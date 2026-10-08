@@ -40,6 +40,7 @@ export default function Login() {
     setBusy(true); setError("");
     try {
       await assertGoogleAvailable();
+      try { sessionStorage.setItem("dream-login-pending", "1"); } catch {}
       const { error: authError } = await getSupabase().auth.signInWithOAuth({
         provider: "google", options: { redirectTo: `${location.origin}/auth/callback` }
       });

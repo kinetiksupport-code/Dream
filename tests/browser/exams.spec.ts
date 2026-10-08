@@ -294,6 +294,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
 }) => {
   test.setTimeout(90000);
   const state = await fixture(page, false);
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/exams");
   await expect(
     page.getByRole("heading", { name: "Prepárate con calma." }),
@@ -333,20 +334,31 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
   await page.goto(`/exams/${e.id}`);
   await page.getByRole("button", { name: "Empezar simulacro" }).click();
   await page.getByRole("radio").first().check();
+  await page.screenshot({ path: "/tmp/dream-exam-qa/question-choice-390.png" });
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
   await page
     .getByLabel("Tu respuesta", { exact: true })
     .fill("El producto es cero si un factor es cero.");
+  await page.screenshot({ path: "/tmp/dream-exam-qa/question-open-390.png" });
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
   await page
     .getByLabel("Escribe tu razonamiento")
     .fill("(x-3)(x-4)=0, x=3 o x=4.");
+  await page.screenshot({ path: "/tmp/dream-exam-qa/question-math-390.png" });
   await page.getByRole("button", { name: "Revisar y entregar" }).click();
   expect(state.calls).not.toContain("test_check_answer");
+  await expect(
+    page.getByRole("button", { name: "Entregar simulacro" }),
+  ).toBeVisible();
+  await page.screenshot({ path: "/tmp/dream-exam-qa/confirm-390.png" });
   await page.getByRole("button", { name: "Entregar simulacro" }).click();
   await expect(
     page.getByRole("heading", { name: "Ya sabes por dónde seguir." }),
   ).toBeVisible();
+  await page.screenshot({ path: "/tmp/dream-exam-qa/result-390.png" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({ path: "/tmp/dream-exam-qa/result-1440.png" });
+  await page.setViewportSize({ width: 390, height: 844 });
   const resultURL = page.url();
   await page.reload();
   await expect(
@@ -359,6 +371,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
   await page.getByRole("radio").nth(1).check();
   await page.getByRole("button", { name: "Comprobar respuesta" }).click();
   await expect(page.getByText("Bien pensado.")).toBeVisible();
+  await page.screenshot({ path: "/tmp/dream-exam-qa/practice-390.png" });
   await page.goto(resultURL);
   await expect(
     page.getByRole("heading", { name: "Ya sabes por dónde seguir." }),
@@ -456,7 +469,9 @@ test("responsive exam frames, dark mode and screenshots at every required width"
     localStorage.setItem("dream-theme", "dark");
   });
   await page.goto("/exams");
-  await expect(page.getByRole("heading", {name:"Prepárate con calma."})).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Prepárate con calma." }),
+  ).toBeVisible();
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   await page.screenshot({
     path: "/tmp/dream-exam-qa/index-dark-1440.png",

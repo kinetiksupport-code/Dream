@@ -1,3 +1,6 @@
+import { track } from "./observability/analytics";
+import { captureDiagnostic } from "./observability/diagnostics";
+import type { Outcome } from "./observability/policy";
 import { getSupabase } from "./supabase";
 import { readNDJSON } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
@@ -81,8 +84,20 @@ export async function callDream<T>(
   payload: Record<string, unknown> = {},
   signal?: AbortSignal,
 ): Promise<T> {
-  const response = await request(action, payload, signal);
-  return response.json() as Promise<T>;
+  const start = performance.now();
+  try {
+    const response = await request(action, payload, signal);
+    const result = (await response.json()) as T;
+    reportRequest(action, start, "success", response.status);
+    if (action === "conversation_create")
+      track("conversation_started", { action, section: "chat" });
+    if (action === "exam_create")
+      track("exam_created", { action, section: "exams" });
+    return result;
+  } catch (error) {
+    reportFailure(action, start, error, signal);
+    throw error;
+  }
 }
 export async function streamDreamChat(
   payload: {
@@ -95,13 +110,75 @@ export async function streamDreamChat(
   onEvent: (event: DreamStreamEvent) => void,
   signal: AbortSignal,
 ) {
-  const response = await request("chat", payload, signal);
-  if (
-    !response.body ||
-    !response.headers.get("content-type")?.includes("application/x-ndjson")
-  )
-    throw new Error("Dream no devolvió una respuesta en streaming.");
-  await readNDJSON(response.body, onEvent, signal);
+  const start = performance.now();
+  try {
+    const response = await request("chat", payload, signal);
+    if (
+      !response.body ||
+      !response.headers.get("content-type")?.includes("application/x-ndjson")
+    )
+      throw new Error("Dream no devolvió una respuesta en streaming.");
+    let backendFailed = false;
+    await readNDJSON(
+      response.body,
+      (event) => {
+        if (event.type === "error") backendFailed = true;
+        onEvent(event);
+      },
+      signal,
+    );
+    reportRequest(
+      "chat",
+      start,
+      backendFailed ? "stream_error" : "success",
+      response.status,
+    );
+    if (backendFailed)
+      captureDiagnostic(new Error("Dream stream failed"), {
+        action: "chat",
+        outcome: "stream_error",
+      });
+  } catch (error) {
+    reportFailure("chat", start, error, signal);
+    throw error;
+  }
+}
+function reportRequest(
+  action: DreamAction,
+  start: number,
+  outcome: Outcome,
+  http_status?: number,
+) {
+  const properties = {
+    action,
+    duration_ms: performance.now() - start,
+    outcome,
+    http_status,
+  };
+  track("api_request_completed", properties);
+  if (outcome !== "success" && outcome !== "aborted")
+    track("feature_error", properties);
+}
+function reportFailure(
+  action: DreamAction,
+  start: number,
+  error: unknown,
+  signal?: AbortSignal,
+) {
+  const outcome = signal?.aborted
+    ? "aborted"
+    : error instanceof DreamApiError
+      ? "http_error"
+      : "network_error";
+  const http_status = error instanceof DreamApiError ? error.status : undefined;
+  reportRequest(action, start, outcome, http_status);
+  // Never pass the backend's exception message or payload to a monitoring SDK.
+  if (outcome !== "aborted")
+    captureDiagnostic(new Error("Dream API request failed"), {
+      action,
+      http_status,
+      outcome,
+    });
 }
 export async function getDreamProfile(signal?: AbortSignal) {
   const data = await callDream<{

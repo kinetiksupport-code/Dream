@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Plus } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
   preparation,
@@ -50,7 +50,7 @@ export function ExamList() {
       subtitle="Tus fechas, tus apuntes y un siguiente paso claro."
       action={
         <Link className="primary" href="/exams/new">
-          Nuevo examen <Plus size={18} />
+          Nuevo examen <ArrowRight size={18} />
         </Link>
       }
       aside={
@@ -156,8 +156,11 @@ export function ExamList() {
             </div>
             <h2>{exam.title}</h2>
             <small>
-              {examDateLabel(exam.exam_date, true)} · {exam.topics.length} temas
-              · {exam.materials.length} materiales
+              {examDateLabel(exam.exam_date, true)} · {exam.topics.length}{" "}
+              {exam.topics.length === 1 ? "tema" : "temas"}
+              {" · "}
+              {exam.materials.length}{" "}
+              {exam.materials.length === 1 ? "material" : "materiales"}
             </small>
             <div className={styles.preparation}>
               <strong>

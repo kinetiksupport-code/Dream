@@ -12,6 +12,8 @@ import type { Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
+import { ObservabilityRoutes } from "@/components/observability";
+import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
 type Theme = "light" | "dark" | "system";
 interface Context {
@@ -78,6 +80,15 @@ export function Providers({ children }: { children: ReactNode }) {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, next) => {
         if (alive) {
+          if (_event === "SIGNED_IN" && next) {
+            try {
+              if (sessionStorage.getItem("dream-login-pending") === "1") {
+                sessionStorage.removeItem("dream-login-pending");
+                track("login_completed", { section: "login" });
+              }
+            } catch {}
+          }
+          if (_event === "SIGNED_OUT") resetAnalytics();
           if (currentUser.current !== next?.user.id) {
             setProfile(null);
             currentUser.current = next?.user.id;
@@ -184,6 +195,7 @@ export function Providers({ children }: { children: ReactNode }) {
         logout,
       }}
     >
+      <ObservabilityRoutes />
       {children}
     </DreamContext.Provider>
   );
