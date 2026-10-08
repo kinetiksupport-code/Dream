@@ -456,6 +456,7 @@ test("responsive exam frames, dark mode and screenshots at every required width"
     localStorage.setItem("dream-theme", "dark");
   });
   await page.goto("/exams");
+  await expect(page.getByRole("heading", {name:"Prepárate con calma."})).toBeVisible();
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   await page.screenshot({
     path: "/tmp/dream-exam-qa/index-dark-1440.png",
