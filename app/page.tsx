@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect } from "react";
-import { ArrowRight, Check, Search, FileText } from "lucide-react";
+import { ArrowRight, Check, Search } from "lucide-react";
 import { DreamSiteMark } from "@/components/dream-site-mark";
 import s from "./landing.module.css";
 

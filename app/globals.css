@@ -2659,3 +2659,9 @@ select,
 :root[data-theme="dark"] .theme-options button[aria-pressed="true"] {
   color: var(--lime);
 }
+
+.study-conversation-empty { display:flex; flex-direction:column; align-items:flex-start; gap:20px; padding:24px 8px; }
+.study-conversation-empty h2 { font-size:28px; }
+.study-conversation-empty p { color:var(--muted); font-size:15px; line-height:1.5; }
+
+@media(min-width:851px){.workspace-header.exam-topbar{height:64px}}
