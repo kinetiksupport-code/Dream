@@ -1,4 +1,5 @@
 "use client";
+import { track } from "@/lib/observability/analytics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -206,6 +207,11 @@ export function ExamSessionView({
         "exam_session_submit",
         { exam_id: id, session_id: sessionId },
       );
+      if (
+        sessionRef.current.status !== "completed" &&
+        saved.status === "completed"
+      )
+        track("simulation_completed", { section: "exams", mode: saved.mode });
       sessionRef.current = saved;
       setSession(saved);
       setDirty(false);

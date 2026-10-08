@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Sun, Moon, Monitor, Check, LogOut, Trash2 } from "lucide-react";
+import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
@@ -130,6 +131,7 @@ export default function Settings() {
           </div>
         </div>
       </section>
+      <PrivacySettings />
       <section className="settings-group">
         <h2>Datos</h2>
         <div className="settings-row">
