@@ -15,6 +15,7 @@ import {
   History,
   ChartNoAxesColumn,
   ListChecks,
+  CalendarDays,
   SquarePen,
   ChevronRight,
   Settings2,
@@ -139,6 +140,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const currentConversation = items.find((c) => c.id === search.get("c"));
   const home =
     pathname === "/chat" && !view && (!search.get("c") || workspaceEmpty);
+  const examArea = pathname.startsWith("/exams");
+  const brandedTopbar = home || examArea;
   const nav = [
     { label: "Inicio", href: "/chat", icon: Home, active: home },
     {
@@ -159,6 +162,7 @@ export function Shell({ children }: { children: ReactNode }) {
       icon: ListChecks,
       active: view === "tests",
     },
+    { label: "Exámenes", href: "/exams", icon: CalendarDays, active: examArea },
     {
       label: "Ajustes",
       href: "/settings",
@@ -239,16 +243,20 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         </aside>
         <div className="workspace">
-          <header className={`workspace-header ${home ? "home-topbar" : ""}`}>
+          <header
+            className={`workspace-header ${examArea ? "exam-topbar" : ""} ${brandedTopbar ? "home-topbar" : ""}`}
+          >
             <div className="topbar-left">
-              {home ? (
+              {brandedTopbar ? (
                 <>
                   <Link className="wordmark mobile-brand" href="/chat">
                     <DreamMark size={24} />
                     dream
                   </Link>
                   <span className="desktop-header-label">
-                    TU ESPACIO PARA ENTENDER
+                    {examArea
+                      ? "EXÁMENES / TU PREPARACIÓN"
+                      : "TU ESPACIO PARA ENTENDER"}
                   </span>
                 </>
               ) : (
@@ -277,7 +285,7 @@ export function Shell({ children }: { children: ReactNode }) {
               )}
             </div>
             <div className="topbar-controls">
-              {home && (
+              {brandedTopbar && (
                 <Link
                   className="icon-button"
                   href={`/chat?new=${Date.now()}`}
@@ -292,7 +300,11 @@ export function Shell({ children }: { children: ReactNode }) {
                 aria-expanded={open}
                 onClick={() => setOpen(true)}
               >
-                {home ? <Menu size={20} /> : <MoreHorizontal size={20} />}
+                {brandedTopbar ? (
+                  <Menu size={20} />
+                ) : (
+                  <MoreHorizontal size={20} />
+                )}
               </button>
             </div>
           </header>

@@ -2,6 +2,22 @@ import { getSupabase } from "./supabase";
 import { readNDJSON } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
+  | "exams"
+  | "exam_create"
+  | "exam_get"
+  | "exam_update"
+  | "exam_rhythm"
+  | "exam_upload_start"
+  | "exam_material_add"
+  | "exam_material_remove"
+  | "exam_prepare"
+  | "exam_unit_start"
+  | "exam_unit_complete"
+  | "exam_complete"
+  | "exam_session_create"
+  | "exam_session_get"
+  | "exam_session_save"
+  | "exam_session_submit"
   | "profile"
   | "conversations"
   | "conversation_create"
@@ -73,6 +89,8 @@ export async function streamDreamChat(
     conversation_id: string;
     prompt: string;
     attachment_ids: string[];
+    exam_id?: string;
+    unit_id?: string;
   },
   onEvent: (event: DreamStreamEvent) => void,
   signal: AbortSignal,

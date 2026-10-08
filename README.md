@@ -1,5 +1,8 @@
 # Dream
 
+La ampliación de **Exámenes** usa persistencia real por usuario y `dream-api` v5. Sus rutas, migraciones, seguridad, recuperación y límites de verificación están documentados en [EXAMS_IMPLEMENTATION.md](EXAMS_IMPLEMENTATION.md). Las secciones siguientes describen también los contratos originales v3 que esta ampliación conserva.
+
+
 Aplicación Dream existente, actualizada visualmente con las exportaciones aprobadas de Figma. Next.js 15, React 19, TypeScript strict, Tailwind CSS 4, Inter, Supabase JS, Markdown seguro y KaTeX. Se mantiene la lógica de autenticación, API, conversaciones, streaming, adjuntos y tests. No contiene otro backend ni accede a tablas directamente.
 
 La implementación visual y sus adaptaciones están detalladas en [DESIGN_IMPLEMENTATION.md](DESIGN_IMPLEMENTATION.md).

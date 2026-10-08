@@ -21,7 +21,7 @@ import type {
 import { DreamActivity } from "./dream-mark";
 import { Markdown } from "./markdown";
 import { useConversations } from "./shell";
-function hasAnswer(q: DreamQuestion, a: AnswerValue | undefined) {
+export function hasAnswer(q: DreamQuestion, a: AnswerValue | undefined) {
   if (a === undefined) return false;
   if (q.type === "matching")
     return !!q.metadata?.left?.every(
@@ -33,7 +33,7 @@ function hasAnswer(q: DreamQuestion, a: AnswerValue | undefined) {
       ? !!a.trim()
       : false;
 }
-function AnswerInput({
+export function AnswerInput({
   question: q,
   value,
   onChange,

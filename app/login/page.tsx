@@ -1,86 +1,79 @@
 "use client";
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
 import { useDream } from "@/components/providers";
-import { DreamMark } from "@/components/dream-mark";
+import { DreamSiteMark } from "@/components/dream-site-mark";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
+import s from "./login.module.css";
+
+const words = ["tus PDFs", "matemáticas", "historia", "cualquier tema"];
+
 export default function Login() {
   const { ready, session, bootError } = useDream();
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [letters, setLetters] = useState(words[0].length);
+  const [erasing, setErasing] = useState(false);
   useEffect(() => {
     if (ready && session) router.replace("/chat");
     const params = new URLSearchParams(location.search);
-    if (params.has("expired"))
-      setError("Tu sesión ha terminado. Entra para continuar.");
-    if (params.has("error"))
-      setError("No se pudo completar el acceso. Inténtalo de nuevo.");
+    if (params.has("expired")) setError("Tu sesión ha terminado. Entra para continuar.");
+    if (params.has("error")) setError("No se pudo completar el acceso. Inténtalo de nuevo.");
   }, [ready, session, router]);
+  useEffect(() => {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const full = words[wordIndex];
+    const delay = !erasing && letters === full.length ? 2100 : erasing ? 55 : 105;
+    const timer = setTimeout(() => {
+      if (!erasing && letters === full.length) setErasing(true);
+      else if (erasing && letters === 0) { setErasing(false); setWordIndex((i) => (i+1) % words.length); }
+      else setLetters((n) => n + (erasing ? -1 : 1));
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [wordIndex, letters, erasing]);
   async function login() {
-    if (busy) return;
-    setBusy(true);
-    setError("");
+    if (busy || !ready) return;
+    setBusy(true); setError("");
     try {
       await assertGoogleAvailable();
-      const { error } = await getSupabase().auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${location.origin}/auth/callback` },
+      const { error: authError } = await getSupabase().auth.signInWithOAuth({
+        provider: "google", options: { redirectTo: `${location.origin}/auth/callback` }
       });
-      if (error) throw error;
-    } catch (e) {
-      setError(errorMessage(e));
-      setBusy(false);
-    }
+      if (authError) throw authError;
+    } catch (e) { setError(errorMessage(e)); setBusy(false); }
   }
-  return (
-    <main className="login">
-      <Link className="wordmark" href="/">
-        <DreamMark size={28} />
-        dream
-      </Link>
-      <div className="login-content">
-        <DreamMark large />
-        <p className="eyebrow">TU INTELIGENCIA PERSONAL</p>
-        <h1>
-          Las grandes ideas
-          <br />
-          empiezan con
-          <br />
-          <span>una pregunta.</span>
-        </h1>
-        <p className="login-copy">
-          Un espacio tuyo para aprender, crear
-          <br />y entender un poco más.
-        </p>
-        <button
-          className="google-button"
-          onClick={login}
-          disabled={busy || !ready}
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.03v2.52h3.24c1.9-1.75 2.98-4.33 2.98-7.38ZM12 22c2.7 0 4.96-.9 6.62-2.39l-3.24-2.52c-.9.6-2.05.96-3.38.96-2.6 0-4.81-1.76-5.6-4.13H3.05v2.6A10 10 0 0 0 12 22ZM6.4 13.92A6 6 0 0 1 6.08 12c0-.67.12-1.32.32-1.92v-2.6H3.05A10 10 0 0 0 2 12c0 1.61.39 3.14 1.05 4.52l3.35-2.6ZM12 5.95c1.47 0 2.79.5 3.83 1.51l2.88-2.88A9.61 9.61 0 0 0 12 2a10 10 0 0 0-8.95 5.48l3.35 2.6c.79-2.37 3-4.13 5.6-4.13Z"
-            />
+  return <main className={s.login}>
+    <section className={s.brandPanel} aria-label="Dream">
+      <div className={s.noise} aria-hidden="true"/>
+      <div className={s.auroraBlue} aria-hidden="true"/>
+      <div className={s.auroraLime} aria-hidden="true"/>
+      <Link href="/" className={s.desktopBrand}><DreamSiteMark size={32}/>Dream</Link>
+      <div className={s.narrative}>
+        <h1>No es magia.<br/><span>Entiende</span><br/><em>{words[wordIndex].slice(0,letters)}</em><b className={s.cursor}>|</b></h1>
+        <p>Sube tus apuntes, haz preguntas y prepárate para los exámenes a tu propio ritmo.</p>
+      </div>
+    </section>
+    <section className={s.formPanel}>
+      <div className={s.formContent}>
+        <Link className={s.mobileBrand} href="/"><DreamSiteMark size={39}/>Dream</Link>
+        <div className={s.heading}><h2>Entrar en Dream</h2><p>Inicia sesión o crea tu cuenta gratis.</p></div>
+        <button type="button" className={s.googleButton} onClick={() => void login()} disabled={!ready || busy} aria-busy={busy}>
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
           {busy ? "Abriendo Google…" : "Continuar con Google"}
-          <ArrowUpRight size={17} />
         </button>
-        {(error || bootError) && (
-          <p className="error" role="alert">
-            {error || bootError}
-          </p>
-        )}
-        <span className="login-note">Google → Dream. Así de simple.</span>
+        {(error || bootError) && <p role="alert" className={s.error}>{error || bootError}</p>}
+        <p className={s.legal}>Al continuar, aceptas nuestros <Link href="/terminos">Términos de Servicio</Link> y <Link href="/privacidad">Política de Privacidad</Link>.</p>
+        <Link className={s.back} href="/">Volver al inicio</Link>
       </div>
-      <footer className="login-footer">
-        <span>Menos ruido. Más posibilidades.</span>
-        <span>Hecho para tu curiosidad.</span>
-      </footer>
-    </main>
-  );
+    </section>
+  </main>;
 }
