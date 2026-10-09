@@ -73,9 +73,10 @@ export function Shell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
+  const profileEmail = profile?.email;
   useEffect(() => {
-    if (profile) void refresh();
-  }, [profile, refresh]);
+    if (profileEmail) void refresh();
+  }, [profileEmail, refresh]);
   useEffect(() => setOpen(false), [pathname, search]);
   async function rename() {
     if (!editing || !title.trim() || busy) return;

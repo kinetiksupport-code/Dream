@@ -121,7 +121,10 @@ test("streamed and legacy Sentry traces discard span descriptions, attributes an
     ],
   };
   assert.ok(!JSON.stringify(scrubSpan(span)).includes(privateText));
-  assert.equal(scrubSpan({ ...span, name: "GET /exams/private-id?prompt=secret" }).name, "/exams");
+  assert.equal(
+    scrubSpan({ ...span, name: "GET /exams/private-id?prompt=secret" }).name,
+    "/exams",
+  );
   const event: TransactionEvent = {
     type: "transaction",
     transaction: "/chat/private-id?prompt=secret",
@@ -179,4 +182,18 @@ test("real Sentry SDK transport receives an envelope scrubbed by the installed h
   assert.ok(envelopes.length > 0);
   assert.ok(!JSON.stringify(envelopes).includes(privateText));
   await Sentry.close(1000);
+});
+test("preview environment is not misclassified as production and arbitrary labels are rejected", async () => {
+  const { environmentFor } = await import("../lib/observability/environment");
+  assert.equal(environmentFor("preview"), "preview");
+  assert.equal(environmentFor("production"), "production");
+  assert.equal(environmentFor("private-prompt"), "development");
+  assert.equal(
+    safeProperties({ environment: "preview" }).environment,
+    "preview",
+  );
+  assert.equal(
+    safeProperties({ environment: "private-prompt" }).environment,
+    undefined,
+  );
 });

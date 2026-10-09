@@ -1,5 +1,6 @@
 "use client";
 import {
+  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -12,6 +13,7 @@ import type { Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
+import { ConnectionStatus } from "@/components/connection-status";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
@@ -151,8 +153,6 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => media.removeEventListener("change", apply);
   }, [theme, themeReady]);
   useEffect(() => {
-    if ("serviceWorker" in navigator)
-      void navigator.serviceWorker.register("/sw.js").catch(() => {});
     const viewport = window.visualViewport;
     const update = () => {
       document.documentElement.style.setProperty(
@@ -196,7 +196,8 @@ export function Providers({ children }: { children: ReactNode }) {
       }}
     >
       <ObservabilityRoutes />
-      {children}
+      <ConnectionStatus />
+      <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>
   );
 }

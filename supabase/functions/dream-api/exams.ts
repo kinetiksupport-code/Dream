@@ -10,7 +10,7 @@ async function detail(db:SupabaseClient,owner:string,examId:unknown){
  const [u,m,s]=await Promise.all([
  db.from('dream_exam_units').select('*').eq('exam_id',exam.id).eq('owner_id',owner).order('position'),
  db.from('dream_exam_materials').select('attachment_id,dream_attachments(id,file_name,mime_type,size_bytes,status)').eq('exam_id',exam.id).eq('owner_id',owner).order('created_at'),
- db.from('dream_exam_sessions').select('id,mode,status,started_at,submitted_at').eq('exam_id',exam.id).eq('owner_id',owner).order('started_at',{ascending:false})]);
+ db.from('dream_exam_sessions').select('id,mode,status,started_at,submitted_at').eq('exam_id',exam.id).eq('owner_id',owner).order('started_at',{ascending:false}).limit(50)]);
  return {...exam,units:checked(u)??[],materials:(checked(m)??[]).map(row=>row.dream_attachments),sessions:checked(s)??[]};
 }
 export async function examContext(db:SupabaseClient,owner:string,examId:unknown,unitId?:unknown,conversationId?:unknown){
@@ -27,8 +27,9 @@ function answerValue(a:unknown):a is Answer {return typeof a==='string'||Array.i
 export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI,legacy:(body:Body)=>Promise<Response>,signal:AbortSignal):Promise<unknown>{
  const action=b.action;
  if(action==='exams'){
- const exams=checked(await db.from('dream_exams').select('*,units:dream_exam_units(id,status),materials:dream_exam_materials(attachment_id)').eq('owner_id',owner).order('exam_date'));
- return {exams};}
+ const offset=Number(b.offset??0);if(!Number.isInteger(offset)||offset<0||offset>100000)throw new ExamError('Página no válida.');
+ const exams=checked(await db.from('dream_exams').select('*,units:dream_exam_units(id,status),materials:dream_exam_materials(attachment_id)').eq('owner_id',owner).order('exam_date').order('id').range(offset,offset+19));
+ return {exams,next_offset:exams?.length===20?offset+20:null};}
  if(action==='exam_create'){
  const examId=id(b.exam_id);const existing=await db.from('dream_exams').select('id').eq('id',examId).eq('owner_id',owner).maybeSingle();
  if(existing.error)throw new ExamError('No se pudo consultar el examen.',503);
@@ -70,7 +71,7 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  const units=generated.units.map((u:unknown)=>{if(!u||typeof u!=='object')throw new Error('invalid_unit');const v=u as Body;const minutes=Number(v.estimated_minutes);if(!Number.isInteger(minutes)||minutes<5||minutes>120)throw new Error('invalid_minutes');return {title:text(v.title,200,true),topic:text(v.topic,160,true),summary:text(v.summary,1500,true),estimated_minutes:minutes};});
  checked(await db.rpc('dream_exam_store_plan',{p_exam:exam.id,p_owner:owner,p_units:units}));
  return {exam:await detail(db,owner,exam.id)};
- }catch {checked(await db.from('dream_exams').update({status:'failed',plan_error:'No se pudo preparar el plan. Tus temas y materiales están guardados.'}).eq('id',exam.id).eq('owner_id',owner).eq('status','preparing'));throw new ExamError('No se pudo preparar el plan. Tus temas y materiales están guardados. Reintenta cuando el servicio esté disponible.',502);}}
+ }catch(error) {checked(await db.from('dream_exams').update({status:'failed',plan_error:'No se pudo preparar el plan. Tus temas y materiales están guardados.'}).eq('id',exam.id).eq('owner_id',owner).eq('status','preparing'));if(error instanceof Error && ['AdmissionError','GroqProviderError'].includes(error.name))throw error;throw new ExamError('No se pudo preparar el plan. Tus temas y materiales están guardados. Reintenta cuando el servicio esté disponible.',502);}}
  if(action==='exam_unit_start'||action==='exam_unit_complete'){
  const unit=checked(await db.from('dream_exam_units').select('*').eq('id',id(b.unit_id)).eq('exam_id',exam.id).eq('owner_id',owner).maybeSingle());if(!unit)throw new ExamError('Unidad no encontrada.',404);
  if(action==='exam_unit_complete'){checked(await db.from('dream_exam_units').update({status:'completed',completed_at:new Date().toISOString()}).eq('id',unit.id).eq('owner_id',owner));return {exam:await detail(db,owner,exam.id)};}

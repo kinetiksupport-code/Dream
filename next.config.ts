@@ -1,6 +1,10 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 const config: NextConfig = {
+  env: {
+    NEXT_PUBLIC_DREAM_ENVIRONMENT:
+      process.env.VERCEL_ENV || process.env.NODE_ENV || "development",
+  },
   poweredByHeader: false,
   devIndicators: false,
   async headers() {

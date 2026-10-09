@@ -15,11 +15,20 @@ export function ExamList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [tab, setTab] = useState("upcoming");
   useEffect(() => {
     const controller = new AbortController();
-    callDream<{ exams: ExamIndex[] }>("exams", {}, controller.signal)
-      .then((r) => setItems(r.exams))
+    callDream<{ exams: ExamIndex[]; next_offset?: number | null }>(
+      "exams",
+      {},
+      controller.signal,
+    )
+      .then((r) => {
+        setItems(r.exams);
+        setNextOffset(r.next_offset ?? null);
+      })
       .catch((e) => {
         if (!controller.signal.aborted) setError(errorMessage(e));
       })
@@ -28,6 +37,25 @@ export function ExamList() {
       });
     return () => controller.abort();
   }, [retry]);
+  async function loadMore() {
+    if (nextOffset === null || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const r = await callDream<{
+        exams: ExamIndex[];
+        next_offset?: number | null;
+      }>("exams", { offset: nextOffset });
+      setItems((previous) => [
+        ...previous,
+        ...r.exams.filter((e) => !previous.some((p) => p.id === e.id)),
+      ]);
+      setNextOffset(r.next_offset ?? null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setLoadingMore(false);
+    }
+  }
   if (loading || error)
     return (
       <ExamLoad
@@ -190,6 +218,15 @@ export function ExamList() {
           </article>
         );
       })}
+      {nextOffset !== null && (
+        <button
+          className="secondary"
+          disabled={loadingMore}
+          onClick={() => void loadMore()}
+        >
+          {loadingMore ? "Abriendo exámenes…" : "Ver más exámenes"}
+        </button>
+      )}
     </ExamFrame>
   );
 }

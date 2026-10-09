@@ -38,8 +38,9 @@ export function AttachmentItem({
         : kind === "Excel"
           ? FileSpreadsheet
           : FileText;
-  const status =
-    a.status === "ready"
+  const status = a.queued
+    ? "En espera"
+    : a.status === "ready"
       ? "Listo"
       : a.status === "uploading"
         ? "Subiendo"
