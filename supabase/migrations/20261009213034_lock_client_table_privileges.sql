@@ -1,4 +1,5 @@
--- Applied to Dream AI (cxaujyagtpsxvkwkdxbc) on 2026-10-09.
+-- Version matches supabase_migrations.schema_migrations row 20261009213034.
+-- Already applied to Dream AI (cxaujyagtpsxvkwkdxbc). Do not copy this file to a new timestamp.
 -- Service role used by dream-api is unchanged. Client grants no longer exceed RLS.
 
 revoke all on table public.dream_teacher_invites from anon;
