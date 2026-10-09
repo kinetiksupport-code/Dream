@@ -116,4 +116,4 @@ Pendientes para producción: autorización de metadatos de secretos Supabase; cu
 
 ## 11. Archivos y revisión
 
-Ver `FILES.txt` para listado completo. Principales: admisión/ZIP/Tavily/corrección/monitoring Edge, índice dream-api, migración privada, estado de sesión/composer/paginación, Service Worker, políticas de telemetría/entornos, overrides y lockfiles, scripts PostgreSQL/k6, CI sin deploy y tests. Arquitectura y operación en OPERATIONS.md; auditoría inicial en AUDIT.md. Base del PR: rama de observabilidad para conservar trabajos sin integrar. Pull request draft: pendiente de crear al publicar esta rama.
+Ver `FILES.txt` para listado completo. Principales: admisión/ZIP/Tavily/corrección/monitoring Edge, índice dream-api, migración privada, estado de sesión/composer/paginación, Service Worker, políticas de telemetría/entornos, overrides y lockfiles, scripts PostgreSQL/k6, CI sin deploy y tests. Arquitectura y operación en OPERATIONS.md; auditoría inicial en AUDIT.md. Base del PR: rama de observabilidad para conservar trabajos sin integrar. Pull request draft: https://github.com/kinetiksupport-code/Dream/pull/3
