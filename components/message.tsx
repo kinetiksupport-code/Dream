@@ -106,6 +106,7 @@ export const MessageView = memo(function MessageView({
             >
               <ThumbsDown size={18} />
             </button>
+            <span className="action-label">Guardar</span>
           </div>
         </>
       )}
