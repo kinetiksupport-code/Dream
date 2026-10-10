@@ -213,19 +213,22 @@ function reportFailure(
 }
 export async function getDreamProfile(signal?: AbortSignal) {
   const data = await callDream<{
-    profile: DreamProfile;
-    service_ready: boolean;
+    profile: DreamProfile | null;
+    service_ready?: boolean;
   }>("profile", {}, signal);
-  const p = data.profile;
+  const p = data?.profile;
+  if (!p || typeof p !== "object") {
+    throw new Error("No se pudo cargar tu perfil. Inténtalo de nuevo.");
+  }
   return {
     profile: {
-      email: p.email,
-      display_name: p.display_name,
-      pref_step_by_step: p.pref_step_by_step,
-      pref_practice_suggestions: p.pref_practice_suggestions,
-      pref_calm_tone: p.pref_calm_tone,
+      email: p.email ?? "",
+      display_name: p.display_name ?? "",
+      pref_step_by_step: p.pref_step_by_step ?? true,
+      pref_practice_suggestions: p.pref_practice_suggestions ?? true,
+      pref_calm_tone: p.pref_calm_tone ?? true,
     },
-    service_ready: data.service_ready,
+    service_ready: data.service_ready ?? true,
   };
 }
 export function errorMessage(error: unknown) {

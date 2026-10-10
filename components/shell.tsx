@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { Modal } from "./modal";
 import { useDream } from "./providers";
-import { DreamMark, DreamActivity } from "./dream-mark";
+import { DreamMark } from "./dream-mark";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import { Toast } from "./toast";
 import type { Conversation } from "@/lib/types";
@@ -133,7 +133,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </button>
           </div>
         ) : (
-          <DreamActivity state="thinking" />
+          <div className="boot-spinner" role="status" aria-label="Cargando" />
         )}
       </main>
     );
@@ -174,12 +174,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const account = (
     <Link className="account-link" href="/settings">
       <span className="avatar">
-        {(profile.display_name || profile.email || "D")
+        {((profile?.display_name || profile?.email || "D"))
           .slice(0, 1)
           .toUpperCase()}
       </span>
       <span>
-        <strong>{profile.display_name?.split(" ")[0] || "Mi cuenta"}</strong>
+        <strong>{profile?.display_name?.split(" ")[0] || "Mi cuenta"}</strong>
         <small>Tu espacio de aprendizaje</small>
       </span>
       <ChevronRight size={18} />

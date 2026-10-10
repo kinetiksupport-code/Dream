@@ -453,6 +453,22 @@ button:active:not(:disabled) {
   min-height: var(--viewport-height);
   padding: 32px;
 }
+
+.boot-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: boot-spin 0.8s linear infinite;
+}
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-spinner { animation: none; border-top-color: var(--blue); }
+}
+
 .boot-error {
   max-width: 440px;
   display: grid;
