@@ -4,10 +4,14 @@ export const webSearchTool = {
   type: 'function',
   function: {
     name: 'web_search',
-    description: 'Busca hechos actuales cuando una respuesta depende de noticias, fechas, versiones o cambios recientes.',
+    description: 'Busca en internet. Úsala cuando el usuario pida buscar o cuando no sepas un dato, especialmente si es actual, factual o puede haber cambiado. Devuelve resultados con fuentes.',
     parameters: { type: 'object', properties: { query: { type: 'string', description: 'Consulta concreta de búsqueda' } }, required: ['query'], additionalProperties: false },
   },
 };
+
+export const SEARCH_INTENT = /\b(busca(?:r|me|le|nos|d)?|b[uú]squeda|investiga(?:r|me)?|consulta(?:r)?|googlea|hoy|noticias?|actual(?:es)?|[uú]ltim[oa]s?|reciente(?:s)?|precio(?:s)?|versi[oó]n(?:es)?|internet|202[5-9])\b/i;
+
+export const wantsWebSearch = (prompt) => typeof prompt === 'string' && SEARCH_INTENT.test(prompt);
 
 export function collectToolCalls(chunks) {
   const calls = new Map();

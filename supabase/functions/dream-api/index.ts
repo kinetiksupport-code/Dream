@@ -8,7 +8,7 @@ import { resolveDreamMode, emailDomain, isAutoClassified } from './mode.mjs';
 import { DREAM_SYSTEM_PROMPT, dynamicContextFor } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
-import { webSearchTool, collectToolCalls, validateToolCall, searchWeb } from './tools.mjs';
+import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
   extractAttachment, base64ByteLength,
@@ -566,7 +566,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
-  if (/\b(hoy|noticias?|busca\s+(?:en\s+)?(?:la\s+)?web|internet|actual(?:es)?)\b/i.test(prompt) && !tavilyProvider.configured()) return json({error:'La búsqueda web no está configurada. No puedo verificar información actual ahora.'},503);
+  const searchRequested = wantsWebSearch(prompt);
+  if (searchRequested && !tavilyProvider.configured()) return json({error:'La búsqueda web no está configurada. No puedo verificar información actual ahora.'},503);
   if (prompt.length < 1 || prompt.length > MAX_PROMPT) {
     return json({ error: 'Escribe entre 1 y 12.000 caracteres.' }, 400);
   }
@@ -631,6 +632,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const systemMessages = [
     { role: 'system', content: DREAM_SYSTEM_PROMPT },
     { role: 'system', content: `Política de conversación actual: responde proporcionalmente y con prosa natural. Para mensajes breves o ambiguos, responde brevemente o pregunta solo lo imprescindible; nunca inventes contexto ausente. No actives una lección por defecto para tareas generales. En un tema nuevo educativo, explica solo una idea, como máximo un ejemplo y, si aporta valor, una comprobación breve; espera el siguiente turno. Si el usuario ya domina una parte, comienza en la duda concreta. Una solicitud explícita de apuntes o resumen completo sí requiere respuesta completa. Para trabajo evaluable, ofrece el siguiente paso o pista y revisa el intento sin dar directamente el resultado. Un test para imprimir se entrega como texto; un test interactivo usa el flujo de test del producto. No inventes fechas ni datos recientes; cuando consultes la web, utiliza solamente los resultados obtenidos y distingue fechas y fuentes.` },
+    ...(tavilyProvider.configured() ? [{ role: 'system', content: 'Tienes la herramienta web_search y puedes buscar en internet. Si el usuario pide buscar o investigar, úsala. Si no sabes un dato, o el dato es actual y puedes estar desfasado, búscala antes de responder. No digas que no puedes buscar. No inventes lo que no sepas: busca y responde solo con lo encontrado, citando la fuente.' }] : []),
     { role: 'system', content: dynamicContextFor(mode, {
       pref_step_by_step: profile.pref_step_by_step !== false,
       pref_practice_suggestions: profile.pref_practice_suggestions !== false,
@@ -682,15 +684,15 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       };
       try {
         const messages: any[] = [...systemMessages, ...priorMessages, { role: 'user', content: prompt }];
-        const searchKey = /\b(hoy|actual(?:es)?|últim[oa]s?|reciente(?:s)?|noticias?|precio(?:s)?|versi[oó]n(?:es)?|busca\s+(?:en\s+)?(?:la\s+)?web|internet|202[5-9])\b/i.test(prompt)
-          ? tavilyProvider.configured() : false;
+        const searchAvailable = tavilyProvider.configured();
+        const searchKey = searchAvailable;
         const toolDeltas: any[] = [];
         let provisional = '';
         const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7, stream_options: { include_usage: true } };
-        // Buffer the first pass only when tools are enabled: no partial XML/JSON or
-        // speculative prose should be exposed before a function call is resolved.
+        // Buffer the first pass when tools are available so a search can run
+        // before any speculative text reaches the student.
         for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: streamAdmission, pause: admission.pause,
-          body: { ...baseBody, messages, ...(searchKey ? { tools: [webSearchTool], tool_choice: 'required' } : {}) } })) {
+          body: { ...baseBody, messages, ...(searchAvailable ? { tools: [webSearchTool], tool_choice: searchRequested ? 'required' : 'auto' } : {}) } })) {
           if (chunk?.choices?.[0]?.delta?.tool_calls?.length) toolDeltas.push(chunk);
           const delta = chunk?.choices?.[0]?.delta?.content;
           if (typeof delta === 'string') {
