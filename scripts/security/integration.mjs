@@ -1,15 +1,22 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { isolatedPool, rpcAdapter } from "./db.mjs";
 import { createAdmission } from "../../supabase/functions/dream-api/admission.mjs";
 const pool = isolatedPool(),
   db = rpcAdapter(pool);
+await pool.query(
+  readFileSync(
+    new URL("../../supabase/migrations/20261010120000_admission_pricing_reconcile.sql", import.meta.url),
+    "utf8",
+  ),
+);
 async function reset(extra = "") {
   await pool.query(
-    "truncate dream_private.counters,dream_private.leases,dream_private.provider_state",
+    "truncate dream_private.counters,dream_private.leases,dream_private.provider_state,dream_private.attempts,dream_private.usage_audit,dream_private.user_blocks",
   );
   await pool.query(
-    `update dream_private.limits set enabled=true,rpm=100,daily=100,exams_daily=5,searches_daily=2,global_concurrency=8,user_concurrency=1,user_tokens=500000,global_tokens=2000000,user_microusd=1000000,global_microusd=10000000,token_microusd=1,search_microusd=1000`,
+    `update dream_private.limits set enabled=true,rpm=100,daily=100,exams_daily=5,searches_daily=2,global_concurrency=8,user_concurrency=1,user_tokens=500000,global_tokens=2000000,user_microusd=1000000,global_microusd=10000000,token_microusd=1,search_microusd=1000,tavily_credit_microusd=8000,tavily_basic_credits=1`,
   );
   if (extra)
     await pool.query(`update dream_private.limits set ${extra.slice(1)}`);
@@ -173,6 +180,53 @@ try {
     (e) => e.status === 503,
   );
   console.log("PASS global kill switch");
+  await reset(",rpm=1");
+  const userA = randomUUID();
+  const userB = randomUUID();
+  const first = createAdmission(db, userA, randomUUID());
+  await first.admit("chat");
+  await first.release();
+  await assert.rejects(
+    createAdmission(db, userA, randomUUID()).admit("chat"),
+    (e) => e.code === "dream_rpm",
+  );
+  await createAdmission(db, userB, randomUUID()).admit("chat");
+  console.log("PASS independent per-user quotas");
+  await reset();
+  const priced = createAdmission(db, randomUUID(), randomUUID());
+  await priced.admit("chat");
+  const reserved = await priced.beforeAttempt("groq", {
+    model: "qwen/qwen3.8-27b",
+    messages: [{ content: "hola" }],
+    max_tokens: 10,
+  });
+  const before = Number(
+    (await pool.query("select microusd from dream_private.counters where scope='global'")).rows[0].microusd,
+  );
+  await reserved.reconcile({ prompt_tokens: 1, completion_tokens: 1 });
+  const after = Number(
+    (await pool.query("select microusd from dream_private.counters where scope='global'")).rows[0].microusd,
+  );
+  assert.ok(after < before);
+  await reserved.reconcile({ prompt_tokens: 1, completion_tokens: 1 });
+  assert.equal(
+    Number((await pool.query("select count(*) from dream_private.usage_audit where event='reconciled'")).rows[0].count),
+    1,
+  );
+  console.log("PASS reconciliation refunds once and is idempotent");
+  await assert.rejects(
+    priced.beforeAttempt("groq", { model: "missing-model", messages: [{ content: "x" }], max_tokens: 1 }),
+    (e) => e.code === "model_unpriced",
+  );
+  console.log("PASS unpriced model fails closed");
+  for (const operation of [
+    "chat", "attachment_upload", "test_generate", "test_check_answer",
+    "test_submit", "exam_prepare", "exam_session_create", "exam_session_submit",
+  ]) {
+    await reset();
+    await createAdmission(db, randomUUID(), randomUUID()).admit(operation);
+  }
+  console.log("PASS all eight protected operations admit");
 } finally {
   await pool.end();
 }

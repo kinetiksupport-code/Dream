@@ -68,13 +68,15 @@ export function createGroqProviderManager({
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
       const started = now();
-      await beforeAttempt?.('groq', body);
+      const reservation = await beforeAttempt?.('groq', body);
       try {
         const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (response.ok) {
           markSuccess(slot); safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
-          return response;
+          const data = await response.json();
+          await reservation?.reconcile?.(data?.usage).catch(() => {});
+          return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': 'application/json' } });
         }
         const policy = statusPolicy(response.status);
         if (response.status === 429) {
@@ -113,8 +115,8 @@ export function createGroqProviderManager({
     for (let index = 0; index < available.length; index++) {
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
-      const started = now(); let emittedContent = false;
-      await beforeAttempt?.('groq', body);
+      const started = now(); let emittedContent = false; let usage = null;
+      const reservation = await beforeAttempt?.('groq', body);
       try {
         const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -136,6 +138,7 @@ export function createGroqProviderManager({
         for await (const chunk of parseSSE(response.body)) {
           const delta = chunk?.choices?.[0]?.delta?.content;
           if ((typeof delta === 'string' && delta) || chunk?.choices?.[0]?.delta?.tool_calls?.length) emittedContent = true;
+          if (chunk?.usage) usage = chunk.usage;
           yield chunk;
         }
         if (!emittedContent) {
@@ -144,6 +147,7 @@ export function createGroqProviderManager({
           lastError = new GroqProviderError('empty_stream', { retryable: true }); continue;
         }
         markSuccess(slot);
+        await reservation?.reconcile?.(usage).catch(() => {});
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
         return;
       } catch (error) {
