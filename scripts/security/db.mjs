@@ -16,7 +16,7 @@ export function isolatedPool() {
 export function rpcAdapter(pool) {
   return {
     async rpc(name, args) {
-      if (!/^dream_(admit|reserve|release|provider_pause)$/.test(name))
+      if (!/^dream_(admit|reserve|release|provider_pause|reconcile)$/.test(name))
         throw new Error("Invalid test RPC");
       const parameters = Object.values(args);
       try {

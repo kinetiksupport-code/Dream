@@ -686,7 +686,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           ? tavilyProvider.configured() : false;
         const toolDeltas: any[] = [];
         let provisional = '';
-        const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7 };
+        const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7, stream_options: { include_usage: true } };
         // Buffer the first pass only when tools are enabled: no partial XML/JSON or
         // speculative prose should be exposed before a function call is resolved.
         for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: streamAdmission, pause: admission.pause,
