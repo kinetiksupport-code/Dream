@@ -1,7 +1,7 @@
 {
   "name": "dream",
   "version": "1.0.0",
-  "description": "Dream \u2014 inteligencia personal para aprender, crear y entender",
+  "description": "Dream — inteligencia personal para aprender, crear y entender",
   "scripts": {
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
@@ -31,7 +31,8 @@
     "react-markdown": "10.1.0",
     "rehype-katex": "7.0.1",
     "remark-gfm": "4.0.1",
-    "remark-math": "6.0.0"
+    "remark-math": "6.0.0",
+    "thinking-orbs": "^0.3.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
