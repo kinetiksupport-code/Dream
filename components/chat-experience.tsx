@@ -145,6 +145,9 @@ export function ChatExperience({
       .then((r) => {
         if (route.current !== origin)
           throw new DOMException("Navegación cambiada", "AbortError");
+        if (!r?.conversation?.id) {
+          throw new Error("No se pudo crear la conversación. Inténtalo de nuevo.");
+        }
         idRef.current = r.conversation.id;
         setConversationId(r.conversation.id);
         add(r.conversation);
