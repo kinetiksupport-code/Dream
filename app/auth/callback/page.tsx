@@ -10,9 +10,9 @@ export default function Callback() {
     async function finish() {
       try {
         const client = getSupabase();
-        const code = new URLSearchParams(location.search).get("code");
-        if (new URLSearchParams(location.search).has("error"))
-          throw new Error("OAuth");
+        const params = new URLSearchParams(location.search);
+        const code = params.get("code");
+        if (params.has("error")) throw new Error("OAuth");
         const { data } = await client.auth.getSession();
         if (!data.session && code) {
           const { error } = await client.auth.exchangeCodeForSession(code);
@@ -20,22 +20,42 @@ export default function Callback() {
         }
         const { data: next } = await client.auth.getSession();
         if (!next.session) throw new Error("No session");
-        // Server-side maintenance check
+
+        let verification: Response;
         try {
-          const res = await fetch("/api/auth/verify-maintenance", {
+          verification = await fetch("/api/auth/verify-maintenance", {
             method: "POST",
-            headers: { Authorization: `Bearer ${next.session.access_token}` },
+            cache: "no-store",
+            headers: {
+              Authorization: `Bearer ${next.session.access_token}`,
+            },
           });
-          if (!res.ok) {
-            await client.auth.signOut();
-            if (active) router.replace("/maintenance");
-            return;
-          }
         } catch {
-          // If verify fails for network reasons, still allow if cookie set later
+          await client.auth.signOut({ scope: "local" });
+          if (active) router.replace("/maintenance");
+          return;
         }
+
+        if (!verification.ok) {
+          await client.auth.signOut({ scope: "local" });
+          if (active) router.replace("/maintenance");
+          return;
+        }
+
+        const result = (await verification.json().catch(() => null)) as
+          | { allowed?: boolean }
+          | null;
+        if (result?.allowed !== true) {
+          await client.auth.signOut({ scope: "local" });
+          if (active) router.replace("/maintenance");
+          return;
+        }
+
         if (active) router.replace("/chat");
       } catch {
+        try {
+          await getSupabase().auth.signOut({ scope: "local" });
+        } catch {}
         if (active) router.replace("/login?error=oauth");
       }
     }
