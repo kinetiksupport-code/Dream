@@ -21,8 +21,8 @@ function base64UrlEncode(bytes: Uint8Array): string {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary)
-    .replace(/\\+/g, "-")
-    .replace(/\\//g, "_")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
     .replace(/=+$/g, "");
 }
 
@@ -106,7 +106,9 @@ export async function verifyMaintenanceAccessToken(
     );
     if (!validSignature) return false;
 
-    const payload = JSON.parse(decoder.decode(payloadBytes)) as Partial<MaintenanceTokenPayload>;
+    const payload = JSON.parse(
+      decoder.decode(payloadBytes),
+    ) as Partial<MaintenanceTokenPayload>;
     const now = Math.floor(Date.now() / 1000);
     return (
       typeof payload.sub === "string" &&
