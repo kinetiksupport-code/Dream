@@ -1,50 +1,59 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { isMaintenanceMode } from "@/lib/maintenance";
+import {
+  isMaintenanceMode,
+  MAINTENANCE_COOKIE_NAME,
+  verifyMaintenanceAccessToken,
+} from "@/lib/maintenance";
 
-const PROTECTED_PREFIXES = [
-  "/chat",
-  "/exams",
-  "/progress",
-  "/settings",
-  "/tests",
-];
+const PUBLIC_ROUTES = new Set([
+  "/maintenance",
+  "/login",
+  "/auth/callback",
+  "/api/auth/verify-maintenance",
+]);
+const STATIC_ASSET = /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|mjs|png|svg|txt|ttf|webmanifest|webp|woff2?)$/i;
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   if (!isMaintenanceMode()) {
     return NextResponse.next();
   }
 
   const { pathname } = request.nextUrl;
 
-  // Public paths always allowed
   if (
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/maintenance") ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/icon") ||
-    pathname.startsWith("/manifest") ||
-    pathname.includes(".")
+    PUBLIC_ROUTES.has(pathname) ||
+    pathname.startsWith("/_next/") ||
+    pathname === "/sw.js" ||
+    ((!pathname.startsWith("/api/")) &&
+      (request.method === "GET" || request.method === "HEAD") &&
+      STATIC_ASSET.test(pathname))
   ) {
     return NextResponse.next();
   }
 
-  const allowed = request.cookies.get("dream-maint-allowed")?.value === "1";
-  if (allowed) {
+  const token = request.cookies.get(MAINTENANCE_COOKIE_NAME)?.value;
+  if (await verifyMaintenanceAccessToken(token)) {
     return NextResponse.next();
   }
 
-  // Redirect everything else (including root and protected) to maintenance
-  if (pathname !== "/maintenance") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/maintenance";
-    url.search = "";
-    return NextResponse.redirect(url);
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.json(
+      { error: "Dream está temporalmente en mantenimiento." },
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store",
+          "Retry-After": "300",
+        },
+      },
+    );
   }
 
-  return NextResponse.next();
+  const url = request.nextUrl.clone();
+  url.pathname = "/maintenance";
+  url.search = "";
+  return NextResponse.redirect(url);
 }
 
 export const config = {
