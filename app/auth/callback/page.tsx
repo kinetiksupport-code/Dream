@@ -20,6 +20,20 @@ export default function Callback() {
         }
         const { data: next } = await client.auth.getSession();
         if (!next.session) throw new Error("No session");
+        // Server-side maintenance check
+        try {
+          const res = await fetch("/api/auth/verify-maintenance", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${next.session.access_token}` },
+          });
+          if (!res.ok) {
+            await client.auth.signOut();
+            if (active) router.replace("/maintenance");
+            return;
+          }
+        } catch {
+          // If verify fails for network reasons, still allow if cookie set later
+        }
         if (active) router.replace("/chat");
       } catch {
         if (active) router.replace("/login?error=oauth");

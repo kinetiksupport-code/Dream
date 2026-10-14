@@ -109,6 +109,15 @@ export function Providers({ children }: { children: ReactNode }) {
       setReady(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    void fetch("/api/auth/verify-maintenance", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    }).catch(() => {});
+  }, [session?.access_token]);
+
   const userId = session?.user.id;
   useEffect(() => {
     if (userId) void refreshProfile();
