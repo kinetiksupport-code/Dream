@@ -1,4 +1,5 @@
 import { getSupabase } from "./supabase";
+import { assertDreamAvailable } from "./maintenance-client";
 import { readNDJSON } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
@@ -29,6 +30,7 @@ async function request(
   payload: Record<string, unknown>,
   signal?: AbortSignal,
 ) {
+  await assertDreamAvailable(signal);
   const { data, error } = await getSupabase().auth.getSession();
   if (error || !data.session) {
     if (typeof window !== "undefined")

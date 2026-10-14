@@ -12,11 +12,15 @@ import type { Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
+import { assertDreamAvailable, getMaintenanceStatus } from "@/lib/maintenance-client";
+import { MaintenanceCheck, MaintenancePage } from "@/components/maintenance-page";
 import type { DreamProfile } from "@/lib/types";
 type Theme = "light" | "dark" | "system";
+type Availability = "checking" | "available" | "maintenance" | "unavailable";
 interface Context {
   session: Session | null;
   ready: boolean;
+  availability: Availability;
   profile: DreamProfile | null;
   bootError: string;
   serviceReady: boolean;
@@ -29,6 +33,7 @@ interface Context {
 const DreamContext = createContext<Context | null>(null);
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const [availability, setAvailability] = useState<Availability>("checking");
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<DreamProfile | null>(null);
@@ -40,6 +45,8 @@ export function Providers({ children }: { children: ReactNode }) {
     owner: string | undefined;
     promise: Promise<void>;
   } | null>(null);
+  const availabilityRef = useRef<Availability>(availability);
+  availabilityRef.current = availability;
   const currentUser = useRef(session?.user.id);
   currentUser.current = session?.user.id;
   const refreshProfile = useCallback(async () => {
@@ -65,8 +72,60 @@ export function Providers({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     let alive = true;
+    let inFlight = false;
+    const apply = (next: Availability) => {
+      const previous = availabilityRef.current;
+      availabilityRef.current = next;
+      setAvailability(next);
+      if (previous === "maintenance" && next === "available")
+        window.setTimeout(() => router.refresh(), 0);
+    };
+    const check = async () => {
+      if (inFlight || document.visibilityState === "hidden") return;
+      inFlight = true;
+      try {
+        const maintenance = await getMaintenanceStatus();
+        if (alive) apply(maintenance ? "maintenance" : "available");
+      } catch {
+        if (alive) apply("unavailable");
+      } finally {
+        inFlight = false;
+      }
+    };
+    const onWorkerMessage = (event: MessageEvent) => {
+      if (event.data?.type === "DREAM_MAINTENANCE") apply("maintenance");
+      if (event.data?.type === "DREAM_MAINTENANCE_UNAVAILABLE")
+        apply("unavailable");
+    };
+    void check();
+    const timer = window.setInterval(() => void check(), 10_000);
+    const onFocus = () => void check();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") void check();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    navigator.serviceWorker?.addEventListener("message", onWorkerMessage);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+      navigator.serviceWorker?.removeEventListener("message", onWorkerMessage);
+    };
+  }, [router]);
+  useEffect(() => {
+    if (availability === "maintenance" || availability === "unavailable") {
+      try {
+        getSupabase().auth.stopAutoRefresh();
+      } catch {}
+      return;
+    }
+    if (availability !== "available") return;
+    let alive = true;
     try {
       const supabase = getSupabase();
+      supabase.auth.startAutoRefresh();
       supabase.auth.getSession().then(({ data, error }) => {
         if (alive) {
           setSession(data.session);
@@ -95,13 +154,14 @@ export function Providers({ children }: { children: ReactNode }) {
       setBootError(errorMessage(e));
       setReady(true);
     }
-  }, []);
+  }, [availability]);
   const userId = session?.user.id;
   useEffect(() => {
-    if (userId) void refreshProfile();
-  }, [userId, refreshProfile]);
+    if (availability === "available" && userId) void refreshProfile();
+  }, [availability, userId, refreshProfile]);
   useEffect(() => {
     const expire = () => {
+      if (availabilityRef.current !== "available") return;
       void getSupabase().auth.signOut({ scope: "local" });
       setSession(null);
       setProfile(null);
@@ -140,8 +200,11 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => media.removeEventListener("change", apply);
   }, [theme, themeReady]);
   useEffect(() => {
+    if (availability !== "available") return;
     if ("serviceWorker" in navigator)
-      void navigator.serviceWorker.register("/sw.js").catch(() => {});
+      void navigator.serviceWorker
+        .register("/sw.js", { updateViaCache: "none" })
+        .catch(() => {});
     const viewport = window.visualViewport;
     const update = () => {
       document.documentElement.style.setProperty(
@@ -162,18 +225,28 @@ export function Providers({ children }: { children: ReactNode }) {
       viewport?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [availability]);
   const logout = async () => {
+    await assertDreamAvailable();
     const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
     setProfile(null);
     router.replace("/login");
   };
+  const content =
+    availability === "checking" ? (
+      <MaintenanceCheck />
+    ) : availability === "maintenance" || availability === "unavailable" ? (
+      <MaintenancePage state={availability} />
+    ) : (
+      children
+    );
   return (
     <DreamContext.Provider
       value={{
         session,
         ready,
+        availability,
         profile,
         bootError,
         serviceReady,
@@ -184,7 +257,7 @@ export function Providers({ children }: { children: ReactNode }) {
         logout,
       }}
     >
-      {children}
+      {content}
     </DreamContext.Provider>
   );
 }

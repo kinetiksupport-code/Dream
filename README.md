@@ -37,6 +37,14 @@ NEXT_PUBLIC_DREAM_API_URL=https://cxaujyagtpsxvkwkdxbc.supabase.co/functions/v1/
 
 La clave publishable es pública por diseño. Nunca añadir claves de Groq, Tavily, service role ni secretos de Google a esta aplicación. No existe proxy de IA en Next.js; todo pasa por la Edge Function existente.
 
+## Modo de mantenimiento
+
+El modo se controla únicamente desde el entorno privado del servidor, con `DREAM_MAINTENANCE_MODE=true` (también acepta `1`, `yes` y `on`). Para activarlo, define esa variable en el entorno de ejecución y reinicia el servidor; en plataformas que congelan las variables durante el build, crea una nueva build/deployment con la variable habilitada. Para desactivarlo, elimina la variable o establécela en `false` y reinicia/reconstruye de la misma forma. No hay panel público, cookie de administrador ni secreto privilegiado en el frontend.
+
+El middleware intercepta las rutas del sitio y responde directamente con una página autónoma **HTTP 503**, `Cache-Control: no-store` y `X-Dream-Maintenance: 1`. No necesita Supabase, Auth ni la Edge Function para renderizarla. `/api/maintenance-status` es una comprobación del mismo origen, sin credenciales y no cacheable: las pestañas abiertas lo consultan cada 10 segundos y al recuperar el foco. `lib/dream-api.ts` comprueba ese estado antes de ejecutar las operaciones de Dream. El service worker mantiene su caché limitada a iconos, el logo y el elemento 3D de reparación de la pantalla de mantenimiento, y la página offline; no almacena páginas de la aplicación ni conversaciones y bloquea llamadas a la Edge Function de Supabase en clientes ya controlados cuando logra verificar el estado.
+
+**Alcance:** esto bloquea la web y las versiones de cliente que incorporan esta protección. No puede revocar una petición que ya esté en vuelo, ni imponer una barrera a una versión antigua abierta que todavía no tenga comprobación/worker actualizado, ni impedir tráfico directo a Supabase fuera de esta web. Para una parada estricta también de clientes antiguos o llamadas directas se necesitaría aplicar el mantenimiento en la Edge Function/Auth o en la capa de red del backend; este cambio no modifica Supabase. Una aplicación ya abierta sin conexión tampoco puede recibir el cambio hasta volver a conectarse. No se ha activado ni desplegado el modo en producción.
+
 ## Autenticación
 
 `lib/supabase.ts` crea un único cliente Supabase con sesión persistente, renovación automática y PKCE. Los tokens los administra el SDK; la aplicación no mantiene un almacén alternativo. `onAuthStateChange` mantiene el estado de sesión. Los errores 401 limpian la sesión local y vuelven a `/login`.
@@ -84,8 +92,9 @@ No existen pantallas docentes, roles visibles, clases, invitaciones, administrac
 - `lib/widgets.ts`: comentarios y widgets del protocolo.
 - `lib/attachments.ts`: validación local de tamaño/formato y lectura base64, sin extraer contenido.
 - `lib/types.ts`: tipos de producto y protocolo, sin `any`.
+- `middleware.ts` y `lib/maintenance.ts`: respuesta 503 autónoma bajo el interruptor privado; `lib/maintenance-client.ts` valida disponibilidad antes de llamadas del cliente.
 - `app/globals.css`: tokens visuales, superficies claras/oscuras, composición, estados y responsive.
-- `public/sw.js`: service worker con estrategia de privacidad explícita.
+- `public/sw.js`: service worker con caché limitada, detección de mantenimiento y bloqueo de peticiones Supabase en clientes controlados.
 
 ## API real
 

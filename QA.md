@@ -92,3 +92,29 @@ Google OAuth está desactivado en el backend. Activación y redirects están doc
 - Comparación de fuentes con backup previo: `lib/dream-api.ts`, `lib/supabase.ts`, `lib/streaming.ts`, `lib/widgets.ts`, `lib/attachments.ts`, `lib/types.ts` y `public/sw.js` idénticos. No cambió ningún contrato, endpoint ni lógica de procesamiento del backend.
 
 Las adaptaciones están en [DESIGN_IMPLEMENTATION.md](DESIGN_IMPLEMENTATION.md). El backup anterior a esta fase se guarda en `/workspace/dream-visual-backup/before-figma.tar.gz`.
+
+
+## Actualización del modo de mantenimiento — 14 de octubre de 2026
+
+Esta actualización complementa el QA anterior (7 de octubre); las observaciones de ese bloque sobre que `public/sw.js` y `lib/dream-api.ts` no cambiaron describen únicamente la implementación de aquella fecha.
+
+- `npm run typecheck`: correcto.
+- `npm run lint`: correcto, sin errores ni avisos.
+- `npm test`: **10/10** pruebas unitarias y de protocolo.
+- `npm run build` de producción: compilación correcta; middleware incluido.
+- Con `DREAM_MAINTENANCE_MODE=true`, una build de producción respondió **503** y `Cache-Control: no-store` en `/`, `/login`, `/chat`, `/auth/callback` y `/tests/123`. El endpoint sin credenciales `/api/maintenance-status` respondió `503 {"maintenance":true}`; `/sw.js` respondió 200 y no-cache.
+- Con el modo en `false` y la misma build, el endpoint volvió a `200 {"maintenance":false}` y `/login` a 200.
+- En la versión inicial, Chromium a 390 px mostró el mensaje y el botón; el rediseño visual posterior se documenta abajo.
+- Simulación de pestaña abierta: el panel aparece al pasar a estado activo y desaparece cuando la comprobación vuelve a false.
+- La entrada `public/sw.js` pasa `node --check`.
+
+La comprobación no incluye llamadas reales autenticadas ni mutaciones a Supabase. El bloqueo de llamadas a la Edge Function del service worker solo aplica a clientes que ya controlaba y que reciben esta versión; las llamadas en vuelo, clientes antiguos sin el nuevo código y tráfico directo al backend requieren protección del lado Supabase/red para una parada estricta. No se ha desplegado ni activado en producción.
+- `npm run test:browser`: **10/10** pruebas Playwright pasan (1,8 min), con el service worker bloqueado solo en el contexto de fixtures para mantener las interceptaciones de contrato fuera de Supabase real; las comprobaciones del modo de mantenimiento y la pestaña abierta se hicieron por separado con navegador local.
+
+## Rediseño visual de la página 503 — 14 de octubre de 2026
+
+- La página muestra el logo adjunto, una llave 3D y el texto “Dream / Estamos haciendo mejoras”, con fondo negro, una línea breve sobre la estabilidad y sin botón.
+- Prueba en la build local con mantenimiento activo: `/` respondió **503**, `Cache-Control: no-store` y `X-Dream-Maintenance: 1`; logo e ilustración respondieron 200.
+- Chromium comprobó imagen y texto cargados, cero botones y cero desbordamiento horizontal a 390×844 y 1440×900.
+- `npm run typecheck`, `npm run lint`, `npm test` (**10/10**), `node --check public/sw.js` y `npm run build`: correctos.
+- No se volvió a ejecutar la suite completa Playwright tras este cambio visual; el resultado 10/10 anterior corresponde a la pasada de mantenimiento precedente. No se desplegó ni se activó el modo en producción.
