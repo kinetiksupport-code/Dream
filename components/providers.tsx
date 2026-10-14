@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
@@ -33,6 +33,7 @@ interface Context {
 const DreamContext = createContext<Context | null>(null);
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<DreamProfile | null>(null);
@@ -112,11 +113,52 @@ export function Providers({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!session?.access_token) return;
-    void fetch("/api/auth/verify-maintenance", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    }).catch(() => {});
-  }, [session?.access_token]);
+    let alive = true;
+
+    async function verifyMaintenanceAccess() {
+      try {
+        const response = await fetch("/api/auth/verify-maintenance", {
+          method: "POST",
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${session!.access_token}` },
+        });
+        if (!alive) return;
+
+        if (!response.ok) {
+          if ([401, 403, 503].includes(response.status)) {
+            await getSupabase().auth.signOut({ scope: "local" });
+            if (alive) router.replace("/maintenance");
+          }
+          return;
+        }
+
+        const result = (await response.json().catch(() => null)) as
+          | { allowed?: boolean; maintenance?: boolean }
+          | null;
+        if (result?.allowed !== true) {
+          await getSupabase().auth.signOut({ scope: "local" });
+          if (alive) router.replace("/maintenance");
+          return;
+        }
+
+        if (result.maintenance && pathname === "/maintenance") {
+          router.replace("/chat");
+        }
+      } catch {
+        // Middleware remains fail-closed if verification is temporarily unavailable.
+      }
+    }
+
+    void verifyMaintenanceAccess();
+    const interval = window.setInterval(
+      () => void verifyMaintenanceAccess(),
+      10 * 60 * 1000,
+    );
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+    };
+  }, [session?.access_token, pathname, router]);
 
   const userId = session?.user.id;
   useEffect(() => {
@@ -184,6 +226,13 @@ export function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
   const logout = async () => {
+    // Clears the HTTP-only maintenance cookie before ending the auth session.
+    try {
+      await fetch("/api/auth/verify-maintenance", {
+        method: "POST",
+        cache: "no-store",
+      });
+    } catch {}
     const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
     setProfile(null);
