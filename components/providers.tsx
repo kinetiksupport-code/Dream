@@ -91,7 +91,14 @@ export function Providers({ children }: { children: ReactNode }) {
               }
             } catch {}
           }
-          if (_event === "SIGNED_OUT") resetAnalytics();
+          if (_event === "SIGNED_OUT") {
+            resetAnalytics();
+            // Remove the short-lived maintenance session on every sign-out path.
+            void fetch("/api/auth/verify-maintenance", {
+              method: "POST",
+              cache: "no-store",
+            }).catch(() => {});
+          }
           if (currentUser.current !== next?.user.id) {
             setProfile(null);
             currentUser.current = next?.user.id;
@@ -152,7 +159,7 @@ export function Providers({ children }: { children: ReactNode }) {
     void verifyMaintenanceAccess();
     const interval = window.setInterval(
       () => void verifyMaintenanceAccess(),
-      10 * 60 * 1000,
+      5 * 60 * 1000,
     );
     return () => {
       alive = false;
