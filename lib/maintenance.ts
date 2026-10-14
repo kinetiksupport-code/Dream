@@ -2,7 +2,7 @@
 // The allowlist is intentionally private and must never be sent to the client.
 
 export const MAINTENANCE_COOKIE_NAME = "dream-maint-access";
-export const MAINTENANCE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 8;
+export const MAINTENANCE_COOKIE_MAX_AGE_SECONDS = 30 * 60;
 
 const ALLOWED_EMAILS = new Set([
   "carlossanchezma1999@gmail.com",
