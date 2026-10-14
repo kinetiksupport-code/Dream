@@ -186,3 +186,9 @@ Consultar [QA.md](QA.md). Las pruebas unitarias cubren los puntos donde un fallo
 Lecturas reales efectuadas: contrato de `dream-api`, configuración pública de Auth y rechazo 401 de peticiones sin sesión. Pendiente, por Google desactivado: login real, persistencia/logout con cuenta Google, generación Groq, búsqueda Tavily, procesamiento real de PDF/Office/imágenes y memoria tras volver días después.
 
 No se ha desplegado a un servicio externo. El proyecto se puede desplegar como Next.js estándar con estas mismas tres variables y el callback permitido en Supabase; no depende del proyecto Vercel anterior.
+
+## Seguridad, fiabilidad y carga
+
+La rama de seguridad conserva Exámenes y observabilidad. [Informe medido](docs/security/REPORT.md), [auditoría inicial](docs/security/AUDIT.md) y [operación/reproducción](docs/security/OPERATIONS.md) distinguen las pruebas aisladas de la capacidad todavía no verificada en producción. La migración de admisión y presupuestos se entrega para revisión; no se aplica ni despliega automáticamente.
+
+`npm run test:security-db` requiere PostgreSQL aislado y verifica cuotas/entregas atómicas. `npm run test:load-server` levanta el harness sintético para k6, limitado a localhost. CI valida código, dependencias de ejecución, migración aislada y navegador sin desplegar.

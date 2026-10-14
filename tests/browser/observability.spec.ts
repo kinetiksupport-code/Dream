@@ -94,6 +94,7 @@ test("PostHog SDK sends only allowlisted events after consent and stops after re
     "http_status",
     "duration_ms",
     "outcome",
+    "environment",
     "distinct_id",
     "token",
     "$geoip_disable",
@@ -108,6 +109,9 @@ test("PostHog SDK sends only allowlisted events after consent and stops after re
       expect(
         Object.keys(event.properties).every((key) => allowed.has(key)),
       ).toBe(true);
+      expect(["production", "preview", "development"]).toContain(
+        event.properties.environment,
+      );
     }
   }
   expect(joined).not.toContain("PRIVATE_CANARY_NAME");

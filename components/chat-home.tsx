@@ -120,6 +120,7 @@ export function ChatHome({
           <section>
             <p className="eyebrow">ESTA SEMANA</p>
             <h2>A tu ritmo.</h2>
+            <div className="week-meter" aria-hidden="true"><i /></div>
             <p>Cada buena pregunta es un paso más.</p>
             <Link href="/progress">
               Ver mi progreso <ArrowRight size={14} />

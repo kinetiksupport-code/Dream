@@ -36,6 +36,7 @@ export interface Attachment {
   preview?: string;
   status: "uploading" | "processing" | "ready" | "error";
   error?: string;
+  queued?: boolean;
 }
 export interface StreamDelta {
   type: "delta";
@@ -49,7 +50,7 @@ export type DreamStreamEvent =
   | StreamDelta
   | StreamActivity
   | { type: "complete" }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string; code?: string; retry_after?: number };
 export interface QuizWidget {
   type: "quiz";
   testId: string;

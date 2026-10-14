@@ -28,8 +28,9 @@
   --radius-md: 20px;
   --radius-lg: 32px;
   --shadow-control: 2px 3px 0 var(--ink);
-  --duration: 200ms;
-  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --duration: 160ms;
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --viewport-height: 100dvh;
   --viewport-top: 0px;
 }
@@ -107,13 +108,14 @@ a {
 button,
 a {
   transition:
-    background var(--duration),
-    color var(--duration),
-    transform var(--duration),
-    border-color var(--duration);
+    background var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease),
+    transform 120ms var(--ease);
 }
 button:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 :focus-visible {
   outline: 3px solid var(--blue);
@@ -169,8 +171,8 @@ button:active:not(:disabled) {
   box-shadow: none;
 }
 .primary:active:not(:disabled) {
-  transform: translate(1px, 2px);
-  box-shadow: 1px 1px 0 var(--ink);
+  transform: translate(1px, 2px) scale(0.98);
+  box-shadow: 0 0 0 var(--ink);
 }
 .text-button,
 .text-link {
@@ -238,13 +240,23 @@ button:active:not(:disabled) {
 .activity {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-height: 40px;
   margin-bottom: 24px;
 }
-.activity > span:not(.dream-mark):not(.activity-dots) {
+.thinking-orb {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
   display: grid;
-  gap: 3px;
+  place-items: center;
+}
+.thinking-orb canvas {
+  display: block;
+}
+.activity > span:not(.dream-mark):not(.thinking-orb) {
+  display: grid;
+  gap: 2px;
 }
 .activity strong {
   font-size: 14px;
@@ -252,16 +264,15 @@ button:active:not(:disabled) {
   font-weight: 600;
 }
 .activity small {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 16px;
   color: var(--muted);
 }
-.activity-dots {
-  margin-left: auto;
-  color: var(--blue);
-  font-size: 22px;
-  letter-spacing: 3px;
-  animation: orb-breathe 1.5s ease-in-out infinite;
+.activity em {
+  font-style: normal;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--faint);
 }
 .activity-error small {
   color: var(--error);
@@ -442,6 +453,22 @@ button:active:not(:disabled) {
   min-height: var(--viewport-height);
   padding: 32px;
 }
+
+.boot-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid color-mix(in oklab, var(--ink) 12%, transparent);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: boot-spin 0.8s linear infinite;
+}
+@keyframes boot-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boot-spinner { animation: none; border-top-color: var(--blue); }
+}
+
 .boot-error {
   max-width: 440px;
   display: grid;
@@ -525,7 +552,12 @@ button:active:not(:disabled) {
   position: relative;
 }
 .quick-action:hover {
-  transform: translateY(-2px);
+  transform: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .quick-action:hover {
+    transform: translateY(-2px);
+  }
 }
 .quick-icons {
   display: flex;
@@ -606,6 +638,19 @@ button:active:not(:disabled) {
   font-size: 32px;
   line-height: 40px;
   margin-top: 12px;
+}
+.week-meter {
+  height: 4px;
+  margin-top: 16px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.week-meter > i {
+  display: block;
+  width: 8px;
+  height: 100%;
+  background: var(--blue);
 }
 .home-personal p:not(.eyebrow) {
   font-size: 12px;
@@ -847,6 +892,7 @@ button:active:not(:disabled) {
 }
 .message-actions {
   display: flex;
+  align-items: center;
   gap: 4px;
   margin-top: 8px;
 }
@@ -854,12 +900,18 @@ button:active:not(:disabled) {
   width: 32px;
   height: 32px;
 }
+.action-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 4px;
+}
 .step-action {
   display: flex;
   width: 100%;
   align-items: center;
   gap: 12px;
   background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 12px 16px;
   margin-top: 20px;
@@ -1196,11 +1248,12 @@ button:active:not(:disabled) {
   right: 0;
   z-index: 40;
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 1px solid var(--ink);
   border-radius: 12px;
   min-width: 145px;
   padding: 6px;
-  box-shadow: 0 4px 12px #0001;
+  box-shadow: var(--shadow-control);
+  transform-origin: top right;
 }
 .row-menu button {
   display: block;
@@ -1469,8 +1522,9 @@ button:active:not(:disabled) {
   border-color: var(--blue);
 }
 .test-option.selected .option-index {
-  background: var(--blue);
-  color: var(--white);
+  background: var(--canvas);
+  color: var(--text);
+  border: 1px solid var(--blue);
 }
 .test-option.correct {
   background: var(--lime);
@@ -1723,7 +1777,7 @@ select,
   max-width: 520px;
   border-radius: 32px 32px 0 0;
   padding: 12px 16px max(24px, env(safe-area-inset-bottom));
-  animation: sheet-enter 280ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheet-enter 280ms var(--ease-drawer);
 }
 .sheet-handle {
   width: 40px;
@@ -1832,11 +1886,11 @@ select,
 @keyframes appear {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px) scale(0.98);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 @keyframes sheet-enter {
@@ -2449,9 +2503,22 @@ select,
   *,
   *::before,
   *::after {
-    animation: none !important;
-    transition: none !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+  .message,
+  .bottom-sheet,
+  .state-thinking,
+  .state-searching,
+  .state-shaping,
+  .state-composing,
+  .thinking-orb {
+    animation: none !important;
+  }
+  button:active:not(:disabled),
+  .primary:active:not(:disabled) {
+    transform: none;
   }
 }
 /* The test title remains available to assistive technology; the question leads visually. */
@@ -2665,3 +2732,6 @@ select,
 .study-conversation-empty p { color:var(--muted); font-size:15px; line-height:1.5; }
 
 @media(min-width:851px){.workspace-header.exam-topbar{height:64px}}
+
+.connection-status {position:fixed;z-index:90;top:calc(env(safe-area-inset-top) + 12px);left:50%;transform:translateX(-50%);max-width:calc(100% - 32px);width:max-content;background:var(--surface,#fff);color:var(--text,#111);border:1px solid currentColor;padding:12px 16px;border-radius:12px;font-size:13px;box-shadow:0 2px 0 #111;display:flex;align-items:center;gap:12px;}
+.connection-status button {min-width:40px;min-height:40px;font-size:22px;background:transparent;border:0;color:inherit;}

@@ -1,3 +1,4 @@
+import { deploymentEnvironment } from "./environment";
 import { readPrivacy } from "./privacy";
 import {
   events,
@@ -86,7 +87,10 @@ export function track(
     !analyticsConfigured()
   )
     return;
-  const safe = safeProperties(properties);
+  const safe = safeProperties({
+    ...properties,
+    environment: deploymentEnvironment(),
+  });
   if (client && !client.has_opted_out_capturing()) client.capture(event, safe);
   else {
     if (queue.length < 50) queue.push({ event, properties: safe });

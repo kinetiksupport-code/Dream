@@ -1,3 +1,4 @@
+import { deploymentEnvironment } from "./environment";
 import { readPrivacy } from "./privacy";
 import { sentryPrivacy } from "./sentry-policy";
 import { safeProperties, type SafeProperties } from "./policy";
@@ -21,8 +22,7 @@ export async function syncDiagnostics(): Promise<void> {
     sdk.init({
       ...sentryPrivacy,
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      environment:
-        process.env.NODE_ENV === "production" ? "production" : "development",
+      environment: deploymentEnvironment(),
       tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1,
       replaysSessionSampleRate: 0,
       replaysOnErrorSampleRate: 0,

@@ -1,3 +1,4 @@
+import { retryAfterSeconds } from './admission.mjs';
 export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 export const DEFAULT_MODEL = 'qwen/qwen3.8-27b';
 
@@ -6,9 +7,9 @@ const TRANSIENT_COOLDOWN_MS = 30_000;
 const AUTH_COOLDOWN_MS = 15 * 60_000;
 
 export class GroqProviderError extends Error {
-  constructor(code, { status = 0, retryable = false, emittedContent = false } = {}) {
+  constructor(code, { status = 0, retryable = false, emittedContent = false, retryAfter = 0 } = {}) {
     super(code); this.name = 'GroqProviderError'; this.code = code; this.status = status;
-    this.retryable = retryable; this.emittedContent = emittedContent;
+    this.retryAfter = retryAfter; this.retryable = retryable; this.emittedContent = emittedContent;
   }
 }
 
@@ -40,6 +41,7 @@ export function createGroqProviderManager({
   const health = new Map();
   const configuredKeys = () => KEY_NAMES.flatMap((name, index) => {
     const key = validKey(getEnv(name));
+    if (key && KEY_NAMES.slice(0,index).some(n => validKey(getEnv(n)) === key)) return [];
     return key ? [{ slot: index + 1, key }] : [];
   });
   const stateFor = (slot) => health.get(slot) || { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' };
@@ -56,28 +58,40 @@ export function createGroqProviderManager({
   }
   function ensureConfigured() { if (!configuredKeys().length) throw new GroqProviderError('missing_key'); }
 
-  async function request({ body, signal, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'completion' }) {
+  /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
+  async function request({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'completion', beforeAttempt = undefined, pause = undefined }) {
+    signal = attemptSignal(signal, 90_000);
     ensureConfigured(); const available = candidates();
-    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { retryable: true });
+    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: Math.max(1,Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil-now()))/1000)) });
     let lastError = null;
     for (let index = 0; index < available.length; index++) {
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
       const started = now();
+      const reservation = await beforeAttempt?.('groq', body);
       try {
         const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (response.ok) {
           markSuccess(slot); safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
-          return response;
+          const data = await response.json();
+          await reservation?.reconcile?.(data?.usage).catch(() => {});
+          return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': 'application/json' } });
         }
         const policy = statusPolicy(response.status);
+        if (response.status === 429) {
+          const retryAfter = retryAfterSeconds(response.headers.get('retry-after'), now());
+          await discardResponse(response);
+          for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + retryAfter * 1000, state: 'cooldown' });
+          await pause?.('groq', retryAfter);
+          throw new GroqProviderError('provider_rate_limit', { status: 429, retryAfter });
+        }
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
         await discardResponse(response);
         if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
         markFailure(slot, policy.kind); lastError = new GroqProviderError(`http_${response.status}`, { status: response.status, retryable: true });
       } catch (error) {
-        if (error instanceof GroqProviderError && !error.retryable) throw error;
+        if (error?.name === 'AdmissionError' || error instanceof GroqProviderError && !error.retryable) throw error;
         if (signal?.aborted) {
           safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'aborted', duration_ms: now() - started });
           throw new GroqProviderError('aborted');
@@ -92,19 +106,29 @@ export function createGroqProviderManager({
     throw lastError || new GroqProviderError('provider_unavailable', { retryable: true });
   }
 
-  async function* stream({ body, signal, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'chat_stream' }) {
+  /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
+  async function* stream({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'chat_stream', beforeAttempt = undefined, pause = undefined }) {
+    signal = attemptSignal(signal, 90_000);
     ensureConfigured(); const available = candidates();
-    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { retryable: true });
+    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: Math.max(1,Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil-now()))/1000)) });
     let lastError = null;
     for (let index = 0; index < available.length; index++) {
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
-      const started = now(); let emittedContent = false;
+      const started = now(); let emittedContent = false; let usage = null;
+      const reservation = await beforeAttempt?.('groq', body);
       try {
         const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!response.ok || !response.body) {
           const policy = statusPolicy(response.status);
+        if (response.status === 429) {
+          const retryAfter = retryAfterSeconds(response.headers.get('retry-after'), now());
+          await discardResponse(response);
+          for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + retryAfter * 1000, state: 'cooldown' });
+          await pause?.('groq', retryAfter);
+          throw new GroqProviderError('provider_rate_limit', { status: 429, retryAfter });
+        }
           safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
           await discardResponse(response);
           if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
@@ -114,6 +138,7 @@ export function createGroqProviderManager({
         for await (const chunk of parseSSE(response.body)) {
           const delta = chunk?.choices?.[0]?.delta?.content;
           if ((typeof delta === 'string' && delta) || chunk?.choices?.[0]?.delta?.tool_calls?.length) emittedContent = true;
+          if (chunk?.usage) usage = chunk.usage;
           yield chunk;
         }
         if (!emittedContent) {
@@ -122,6 +147,7 @@ export function createGroqProviderManager({
           lastError = new GroqProviderError('empty_stream', { retryable: true }); continue;
         }
         markSuccess(slot);
+        await reservation?.reconcile?.(usage).catch(() => {});
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
         return;
       } catch (error) {
@@ -129,7 +155,7 @@ export function createGroqProviderManager({
           safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'aborted', duration_ms: now() - started });
           throw new GroqProviderError('aborted', { emittedContent });
         }
-        if (error instanceof GroqProviderError && !error.retryable) throw error;
+        if (error?.name === 'AdmissionError' || error instanceof GroqProviderError && !error.retryable) throw error;
         markFailure(slot, 'transient');
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: emittedContent ? 'stream_interrupted' : 'network_or_timeout', duration_ms: now() - started });
         if (emittedContent) throw new GroqProviderError('stream_interrupted', { emittedContent: true });
@@ -167,10 +193,12 @@ export async function* parseSSE(stream) {
     while (true) {
       const { value, done } = await reader.read();
       buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+      if (buffer.length > 262144) throw new GroqProviderError('oversized_stream');
       let pos;
       while ((pos = buffer.indexOf('\n')) !== -1) {
         const parsed = parseLine(buffer.slice(0, pos)); buffer = buffer.slice(pos + 1);
         if (parsed) yield parsed;
+        if (completed) return;
       }
       if (done) break;
     }
@@ -179,7 +207,7 @@ export async function* parseSSE(stream) {
       if (parsed) yield parsed;
     }
     if (!completed) throw new GroqProviderError('incomplete_stream', { retryable: true });
-  } finally { reader.releaseLock(); }
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
 }
 
 export function upstreamError(status) {

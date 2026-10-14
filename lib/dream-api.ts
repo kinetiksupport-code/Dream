@@ -1,8 +1,9 @@
+import { requestAbort } from "./request-abort";
 import { track } from "./observability/analytics";
 import { captureDiagnostic } from "./observability/diagnostics";
 import type { Outcome } from "./observability/policy";
 import { getSupabase } from "./supabase";
-import { readNDJSON } from "./streaming";
+import { readNDJSON, DreamStreamError } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
@@ -39,6 +40,8 @@ export class DreamApiError extends Error {
   constructor(
     message: string,
     public status: number,
+    public retryAfter = 0,
+    public code = "",
   ) {
     super(message);
   }
@@ -49,6 +52,12 @@ async function request(
   signal?: AbortSignal,
 ) {
   const { data, error } = await getSupabase().auth.getSession();
+  if (error?.name === "AuthRetryableFetchError")
+    throw new DreamApiError(
+      "No se pudo comprobar la sesión. Reintenta cuando vuelva la conexión.",
+      503,
+      30,
+    );
   if (error || !data.session) {
     if (typeof window !== "undefined")
       window.dispatchEvent(new Event("dream:session-expired"));
@@ -63,19 +72,28 @@ async function request(
       apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ ...payload, action }),
+    body: JSON.stringify({
+      ...payload,
+      action,
+      request_id: crypto.randomUUID(),
+    }),
     signal,
     cache: "no-store",
   });
   if (!response.ok) {
+    let code = "";
+    let retryAfter = Number(response.headers.get("Retry-After")) || 0;
     let message = "No se pudo conectar con Dream. Inténtalo de nuevo.";
     try {
       const data = await response.json();
       if (typeof data.error === "string") message = data.error;
+      if (typeof data.code === "string") code = data.code;
+      if (typeof data.retry_after === "number") retryAfter = data.retry_after;
     } catch {}
     if (response.status === 401)
-      window.dispatchEvent(new Event("dream:session-expired"));
-    throw new DreamApiError(message, response.status);
+      if (typeof window !== "undefined")
+        window.dispatchEvent(new Event("dream:session-expired"));
+    throw new DreamApiError(message, response.status, retryAfter, code);
   }
   return response;
 }
@@ -85,8 +103,9 @@ export async function callDream<T>(
   signal?: AbortSignal,
 ): Promise<T> {
   const start = performance.now();
+  const lifecycle = requestAbort(signal);
   try {
-    const response = await request(action, payload, signal);
+    const response = await request(action, payload, lifecycle.signal);
     const result = (await response.json()) as T;
     reportRequest(action, start, "success", response.status);
     if (action === "conversation_create")
@@ -97,6 +116,8 @@ export async function callDream<T>(
   } catch (error) {
     reportFailure(action, start, error, signal);
     throw error;
+  } finally {
+    lifecycle.dispose();
   }
 }
 export async function streamDreamChat(
@@ -111,8 +132,9 @@ export async function streamDreamChat(
   signal: AbortSignal,
 ) {
   const start = performance.now();
+  const lifecycle = requestAbort(signal);
   try {
-    const response = await request("chat", payload, signal);
+    const response = await request("chat", payload, lifecycle.signal);
     if (
       !response.body ||
       !response.headers.get("content-type")?.includes("application/x-ndjson")
@@ -141,6 +163,8 @@ export async function streamDreamChat(
   } catch (error) {
     reportFailure("chat", start, error, signal);
     throw error;
+  } finally {
+    lifecycle.dispose();
   }
 }
 function reportRequest(
@@ -167,11 +191,18 @@ function reportFailure(
 ) {
   const outcome = signal?.aborted
     ? "aborted"
-    : error instanceof DreamApiError
-      ? "http_error"
-      : "network_error";
-  const http_status = error instanceof DreamApiError ? error.status : undefined;
+    : error instanceof DreamStreamError
+      ? "stream_error"
+      : error instanceof DreamApiError
+        ? "http_error"
+        : "network_error";
+  const http_status =
+    error instanceof DreamApiError || error instanceof DreamStreamError
+      ? error.status
+      : undefined;
   reportRequest(action, start, outcome, http_status);
+  if (http_status === 429)
+    track("rate_limit_reached", { action, http_status, outcome });
   // Never pass the backend's exception message or payload to a monitoring SDK.
   if (outcome !== "aborted")
     captureDiagnostic(new Error("Dream API request failed"), {
@@ -182,19 +213,22 @@ function reportFailure(
 }
 export async function getDreamProfile(signal?: AbortSignal) {
   const data = await callDream<{
-    profile: DreamProfile;
-    service_ready: boolean;
+    profile: DreamProfile | null;
+    service_ready?: boolean;
   }>("profile", {}, signal);
-  const p = data.profile;
+  const p = data?.profile;
+  if (!p || typeof p !== "object") {
+    throw new Error("No se pudo cargar tu perfil. Inténtalo de nuevo.");
+  }
   return {
     profile: {
-      email: p.email,
-      display_name: p.display_name,
-      pref_step_by_step: p.pref_step_by_step,
-      pref_practice_suggestions: p.pref_practice_suggestions,
-      pref_calm_tone: p.pref_calm_tone,
+      email: p.email ?? "",
+      display_name: p.display_name ?? "",
+      pref_step_by_step: p.pref_step_by_step ?? true,
+      pref_practice_suggestions: p.pref_practice_suggestions ?? true,
+      pref_calm_tone: p.pref_calm_tone ?? true,
     },
-    service_ready: data.service_ready,
+    service_ready: data.service_ready ?? true,
   };
 }
 export function errorMessage(error: unknown) {

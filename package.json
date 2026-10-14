@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "test": "tsx --test tests/*.test.ts",
     "test:browser": "playwright test",
-    "format": "prettier --write app components lib tests *.ts *.mjs"
+    "format": "prettier --write app components lib tests *.ts *.mjs",
+    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs",
+    "test:load-server": "node scripts/security/load-server.mjs"
   },
   "keywords": [],
   "author": "",
@@ -29,7 +31,8 @@
     "react-markdown": "10.1.0",
     "rehype-katex": "7.0.1",
     "remark-gfm": "4.0.1",
-    "remark-math": "6.0.0"
+    "remark-math": "6.0.0",
+    "thinking-orbs": "^0.3.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.7",
@@ -37,14 +40,20 @@
     "@tailwindcss/postcss": "4.3.3",
     "@types/katex": "0.16.8",
     "@types/node": "26.6.4",
+    "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "9.39.5",
     "eslint-config-next": "15.5.27",
+    "pg": "8.23.1",
     "prettier": "3.9.9",
     "tailwindcss": "4.3.3",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "postcss": "8.5.29",
+    "katex": "0.19.0"
+  }
 }

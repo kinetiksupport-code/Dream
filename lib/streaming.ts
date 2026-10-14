@@ -1,4 +1,28 @@
 import type { DreamStreamEvent } from "./types";
+export class DreamStreamError extends Error {
+  constructor(
+    message: string,
+    public code = "",
+    public retryAfter = 0,
+  ) {
+    super(message);
+  }
+  get status() {
+    return /^(dream_|provider_rate_limit)/.test(this.code) ? 429 : 503;
+  }
+}
+const streamCodes = new Set([
+  "dream_rpm",
+  "dream_daily",
+  "dream_concurrency",
+  "dream_admission_busy",
+  "dream_budget",
+  "provider_rate_limit",
+  "budget_unconfigured",
+  "lease_expired",
+  "vision_budget_unconfigured",
+  "stream_failed",
+]);
 export function parseEvent(line: string): DreamStreamEvent | null {
   if (!line.trim()) return null;
   let v: unknown;
@@ -21,7 +45,19 @@ export function parseEvent(line: string): DreamStreamEvent | null {
     return { type: "activity", activity: v.activity };
   if (v.type === "complete") return { type: "complete" };
   if (v.type === "error" && "message" in v && typeof v.message === "string")
-    return { type: "error", message: v.message };
+    return {
+      type: "error",
+      message: v.message,
+      ...("code" in v && typeof v.code === "string" && streamCodes.has(v.code)
+        ? { code: v.code }
+        : {}),
+      ...("retry_after" in v &&
+      typeof v.retry_after === "number" &&
+      Number.isFinite(v.retry_after) &&
+      v.retry_after > 0
+        ? { retry_after: Math.ceil(v.retry_after) }
+        : {}),
+    };
   return null;
 }
 export async function readNDJSON(
@@ -36,7 +72,10 @@ export async function readNDJSON(
   const process = (line: string) => {
     const event = parseEvent(line);
     if (!event) return;
-    if (event.type === "error") throw new Error(event.message);
+    if (event.type === "error") {
+      onEvent(event);
+      throw new DreamStreamError(event.message, event.code, event.retry_after);
+    }
     if (event.type === "complete") complete = true;
     onEvent(event);
   };

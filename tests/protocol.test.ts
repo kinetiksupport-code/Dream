@@ -93,3 +93,35 @@ test("LaTeX conversion respects code and ordinary parentheses", () => {
     "Texto (normal) y `\\(codigo\\)`",
   );
 });
+test("stream quotas retain safe retry metadata and preserve received text", async () => {
+  const events: DreamStreamEvent[] = [];
+  await assert.rejects(
+    readNDJSON(
+      chunks(
+        new TextEncoder().encode(
+          '{"type":"delta","text":"Ya recibido"}\n{"type":"error","message":"Espera","code":"dream_budget","retry_after":60}\n',
+        ),
+      ),
+      (e) => events.push(e),
+    ),
+    (error: unknown) =>
+      error instanceof Error &&
+      "retryAfter" in error &&
+      error.retryAfter === 60,
+  );
+  assert.equal(events.length, 2);
+});
+test("request deadline propagates cancellation without relying on newer Safari signal APIs", async () => {
+  const { requestAbort } = await import("../lib/request-abort");
+  const parent = new AbortController();
+  const life = requestAbort(parent.signal, 1000);
+  parent.abort();
+  assert.equal(life.signal.aborted, true);
+  life.dispose();
+  const expired = requestAbort(undefined, 5);
+  await new Promise<void>((resolve) =>
+    expired.signal.addEventListener("abort", () => resolve(), { once: true }),
+  );
+  assert.equal(expired.signal.reason.name, "TimeoutError");
+  expired.dispose();
+});

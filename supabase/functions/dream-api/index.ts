@@ -1,10 +1,14 @@
+import { validateEvaluations } from './grading.mjs';
+import { captureEdgeFailure } from './monitoring.ts';
+import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
+import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
-import { createClient } from 'npm:@supabase/supabase-js@2.95.0';
+import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { resolveDreamMode, emailDomain, isAutoClassified } from './mode.mjs';
-import { DREAM_SYSTEM_PROMPT, dynamicContextFor, promptIdFor } from './prompts.mjs';
+import { DREAM_SYSTEM_PROMPT, dynamicContextFor } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
-import { webSearchTool, collectToolCalls, validateToolCall, searchWeb } from './tools.mjs';
+import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
   extractAttachment, base64ByteLength,
@@ -12,22 +16,32 @@ import {
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-dream-request-id',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Expose-Headers': 'Retry-After',
   'Vary': 'Origin'
 };
-const json = (data: unknown, status = 200) =>
+const json = (data: unknown, status = 200, extra: Record<string,string> = {}) =>
   new Response(JSON.stringify(data), {
     status,
-    headers: { ...cors, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+    headers: { ...cors, ...extra, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
   });
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PROMPT = 12000;
 const MAX_HISTORY = 20;
 const MAX_BODY_CHARS = 12_000_000;
+function safeFailure(error: unknown): Response {
+  if (error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError) {
+    const status = error.status === 429 ? 429 : error instanceof AdmissionError ? error.status : 503;
+    const code = error.code;
+    const message = status === 429 ? code === 'provider_rate_limit' ? 'El proveedor ha limitado las solicitudes. Respeta la espera indicada.' : 'Has alcanzado un límite de Dream. Espera antes de volver a intentarlo.' : status === 409 ? 'Esta solicitud ya está en curso o fue procesada. Abre los datos guardados.' : status === 413 ? 'El archivo o contexto excede el presupuesto permitido por solicitud.' : 'La IA no está disponible ahora. Puedes consultar tus datos guardados.';
+    return json({ error: message, code, retry_after: error.retryAfter || 0 }, status, error.retryAfter ? {'Retry-After':String(error.retryAfter)} : {});
+  }
+  return json({error:'No se pudo completar la operación. Tus datos guardados se conservan.'},503);
+}
 
-async function groqJson(system: string, user: string, operation: string, signal?: AbortSignal) {
-  const response = await groqProvider.request({ operation, signal, body: {
+async function groqJson(system: string, user: string, operation: string, signal?: AbortSignal, admission?: ReturnType<typeof createAdmission>) {
+  const response = await groqProvider.request({ operation, signal, beforeAttempt: admission?.beforeAttempt, pause: admission?.pause, body: {
     model: groqModel(), stream: false, temperature: 0.25, max_tokens: 3500,
     response_format: { type: 'json_object' }, messages: [{ role: 'system', content: system }, { role: 'user', content: user }]
   }});
@@ -56,54 +70,67 @@ function objectiveAnswerIsCorrect(type: string, answer: unknown, expected: unkno
   return normalizeAnswer(answer) === normalizeAnswer(expected);
 }
 
-async function handle(req: Request, examInternal = false): Promise<Response> {
+async function handle(req: Request, examInternal = false, inherited?: ReturnType<typeof createAdmission>, verified?: {user:User;admin:SupabaseClient;profile:Record<string,unknown>}): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return json({ error: 'Método no permitido.' }, 405);
 
   const bearer = req.headers.get('Authorization') || '';
   if (!bearer.startsWith('Bearer ')) return json({ error: 'Inicia sesión para continuar.' }, 401);
 
-  const userClient = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { auth: { persistSession: false, autoRefreshToken: false } }
-  );
-  const { data: { user }, error: authError } = await userClient.auth.getUser(bearer.slice(7));
-  if (authError || !user) return json({ error: 'La sesión ha caducado. Vuelve a entrar.' }, 401);
+  let user = verified?.user ?? null;
+  if (!user) {
+    const userClient = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+      auth:{persistSession:false,autoRefreshToken:false},
+      global:{fetch:(url,options)=>fetch(url,{...options,signal:AbortSignal.any([req.signal,AbortSignal.timeout(10000)])})}
+    });
+    const authenticated = await userClient.auth.getUser(bearer.slice(7));
+    const authError=authenticated.error;
+    if(authError && (authError.name==='AuthRetryableFetchError' || (authError.status??0)>=500)) return json({error:'No se pudo comprobar tu sesión ahora. No se ha cerrado tu cuenta.'},503,{'Retry-After':'30'});
+    user=authenticated.data.user;
+    if(authError || !user) return json({error:'La sesión ha caducado. Vuelve a entrar.'},401);
+  }
 
   let body: any;
   try {
-    const raw = await req.text();
+    const raw = await readBoundedBody(req, MAX_BODY_CHARS);
     if (raw.length > MAX_BODY_CHARS) return json({ error: 'Solicitud demasiado grande.' }, 413);
     body = JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    if (error instanceof AdmissionError) return safeFailure(error);
     return json({ error: 'Solicitud no válida.' }, 400);
   }
   if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: 'Solicitud no válida.' }, 400);
 
-  const admin = createClient(
+  const admin = verified?.admin ?? createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
+  const requestId = req.headers.get('x-dream-request-id') || body.request_id;
+  const admission = inherited ?? createAdmission(admin, user.id, uuid.test(requestId || '') ? requestId! : crypto.randomUUID());
+  let streamOwnsLease = false;
+  let admitted = false;
+  const consuming = !examInternal && consumingActions.has(String(body.action));
+  try {
+    if (consuming) { await admission.admit(String(body.action)); admitted = true; }
+  const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
   const email = String(user.email || '').trim().toLowerCase();
   const domain = emailDomain(email);
 
-  let { data: profile } = await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle();
+  let { data: profile } = verified ? {data:verified.profile} : await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) {
-    const { data: classified } = await admin.rpc('dream_classify_email', { p_email: email });
-    const row = Array.isArray(classified) ? classified[0] : classified;
-    const insert = await admin.from('dream_profiles').insert({
+    const insert = await admin.from('dream_profiles').upsert({
       id: user.id,
       email,
       email_domain: domain,
       role: 'student',
       education_mode: true,
       onboarding_completed: true
-    }).select('*').single();
-    if (insert.error) return json({ error: 'No se pudo preparar tu perfil.' }, 503);
-    profile = insert.data;
+    }, {onConflict:'id',ignoreDuplicates:true});
+    const loaded = await admin.from('dream_profiles').select('*').eq('id',user.id).single();
+    if (insert.error || loaded.error) return json({ error: 'No se pudo preparar tu perfil.' }, 503);
+    profile = loaded.data;
   }
 
   const mode = resolveDreamMode(user, profile);
@@ -124,11 +151,12 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
 
   if (body.action === 'exams' || String(body.action).startsWith('exam_')) {
     try {
-      const result = await examAction(admin, user.id, body, groqJson, payload => handle(new Request(req.url, {
+      const result = await examAction(admin, user.id, body, jsonAI, payload => handle(new Request(req.url, {
         method: 'POST', headers: req.headers, body: JSON.stringify(payload), signal: req.signal
-      }), true), req.signal);
+      }), true, admission, {user,admin,profile}), req.signal);
       return json(result);
     } catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError) return safeFailure(error);
       return json({ error: error instanceof ExamError ? error.message : 'No se pudo completar la operación. Tus datos guardados se conservan.' }, error instanceof ExamError ? error.status : 503);
     }
   }
@@ -257,11 +285,12 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
 
   if (body.action === 'messages') {
     if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
-    const { data, error } = await admin
-      .from('dream_messages').select('id,role,content,created_at')
+    const offset = Number(body.offset ?? 0);
+    if (!Number.isInteger(offset) || offset < 0 || offset > 100000) return json({error:'Página no válida.'},400);
+    const { data, error } = await admin.from('dream_messages').select('id,role,content,created_at')
       .eq('conversation_id', body.conversation_id).eq('owner_id', user.id)
-      .order('created_at', { ascending: true }).limit(400);
-    return error ? json({ error: 'No se pudieron cargar los mensajes.' }, 503) : json({ items: data });
+      .order('created_at', { ascending: false }).order('id',{ascending:false}).range(offset,offset+49);
+    return error ? json({error:'No se pudieron cargar los mensajes.'},503) : json({items:data?.reverse(),next_offset:data?.length===50?offset+50:null});
   }
 
   if (body.action === 'attachment_upload') {
@@ -278,7 +307,8 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
       return json({ error: 'Formato no compatible. Usa imágenes, PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx), texto, Markdown, código, CSV o JSON.' }, 415);
     }
 
-    const sizeBytes = base64ByteLength(base64);
+    let sizeBytes: number;
+    try {sizeBytes=base64ByteLength(base64);}catch{return json({error:'El archivo contiene datos no válidos.'},400);}
     if (sizeBytes > maxBytesFor(fileName)) {
       return json({ error: 'El archivo supera el límite permitido para este formato.' }, 413);
     }
@@ -289,9 +319,10 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
         fileName,
         mimeType: typeof body.mime_type === 'string' ? body.mime_type.slice(0, 100) : '',
         base64,
-        signal: req.signal,
+        signal: req.signal, admission,
       });
     } catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
       const code = error instanceof Error ? error.message : '';
       if (code === 'too_many_pages') return json({ error: 'El PDF supera el máximo de 80 páginas.' }, 413);
       if (code === 'empty_pdf') return json({ error: 'El PDF no contiene texto extraíble. Prueba a adjuntar sus páginas como imágenes.' }, 422);
@@ -417,9 +448,9 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
     if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
     let generated: any;
     try {
-      generated = await groqJson(
+      generated = await jsonAI(
         `Eres el motor privado de tests de Dream. Devuelve SOLO JSON válido. Crea un test ${testMode === 'exam' ? 'de examen' : 'de práctica'} con ${count} preguntas variadas y dificultad ${difficulty}. Esquema exacto: {"title":"...","subject":"...","topic":"...","questions":[{"type":"multiple_choice|multiple_select|true_false|short_answer|numeric|fill_blank|matching|math","prompt":"...","options":["..."],"matchingPairs":[{"left":"...","right":"..."}],"correctAnswer":"...","rubric":"...","expectedConcepts":["..."],"explanation":"..."}]}. Alterna tipos que encajen con la materia; no fuerces todos. multiple_choice lleva 4 opciones y una respuesta exacta; multiple_select lleva 4-6 opciones y correctAnswer es un array; true_false lleva ["Verdadero","Falso"]; numeric usa respuesta numérica; fill_blank una cadena; matching lleva 3-5 matchingPairs y correctAnswer puede omitirse; math y short_answer llevan rúbrica. Usa LaTeX delimitado en prompts matemáticos. No reveles claves fuera de correctAnswer o matchingPairs.`, generationContext, 'test_generate', req.signal);
-    } catch { return json({ error: 'No se pudo generar el test. Inténtalo de nuevo.' }, 502); }
+    } catch (error) { if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error); return json({ error: 'No se pudo generar el test. Inténtalo de nuevo.' }, 502); }
     if (!Array.isArray(generated.questions) || generated.questions.length < 1) return json({ error: 'El test generado no era válido.' }, 502);
     const testInsert = await admin.from('dream_tests').insert({ owner_id: user.id,
       conversation_id: ownedConversationId,
@@ -475,11 +506,11 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
     if (['short_answer','math'].includes(question.type)) {
       if (!groqConfigured()) return json({ error: 'El servicio de corrección no está configurado.' }, 503);
       try {
-        const evaluation = await groqJson(
+        const evaluation = await jsonAI(
           'Evalúa una respuesta de estudiante con la rúbrica. Devuelve SOLO JSON {"is_correct":true|false,"feedback":"explicación breve, específica y educativa"}. No infieras capacidad ni personalidad.',
           JSON.stringify({ prompt: question.prompt, answer: body.answer, rubric: question.rubric, expectedConcepts: question.expected_concepts, reference: question.correct_answer }), 'test_check_answer', req.signal);
         isCorrect = evaluation.is_correct === true; feedback = String(evaluation.feedback || 'Compara tu razonamiento con la explicación.').slice(0, 1200);
-      } catch { return json({ error: 'No se pudo corregir esta respuesta.' }, 502); }
+      } catch (error) { if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error); return json({ error: 'No se pudo corregir esta respuesta.' }, 502); }
     } else {
       isCorrect = objectiveAnswerIsCorrect(question.type, body.answer, question.correct_answer);
       feedback = isCorrect ? 'Correcto. Has aplicado bien el concepto.' : String(question.explanation || 'Revisa el concepto y vuelve a intentarlo.').slice(0, 1200);
@@ -496,17 +527,21 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
     if (!uuid.test(body.test_id || '') || !Array.isArray(body.answers)) return json({ error: 'Entrega no válida.' }, 400);
     const testResult = await admin.from('dream_tests').select('*').eq('id', body.test_id).eq('owner_id', user.id).maybeSingle();
     if (!testResult.data) return json({ error: 'Test no encontrado.' }, 404);
+    if (body.answers.length > 10 || JSON.stringify(body.answers).length > 100000) return json({error:'Entrega demasiado grande.'},413);
+    const previous = await admin.from('dream_test_attempts').select('id,score,total').eq('test_id',body.test_id).eq('student_id',user.id).eq('status','completed').order('completed_at',{ascending:false}).limit(1).maybeSingle();
+    if (previous.error) return json({error:'No se pudo consultar la entrega.'},503);
+    if (previous.data) return json({error:'Este test ya fue entregado. Consulta el resultado guardado en tu examen o genera una práctica nueva.',code:'already_submitted'},409);
     const questionsResult = await admin.from('dream_test_questions').select('*').eq('test_id', body.test_id).order('position');
     const questions = questionsResult.data || []; const submitted = new Map(body.answers.map((a: any) => [a.question_id, a.answer]));
     if (!questions.length || questions.some((q: any) => !submitted.has(q.id))) return json({ error: 'Responde todas las preguntas antes de entregar.' }, 400);
     const short = questions.filter((q: any) => ['short_answer','math'].includes(q.type)); let evaluations: any[] = [];
     if (short.length) {
       if (!groqConfigured()) return json({ error: 'El servicio de corrección no está configurado.' }, 503);
-      try { const evaluation = await groqJson(
+      try { const evaluation = await jsonAI(
         'Evalúa respuestas breves con la rúbrica. Devuelve SOLO JSON {"evaluations":[{"question_id":"uuid","is_correct":true|false,"feedback":"feedback académico breve"}]}. No infieras capacidad ni personalidad.',
         JSON.stringify(short.map((q: any) => ({ question_id: q.id, prompt: q.prompt, answer: submitted.get(q.id), rubric: q.rubric, expectedConcepts: q.expected_concepts, reference: q.correct_answer }))), 'test_submit', req.signal);
-        evaluations = Array.isArray(evaluation.evaluations) ? evaluation.evaluations : [];
-      } catch { return json({ error: 'No se pudieron evaluar las respuestas breves.' }, 502); }
+        evaluations = validateEvaluations(evaluation.evaluations, short.map((q: any) => q.id));
+      } catch (error) { if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error); return json({ error: 'No se pudieron evaluar las respuestas breves.' }, 502); }
     }
     const items = questions.map((q: any) => { const answer = submitted.get(q.id); const ev = evaluations.find((x: any) => x.question_id === q.id);
       const isCorrect = ['short_answer','math'].includes(q.type) ? ev?.is_correct === true : objectiveAnswerIsCorrect(q.type, answer, q.correct_answer);
@@ -515,22 +550,12 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
         feedback: ['short_answer','math'].includes(q.type) ? String(ev?.feedback || 'Revisa tu explicación con la rúbrica.') : isCorrect ? 'Correcto. Has aplicado bien el concepto.' : String(q.explanation || 'Revisa el concepto antes de intentarlo de nuevo.'),
         concepts: q.expected_concepts || [] }; });
     const score = items.filter((x: any) => x.is_correct).length;
-    const attempt = await admin.from('dream_test_attempts').insert({ test_id: body.test_id, student_id: user.id, status: 'completed', score, total: items.length, completed_at: new Date().toISOString() }).select('id').single();
-    if (attempt.error) return json({ error: 'No se pudo guardar el resultado.' }, 503);
-    await admin.from('dream_test_answers').insert(items.map((x: any) => ({ attempt_id: attempt.data.id, question_id: x.question_id, student_id: user.id, answer: x.answer ?? null, is_correct: x.is_correct, feedback: x.feedback })));
-    for (const item of items) for (const concept of item.concepts.slice(0, 8)) {
-      const existing = await admin.from('dream_learning_topics').select('*').eq('student_id', user.id).eq('subject', testResult.data.subject).eq('topic', testResult.data.topic).eq('concept', concept).maybeSingle();
-      const evidence = (existing.data?.evidence_count || 0) + 1; const correct = (existing.data?.correct_count || 0) + (item.is_correct ? 1 : 0); const ratio = correct / evidence;
-      const status = evidence < 2 ? 'practicing' : evidence >= 5 && ratio >= .85 ? 'mastered' : evidence >= 3 && ratio >= .75 ? 'almost_mastered' : ratio >= .55 ? 'improving' : 'practicing';
-      await admin.from('dream_learning_topics').upsert({ id: existing.data?.id, student_id: user.id, subject: testResult.data.subject, topic: testResult.data.topic,
-        concept, status, evidence_count: evidence, correct_count: correct, last_evidence_at: new Date().toISOString(), updated_at: new Date().toISOString() }, { onConflict: 'student_id,subject,topic,concept' });
-      await admin.from('dream_learning_events').insert({ student_id: user.id, test_attempt_id: attempt.data.id, subject: testResult.data.subject,
-        topic: testResult.data.topic, concept, outcome: item.is_correct ? 'correct' : 'incorrect', evidence: item.feedback.slice(0, 1000) });
-    }
-    await admin.from('dream_tests').update({ status: 'completed' }).eq('id', body.test_id);
+    const committed = await admin.rpc('dream_test_commit', {p_owner:user.id,p_test:body.test_id,p_items:items});
+    if (committed.error) return json({error:'No se pudo guardar la corrección completa. Tus datos anteriores se conservan.'},503);
+    const attemptId = committed.data;
     const allConcepts = [...new Set(items.flatMap((x: any) => x.concepts))]; const mastered = allConcepts.filter(c => items.filter((x: any) => x.concepts.includes(c)).every((x: any) => x.is_correct));
     const practice = allConcepts.filter(c => !mastered.includes(c));
-    return json({ result: { attempt_id: attempt.data.id, score, total: items.length, percentage: Math.round(score / Math.max(1, items.length) * 100), mastered, practice,
+    return json({ result: { attempt_id: attemptId, score, total: items.length, percentage: Math.round(score / Math.max(1, items.length) * 100), mastered, practice,
       items: items.map(({ concepts, ...item }: any) => item) } });
   }
 
@@ -541,6 +566,8 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
   }
 
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
+  const searchRequested = wantsWebSearch(prompt);
+  if (searchRequested && !tavilyProvider.configured()) return json({error:'La búsqueda web no está configurada. No puedo verificar información actual ahora.'},503);
   if (prompt.length < 1 || prompt.length > MAX_PROMPT) {
     return json({ error: 'Escribe entre 1 y 12.000 caracteres.' }, 400);
   }
@@ -583,33 +610,15 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
   const history = await admin.from('dream_messages')
     .select('role,content').eq('conversation_id', conversation.data.id).eq('owner_id', user.id)
     .order('created_at', { ascending: false }).limit(MAX_HISTORY);
-  const priorMessages = (history.data || []).reverse().map((m: any) => ({ role: m.role, content: m.content }));
+  const priorMessages = (history.data || []).reverse().map((m: any) => ({ role: m.role, content: String(m.content || '').slice(0,4000) }));
   const educationalSelection = selectEducationalSkills(prompt, priorMessages, mode.educationMode);
   const model = groqModel();
   console.log(JSON.stringify({
     event: 'dream_mode_resolved',
-    user_domain: domain,
-    role: mode.role,
-    education_mode: mode.educationMode,
-    prompt_id: promptIdFor(mode),
     model,
     groq_key_slots: groqProvider.configuredKeyCount(),
     attachments: attachmentRows.length,
-    educational_subject: educationalSelection.subject,
-    educational_skills: educationalSelection.skills,
-    educational_pacing: educationalSelection.pacing
   }));
-
-  const userSave = await admin.from('dream_messages').insert({
-    conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: prompt
-  }).select('id').single();
-  if (userSave.error) return json({ error: 'No se pudo guardar tu mensaje.' }, 503);
-
-  if (attachmentRows.length) {
-    await admin.from('dream_attachments')
-      .update({ message_id: userSave.data.id })
-      .in('id', attachmentRows.map((a) => a.id));
-  }
 
   let academicMemory: any[] = [];
   if (mode.role === 'student') {
@@ -623,6 +632,7 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
   const systemMessages = [
     { role: 'system', content: DREAM_SYSTEM_PROMPT },
     { role: 'system', content: `Política de conversación actual: responde proporcionalmente y con prosa natural. Para mensajes breves o ambiguos, responde brevemente o pregunta solo lo imprescindible; nunca inventes contexto ausente. No actives una lección por defecto para tareas generales. En un tema nuevo educativo, explica solo una idea, como máximo un ejemplo y, si aporta valor, una comprobación breve; espera el siguiente turno. Si el usuario ya domina una parte, comienza en la duda concreta. Una solicitud explícita de apuntes o resumen completo sí requiere respuesta completa. Para trabajo evaluable, ofrece el siguiente paso o pista y revisa el intento sin dar directamente el resultado. Un test para imprimir se entrega como texto; un test interactivo usa el flujo de test del producto. No inventes fechas ni datos recientes; cuando consultes la web, utiliza solamente los resultados obtenidos y distingue fechas y fuentes.` },
+    ...(tavilyProvider.configured() ? [{ role: 'system', content: 'Tienes la herramienta web_search y puedes buscar en internet. Si el usuario pide buscar o investigar, úsala. Si no sabes un dato, o el dato es actual y puedes estar desfasado, búscala antes de responder. No digas que no puedes buscar. No inventes lo que no sepas: busca y responde solo con lo encontrado, citando la fuente.' }] : []),
     { role: 'system', content: dynamicContextFor(mode, {
       pref_step_by_step: profile.pref_step_by_step !== false,
       pref_practice_suggestions: profile.pref_practice_suggestions !== false,
@@ -635,10 +645,29 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
     systemMessages.push({ role: 'system', content: `Contexto de archivos adjuntos por el usuario:\n\n${attachmentContext}` });
   }
 
+  const initialMessages = [...systemMessages, ...priorMessages, {role:'user',content:prompt}];
+  await admission.beforeAttempt('groq', {messages:initialMessages,max_tokens:4096});
+  let initialReservation = true;
+  const streamAdmission = async (provider: string, providerBody: Record<string,unknown>) => {
+    if (provider === 'groq' && initialReservation) { initialReservation = false; return; }
+    await admission.beforeAttempt(provider, providerBody);
+  };
+  const userSave = await admin.from('dream_messages').insert({
+    conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: prompt
+  }).select('id').single();
+  if (userSave.error) return json({ error: 'No se pudo guardar tu mensaje.' }, 503);
+
+  if (attachmentRows.length) {
+    await admin.from('dream_attachments')
+      .update({ message_id: userSave.data.id })
+      .in('id', attachmentRows.map((a) => a.id));
+  }
+
   const encoder = new TextEncoder();
   const generationId = crypto.randomUUID();
   const generationAbort = new AbortController();
   const generationSignal = AbortSignal.any([req.signal, generationAbort.signal]);
+  streamOwnsLease = true;
   const stream = new ReadableStream({
     async start(controller) {
       let answer = '';
@@ -655,15 +684,15 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
       };
       try {
         const messages: any[] = [...systemMessages, ...priorMessages, { role: 'user', content: prompt }];
-        const searchKey = /\b(hoy|actual(?:es)?|últim[oa]s?|reciente(?:s)?|noticias?|precio(?:s)?|versi[oó]n(?:es)?|busca\s+(?:en\s+)?(?:la\s+)?web|internet|202[5-9])\b/i.test(prompt)
-          ? Deno.env.get('TAVILY_API_KEY') : undefined;
+        const searchAvailable = tavilyProvider.configured();
+        const searchKey = searchAvailable;
         const toolDeltas: any[] = [];
         let provisional = '';
-        const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7 };
-        // Buffer the first pass only when tools are enabled: no partial XML/JSON or
-        // speculative prose should be exposed before a function call is resolved.
-        for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal,
-          body: { ...baseBody, messages, ...(searchKey ? { tools: [webSearchTool], tool_choice: 'required' } : {}) } })) {
+        const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7, stream_options: { include_usage: true } };
+        // Buffer the first pass when tools are available so a search can run
+        // before any speculative text reaches the student.
+        for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: streamAdmission, pause: admission.pause,
+          body: { ...baseBody, messages, ...(searchAvailable ? { tools: [webSearchTool], tool_choice: searchRequested ? 'required' : 'auto' } : {}) } })) {
           if (chunk?.choices?.[0]?.delta?.tool_calls?.length) toolDeltas.push(chunk);
           const delta = chunk?.choices?.[0]?.delta?.content;
           if (typeof delta === 'string') {
@@ -685,12 +714,11 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
           const validated = validateToolCall(calls[0]);
           send({ type: 'activity', activity: 'searching' });
           let result: string;
-          // JS helper accepts key and signal; its inferred TS type omits uninitialised destructured fields.
-          try { result = await (searchWeb as (query: string, options: { key: string | undefined; signal: AbortSignal }) => Promise<string>)(validated.query, { key: searchKey, signal: generationSignal }); }
-          catch { throw new Error('web_search_failed'); }
+          try { result = await searchWeb(validated.query, { signal: generationSignal, beforeAttempt: admission.beforeAttempt, pause: admission.pause }); }
+          catch (error) { if (error instanceof AdmissionError || error instanceof TavilyError) throw error; throw new Error('web_search_failed'); }
           messages.push({ role: 'assistant', content: provisional || null, tool_calls: calls });
           messages.push({ role: 'tool', tool_call_id: validated.id, content: result });
-          for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal,
+          for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: admission.beforeAttempt, pause: admission.pause,
             body: { ...baseBody, messages } })) {
             const delta = chunk?.choices?.[0]?.delta?.content;
             if (typeof delta !== 'string' || !delta) continue;
@@ -716,18 +744,20 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
           send({ type: 'error', message: 'El servicio respondió sin texto. Tu mensaje se conserva.' });
         }
       } catch (error) {
+        if (!generationSignal.aborted) captureEdgeFailure('chat',error instanceof AdmissionError ? error.code : 'stream_failed');
         if (answer.trim()) {
           await admin.from('dream_messages').insert({
             conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: answer.slice(0, 32000)
           });
         }
         if (!(error instanceof GroqProviderError && error.code === 'aborted')) {
-          send({ type: 'error', message: !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
+          send({ type: 'error', code: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.code : 'stream_failed', retry_after: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.retryAfter : 0, message: error instanceof AdmissionError || error instanceof TavilyError || error instanceof GroqProviderError && error.status === 429 ? (error.status === 429 ? 'Se ha alcanzado un límite de solicitudes. Espera antes de reintentar.' : 'No se pudo consultar el servicio ahora. Tus datos se conservan.') : !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
             ? 'No se pudo consultar la web ahora mismo. Prueba de nuevo.' : answer.trim()
             ? 'La respuesta se interrumpió. Lo escrito hasta ahora se conserva.'
             : 'Dream está teniendo problemas para responder ahora mismo. Tu mensaje se ha conservado. Puedes intentarlo de nuevo.' });
         }
       } finally {
+        if (admitted) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'})));
         if (chunkCount) console.log(JSON.stringify({
           event: 'dream_stream_metrics', generation_id: generationId,
           chunks: chunkCount, characters: chunkCharacters,
@@ -746,6 +776,15 @@ async function handle(req: Request, examInternal = false): Promise<Response> {
   return new Response(stream, {
     headers: { ...cors, 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }
   });
+  } catch (error) { captureEdgeFailure(String(body.action), error instanceof AdmissionError ? error.code : 'edge_failure'); return safeFailure(error); }
+  finally { if (admitted && !streamOwnsLease) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'}))); }
 }
-Deno.serve((req: Request) => handle(req));
+Deno.serve(async (req: Request) => {
+  const origin=req.headers.get('origin');
+  const allowed=(Deno.env.get('DREAM_ALLOWED_ORIGINS')??'').split(',').map(o=>o.trim()).filter(Boolean);
+  if(origin && !allowed.includes(origin)) return new Response(JSON.stringify({error:'Origen no permitido.'}),{status:403,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
+  const response=await handle(new Request(req,{signal:AbortSignal.any([req.signal,AbortSignal.timeout(150000)])}));
+  if(origin) response.headers.set('Access-Control-Allow-Origin',origin);
+  return response;
+});
 

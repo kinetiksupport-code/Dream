@@ -1,12 +1,17 @@
+import { tavilyProvider } from './tavily.mjs';
 // Tool outputs are untrusted external content. Only the allowlisted server-side tool runs.
 export const webSearchTool = {
   type: 'function',
   function: {
     name: 'web_search',
-    description: 'Busca hechos actuales cuando una respuesta depende de noticias, fechas, versiones o cambios recientes.',
+    description: 'Busca en internet. Úsala cuando el usuario pida buscar o cuando no sepas un dato, especialmente si es actual, factual o puede haber cambiado. Devuelve resultados con fuentes.',
     parameters: { type: 'object', properties: { query: { type: 'string', description: 'Consulta concreta de búsqueda' } }, required: ['query'], additionalProperties: false },
   },
 };
+
+export const SEARCH_INTENT = /\b(busca(?:r|me|le|nos|d)?|b[uú]squeda|investiga(?:r|me)?|consulta(?:r)?|googlea|hoy|noticias?|actual(?:es)?|[uú]ltim[oa]s?|reciente(?:s)?|precio(?:s)?|versi[oó]n(?:es)?|internet|202[5-9])\b/i;
+
+export const wantsWebSearch = (prompt) => typeof prompt === 'string' && SEARCH_INTENT.test(prompt);
 
 export function collectToolCalls(chunks) {
   const calls = new Map();
@@ -17,6 +22,7 @@ export function collectToolCalls(chunks) {
       if (delta.id) prior.id += delta.id;
       if (delta.function?.name) prior.function.name += delta.function.name;
       if (delta.function?.arguments) prior.function.arguments += delta.function.arguments;
+      if (prior.function.arguments.length > 2048 || prior.function.name.length > 64 || prior.id.length > 128) throw new Error('oversized_tool_call');
       calls.set(delta.index, prior);
     }
   }
@@ -31,17 +37,4 @@ export function validateToolCall(call) {
   return { id: call.id, query: args.query.trim() };
 }
 
-export async function searchWeb(query, { key, signal, fetchImpl = fetch } = {}) {
-  if (!key) throw new Error('web_search_unavailable');
-  const response = await fetchImpl('https://api.tavily.com/search', {
-    method: 'POST', signal, headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-    body: JSON.stringify({ query, search_depth: 'basic', max_results: 4, include_answer: false }),
-  });
-  if (!response.ok) throw new Error('web_search_failed');
-  const data = await response.json();
-  return JSON.stringify((Array.isArray(data.results) ? data.results : []).slice(0, 4).map(item => ({
-    title: String(item.title || '').slice(0, 200), url: String(item.url || '').slice(0, 500),
-    content: String(item.content || '').slice(0, 1200),
-  })));
-}
-
+export const searchWeb = (query, options = {}) => tavilyProvider.search(query, options);

@@ -1,3 +1,4 @@
+import { deploymentEnvironment } from "./environment";
 import type {
   ErrorEvent,
   TransactionEvent,
@@ -43,8 +44,7 @@ export function scrubError(event: ErrorEvent): ErrorEvent {
     timestamp: event.timestamp,
     platform: event.platform,
     level: event.level,
-    environment:
-      process.env.NODE_ENV === "production" ? "production" : "development",
+    environment: deploymentEnvironment(),
     release: event.release,
     exception: values ? { values } : undefined,
     message: values ? undefined : "Evento de diagnóstico de Dream",
@@ -86,8 +86,7 @@ export function scrubTransaction(
     timestamp: event.timestamp,
     start_timestamp: event.start_timestamp,
     transaction: safeRoute(event.transaction),
-    environment:
-      process.env.NODE_ENV === "production" ? "production" : "development",
+    environment: deploymentEnvironment(),
     release: event.release,
     platform: event.platform,
     contexts: event.contexts?.trace

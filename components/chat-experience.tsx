@@ -42,6 +42,8 @@ export function ChatExperience({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [state, setState] = useState<DreamState>("idle");
   const [busy, setBusy] = useState(false);
+  const [olderOffset, setOlderOffset] = useState<number | null>(null);
+  const [olderLoading, setOlderLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [atBottom, setAtBottom] = useState(true);
@@ -55,6 +57,8 @@ export function ChatExperience({
   const route = useRef("");
   const justCreated = useRef<string | null>(null);
   const uploads = useRef(new Map<string, AbortController>());
+  const uploadQueue = useRef<Attachment[]>([]);
+  const uploadWorker = useRef(false);
   useEffect(() => {
     setWorkspaceEmpty(!messages.length && !loading);
   }, [messages.length, loading, setWorkspaceEmpty]);
@@ -67,6 +71,7 @@ export function ChatExperience({
     setAttachments([]);
     for (const controller of uploads.current.values()) controller.abort();
     uploads.current.clear();
+    uploadQueue.current = [];
   }, []);
   useEffect(() => {
     const key = c ?? fresh ?? "new";
@@ -91,17 +96,19 @@ export function ChatExperience({
     clearFiles();
     setError("");
     setMessages([]);
+    setOlderOffset(null);
     pinned.current = true;
     setAtBottom(true);
     if (!c) return;
     const controller = new AbortController();
     setLoading(true);
-    callDream<{ items: Message[] }>(
+    callDream<{ items: Message[]; next_offset?: number | null }>(
       "messages",
       { conversation_id: c },
       controller.signal,
     )
       .then((r) => {
+        setOlderOffset(r.next_offset ?? null);
         setMessages(
           r.items.filter((m) => m.role === "user" || m.role === "assistant"),
         );
@@ -138,6 +145,9 @@ export function ChatExperience({
       .then((r) => {
         if (route.current !== origin)
           throw new DOMException("Navegación cambiada", "AbortError");
+        if (!r?.conversation?.id) {
+          throw new Error("No se pudo crear la conversación. Inténtalo de nuevo.");
+        }
         idRef.current = r.conversation.id;
         setConversationId(r.conversation.id);
         add(r.conversation);
@@ -165,7 +175,11 @@ export function ChatExperience({
     const controller = new AbortController();
     uploads.current.set(a.localId, controller);
     try {
-      patchAttachment(a.localId, { status: "uploading", error: undefined });
+      patchAttachment(a.localId, {
+        status: "uploading",
+        queued: false,
+        error: undefined,
+      });
       const content = await toBase64(a.file);
       if (controller.signal.aborted) return;
       const id = await ensureConversation();
@@ -188,6 +202,33 @@ export function ChatExperience({
     } finally {
       uploads.current.delete(a.localId);
     }
+  }
+  function enqueueUpload(file: Attachment) {
+    if (
+      uploads.current.has(file.localId) ||
+      uploadQueue.current.some((f) => f.localId === file.localId)
+    )
+      return;
+    if (uploadQueue.current.length >= 4) return;
+    patchAttachment(file.localId, {
+      status: "uploading",
+      queued: true,
+      error: undefined,
+    });
+    uploadQueue.current.push(file);
+    if (uploadWorker.current) return;
+    uploadWorker.current = true;
+    void (async () => {
+      try {
+        while (uploadQueue.current.length) {
+          const next = uploadQueue.current.shift()!;
+          if (filesRef.current.some((f) => f.localId === next.localId))
+            await upload(next);
+        }
+      } finally {
+        uploadWorker.current = false;
+      }
+    })();
   }
   function addFiles(files: File[]) {
     if (lock.current || loading) return;
@@ -212,10 +253,11 @@ export function ChatExperience({
     }
     filesRef.current = [...filesRef.current, ...next];
     setAttachments(filesRef.current);
-    for (const a of next) void upload(a);
+    for (const a of next) enqueueUpload(a);
   }
   function removeFile(id: string) {
     uploads.current.get(id)?.abort();
+    uploadQueue.current = uploadQueue.current.filter((f) => f.localId !== id);
     const a = filesRef.current.find((x) => x.localId === id);
     if (a?.preview) URL.revokeObjectURL(a.preview);
     filesRef.current = filesRef.current.filter((x) => x.localId !== id);
@@ -371,6 +413,39 @@ export function ChatExperience({
       setLoading(false);
     }
   }
+  async function loadOlder() {
+    if (!conversationId || olderOffset === null || olderLoading || busy) return;
+    const origin = route.current;
+    setOlderLoading(true);
+    const height = scroller.current?.scrollHeight ?? 0;
+    const top = scroller.current?.scrollTop ?? 0;
+    try {
+      const r = await callDream<{
+        items: Message[];
+        next_offset?: number | null;
+      }>("messages", { conversation_id: conversationId, offset: olderOffset });
+      if (route.current !== origin) return;
+      pinned.current = false;
+      setMessages((previous) => [
+        ...r.items.filter(
+          (m) =>
+            ["user", "assistant"].includes(m.role) &&
+            !previous.some((p) => p.id === m.id),
+        ),
+        ...previous,
+      ]);
+      setOlderOffset(r.next_offset ?? null);
+      requestAnimationFrame(() => {
+        if (scroller.current)
+          scroller.current.scrollTop =
+            top + scroller.current.scrollHeight - height;
+      });
+    } catch (e) {
+      if (route.current === origin) setError(errorMessage(e));
+    } finally {
+      setOlderLoading(false);
+    }
+  }
   const focusComposer = useCallback((text: string) => {
     setValue(text);
     document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus();
@@ -400,6 +475,17 @@ export function ChatExperience({
           </div>
         ) : messages.length ? (
           <div className="message-thread">
+            {olderOffset !== null && (
+              <button
+                className="secondary"
+                disabled={olderLoading || busy}
+                onClick={() => void loadOlder()}
+              >
+                {olderLoading
+                  ? "Abriendo mensajes…"
+                  : "Ver mensajes anteriores"}
+              </button>
+            )}
             {messages.map((m) => (
               <MessageView
                 message={m}
@@ -465,7 +551,7 @@ export function ChatExperience({
                     )
                   }
                   onRemove={() => removeFile(attachments[0].localId)}
-                  onRetry={() => void upload(attachments[0])}
+                  onRetry={() => enqueueUpload(attachments[0])}
                 />
               </div>
             )}
@@ -515,7 +601,7 @@ export function ChatExperience({
           onRemove={removeFile}
           onRetry={(id) => {
             const a = filesRef.current.find((x) => x.localId === id);
-            if (a) void upload(a);
+            if (a) enqueueUpload(a);
           }}
           busy={busy}
           state={state}

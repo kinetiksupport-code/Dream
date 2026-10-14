@@ -16,6 +16,7 @@ export const events = [
   "exam_created",
   "simulation_completed",
   "feature_error",
+  "rate_limit_reached",
   "api_request_completed",
   "section_viewed",
   "analytics_verification",
@@ -24,6 +25,7 @@ export type AnalyticsEvent = (typeof events)[number];
 export type Outcome =
   "success" | "http_error" | "network_error" | "stream_error" | "aborted";
 export interface SafeProperties {
+  environment?: "production" | "preview" | "development";
   section?: Section;
   action?: string;
   mode?: "practice" | "exam";
@@ -77,6 +79,12 @@ export function safeProperties(input: unknown): SafeProperties {
       ? (input as Record<string, unknown>)
       : {};
   const out: SafeProperties = {};
+  if (
+    p.environment === "production" ||
+    p.environment === "preview" ||
+    p.environment === "development"
+  )
+    out.environment = p.environment;
   if (sections.includes(p.section as Section))
     out.section = p.section as Section;
   if (typeof p.action === "string" && actions.has(p.action))
@@ -104,7 +112,12 @@ export function safeProperties(input: unknown): SafeProperties {
   return out;
 }
 export function safeRoute(path: unknown): string {
-  if (typeof path !== "string" || !path.startsWith("/") || path.startsWith("//")) return "/other";
+  if (
+    typeof path !== "string" ||
+    !path.startsWith("/") ||
+    path.startsWith("//")
+  )
+    return "/other";
   const section = sectionForPath(path);
   if (section === "other") return "/other";
   if (section === "home") return "/";
