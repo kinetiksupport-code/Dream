@@ -1,10 +1,10 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowDown } from "lucide-react";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { DreamActivity } from "@/components/dream-mark";
+import { BackIcon } from "@/components/icons";
 import { Composer } from "@/components/composer";
 import { MessageView } from "@/components/message";
 import { ChatHome } from "@/components/chat-home";
@@ -13,6 +13,7 @@ import { FileCard } from "@/components/attachment";
 import { callDream, streamDreamChat, errorMessage } from "@/lib/dream-api";
 import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
+import { takePendingFiles } from "@/lib/pending-files";
 import type {
   Conversation,
   Message,
@@ -64,6 +65,8 @@ export function ChatExperience({
   }, [messages.length, loading, setWorkspaceEmpty]);
   const c = study?.conversationId ?? params.get("c");
   const fresh = study ? null : params.get("new");
+  // Optional ?q= pre-fills (never sends) the composer, e.g. from Apuntes.
+  const prefill = study ? null : params.get("q")?.slice(0, 2000) ?? null;
   const clearFiles = useCallback(() => {
     for (const a of filesRef.current)
       if (a.preview) URL.revokeObjectURL(a.preview);
@@ -91,7 +94,7 @@ export function ChatExperience({
     setConversationId(c);
     setBusy(false);
     setState("idle");
-    setValue("");
+    setValue(prefill ?? "");
     setAnalysisView(false);
     clearFiles();
     setError("");
@@ -99,7 +102,14 @@ export function ChatExperience({
     setOlderOffset(null);
     pinned.current = true;
     setAtBottom(true);
-    if (!c) return;
+    if (!c) {
+      const handed = takePendingFiles();
+      if (handed.length) {
+        setAnalysisView(true);
+        queueMicrotask(() => addFilesRef.current(handed));
+      }
+      return;
+    }
     const controller = new AbortController();
     setLoading(true);
     callDream<{ items: Message[]; next_offset?: number | null }>(
@@ -120,7 +130,7 @@ export function ChatExperience({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [c, fresh, clearFiles]);
+  }, [c, fresh, prefill, clearFiles]);
   useEffect(
     () => () => {
       abort.current?.abort();
@@ -255,6 +265,8 @@ export function ChatExperience({
     setAttachments(filesRef.current);
     for (const a of next) enqueueUpload(a);
   }
+  const addFilesRef = useRef(addFiles);
+  addFilesRef.current = addFiles;
   function removeFile(id: string) {
     uploads.current.get(id)?.abort();
     uploadQueue.current = uploadQueue.current.filter((f) => f.localId !== id);
@@ -385,6 +397,14 @@ export function ChatExperience({
         );
         setState("idle");
       } else {
+        if (!answer) {
+          // Nothing arrived: drop the optimistic turn and give the text back
+          // to the composer so the draft is never lost (e.g. network drop).
+          setMessages((list) =>
+            list.filter((m) => m.id !== userId && m.id !== assistantId),
+          );
+          setValue((current) => current || prompt);
+        }
         setError(errorMessage(e));
         setState("error");
       }
@@ -448,11 +468,83 @@ export function ChatExperience({
   }
   const focusComposer = useCallback((text: string) => {
     setValue(text);
-    document.querySelector<HTMLTextAreaElement>(".composer textarea")?.focus();
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLTextAreaElement>(
+        ".composer textarea",
+      );
+      el?.focus();
+      el?.setSelectionRange(text.length, text.length);
+    });
   }, []);
   const view = params.get("view");
-  if (view === "recent" || view === "tests")
-    return <Recents tests={view === "tests"} />;
+  if (view === "recent" || view === "tests") return <Recents />;
+  const composer = (variant: "hero" | "dock") => (
+    <Composer
+      variant={variant}
+      value={value}
+      onChange={setValue}
+      onSend={() => void send()}
+      onStop={() => abort.current?.abort()}
+      onFiles={addFiles}
+      attachments={attachments}
+      onRemove={removeFile}
+      onRetry={(id) => {
+        const a = filesRef.current.find((x) => x.localId === id);
+        if (a) enqueueUpload(a);
+      }}
+      busy={busy}
+      state={state}
+      unavailable={loading}
+    />
+  );
+  const errorBanner = (!serviceReady || error) && (
+    <div className="chat-error" role="alert">
+      <p>
+        {error || "El servicio de IA aún no está configurado en el servidor."}
+      </p>
+      {error && conversationId && (
+        <button
+          className="secondary press"
+          onClick={() => void reload()}
+          disabled={busy}
+        >
+          Reintentar
+        </button>
+      )}
+    </div>
+  );
+  if (!study && !loading && !messages.length)
+    return (
+      <section className="chat-view is-empty">
+        <ChatHome
+          composer={composer("hero")}
+          onPrompt={focusComposer}
+          onAttach={() => {
+            setAnalysisView(true);
+            document
+              .querySelector<HTMLInputElement>(".composer input[type=file]")
+              ?.click();
+          }}
+        >
+          {errorBanner}
+          {analysisView && attachments[0] && (
+            <FileCard
+              attachment={attachments[0]}
+              busy={busy}
+              onAnalyze={() =>
+                void send(
+                  "Analiza este archivo y ayúdame a entender sus ideas principales.",
+                )
+              }
+              onRemove={() => removeFile(attachments[0].localId)}
+              onRetry={() => enqueueUpload(attachments[0])}
+            />
+          )}
+        </ChatHome>
+        <span className="visually-hidden">Nueva conversación</span>
+      </section>
+    );
+  const last = messages.at(-1);
   return (
     <section
       className={`chat-view ${messages.length ? "has-messages" : "is-empty"}`}
@@ -471,13 +563,13 @@ export function ChatExperience({
       >
         {loading ? (
           <div className="chat-loading">
-            <DreamActivity state="thinking" />
+            <DreamActivity state="thinking" label="Abriendo la conversación" />
           </div>
         ) : messages.length ? (
           <div className="message-thread">
             {olderOffset !== null && (
               <button
-                className="secondary"
+                className="secondary older-button press"
                 disabled={olderLoading || busy}
                 onClick={() => void loadOlder()}
               >
@@ -489,124 +581,62 @@ export function ChatExperience({
             {messages.map((m) => (
               <MessageView
                 message={m}
-                state={busy && m.id === messages.at(-1)?.id ? state : "done"}
+                state={busy && m.id === last?.id ? state : "done"}
                 onContinue={focusComposer}
                 key={m.id}
               />
             ))}
-            {busy && messages.at(-1)?.role !== "assistant" && (
+            {busy && last?.role !== "assistant" && (
               <DreamActivity state={state} />
-            )}
-            {busy && (
-              <button
-                className="secondary stop-response"
-                onClick={() => abort.current?.abort()}
-              >
-                Detener
-              </button>
             )}
           </div>
         ) : (
-          <>
-            {study ? (
-              <div className="study-conversation-empty">
-                <DreamActivity state="idle" />
-                <h2>Una idea cada vez.</h2>
-                <p>
-                  Pregunta lo que necesites. Dream tiene tus temas y materiales
-                  como referencia.
-                </p>
-                <button
-                  className="primary"
-                  onClick={() =>
-                    void send(
-                      `Ayúdame a entender ${study.title}. Empieza por una idea y un ejemplo, y después comprueba si lo he entendido.`,
-                    )
-                  }
-                >
-                  Empezar a entender
-                </button>
-              </div>
-            ) : (
-              <ChatHome
-                onPrompt={focusComposer}
-                onAttach={() => {
-                  setAnalysisView(true);
-                  document
-                    .querySelector<HTMLInputElement>(
-                      ".composer input[type=file]",
-                    )
-                    ?.click();
-                }}
-              />
-            )}
-            {analysisView && attachments[0] && (
-              <div className="home-file">
-                <FileCard
-                  attachment={attachments[0]}
-                  busy={busy}
-                  onAnalyze={() =>
-                    void send(
-                      "Analiza este archivo y ayúdame a entender sus ideas principales.",
-                    )
-                  }
-                  onRemove={() => removeFile(attachments[0].localId)}
-                  onRetry={() => enqueueUpload(attachments[0])}
-                />
-              </div>
-            )}
-          </>
+          study && (
+            <div className="study-conversation-empty">
+              <DreamActivity state="idle" label="Dream" />
+              <h2>Una idea cada vez.</h2>
+              <p>
+                Pregunta lo que necesites. Dream tiene tus temas y materiales
+                como referencia.
+              </p>
+              <button
+                className="primary press"
+                onClick={() =>
+                  void send(
+                    `Ayúdame a entender ${study.title}. Empieza por una idea y un ejemplo, y después comprueba si lo he entendido.`,
+                  )
+                }
+              >
+                Empezar a entender
+              </button>
+            </div>
+          )
         )}
       </div>
       <div className="composer-area">
         {!atBottom && messages.length > 0 && (
           <button
-            className="jump-bottom"
+            className="jump-bottom press"
             onClick={() => {
               pinned.current = true;
               setAtBottom(true);
               scroller.current?.scrollTo({
                 top: scroller.current.scrollHeight,
-                behavior: "smooth",
+                behavior: matchMedia("(prefers-reduced-motion: reduce)")
+                  .matches
+                  ? "auto"
+                  : "smooth",
               });
             }}
           >
-            <ArrowDown size={15} />
+            <span className="jump-icon" aria-hidden="true">
+              <BackIcon size={16} />
+            </span>
             Volver al final
           </button>
         )}
-        {(!serviceReady || error) && (
-          <div className="chat-error" role="alert">
-            <div>
-              <DreamActivity state="error" />
-              <p>
-                {error ||
-                  "El servicio de IA aún no está configurado en el servidor."}
-              </p>
-            </div>
-            {error && conversationId && (
-              <button onClick={() => void reload()} disabled={busy}>
-                Reintentar
-              </button>
-            )}
-          </div>
-        )}
-        <Composer
-          value={value}
-          onChange={setValue}
-          onSend={() => void send()}
-          onStop={() => abort.current?.abort()}
-          onFiles={addFiles}
-          attachments={attachments}
-          onRemove={removeFile}
-          onRetry={(id) => {
-            const a = filesRef.current.find((x) => x.localId === id);
-            if (a) enqueueUpload(a);
-          }}
-          busy={busy}
-          state={state}
-          unavailable={loading}
-        />
+        {errorBanner}
+        {composer("dock")}
         <p className="composer-footnote">
           Dream puede equivocarse. Pregunta, compara y comprende.
         </p>
