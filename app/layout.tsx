@@ -1,24 +1,48 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { THEME_COLORS } from "@/lib/theme";
 import "./globals.css";
-import "katex/dist/katex.min.css";
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+// Inter is only a fallback after the system stack (-apple-system / SF Pro):
+// not preloaded, so Apple devices never download it.
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  preload: false,
+});
 export const metadata: Metadata = {
-  title: { default: "Dream — Tu espacio para pensar", template: "%s · Dream" },
-  description: "Una inteligencia personal para aprender, crear y entender.",
+  title: { default: "Dream — Tu compañero de estudio", template: "%s · Dream" },
+  description:
+    "Dream te ayuda a entender lo que estudias: pregunta, sube tus apuntes y practica con tests.",
+  applicationName: "Dream",
   manifest: "/manifest.webmanifest",
-  appleWebApp: { capable: true, statusBarStyle: "default", title: "Dream" },
-  icons: { icon: "/icon.svg", apple: "/apple-touch-icon.png" },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Dream",
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: { url: "/apple-touch-icon.png", sizes: "180x180" },
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "supported-color-schemes": "light dark",
+  },
 };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  colorScheme: "light dark",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F4F1E9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0F0F10" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
 export default function RootLayout({
@@ -36,7 +60,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.variable} ${mono.variable}`}>
+      <body className={inter.variable}>
         <Providers>{children}</Providers>
       </body>
     </html>
