@@ -17,6 +17,7 @@ import { ConnectionStatus } from "@/components/connection-status";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
+import { THEME_COLORS } from "@/lib/theme";
 type Theme = "light" | "dark" | "system";
 interface Context {
   session: Session | null;
@@ -118,8 +119,11 @@ export function Providers({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Depend on the token string, not the session object, so routine session
+  // refreshes with the same token do not restart the verification loop.
+  const accessToken = session?.access_token;
   useEffect(() => {
-    if (!session?.access_token) return;
+    if (!accessToken) return;
     let alive = true;
 
     async function verifyMaintenanceAccess() {
@@ -127,7 +131,7 @@ export function Providers({ children }: { children: ReactNode }) {
         const response = await fetch("/api/auth/verify-maintenance", {
           method: "POST",
           cache: "no-store",
-          headers: { Authorization: `Bearer ${session!.access_token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!alive) return;
 
@@ -165,7 +169,7 @@ export function Providers({ children }: { children: ReactNode }) {
       alive = false;
       window.clearInterval(interval);
     };
-  }, [session?.access_token, pathname, router]);
+  }, [accessToken, pathname, router]);
 
   const userId = session?.user.id;
   useEffect(() => {
@@ -200,7 +204,7 @@ export function Providers({ children }: { children: ReactNode }) {
       document
         .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
         .forEach(
-          (meta) => (meta.content = actual === "dark" ? "#0F0F10" : "#F4F1E9"),
+          (meta) => (meta.content = THEME_COLORS[actual]),
         );
     };
     apply();
@@ -213,10 +217,15 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     const viewport = window.visualViewport;
     const update = () => {
+      const height = viewport?.height ?? window.innerHeight;
       document.documentElement.style.setProperty(
         "--viewport-height",
-        `${viewport?.height ?? window.innerHeight}px`,
+        `${height}px`,
       );
+      // On-screen keyboard: the visual viewport shrinks well below the layout
+      // viewport. The tab bar hides so the composer sits right above the keys.
+      document.documentElement.dataset.keyboard =
+        window.innerHeight - height > 150 ? "open" : "closed";
       document.documentElement.style.setProperty(
         "--viewport-top",
         `${viewport?.offsetTop ?? 0}px`,

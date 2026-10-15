@@ -1,19 +1,40 @@
 "use client";
 import { useState } from "react";
-import { Sun, Moon, Monitor, Check, LogOut, Trash2 } from "lucide-react";
+import { Sun, Moon, Monitor, Check } from "lucide-react";
 import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
+import { InstallDream } from "@/components/install-dream";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
+import { accountActions } from "@/lib/account";
 import type { DreamProfile, UserPreferences } from "@/lib/types";
+
+const HELP = [
+  {
+    key: "pref_step_by_step",
+    title: "Paso a paso",
+    description: "Te guía con preguntas hasta que lo entiendas.",
+  },
+  {
+    key: "pref_practice_suggestions",
+    title: "Propuestas para practicar",
+    description: "Sugiere ejercicios cuando ayudan a entender mejor.",
+  },
+  {
+    key: "pref_calm_tone",
+    title: "Un tono tranquilo",
+    description: "Explicaciones cercanas, claras y sin prisa.",
+  },
+] as const;
+
 export default function Settings() {
   const { profile, setProfile, theme, setTheme, logout } = useDream();
   const { refresh } = useConversations();
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
-  const [confirm, setConfirm] = useState(false);
+  const [confirm, setConfirm] = useState<"history" | "account" | null>(null);
   async function toggle(key: keyof UserPreferences) {
     if (!profile || saving) return;
     setSaving(key);
@@ -37,164 +58,223 @@ export default function Settings() {
       setSaving(null);
     }
   }
-  async function clear() {
+  async function clearHistory() {
     if (saving) return;
     setSaving("delete");
+    setError("");
     try {
       await callDream("conversations_delete_all");
       await refresh();
-      setConfirm(false);
+      setConfirm(null);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setSaving(null);
     }
   }
+  async function deleteAccount() {
+    const action = accountActions.deleteAccount;
+    if (!action || saving) return;
+    setSaving("account");
+    setError("");
+    try {
+      await action();
+      await logout();
+    } catch (e) {
+      setError(errorMessage(e));
+      setSaving(null);
+    }
+  }
   return (
-    <div className="personal-page">
-      <h1>Dream, a tu manera.</h1>
-      <div className="settings-account">
-        <span className="avatar">
-          {(profile?.display_name || profile?.email || "D")
-            .slice(0, 1)
-            .toUpperCase()}
-        </span>
-        <div>
-          <strong>{profile?.display_name || "Mi cuenta"}</strong>
-          <p>{profile?.email}</p>
-        </div>
-      </div>
-      <section className="settings-group">
-        <h2>Dream</h2>
-        {(
-          [
-            {
-              key: "pref_step_by_step",
-              title: "Paso a paso",
-              description:
-                "Dar espacio a cada idea antes de pasar a la siguiente.",
-            },
-            {
-              key: "pref_practice_suggestions",
-              title: "Una ocasión para practicar",
-              description: "Sugerir ejercicios cuando ayuden a entender mejor.",
-            },
-            {
-              key: "pref_calm_tone",
-              title: "Un tono tranquilo",
-              description: "Explicaciones cercanas, claras y sin prisa.",
-            },
-          ] as const
-        ).map((row) => (
-          <div className="settings-row" key={row.key}>
-            <div>
-              <strong>{row.title}</strong>
-              <p>{row.description}</p>
-            </div>
-            <button
-              className="switch"
-              role="switch"
-              aria-checked={profile?.[row.key] ?? false}
-              aria-label={row.title}
-              disabled={saving !== null}
-              onClick={() => void toggle(row.key)}
-            >
-              <span />
-            </button>
+    <div className="page page-settings">
+      <h1 className="title">Ajustes</h1>
+
+      <section className="group" aria-labelledby="profile-title">
+        <h2 className="section-title" id="profile-title">
+          Perfil
+        </h2>
+        <dl className="group-list">
+          <div className="group-row">
+            <dt>Nombre</dt>
+            <dd className="value">{profile?.display_name || "Sin nombre"}</dd>
           </div>
-        ))}
+          <div className="group-row">
+            <dt>Correo</dt>
+            <dd className="value">{profile?.email}</dd>
+          </div>
+        </dl>
+        <p className="page-intro">
+          Tu nombre viene de tu cuenta de Google.
+        </p>
       </section>
-      <section className="settings-group">
-        <h2>Apariencia</h2>
-        <div className="settings-row appearance-row">
-          <div>
-            <strong>La luz de tu espacio</strong>
-            <p>Elige cómo se siente Dream.</p>
-          </div>
-          <div className="theme-options">
-            {(
-              [
-                { value: "light", label: "Claro", icon: Sun },
-                { value: "dark", label: "Oscuro", icon: Moon },
-                { value: "system", label: "Sistema", icon: Monitor },
-              ] as const
-            ).map((t) => (
+
+      <section className="group" aria-labelledby="help-title">
+        <h2 className="section-title" id="help-title">
+          Cómo te ayuda Dream
+        </h2>
+        <ul className="group-list">
+          {HELP.map((row) => (
+            <li className="group-row" key={row.key}>
+              <span className="row-text">
+                <strong>{row.title}</strong>
+                <small>{row.description}</small>
+              </span>
               <button
-                aria-pressed={theme === t.value}
-                key={t.value}
-                onClick={() => setTheme(t.value)}
-              >
-                <t.icon size={17} />
-                {t.label}
-              </button>
-            ))}
-          </div>
+                className="switch"
+                role="switch"
+                aria-checked={profile?.[row.key] ?? false}
+                aria-label={row.title}
+                disabled={saving !== null}
+                onClick={() => void toggle(row.key)}
+              />
+            </li>
+          ))}
+        </ul>
+        {saved && (
+          <p className="save-status" role="status">
+            <Check size={16} />
+            Preferencias guardadas
+          </p>
+        )}
+      </section>
+
+      <section className="group" aria-labelledby="theme-title">
+        <h2 className="section-title" id="theme-title">
+          Apariencia
+        </h2>
+        <div className="segmented" role="group" aria-labelledby="theme-title">
+          {(
+            [
+              { value: "light", label: "Claro", icon: Sun },
+              { value: "dark", label: "Oscuro", icon: Moon },
+              { value: "system", label: "Sistema", icon: Monitor },
+            ] as const
+          ).map((t) => (
+            <button
+              className="press"
+              aria-pressed={theme === t.value}
+              key={t.value}
+              onClick={() => setTheme(t.value)}
+            >
+              <t.icon size={18} />
+              {t.label}
+            </button>
+          ))}
         </div>
       </section>
-      <PrivacySettings />
-      <section className="settings-group">
-        <h2>Datos</h2>
-        <div className="settings-row">
-          <div>
-            <strong>Mis conversaciones</strong>
-            <p>Eliminar tu historial de conversaciones.</p>
-          </div>
+
+      <InstallDream />
+
+      <section className="group" aria-labelledby="privacy-title">
+        <h2 className="section-title" id="privacy-title">
+          Privacidad
+        </h2>
+        <p className="page-intro">
+          Tus apuntes y conversaciones son solo tuyos.
+        </p>
+        <div className="button-row">
           <button
-            className="text-button danger"
-            onClick={() => setConfirm(true)}
+            type="button"
+            className="secondary press"
+            onClick={() => setConfirm("history")}
           >
-            <Trash2 size={16} />
-            Eliminar
+            Borrar historial
+          </button>
+          <button
+            type="button"
+            className="danger-outline press"
+            onClick={() => setConfirm("account")}
+          >
+            Eliminar mi cuenta
           </button>
         </div>
       </section>
-      <section className="settings-group">
-        <h2>Cuenta</h2>
-        <div className="settings-row">
-          <div>
-            <strong>{profile?.display_name || "Mi cuenta"}</strong>
-            <p>{profile?.email}</p>
-          </div>
+
+      <PrivacySettings />
+
+      <section className="group" aria-labelledby="account-title">
+        <h2 className="section-title" id="account-title">
+          Cuenta
+        </h2>
+        <div className="button-row">
           <button
-            className="text-button"
+            type="button"
+            className="secondary press"
             onClick={() =>
               void logout().catch((e) => setError(errorMessage(e)))
             }
           >
-            <LogOut size={16} />
             Cerrar sesión
           </button>
         </div>
       </section>
-      {saved && (
-        <p className="save-status" role="status">
-          <Check size={15} />
-          Preferencias guardadas
-        </p>
-      )}
-      {error && (
+
+      {error && !confirm && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      {confirm && (
-        <Modal labelledBy="delete-title" onClose={() => setConfirm(false)}>
-          <h2 id="delete-title">¿Eliminar todas las conversaciones?</h2>
-          <p>Esta acción no se puede deshacer.</p>
+      {confirm === "history" && (
+        <Modal labelledBy="delete-title" onClose={() => setConfirm(null)}>
+          <h2 id="delete-title">¿Borrar todo el historial?</h2>
+          <p>
+            Se eliminarán todas tus conversaciones. Esta acción no se puede
+            deshacer.
+          </p>
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
           <div className="modal-actions">
             <button
-              className="text-button"
+              className="secondary press"
               autoFocus
-              onClick={() => setConfirm(false)}
+              onClick={() => setConfirm(null)}
             >
               Cancelar
             </button>
             <button
-              className="primary danger-button"
+              className="primary danger-button press"
               disabled={saving !== null}
-              onClick={() => void clear()}
+              onClick={() => void clearHistory()}
             >
-              Eliminar todas
+              Borrar historial
+            </button>
+          </div>
+        </Modal>
+      )}
+      {confirm === "account" && (
+        <Modal labelledBy="account-delete-title" onClose={() => setConfirm(null)}>
+          <h2 id="account-delete-title">¿Eliminar tu cuenta?</h2>
+          <p>
+            Se borrarán tu perfil, tus conversaciones, tus apuntes y tus
+            exámenes. Esta acción no se puede deshacer.
+          </p>
+          {!accountActions.deleteAccount && (
+            <p role="status">
+              Todavía no se puede eliminar la cuenta desde la app.
+            </p>
+          )}
+          {error && (
+            <p className="error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="modal-actions">
+            <button
+              className="secondary press"
+              autoFocus
+              onClick={() => setConfirm(null)}
+            >
+              Cancelar
+            </button>
+            <button
+              className="primary danger-button press"
+              disabled={!accountActions.deleteAccount || saving !== null}
+              onClick={() => void deleteAccount()}
+            >
+              Eliminar cuenta
             </button>
           </div>
         </Modal>

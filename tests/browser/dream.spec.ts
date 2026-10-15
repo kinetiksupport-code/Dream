@@ -188,7 +188,7 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
   await authenticated(page);
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
@@ -248,23 +248,21 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
     path: "test-results/chat-mobile-dark.png",
   });
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
-  await expect(
-    page.getByRole("link", { name: "Progreso", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("link", { name: "Progreso", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Mira cuánto has avanzado." }),
-  ).toBeVisible();
+  await page
+    .getByRole("navigation", { name: "Principal" })
+    .getByRole("link", { name: "Más" })
+    .click();
+  await page.getByRole("link", { name: "Apuntes", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Apuntes" })).toBeVisible();
   await page.screenshot({
     animations: "disabled",
-    path: "test-results/progress-mobile-dark.png",
+    path: "test-results/notes-mobile-dark.png",
   });
 });
 test("practice corrects server-side and shows returned result", async ({
@@ -576,7 +574,7 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
       });
       await page.goto("/chat");
       await expect(
-        page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+        page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
       ).toBeVisible();
       await page.screenshot({
         path: `test-results/empty-${size.name}-${theme}.png`,
@@ -612,7 +610,7 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
   });
 });
 
-test("Figma states: test feedback, original orb, files, bottom sheet and editorial math", async ({
+test("design states: test feedback, Orb, files, tab bar and editorial math", async ({
   page,
 }) => {
   test.setTimeout(120000);
@@ -724,22 +722,31 @@ test("Figma states: test feedback, original orb, files, bottom sheet and editori
   });
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
-  await expect(page.locator(".bottom-sheet")).toBeVisible();
+  // Mobile tab bar: Inicio, Chat, Tareas, Más (design "Móvil · Inicio").
+  const tabs = page.getByRole("navigation", { name: "Principal" });
+  await expect(tabs.getByRole("link")).toHaveText([
+    "Inicio",
+    "Chat",
+    "Tareas",
+    "Más",
+  ]);
+  await expect(tabs.getByRole("link", { name: "Inicio" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await tabs.getByRole("link", { name: "Más" }).click();
+  await expect(page.getByRole("heading", { name: "Más" })).toBeVisible();
+  await expect(tabs.getByRole("link", { name: "Más" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   await page.screenshot({
-    path: "test-results/figma-bottom-sheet.png",
+    path: "test-results/design-more.png",
     animations: "disabled",
   });
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Abrir navegación" }),
-  ).toBeFocused();
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
-  await page.locator(".sheet-backdrop").click({ position: { x: 3, y: 3 } });
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await tabs.getByRole("link", { name: "Inicio" }).click();
   await page.locator("input[type=file]").setInputFiles({
     name: "Ecuaciones.pdf",
     mimeType: "application/pdf",
@@ -757,9 +764,8 @@ test("Figma states: test feedback, original orb, files, bottom sheet and editori
     path: "test-results/figma-math.png",
     animations: "disabled",
   });
-  expect(
-    await page.locator(".dream-mark img").first().getAttribute("src"),
-  ).toContain("dream-orb.png");
+  // The Orb is the canvas SVG, not a redrawn mark.
+  await expect(page.locator(".orb .orb-nucleus").first()).toBeAttached();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -862,7 +868,7 @@ test("real UI states from stream events and failed upload recovery", async ({
   });
   const chooser = page.waitForEvent("filechooser");
   await page
-    .getByRole("button", { name: "Analizar archivo", exact: true })
+    .getByRole("button", { name: "Subir apuntes", exact: true })
     .click();
   await (
     await chooser
@@ -881,9 +887,6 @@ test("real UI states from stream events and failed upload recovery", async ({
     .getByRole("button", { name: "Reintentar Ecuaciones.pdf" })
     .click();
   await expect(page.locator(".file-card .attachment-chip.ready")).toBeVisible();
-  await page
-    .locator(".chat-scroll")
-    .evaluate((el) => (el.scrollTop = el.scrollHeight));
   await page.screenshot({
     path: "test-results/figma-file-card.png",
     animations: "disabled",

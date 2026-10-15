@@ -2,14 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  X,
-  ArrowUpRight,
-  RotateCcw,
-} from "lucide-react";
+import { ArrowLeft, Check, X, RotateCcw } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import type {
   DreamTest,
@@ -95,15 +88,11 @@ export function AnswerInput({
                   } else onChange(option);
                 }}
               />
-              <span className="option-index">
-                {state === "incorrect" ? (
-                  <X size={15} />
-                ) : correct || checked ? (
-                  <Check size={15} />
-                ) : (
-                  String.fromCharCode(65 + index)
-                )}
-              </span>
+              {evaluation && (correct || state === "incorrect") && (
+                <span className="option-index" aria-hidden="true">
+                  {state === "incorrect" ? <X size={15} /> : <Check size={15} />}
+                </span>
+              )}
               <Markdown content={option} />
             </label>
           );
@@ -183,6 +172,7 @@ export function TestExperience({ id }: { id: string }) {
     return () => setPageTitle(null);
   }, [result, setPageTitle]);
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
@@ -212,6 +202,7 @@ export function TestExperience({ id }: { id: string }) {
     if (!test || busy) return;
     const q = test.questions[index];
     setBusy(true);
+    setChecking(true);
     setError("");
     try {
       const r = await callDream<{ evaluation: Evaluation }>(
@@ -223,6 +214,7 @@ export function TestExperience({ id }: { id: string }) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
+      setChecking(false);
     }
   }
   async function submit() {
@@ -265,29 +257,36 @@ export function TestExperience({ id }: { id: string }) {
   if (loading)
     return (
       <div className="boot">
-        <DreamActivity state="thinking" />
+        <DreamActivity state="thinking" label="Abriendo el test" />
       </div>
     );
   if (!test)
     return (
-      <div className="personal-page">
-        <h1>No pudimos abrir este test.</h1>
-        <p className="error" role="alert">
-          {error}
-        </p>
-        <button className="primary" onClick={() => setRetry((s) => s + 1)}>
-          Reintentar
-        </button>
-        <Link className="text-link" href="/chat">
-          Volver al chat
-        </Link>
+      <div className="boot">
+        <div className="status-page">
+          <h1>No pudimos abrir este test</h1>
+          <p className="error" role="alert">
+            {error}
+          </p>
+          <div className="button-row">
+            <button
+              className="primary press"
+              onClick={() => setRetry((s) => s + 1)}
+            >
+              Reintentar
+            </button>
+            <Link className="secondary press" href="/chat">
+              Volver al chat
+            </Link>
+          </div>
+        </div>
       </div>
     );
   if (result)
     return (
       <div className="test-page result-page">
         <div className="result-heading">
-          <p className="eyebrow">{test.title.toLocaleUpperCase("es")}</p>
+          <p className="eyebrow">{test.title}</p>
           <div>
             <h1>
               {result.score} <span>/ {result.total}</span>
@@ -361,12 +360,10 @@ export function TestExperience({ id }: { id: string }) {
               onClick={() => void practiceErrors()}
             >
               {busy ? "Preparando…" : "Practicar mis errores"}
-              <ArrowUpRight size={17} />
             </button>
           )}
-          <Link className="text-link" href="/chat">
-            Volver a mi Dream
-            <ArrowRight size={17} />
+          <Link className="secondary press" href="/chat">
+            Volver a Dream
           </Link>
         </div>
         {error && (
@@ -388,7 +385,7 @@ export function TestExperience({ id }: { id: string }) {
                 </span>
               </summary>
               <div>
-                <p className="eyebrow">TU RESPUESTA</p>
+                <p className="eyebrow">Tu respuesta</p>
                 <p>
                   {typeof item.answer === "string"
                     ? item.answer
@@ -396,7 +393,7 @@ export function TestExperience({ id }: { id: string }) {
                 </p>
                 {!item.is_correct && (
                   <>
-                    <p className="eyebrow">REFERENCIA</p>
+                    <p className="eyebrow">Referencia</p>
                     <p>
                       {typeof item.correct_answer === "string"
                         ? item.correct_answer
@@ -414,45 +411,50 @@ export function TestExperience({ id }: { id: string }) {
   const question = test.questions[index];
   if (!question)
     return (
-      <div className="personal-page">
-        <h1>Este test no tiene preguntas disponibles.</h1>
-        <Link href="/chat">Volver al chat</Link>
+      <div className="boot">
+        <div className="status-page">
+          <h1>Este test no tiene preguntas disponibles</h1>
+          <Link className="primary press" href="/chat">
+            Volver al chat
+          </Link>
+        </div>
       </div>
     );
   const evaluation = evaluations[question.id];
   const allAnswered = test.questions.every((q) => hasAnswer(q, answers[q.id]));
   return (
     <div className="test-page">
-      <div className="test-topline">
-        <Link href="/chat">
-          <ArrowLeft size={16} />
-          Mi Dream
+      <header className="test-topline">
+        <Link className="exit press" href="/chat">
+          Salir
         </Link>
-        <span>
-          {test.mode === "exam" ? "Examen" : "Práctica"} · {test.subject}
-        </span>
-      </div>
-      <div className="test-title">
-        <h1>{test.title}</h1>
-      </div>
-      <div className="test-progress">
-        <p className="eyebrow">
-          {test.topic.toLocaleUpperCase("es")} · {test.difficulty}
-        </p>
-        <span>
-          {index + 1} / {test.questions.length}
-        </span>
-        <div
-          role="progressbar"
-          aria-label="Progreso del test"
-          aria-valuenow={index + 1}
-          aria-valuemin={0}
-          aria-valuemax={test.questions.length}
-        >
-          <i
-            style={{ width: `${((index + 1) / test.questions.length) * 100}%` }}
-          />
+        <div className="test-progress">
+          <p>
+            Pregunta {index + 1} de {test.questions.length}
+          </p>
+          <div
+            className="progress-track"
+            role="progressbar"
+            aria-label="Progreso del test"
+            aria-valuenow={index + 1}
+            aria-valuemin={0}
+            aria-valuemax={test.questions.length}
+          >
+            <i
+              style={{
+                width: `${((index + 1) / test.questions.length) * 100}%`,
+              }}
+            />
+          </div>
         </div>
+        <span className="spacer" aria-hidden="true" />
+      </header>
+      <div className="result-heading">
+        <p className="test-meta">
+          {test.mode === "exam" ? "Examen" : "Práctica"} · {test.subject} ·{" "}
+          {test.topic}
+        </p>
+        <h1 className="visually-hidden">{test.title}</h1>
       </div>
       <section className="question" key={question.id}>
         <div className="question-prompt">
@@ -468,12 +470,16 @@ export function TestExperience({ id }: { id: string }) {
           evaluation={evaluation}
           onChange={(v) => setAnswers((s) => ({ ...s, [question.id]: v }))}
         />
+        {busy && !evaluation && checking && (
+          <DreamActivity state="thinking" label="Comprobando tu respuesta" />
+        )}
         {evaluation && (
           <div
             className={`answer-feedback ${evaluation.is_correct ? "correct" : "incorrect"}`}
             role="status"
           >
             <strong>
+              {evaluation.is_correct ? <Check size={22} /> : <X size={22} />}
               {evaluation.is_correct
                 ? "Bien pensado."
                 : "Vamos a darle otra mirada."}
@@ -526,7 +532,6 @@ export function TestExperience({ id }: { id: string }) {
               onClick={() => setIndex((s) => s + 1)}
             >
               Siguiente
-              <ArrowRight size={17} />
             </button>
           ) : (
             <button
@@ -535,7 +540,6 @@ export function TestExperience({ id }: { id: string }) {
               onClick={() => void submit()}
             >
               {busy ? "Corrigiendo…" : "Terminar y ver resultado"}
-              <ArrowUpRight size={17} />
             </button>
           )}
         </div>

@@ -1,16 +1,13 @@
-"use client";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import { ThinkingOrb, type OrbState } from "thinking-orbs";
+import { Orb } from "./orb";
 import type { DreamState } from "@/lib/types";
 
-const ORB: Partial<Record<DreamState, OrbState>> = {
-  thinking: "solving",
-  searching: "searching",
-  composing: "composing",
-  shaping: "shaping",
-  listening: "listening",
-};
+const WORKING = new Set<DreamState>([
+  "thinking",
+  "searching",
+  "composing",
+  "shaping",
+  "listening",
+]);
 
 export function DreamMark({
   state = "idle",
@@ -21,74 +18,40 @@ export function DreamMark({
   large?: boolean;
   size?: number;
 }) {
-  const dimension = size ?? (large ? 64 : 36);
   return (
-    <span
-      className={`dream-mark state-${state}`}
-      aria-hidden="true"
-      style={{ width: dimension, height: dimension }}
-    >
-      <Image
-        src="/brand/dream-orb.png"
-        width={dimension}
-        height={dimension}
-        alt=""
-        unoptimized
-      />
+    <span className={`dream-mark state-${state}`} aria-hidden="true">
+      <Orb size={size ?? (large ? 64 : 32)} pulsing={WORKING.has(state)} />
     </span>
   );
 }
 
-export function DreamActivity({ state }: { state: DreamState }) {
-  const [paused, setPaused] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const sync = () => setPaused(media.matches);
-    sync();
-    media.addEventListener("change", sync);
-    return () => media.removeEventListener("change", sync);
-  }, []);
+export const ACTIVITY_LABELS: Record<DreamState, string> = {
+  idle: "Listo",
+  thinking: "Pensando",
+  searching: "Buscando en Internet",
+  composing: "Escribiendo",
+  shaping: "Preparando la práctica",
+  listening: "Escuchando",
+  done: "Listo",
+  error: "No se ha podido completar",
+};
 
-  const labels: Record<DreamState, string> = {
-    idle: "Listo",
-    thinking: "Pensando en profundidad",
-    searching: "Buscando en Internet",
-    composing: "Escribiendo",
-    shaping: "Preparando práctica",
-    listening: "Escuchando",
-    done: "Listo",
-    error: "Error · No se ha podido completar",
-  };
-  const details: Partial<Record<DreamState, string>> = {
-    thinking: "Ordenando las ideas antes de responder",
-    searching: "Comprobando fuentes",
-    composing: "Redactando la explicación",
-    shaping: "Montando la práctica",
-  };
-  const orb = ORB[state];
-  const settled = !orb;
-
+/** Orb + one line of status. Announced politely to assistive technology. */
+export function DreamActivity({
+  state,
+  label,
+}: {
+  state: DreamState;
+  label?: string;
+}) {
   return (
-    <div className={`activity activity-${state}`} role="status">
-      {orb ? (
-        <span className="thinking-orb">
-          <ThinkingOrb
-            state={orb}
-            size={64}
-            theme="auto"
-            speed={1}
-            paused={paused}
-            aria-label={labels[state]}
-          />
-        </span>
-      ) : (
-        <DreamMark state={state} />
-      )}
-      <span>
-        <strong>Dream</strong>
-        <small>{labels[state]}</small>
-        {!settled && details[state] && <em>{details[state]}</em>}
-      </span>
+    <div
+      className={`activity activity-${state}`}
+      role="status"
+      aria-live="polite"
+    >
+      <Orb size={28} pulsing={WORKING.has(state)} />
+      <span>{label ?? ACTIVITY_LABELS[state]}</span>
     </div>
   );
 }

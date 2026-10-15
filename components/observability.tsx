@@ -43,7 +43,7 @@ export function PrivacySettings() {
   }, []);
   return (
     <section className="settings-group">
-      <h2>Privacidad</h2>
+      <h2>Datos de uso</h2>
       <p>
         Opcional y desactivado por defecto. No compartimos mensajes, respuestas,
         archivos ni datos de tu cuenta. Puedes cambiar tu decisión en cualquier

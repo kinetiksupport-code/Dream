@@ -66,7 +66,7 @@ export default function Callback() {
   }, [router]);
   return (
     <main className="boot">
-      <DreamActivity state="thinking" />
+      <DreamActivity state="thinking" label="Entrando en Dream" />
     </main>
   );
 }

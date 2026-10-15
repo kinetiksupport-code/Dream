@@ -26,12 +26,18 @@ function base64UrlEncode(bytes: Uint8Array): string {
     .replace(/=+$/g, "");
 }
 
-function base64UrlDecode(value: string): Uint8Array | null {
+// Backed by a fresh ArrayBuffer so the result is a valid BufferSource for
+// crypto.subtle.verify under TypeScript 6's stricter typed-array generics.
+function base64UrlDecode(value: string): Uint8Array<ArrayBuffer> | null {
   try {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
     const binary = atob(padded);
-    return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    const bytes = new Uint8Array(new ArrayBuffer(binary.length));
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    return bytes;
   } catch {
     return null;
   }
