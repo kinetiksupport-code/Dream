@@ -616,10 +616,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   } catch (error) { captureEdgeFailure(String(body.action), error instanceof AdmissionError ? error.code : 'edge_failure'); return safeFailure(error); }
   finally { if (admitted && !streamOwnsLease) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'}))); }
 }
+// Browser origins allowed to call dream-api: Dream's own domains, local dev,
+// the project's Vercel previews, plus any extra in DREAM_ALLOWED_ORIGINS
+// (comma separated).
+const DEFAULT_ORIGINS = ['https://www.edudream.es', 'https://edudream.es', 'http://localhost:3000'];
+const VERCEL_PREVIEW = /^https:\/\/dream-[a-z0-9-]+-kinetik1\.vercel\.app$/;
+const configuredOrigins = (Deno.env.get('DREAM_ALLOWED_ORIGINS') ?? '').split(',').map(o => o.trim()).filter(Boolean);
+const originAllowed = (origin: string) =>
+  DEFAULT_ORIGINS.includes(origin) || VERCEL_PREVIEW.test(origin) || configuredOrigins.includes(origin);
 Deno.serve(async (req: Request) => {
   const origin=req.headers.get('origin');
-  const allowed=(Deno.env.get('DREAM_ALLOWED_ORIGINS')??'').split(',').map(o=>o.trim()).filter(Boolean);
-  if(origin && !allowed.includes(origin)) return new Response(JSON.stringify({error:'Origen no permitido.'}),{status:403,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
+  if(origin && !originAllowed(origin)) return new Response(JSON.stringify({error:'Origen no permitido.'}),{status:403,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
   const response=await handle(new Request(req,{signal:AbortSignal.any([req.signal,AbortSignal.timeout(150000)])}));
   if(origin) response.headers.set('Access-Control-Allow-Origin',origin);
   return response;
