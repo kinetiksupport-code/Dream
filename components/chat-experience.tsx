@@ -10,7 +10,21 @@ import { MessageView } from "@/components/message";
 import { ChatHome } from "@/components/chat-home";
 import { Recents } from "@/components/recents";
 import { FileCard } from "@/components/attachment";
-import { callDream, streamDreamChat, errorMessage } from "@/lib/dream-api";
+import Link from "next/link";
+import {
+  callDream,
+  streamDreamChat,
+  errorMessage,
+  DreamApiError,
+} from "@/lib/dream-api";
+import { DreamStreamError } from "@/lib/streaming";
+import {
+  limitFor,
+  shouldRetry,
+  waitText,
+  dailyText,
+  type LimitState,
+} from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
@@ -20,6 +34,25 @@ import type {
   Attachment,
   DreamState,
 } from "@/lib/types";
+function limitOf(error: unknown): LimitState | null {
+  if (error instanceof DreamApiError || error instanceof DreamStreamError)
+    return limitFor(error.code, error.retryAfter, Date.now(), error.position);
+  return null;
+}
+function sleep(ms: number, signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(done, ms);
+    function done() {
+      signal.removeEventListener("abort", stop);
+      resolve();
+    }
+    function stop() {
+      clearTimeout(timer);
+      reject(new DOMException("Detenido", "AbortError"));
+    }
+    signal.addEventListener("abort", stop, { once: true });
+  });
+}
 export function ChatExperience({
   study,
 }: {
@@ -47,6 +80,11 @@ export function ChatExperience({
   const [olderLoading, setOlderLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [wait, setWait] = useState<{ until: number; position?: number } | null>(
+    null,
+  );
+  const [dailyLimit, setDailyLimit] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const [atBottom, setAtBottom] = useState(true);
   const scroller = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
@@ -61,12 +99,17 @@ export function ChatExperience({
   const uploadQueue = useRef<Attachment[]>([]);
   const uploadWorker = useRef(false);
   useEffect(() => {
+    if (!wait) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [wait]);
+  useEffect(() => {
     setWorkspaceEmpty(!messages.length && !loading);
   }, [messages.length, loading, setWorkspaceEmpty]);
   const c = study?.conversationId ?? params.get("c");
   const fresh = study ? null : params.get("new");
   // Optional ?q= pre-fills (never sends) the composer, e.g. from Apuntes.
-  const prefill = study ? null : params.get("q")?.slice(0, 2000) ?? null;
+  const prefill = study ? null : (params.get("q")?.slice(0, 2000) ?? null);
   const clearFiles = useCallback(() => {
     for (const a of filesRef.current)
       if (a.preview) URL.revokeObjectURL(a.preview);
@@ -156,7 +199,9 @@ export function ChatExperience({
         if (route.current !== origin)
           throw new DOMException("Navegación cambiada", "AbortError");
         if (!r?.conversation?.id) {
-          throw new Error("No se pudo crear la conversación. Inténtalo de nuevo.");
+          throw new Error(
+            "No se pudo crear la conversación. Inténtalo de nuevo.",
+          );
         }
         idRef.current = r.conversation.id;
         setConversationId(r.conversation.id);
@@ -316,6 +361,7 @@ export function ChatExperience({
     lock.current = true;
     setBusy(true);
     setError("");
+    setDailyLimit(false);
     setState("thinking");
     pinned.current = true;
     setAtBottom(true);
@@ -355,32 +401,67 @@ export function ChatExperience({
           ...s,
           { id: assistantId, role: "assistant", content: "" },
         ]);
-        await streamDreamChat(
-          {
-            conversation_id: id,
-            prompt,
-            attachment_ids: attachmentIds,
-            ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
-          },
-          (event) => {
-            if (controller.signal.aborted || abort.current !== controller)
-              return;
-            if (event.type === "delta") {
-              answer += event.text;
-              setState("composing");
-              setMessages((s) =>
-                s.map((m) =>
-                  m.id === assistantId ? { ...m, content: answer } : m,
-                ),
-              );
-            } else if (event.type === "activity") {
-              setState(
-                event.activity === "searching" ? "searching" : "thinking",
-              );
-            } else if (event.type === "complete") setState("done");
-          },
-          controller.signal,
-        );
+        const chatPayload = {
+          conversation_id: id,
+          prompt,
+          attachment_ids: attachmentIds,
+          ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
+        };
+        // Short limits (busy minute, queue) wait and resend the same message;
+        // only when nothing was saved, so the turn is never duplicated.
+        for (let attempt = 0, waited = 0; ; attempt++) {
+          try {
+            await streamOnce();
+            break;
+          } catch (e) {
+            const limit = limitOf(e);
+            const resendable =
+              e instanceof DreamApiError ||
+              (e instanceof DreamStreamError && e.reverted);
+            if (
+              limit?.kind !== "wait" ||
+              answer ||
+              !resendable ||
+              controller.signal.aborted ||
+              !shouldRetry(attempt, waited, limit.seconds)
+            )
+              throw e;
+            const pause = limit.seconds + Math.random();
+            setNow(Date.now());
+            setState("waiting");
+            setWait({
+              until: Date.now() + pause * 1000,
+              position: limit.position,
+            });
+            await sleep(pause * 1000, controller.signal);
+            waited += pause;
+            setWait(null);
+            setState("thinking");
+          }
+        }
+        async function streamOnce() {
+          await streamDreamChat(
+            chatPayload,
+            (event) => {
+              if (controller.signal.aborted || abort.current !== controller)
+                return;
+              if (event.type === "delta") {
+                answer += event.text;
+                setState("composing");
+                setMessages((s) =>
+                  s.map((m) =>
+                    m.id === assistantId ? { ...m, content: answer } : m,
+                  ),
+                );
+              } else if (event.type === "activity") {
+                setState(
+                  event.activity === "searching" ? "searching" : "thinking",
+                );
+              } else if (event.type === "complete") setState("done");
+            },
+            controller.signal,
+          );
+        }
         if (
           parseDreamContent(answer).requestTest &&
           !parseDreamContent(answer).widgets.length
@@ -390,8 +471,17 @@ export function ChatExperience({
       if (abort.current === controller) setState("idle");
       void refresh();
     } catch (e) {
+      setWait(null);
       if (abort.current !== controller) return;
-      if (controller.signal.aborted) {
+      if (controller.signal.aborted && !answer) {
+        // Cancelled before any answer (for example while waiting in line):
+        // give the text back instead of leaving an empty turn.
+        setMessages((list) =>
+          list.filter((m) => m.id !== userId && m.id !== assistantId),
+        );
+        setValue((current) => current || prompt);
+        setState("idle");
+      } else if (controller.signal.aborted) {
         setMessages((s) =>
           s.map((m) => (m.id === assistantId ? { ...m, stopped: true } : m)),
         );
@@ -405,7 +495,9 @@ export function ChatExperience({
           );
           setValue((current) => current || prompt);
         }
-        setError(errorMessage(e));
+        const limit = limitOf(e);
+        setDailyLimit(limit?.kind === "daily");
+        setError(limit?.kind === "daily" ? dailyText(limit) : errorMessage(e));
         setState("error");
       }
     } finally {
@@ -469,9 +561,8 @@ export function ChatExperience({
   const focusComposer = useCallback((text: string) => {
     setValue(text);
     requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLTextAreaElement>(
-        ".composer textarea",
-      );
+      const el =
+        document.querySelector<HTMLTextAreaElement>(".composer textarea");
       el?.focus();
       el?.setSelectionRange(text.length, text.length);
     });
@@ -502,7 +593,14 @@ export function ChatExperience({
       <p>
         {error || "El servicio de IA aún no está configurado en el servidor."}
       </p>
-      {error && conversationId && (
+      {dailyLimit && (
+        <p>
+          Mientras tanto puedes repasar tus <Link href="/notes">apuntes</Link>,
+          ver tu <Link href="/progress">progreso</Link> o leer tu{" "}
+          <Link href="/chat?view=recent">historial</Link>.
+        </p>
+      )}
+      {error && !dailyLimit && conversationId && (
         <button
           className="secondary press"
           onClick={() => void reload()}
@@ -511,6 +609,18 @@ export function ChatExperience({
           Reintentar
         </button>
       )}
+    </div>
+  );
+  const waitBanner = wait && (
+    <div className="chat-wait" role="status">
+      <p>{waitText(Math.max(1, (wait.until - now) / 1000), wait.position)}</p>
+      <button
+        type="button"
+        className="secondary press"
+        onClick={() => abort.current?.abort()}
+      >
+        Cancelar
+      </button>
     </div>
   );
   if (!study && !loading && !messages.length)
@@ -622,8 +732,7 @@ export function ChatExperience({
               setAtBottom(true);
               scroller.current?.scrollTo({
                 top: scroller.current.scrollHeight,
-                behavior: matchMedia("(prefers-reduced-motion: reduce)")
-                  .matches
+                behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
                   ? "auto"
                   : "smooth",
               });
@@ -635,6 +744,7 @@ export function ChatExperience({
             Volver al final
           </button>
         )}
+        {waitBanner}
         {errorBanner}
         {composer("dock")}
         <p className="composer-footnote">

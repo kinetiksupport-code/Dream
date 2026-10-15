@@ -2303,3 +2303,21 @@ fieldset:disabled .test-option {
 .group-list dd {
   margin: 0;
 }
+.chat-wait {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-secondary-size);
+}
+.chat-error a {
+  color: inherit;
+  text-decoration: underline;
+}
+.chat-error {
+  flex-wrap: wrap;
+}

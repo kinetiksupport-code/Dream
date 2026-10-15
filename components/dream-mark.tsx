@@ -7,6 +7,7 @@ const WORKING = new Set<DreamState>([
   "composing",
   "shaping",
   "listening",
+  "waiting",
 ]);
 
 export function DreamMark({
@@ -32,6 +33,7 @@ const ACTIVITY_LABELS: Record<DreamState, string> = {
   composing: "Escribiendo",
   shaping: "Preparando la práctica",
   listening: "Escuchando",
+  waiting: "Esperando turno",
   done: "Listo",
   error: "No se ha podido completar",
 };
