@@ -12,6 +12,13 @@
   - Antes de instalar, enseño el comando y espero el OK.
 - **`frontend-design` o similares**: no están disponibles en esta sesión. Aplico el resumen de reglas del encargo.
 
+## Criterio sobre «solo transform y opacity»
+
+emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
+- Prohíbe animar el tamaño o la posición (`width`, `height`, `top`, `margin`…), `all`, `ease-in`, `scale(0)` y más de 400 ms.
+- Permite fundidos de color (`background-color`, `color`, `border-color`), que no recalculan la página.
+- Con `prefers-reduced-motion` solo quedan opacidad y color.
+
 ## Cómo se genera la evidencia
 
 - **Capturas:** `CAPTURAS_DIR=<carpeta> PLAYWRIGHT_CHROMIUM_EXECUTABLE=/opt/pw-browsers/chromium npx playwright test tests/browser/capturas.spec.ts`. Cada pantalla se captura a 390 y 1440 px, en claro y oscuro. Se guardan en WebP en `docs/diseno/antes/` y `docs/diseno/despues/`.
@@ -22,4 +29,4 @@
 
 | Pantalla | Antes | Después | Grabación | PR |
 |---|---|---|---|---|
-| Cimientos (tokens, tipografía, movimiento) | `docs/diseno/antes/*` | pendiente | pendiente | pendiente |
+| Cimientos (tokens, tipografía, movimiento) | `docs/diseno/antes/*` | `docs/diseno/cimientos/*` | `docs/diseno/grabaciones/cimientos.webm`: pulsado de la navegación y de los botones, anillo de foco de la caja y cambio de pantalla con fundido | este PR |
