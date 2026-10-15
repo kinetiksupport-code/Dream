@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDream } from "@/components/providers";
 import { Orb } from "@/components/orb";
+import { LegalLinks } from "@/components/legal-links";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
 import s from "./login.module.css";
@@ -98,12 +99,13 @@ export default function Login() {
           )}
           <p className={s.legal}>
             Al continuar, aceptas nuestros{" "}
-            <Link href="/terminos">Términos de Servicio</Link> y{" "}
-            <Link href="/privacidad">Política de Privacidad</Link>.
+            <Link href="/terminos">Términos y condiciones</Link> y nuestra{" "}
+            <Link href="/privacidad">Política de privacidad</Link>.
           </p>
           <Link className="text-link" href="/">
             Volver al inicio
           </Link>
+          <LegalLinks className={s.legalLinks} />
         </div>
       </section>
     </main>

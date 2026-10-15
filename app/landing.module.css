@@ -133,7 +133,8 @@
 }
 .footer nav {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 0 4px;
 }
 .footer a {
   display: inline-flex;
