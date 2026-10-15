@@ -1,4 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+// Returning visitor: the first-visit storage notice was already closed
+// (covered by legal.spec.ts), so it never covers the controls under test.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("dream-storage-notice-v1", "1");
+  });
+});
 // Isolated contract fixtures: never used by the application or service worker.
 const cid = "12345678-1234-1234-1234-123456789abc";
 const tid = "22345678-1234-1234-1234-123456789abc";

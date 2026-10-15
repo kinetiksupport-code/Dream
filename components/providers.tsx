@@ -14,10 +14,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
+import { StorageNotice } from "@/components/storage-notice";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
 import { THEME_COLORS } from "@/lib/theme";
+import { isLegalRoute } from "@/lib/legal";
 type Theme = "light" | "dark" | "system";
 interface Context {
   session: Session | null;
@@ -135,10 +137,11 @@ export function Providers({ children }: { children: ReactNode }) {
         });
         if (!alive) return;
 
+        // Legal pages stay open during maintenance: sign out, but no redirect.
         if (!response.ok) {
           if ([401, 403, 503].includes(response.status)) {
             await getSupabase().auth.signOut({ scope: "local" });
-            if (alive) router.replace("/maintenance");
+            if (alive && !isLegalRoute(pathname)) router.replace("/maintenance");
           }
           return;
         }
@@ -148,7 +151,7 @@ export function Providers({ children }: { children: ReactNode }) {
           | null;
         if (result?.allowed !== true) {
           await getSupabase().auth.signOut({ scope: "local" });
-          if (alive) router.replace("/maintenance");
+          if (alive && !isLegalRoute(pathname)) router.replace("/maintenance");
           return;
         }
 
@@ -267,6 +270,7 @@ export function Providers({ children }: { children: ReactNode }) {
     >
       <ObservabilityRoutes />
       <ConnectionStatus />
+      <StorageNotice />
       <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>
   );
