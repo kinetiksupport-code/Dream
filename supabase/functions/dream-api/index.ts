@@ -3,6 +3,7 @@ import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
+import { chatShortcut, type ChatShortcut } from './validation.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { DREAM_SYSTEM_PROMPT, dynamicContextFor } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
@@ -416,6 +417,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ error: 'Escribe entre 1 y 12.000 caracteres.' }, 400);
   }
   if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
+  let shortcut: ChatShortcut | null;
+  try { shortcut = chatShortcut(body.shortcut); }
+  catch { return json({ error: 'Atajo no válido.' }, 400); }
 
   const conversation = await admin.from('dream_conversations')
     .select('id,title').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
@@ -467,14 +471,19 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const memoryResult = await admin.from('dream_learning_topics').select('subject,topic,concept,status,evidence_count,correct_count')
     .eq('student_id', user.id).order('last_evidence_at', { ascending: false }).limit(50);
   const promptWords = new Set(prompt.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word: string) => word.length > 3));
-  const academicMemory = (memoryResult.data || []).filter((row: any) =>
+  const memoryRows = memoryResult.data || [];
+  // Shortcuts without a topic in the text use the most recent evidence instead
+  // of word matching: the latest tested concepts, or the ones not yet mastered.
+  const academicMemory = (shortcut === 'review_last' ? memoryRows
+    : shortcut === 'weak_points' ? memoryRows.filter((row: any) => row.status !== 'mastered')
+    : memoryRows.filter((row: any) =>
     [row.subject,row.topic,row.concept].some((value: string) => String(value || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).some(word => promptWords.has(word)))
-  ).slice(0, 5);
+  )).slice(0, 5);
   const systemMessages = [
     { role: 'system', content: DREAM_SYSTEM_PROMPT },
     { role: 'system', content: `Política de conversación actual: responde proporcionalmente y con prosa natural. Para mensajes breves o ambiguos, responde brevemente o pregunta solo lo imprescindible; nunca inventes contexto ausente. No actives una lección por defecto para tareas generales. En un tema nuevo educativo, explica solo una idea, como máximo un ejemplo y, si aporta valor, una comprobación breve; espera el siguiente turno. Si el usuario ya domina una parte, comienza en la duda concreta. Una solicitud explícita de apuntes o resumen completo sí requiere respuesta completa. Para trabajo evaluable, ofrece el siguiente paso o pista y revisa el intento sin dar directamente el resultado. Un test para imprimir se entrega como texto; un test interactivo usa el flujo de test del producto. No inventes fechas ni datos recientes; cuando consultes la web, utiliza solamente los resultados obtenidos y distingue fechas y fuentes.` },
     ...(tavilyProvider.configured() ? [{ role: 'system', content: 'Tienes la herramienta web_search y puedes buscar en internet. Si el usuario pide buscar o investigar, úsala. Si no sabes un dato, o el dato es actual y puedes estar desfasado, búscala antes de responder. No digas que no puedes buscar. No inventes lo que no sepas: busca y responde solo con lo encontrado, citando la fuente.' }] : []),
-    { role: 'system', content: dynamicContextFor(academicMemory) },
+    { role: 'system', content: dynamicContextFor(academicMemory, shortcut) },
     { role: 'system', content: educationalSkillPrompt(educationalSelection, profile.academic_level) },
   ];
   if (examStudyContext) systemMessages.push({ role: 'system', content: examStudyContext });
