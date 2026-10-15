@@ -1,1 +1,33 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#F7F7F5"><title>Dream · Sin conexión</title><style>body{margin:0;background:#F7F7F5;color:#111;font-family:system-ui;min-height:100dvh;display:grid;place-items:center}main{padding:32px;max-width:440px}h1{font-size:42px;letter-spacing:-2px}p{color:#686860;line-height:1.7}button{background:#C8F560;border:0;border-radius:12px;padding:14px 22px;font:inherit;cursor:pointer}@media(prefers-color-scheme:dark){body{background:#111;color:#f5f5f3}p{color:#a4a49b}}</style><main><small>DREAM</small><h1>Una pausa<br>en la conexión.</h1><p>Tus conversaciones siguen en tu cuenta. Vuelve a conectarte para continuar.</p><button onclick="location.reload()">Reintentar</button></main></html>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0E16" media="(prefers-color-scheme: dark)">
+<title>Dream · Sin conexión</title>
+<style>
+:root{--bg:#FFFFFF;--surface:#F5F7FA;--text:#080B14;--muted:#5B6678;--primary:#155BFF;--hover:#246BFD;--focus:#155BFF;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0B0E16;--surface:#161A24;--text:#F2F4F8;--muted:#A3ADBF;--hover:#2F6DFF;--focus:#7AA2FF;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom));background:var(--bg);color:var(--text);font:17px/1.5 -apple-system,"SF Pro Text","SF Pro Display",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:440px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
+h1{margin:8px 0 0;font-size:2.125rem;line-height:1.1;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
+p{margin:0;color:var(--muted)}
+button{margin-top:8px;min-height:44px;padding:0 24px;border:0;border-radius:22px;background:var(--primary);color:#fff;font:600 15px/1 inherit;font-family:inherit;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease-out}
+button:hover{background:var(--hover)}
+button:active{transform:scale(.97)}
+button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){button{transition:none}button:active{transform:none}}
+</style>
+</head>
+<body>
+<main>
+<svg width="56" height="56" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#155BFF"/><g transform="rotate(-25 32 32)"><ellipse cx="32" cy="32" rx="22" ry="13" fill="none" stroke="#C8F560" stroke-width="5"/></g><ellipse cx="31" cy="33" rx="7.5" ry="6.5" fill="#C8F560"/><circle cx="51.9" cy="22.7" r="4.8" fill="#FFFFFF"/></svg>
+<h1>Sin conexión</h1>
+<p>Dream necesita Internet para responder. Tus conversaciones siguen guardadas en tu cuenta.</p>
+<button type="button" onclick="location.reload()">Reintentar</button>
+</main>
+</body>
+</html>
