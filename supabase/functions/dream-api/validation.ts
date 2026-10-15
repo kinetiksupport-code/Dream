@@ -10,3 +10,12 @@ export function examFields(b:Body){
  const daily=Number(b.daily_minutes);if(!Number.isInteger(daily)||daily<5||daily>120)throw new ExamError('Elige entre 5 y 120 minutos al día.');
  return {title:text(b.title,160,true),subject:text(b.subject,80,true),exam_date:date,topics:b.topics.map(t=>text(t,160,true)),difficulties:text(b.difficulties??'',4000),goal:text(b.goal??'',1000),daily_minutes:daily};
 }
+/** Closed list of chat shortcuts; prompts.mjs holds one short instruction per id. */
+export const CHAT_SHORTCUTS = ['explain','review_last','weak_points','study_style','exam_date','teach','eli5','key_concepts','connect','test_understanding'] as const;
+export type ChatShortcut = typeof CHAT_SHORTCUTS[number];
+/** Optional `shortcut` of the chat action: absent → null, unknown → 400. */
+export function chatShortcut(value:unknown):ChatShortcut|null{
+ if(value===undefined||value===null)return null;
+ if(typeof value!=='string'||!(CHAT_SHORTCUTS as readonly string[]).includes(value))throw new ExamError('Atajo no válido.');
+ return value as ChatShortcut;
+}
