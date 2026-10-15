@@ -121,9 +121,6 @@ async function fixture(page: Page, seed = true) {
           profile: {
             email: "qa@example.test",
             display_name: "Alex",
-            pref_step_by_step: true,
-            pref_practice_suggestions: true,
-            pref_calm_tone: true,
           },
           service_ready: true,
         };

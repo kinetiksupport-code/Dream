@@ -6,9 +6,6 @@ const qid = "32345678-1234-1234-1234-123456789abc";
 const profile = {
   email: "qa@example.test",
   display_name: "Alex",
-  pref_step_by_step: true,
-  pref_practice_suggestions: true,
-  pref_calm_tone: true,
 };
 async function authenticated(page: Page) {
   await page.addInitScript(() => {
@@ -87,9 +84,6 @@ async function authenticated(page: Page) {
           body: '{"type":"activity","activity":"searching"}\n{"type":"delta","text":"Una respuesta real del contrato de prueba."}\n{"type":"complete"}\n',
         });
         return;
-      case "preferences_update":
-        data = { profile: { ...profile, ...body } };
-        break;
       case "attachment_upload":
         data = { attachment: { id: qid, status: "processed" } };
         break;
@@ -228,11 +222,9 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
     "DREAM_WIDGET",
   );
   await page.goto("/settings");
-  await expect(page.getByRole("switch", { name: "Paso a paso" })).toBeChecked();
-  await page.getByRole("switch", { name: "Paso a paso" }).click();
-  await expect(
-    page.getByRole("switch", { name: "Paso a paso" }),
-  ).not.toBeChecked();
+  // Ajustes shows the Google account behind the session; no help-style toggles.
+  await expect(page.getByText("qa@example.test")).toBeVisible();
+  await expect(page.getByText("Cómo te ayuda Dream")).toHaveCount(0);
   await page.screenshot({
     animations: "disabled",
     path: "test-results/settings-light.png",

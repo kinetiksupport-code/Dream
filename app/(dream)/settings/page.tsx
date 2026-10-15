@@ -7,82 +7,31 @@ import { InstallDream } from "@/components/install-dream";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
-import { accountActions } from "@/lib/account";
-import type { DreamProfile, UserPreferences } from "@/lib/types";
+import { accountIdentity } from "@/lib/account";
 
-const HELP = [
-  {
-    key: "pref_step_by_step",
-    title: "Paso a paso",
-    description: "Te guía con preguntas hasta que lo entiendas.",
-  },
-  {
-    key: "pref_practice_suggestions",
-    title: "Propuestas para practicar",
-    description: "Sugiere ejercicios cuando ayudan a entender mejor.",
-  },
-  {
-    key: "pref_calm_tone",
-    title: "Un tono tranquilo",
-    description: "Explicaciones cercanas, claras y sin prisa.",
-  },
-] as const;
+const CONTACT = "mailto:hellodream@edudream.es?subject=Eliminar%20mi%20cuenta%20de%20Dream";
 
 export default function Settings() {
-  const { profile, setProfile, theme, setTheme, logout } = useDream();
-  const { refresh } = useConversations();
-  const [saving, setSaving] = useState<string | null>(null);
+  const { session, profile, theme, setTheme, logout } = useDream();
+  const { items, refresh } = useConversations();
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
+  const [cleared, setCleared] = useState(false);
   const [confirm, setConfirm] = useState<"history" | "account" | null>(null);
-  async function toggle(key: keyof UserPreferences) {
-    if (!profile || saving) return;
-    setSaving(key);
-    setError("");
-    setSaved(false);
-    try {
-      const r = await callDream<{ profile: DreamProfile }>(
-        "preferences_update",
-        { [key]: !profile[key] },
-      );
-      setProfile({
-        ...profile,
-        pref_step_by_step: r.profile.pref_step_by_step,
-        pref_practice_suggestions: r.profile.pref_practice_suggestions,
-        pref_calm_tone: r.profile.pref_calm_tone,
-      });
-      setSaved(true);
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setSaving(null);
-    }
-  }
+  const identity = accountIdentity(session?.user, profile);
   async function clearHistory() {
-    if (saving) return;
-    setSaving("delete");
+    if (busy) return;
+    setBusy(true);
     setError("");
     try {
       await callDream("conversations_delete_all");
       await refresh();
       setConfirm(null);
+      setCleared(true);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
-      setSaving(null);
-    }
-  }
-  async function deleteAccount() {
-    const action = accountActions.deleteAccount;
-    if (!action || saving) return;
-    setSaving("account");
-    setError("");
-    try {
-      await action();
-      await logout();
-    } catch (e) {
-      setError(errorMessage(e));
-      setSaving(null);
+      setBusy(false);
     }
   }
   return (
@@ -96,46 +45,16 @@ export default function Settings() {
         <dl className="group-list">
           <div className="group-row">
             <dt>Nombre</dt>
-            <dd className="value">{profile?.display_name || "Sin nombre"}</dd>
+            <dd className="value">{identity.name || "Sin nombre en tu cuenta"}</dd>
           </div>
           <div className="group-row">
             <dt>Correo</dt>
-            <dd className="value">{profile?.email}</dd>
+            <dd className="value">{identity.email}</dd>
           </div>
         </dl>
         <p className="page-intro">
-          Tu nombre viene de tu cuenta de Google.
+          Tu nombre y tu correo vienen de tu cuenta de Google.
         </p>
-      </section>
-
-      <section className="group" aria-labelledby="help-title">
-        <h2 className="section-title" id="help-title">
-          Cómo te ayuda Dream
-        </h2>
-        <ul className="group-list">
-          {HELP.map((row) => (
-            <li className="group-row" key={row.key}>
-              <span className="row-text">
-                <strong>{row.title}</strong>
-                <small>{row.description}</small>
-              </span>
-              <button
-                className="switch"
-                role="switch"
-                aria-checked={profile?.[row.key] ?? false}
-                aria-label={row.title}
-                disabled={saving !== null}
-                onClick={() => void toggle(row.key)}
-              />
-            </li>
-          ))}
-        </ul>
-        {saved && (
-          <p className="save-status" role="status">
-            <Check size={16} />
-            Preferencias guardadas
-          </p>
-        )}
       </section>
 
       <section className="group" aria-labelledby="theme-title">
@@ -176,19 +95,34 @@ export default function Settings() {
           <button
             type="button"
             className="secondary press"
-            onClick={() => setConfirm("history")}
+            onClick={() => {
+              setCleared(false);
+              setError("");
+              setConfirm("history");
+            }}
           >
             Borrar historial
           </button>
           <button
             type="button"
             className="danger-outline press"
-            onClick={() => setConfirm("account")}
+            onClick={() => {
+              setError("");
+              setConfirm("account");
+            }}
           >
             Eliminar mi cuenta
           </button>
         </div>
       </section>
+
+      {cleared && (
+        <p className="save-status" role="status">
+          <Check size={16} />
+          Historial borrado.{" "}
+          {items.length === 0 && "Ya no tienes conversaciones guardadas."}
+        </p>
+      )}
 
       <PrivacySettings />
 
@@ -236,46 +170,36 @@ export default function Settings() {
             </button>
             <button
               className="primary danger-button press"
-              disabled={saving !== null}
+              disabled={busy}
               onClick={() => void clearHistory()}
             >
-              Borrar historial
+              {busy ? "Borrando…" : "Borrar historial"}
             </button>
           </div>
         </Modal>
       )}
       {confirm === "account" && (
-        <Modal labelledBy="account-delete-title" onClose={() => setConfirm(null)}>
-          <h2 id="account-delete-title">¿Eliminar tu cuenta?</h2>
+        <Modal
+          labelledBy="account-delete-title"
+          onClose={() => setConfirm(null)}
+        >
+          <h2 id="account-delete-title">Eliminar tu cuenta</h2>
           <p>
-            Se borrarán tu perfil, tus conversaciones, tus apuntes y tus
-            exámenes. Esta acción no se puede deshacer.
+            Todavía no se puede eliminar la cuenta desde la app. Escríbenos y
+            borraremos tu perfil, tus conversaciones, tus apuntes y tus
+            exámenes.
           </p>
-          {!accountActions.deleteAccount && (
-            <p role="status">
-              Todavía no se puede eliminar la cuenta desde la app.
-            </p>
-          )}
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
           <div className="modal-actions">
             <button
               className="secondary press"
               autoFocus
               onClick={() => setConfirm(null)}
             >
-              Cancelar
+              Cerrar
             </button>
-            <button
-              className="primary danger-button press"
-              disabled={!accountActions.deleteAccount || saving !== null}
-              onClick={() => void deleteAccount()}
-            >
-              Eliminar cuenta
-            </button>
+            <a className="primary press" href={CONTACT}>
+              Pedir que la borren
+            </a>
           </div>
         </Modal>
       )}
