@@ -45,6 +45,21 @@
   color: var(--danger) !important;
   font-size: var(--text-secondary-size);
 }
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4px;
+  margin-top: 8px;
+  font-size: var(--text-small);
+}
+.legal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 8px;
+  color: var(--text-secondary);
+}
 @media (prefers-reduced-motion: reduce) {
   .card {
     animation-name: fade;

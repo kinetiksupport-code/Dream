@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Orb } from "@/components/orb";
+import { LegalLinks } from "@/components/legal-links";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
 import styles from "./maintenance.module.css";
@@ -63,6 +64,7 @@ export default function MaintenancePage() {
             {error}
           </p>
         )}
+        <LegalLinks className={styles.legal} />
       </div>
     </main>
   );

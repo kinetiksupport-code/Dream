@@ -5,12 +5,15 @@ import {
   MAINTENANCE_COOKIE_NAME,
   verifyMaintenanceAccessToken,
 } from "@/lib/maintenance";
+import { LEGAL_ROUTES } from "@/lib/legal";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
   "/login",
   "/auth/callback",
   "/api/auth/verify-maintenance",
+  // Legal pages stay readable during maintenance (no data, no session).
+  ...LEGAL_ROUTES,
 ]);
 const STATIC_ASSET = /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|mjs|png|svg|txt|ttf|webmanifest|webp|woff2?)$/i;
 

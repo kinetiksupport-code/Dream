@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Orb } from "@/components/orb";
+import { LegalLinks } from "@/components/legal-links";
 import s from "./landing.module.css";
 
 // Server component: no client JS for the public landing (LCP).
@@ -76,10 +77,7 @@ export default function LandingPage() {
         <span>
           <Orb size={20} /> Dream © 2026
         </span>
-        <nav aria-label="Legal">
-          <Link href="/privacidad">Privacidad</Link>
-          <Link href="/terminos">Términos</Link>
-        </nav>
+        <LegalLinks />
       </footer>
     </div>
   );

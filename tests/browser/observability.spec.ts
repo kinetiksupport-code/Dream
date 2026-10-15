@@ -5,6 +5,13 @@ test.use({
   userAgent:
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
 });
+// Returning visitor: the first-visit storage notice was already closed
+// (covered by legal.spec.ts), so it never covers the controls under test.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("dream-storage-notice-v1", "1");
+  });
+});
 test("PostHog SDK sends only allowlisted events after consent and stops after revocation", async ({
   page,
 }) => {

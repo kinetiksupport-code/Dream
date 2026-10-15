@@ -105,6 +105,25 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.legalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 4px;
+  font-size: var(--text-small);
+}
+.legalLinks a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 8px;
+  color: var(--text-secondary);
+}
+@media (hover: hover) and (pointer: fine) {
+  .legalLinks a:hover {
+    color: var(--text);
+  }
+}
 @media (max-width: 1023.98px) {
   .brandPanel {
     display: none;

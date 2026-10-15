@@ -1,4 +1,11 @@
 import { test, expect } from "@playwright/test";
+// Returning visitor: the first-visit storage notice was already closed
+// (covered by legal.spec.ts), so it never covers the controls under test.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("dream-storage-notice-v1", "1");
+  });
+});
 test("PWA only caches allowlisted public assets, retains unrelated caches, activates safely", async ({
   page,
   context,

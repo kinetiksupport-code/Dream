@@ -1,6 +1,17 @@
 "use client";
 import { useState } from "react";
-import { Sun, Moon, Monitor, Check } from "lucide-react";
+import Link from "next/link";
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Check,
+  Shield,
+  FileText,
+  Cookie,
+  Scale,
+  type LucideIcon,
+} from "lucide-react";
 import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
 import { InstallDream } from "@/components/install-dream";
@@ -8,6 +19,15 @@ import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import { accountIdentity } from "@/lib/account";
+import { LEGAL_LINKS, type LegalRoute } from "@/lib/legal";
+import { ChevronIcon } from "@/components/icons";
+
+const LEGAL_ICONS: Record<LegalRoute, LucideIcon> = {
+  "/privacidad": Shield,
+  "/terminos": FileText,
+  "/cookies": Cookie,
+  "/aviso-legal": Scale,
+};
 
 const CONTACT = "mailto:hellodream@edudream.es?subject=Eliminar%20mi%20cuenta%20de%20Dream";
 
@@ -141,6 +161,26 @@ export default function Settings() {
       )}
 
       <PrivacySettings />
+
+      <section className="group" aria-labelledby="legal-title">
+        <h2 className="section-title" id="legal-title">
+          Legal
+        </h2>
+        <ul className="group-list">
+          {LEGAL_LINKS.map((link) => {
+            const Icon = LEGAL_ICONS[link.href];
+            return (
+              <li key={link.href}>
+                <Link className="group-row group-link press" href={link.href}>
+                  <Icon size={20} aria-hidden="true" />
+                  <span>{link.title}</span>
+                  <ChevronIcon />
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <section className="group" aria-labelledby="account-title">
         <h2 className="section-title" id="account-title">

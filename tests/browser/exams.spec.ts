@@ -2,6 +2,13 @@ import { test, expect, type Page } from "@playwright/test";
 import type { DreamExam, ExamSession } from "../../lib/exam-plans";
 import type { DreamTest, TestResult } from "../../lib/types";
 test.use({ serviceWorkers: "block" });
+// Returning visitor: the first-visit storage notice was already closed
+// (covered by legal.spec.ts), so it never covers the controls under test.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("dream-storage-notice-v1", "1");
+  });
+});
 // Contract fixtures are confined to tests. They do not certify live OAuth or AI.
 const eid = "11111111-1111-4111-8111-111111111111";
 const cid = "33333333-3333-4333-8333-333333333333";
