@@ -796,3 +796,162 @@
     gap: 24px;
   }
 }
+/* Ruta de estudio */
+.pathPercent {
+  font-size: 2.5rem !important;
+  letter-spacing: -0.04em;
+  line-height: 1.1 !important;
+}
+.path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pathStep {
+  position: relative;
+}
+/* Línea que une cada tema con el siguiente. */
+.pathStep:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 41px;
+  top: calc(50% + 22px);
+  height: calc(100% - 32px);
+  width: 2px;
+  background: var(--border);
+}
+.pathStep[data-state="completed"]:not(:last-child)::after {
+  background: var(--primary);
+}
+.pathNode {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: var(--touch);
+  padding: 16px 20px;
+  background: var(--surface);
+  border-radius: 16px;
+  border: 1px solid transparent;
+  color: var(--text);
+  transition:
+    border-color var(--dur-press) var(--ease),
+    background var(--dur-press) var(--ease);
+}
+a.pathNode:hover {
+  border-color: var(--primary-ink);
+}
+a.pathNode:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.pathNode > svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.pathDot {
+  position: relative;
+  z-index: 1;
+  height: 44px;
+  width: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 2px solid var(--border);
+}
+.pathCopy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pathCopy small {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+.pathCopy strong {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.pathState {
+  align-self: start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.pathStep[data-state="completed"] .pathDot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.pathStep[data-state="completed"] .pathState {
+  color: var(--success);
+}
+.pathStep[data-state="current"] .pathNode {
+  background: var(--primary-tint);
+  border-color: var(--primary-ink);
+}
+.pathStep[data-state="current"] .pathDot,
+.pathStep[data-state="started"] .pathDot,
+.pathStep[data-state="open"] .pathDot {
+  border-color: var(--primary-ink);
+  color: var(--primary-ink);
+}
+.pathStep[data-state="current"] .pathState {
+  color: var(--primary-ink);
+}
+.pathStep[data-state="next"] .pathNode {
+  border-color: var(--primary-ink);
+}
+.pathStep[data-state="next"] .pathDot {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+.pathStep[data-state="next"] .pathState {
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 4px 10px;
+  border-radius: 99px;
+}
+.pathStep[data-state="locked"] .pathNode {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+.pathStep[data-state="locked"] .pathCopy strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pathStep[data-state="next"] .pathDot {
+    animation: pathPulse var(--dur-pulse) var(--ease-pulse) 3;
+  }
+}
+@keyframes pathPulse {
+  50% {
+    box-shadow: 0 0 0 6px var(--primary-tint);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pathNode {
+    transition: none;
+  }
+}
+@media (max-width: 600px) {
+  .pathNode {
+    padding: 14px 16px;
+    gap: 12px;
+  }
+  .pathStep:not(:last-child)::after {
+    left: 37px;
+  }
+  .pathPercent {
+    font-size: 2rem !important;
+  }
+}
