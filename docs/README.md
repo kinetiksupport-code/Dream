@@ -1,8 +1,8 @@
-# Diseño y evidencia visual
+# Diseño y documentación
 
-- `design-reference/`: exportaciones originales del archivo DREAM DESIGN.zip proporcionado por el usuario. Son referencias, no UI servida por la aplicación.
-- `visual-qa/`: capturas de Chromium generadas por las pruebas aisladas de navegador sobre el build de producción.
-- [Implementación y adaptaciones](../DESIGN_IMPLEMENTATION.md).
-- [QA y límites de verificación](../QA.md).
+- `design/claude-design/`: copia del canvas de Claude Design (fuente del diseño actual). Es referencia; la app no la sirve.
+- `design/exams/`: pantallas originales del flujo de Exámenes (asistente, plan, simulacro, resultados). El canvas nuevo solo cubre el índice de Exámenes, así que se conservan como referencia de los subflujos.
+- `security/`: auditoría, informe medido y operación de la capa de seguridad y admisión.
+- [Implementación del diseño](../DESIGN_IMPLEMENTATION.md) · [QA](../QA.md).
 
-Las capturas utilizan fixtures exclusivas de tests; no demuestran una sesión de IA autenticada en vivo. El código de aplicación se conecta al backend real.
+Las capturas de QA ya no se guardan en el repo: Playwright las genera en `test-results/`.
