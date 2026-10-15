@@ -171,6 +171,9 @@ export function ExamDetail({
             Ver plan de estudio <ArrowRight size={16} />
           </Link>
         )}
+        <Link className={styles.cardLink} href={`/exams/${id}/ruta`}>
+          Ver mi ruta de estudio <ArrowRight size={16} />
+        </Link>
       </section>
       <h2 className={styles.sectionTitle}>
         {plan ? "Tus unidades de estudio" : "Por dónde seguir"}
