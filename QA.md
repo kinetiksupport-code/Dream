@@ -99,3 +99,9 @@ Las adaptaciones están en [DESIGN_IMPLEMENTATION.md](DESIGN_IMPLEMENTATION.md).
 - Playwright sobre el build de producción: `dream.spec` 10/10, `exams.spec` 3/3, `security.spec` 4/4. `observability.spec` falla de forma intermitente (1 de 4 repeticiones): un lote de PostHog enviado *antes* de revocar el consentimiento llega después de vaciar `captures`. Es un problema de temporización del test, no hay eventos tras la revocación.
 - La suite de capturas por anchos (375–1440 px), Lighthouse y los checks de PWA en preview quedan pendientes (ver PR).
 - Para ejecutar en local: `.env.local` con las variables públicas y `PLAYWRIGHT_CHROMIUM_EXECUTABLE` si se usa un Chromium preinstalado.
+
+## Limpieza (rama `chore/limpieza-dream`)
+
+- `typecheck`, `lint` (0 avisos), `test` (50/50) y `build`: en verde.
+- Playwright sobre el build de producción: 19/19, incluido el nuevo flujo de Ajustes (borrar historial con error y reintento, enlace de contacto para eliminar la cuenta).
+- El `dream-api` desplegado (v22) es un stub; ver `LIMPIEZA.md` §3.
