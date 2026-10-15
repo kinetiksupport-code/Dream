@@ -22,6 +22,7 @@ export type DreamState =
   | "composing"
   | "shaping"
   | "listening"
+  | "waiting"
   | "done"
   | "error";
 export interface Attachment {
@@ -45,7 +46,15 @@ export type DreamStreamEvent =
   | StreamDelta
   | StreamActivity
   | { type: "complete" }
-  | { type: "error"; message: string; code?: string; retry_after?: number };
+  | {
+      type: "error";
+      message: string;
+      code?: string;
+      retry_after?: number;
+      position?: number;
+      /** The server undid the saved turn, so the same message can be retried. */
+      reverted?: boolean;
+    };
 export interface QuizWidget {
   type: "quiz";
   testId: string;

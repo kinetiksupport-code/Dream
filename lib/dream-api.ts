@@ -42,6 +42,7 @@ export class DreamApiError extends Error {
     public status: number,
     public retryAfter = 0,
     public code = "",
+    public position = 0,
   ) {
     super(message);
   }
@@ -84,16 +85,25 @@ async function request(
     let code = "";
     let retryAfter = Number(response.headers.get("Retry-After")) || 0;
     let message = "No se pudo conectar con Dream. Inténtalo de nuevo.";
+    let position = 0;
     try {
       const data = await response.json();
       if (typeof data.error === "string") message = data.error;
       if (typeof data.code === "string") code = data.code;
       if (typeof data.retry_after === "number") retryAfter = data.retry_after;
+      if (Number.isInteger(data.position) && data.position > 0)
+        position = data.position;
     } catch {}
     if (response.status === 401)
       if (typeof window !== "undefined")
         window.dispatchEvent(new Event("dream:session-expired"));
-    throw new DreamApiError(message, response.status, retryAfter, code);
+    throw new DreamApiError(
+      message,
+      response.status,
+      retryAfter,
+      code,
+      position,
+    );
   }
   return response;
 }
