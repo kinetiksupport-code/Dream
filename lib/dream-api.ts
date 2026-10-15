@@ -127,6 +127,8 @@ export async function streamDreamChat(
     attachment_ids: string[];
     exam_id?: string;
     unit_id?: string;
+    /** Optional chat shortcut id; older dream-api versions ignore it. */
+    shortcut?: string;
   },
   onEvent: (event: DreamStreamEvent) => void,
   signal: AbortSignal,

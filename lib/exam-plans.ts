@@ -9,6 +9,7 @@ export interface ExamUnit {
   estimated_minutes: number;
   status: "pending" | "in_progress" | "completed";
   conversation_id: string | null;
+  completed_at?: string | null;
 }
 export interface ExamMaterial {
   id: string;

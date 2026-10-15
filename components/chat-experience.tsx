@@ -14,6 +14,7 @@ import { callDream, streamDreamChat, errorMessage } from "@/lib/dream-api";
 import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
+import { shortcutPrompt, type ChatShortcutId } from "@/lib/chat-shortcuts";
 import type {
   Conversation,
   Message,
@@ -305,7 +306,7 @@ export function ChatExperience({
       },
     ]);
   }
-  async function send(promptOverride?: string) {
+  async function send(promptOverride?: string, shortcut?: ChatShortcutId) {
     if (
       lock.current ||
       loading ||
@@ -361,6 +362,7 @@ export function ChatExperience({
             prompt,
             attachment_ids: attachmentIds,
             ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
+            ...(shortcut ? { shortcut } : {}),
           },
           (event) => {
             if (controller.signal.aborted || abort.current !== controller)
@@ -518,7 +520,10 @@ export function ChatExperience({
       <section className="chat-view is-empty">
         <ChatHome
           composer={composer("hero")}
-          onPrompt={focusComposer}
+          disabled={busy || loading}
+          onShortcut={(s, detail) =>
+            void send(shortcutPrompt(s.label, value.trim() || detail), s.id)
+          }
           onAttach={() => {
             setAnalysisView(true);
             document
