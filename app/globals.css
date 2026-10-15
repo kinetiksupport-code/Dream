@@ -1855,13 +1855,11 @@ svg.lucide {
   transform: scale(0.99);
 }
 .test-option input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-.test-option:has(input:focus-visible) {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--primary);
 }
 .test-option .markdown {
   max-width: none;

@@ -88,15 +88,11 @@ export function AnswerInput({
                   } else onChange(option);
                 }}
               />
-              <span className="option-index">
-                {state === "incorrect" ? (
-                  <X size={15} />
-                ) : correct || checked ? (
-                  <Check size={15} />
-                ) : (
-                  String.fromCharCode(65 + index)
-                )}
-              </span>
+              {evaluation && (correct || state === "incorrect") && (
+                <span className="option-index" aria-hidden="true">
+                  {state === "incorrect" ? <X size={15} /> : <Check size={15} />}
+                </span>
+              )}
               <Markdown content={option} />
             </label>
           );

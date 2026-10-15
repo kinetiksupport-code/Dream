@@ -1,43 +1,30 @@
-# Implementación de las exportaciones Dream
+# Implementación del diseño (Claude Design)
 
-Fuente visual: `DREAM DESIGN.zip`, 45 PNG exportados. Se revisaron pantallas completas, foundations, galería, variantes y componentes antes de editar. No hay enlace de documento Figma ni SVG del Orb: se usa el PNG original de 64×64, sin redibujarlo. Las capturas de pantallas no se utilizan como UI.
+Fuente: canvas «Dream – Sistema de diseño y pantallas» (copia en `docs/design/claude-design/`, solo referencia).
 
-## Mapa sobre el proyecto existente
+## Mapa diseño → código
 
-| Referencia | Implementación existente |
-| --- | --- |
-| Foundations | `app/globals.css` (tokens); Inter en `app/layout.tsx` |
-| DreamOrb / DreamStatus | `components/dream-mark.tsx` |
-| Home vacía, 375, 430, tablet, desktop, dark | Home del `/chat` existente; `components/chat-home.tsx` |
-| QuickAction | Acciones de Home conectadas al composer existente |
-| Composer / Attachment / FileCard | `components/composer.tsx`, adjuntos reutilizables y CTA de análisis con el envío existente |
-| TopBar / Sidebar / BottomSheet / NavigationItem | `components/shell.tsx`; bottom sheet móvil sobre la navegación existente |
-| Historial/recientes | Vista por query de `/chat`, conversaciones de la API existente, sin ruta nueva |
-| MessageUser / MessageDream y conversación normal/dark | `components/message.tsx`, extraído de la vista de mensaje existente |
-| Respuestas educativa/matemática / MathBlock | Renderer seguro existente y KaTeX, fórmulas azules/lima; el contenido sigue viniendo de IA |
-| Test / TestCard / AnswerOption / feedback / resultado | `components/test-experience.tsx`, mismo motor y API |
-| Ajustes | Ruta existente; preferencias reales y cuenta, sin copiar rol/nivel de ejemplo |
-| Progreso | Ruta existente; estado vacío honesto sin cifras de ejemplo |
-| Toast / error | Componente accesible compartido para estados reales |
+| Artboard | Ruta | Componente |
+| --- | --- | --- |
+| Inicio (escritorio/móvil) | `/chat` vacío | `components/chat-home.tsx` + `Composer variant="hero"` |
+| Chat | `/chat?c=<id>` | `components/chat-experience.tsx`, `message.tsx`, `Composer variant="dock"` |
+| Tareas | `/tasks` | `components/tasks-view.tsx` (datos: `lib/study-data.ts`) |
+| Apuntes | `/notes` | `components/notes-view.tsx` (datos: `lib/study-data.ts`) |
+| Exámenes | `/exams` y subrutas | `components/exams/*` (tokens nuevos en `exams.module.css`) |
+| Historial | `/chat?view=recent` | `components/recents.tsx` (`lib/history.ts`) |
+| Test | `/tests/[id]` | `components/test-experience.tsx` (pantalla completa, sin navegación) |
+| Ajustes | `/settings` | `app/(dream)/settings/page.tsx` |
+| Móvil · Más | `/more` | `app/(dream)/more/page.tsx` |
+| Shell | todas | `components/shell.tsx`: sidebar 264 px (≥1024), barra de iconos (640–1023), tab bar de 88 px (<640) |
+| Orb | — | `components/orb.tsx` (SVG del canvas; el núcleo pulsa 1,6 s mientras Dream trabaja) |
 
-## Adaptaciones necesarias
+Tokens: `app/globals.css` (`:root`, `:root[data-theme="dark"]`, `prefers-color-scheme`, `prefers-contrast`), expuestos a Tailwind con `@theme inline`.
 
-- Los exports móviles incluyen barra de estado iOS y home indicator. Pertenecen al sistema operativo; no se dibujan como contenido web. Se preservan safe areas y standalone.
-- La fuente del Foundations es Inter; se cambia la familia visual, no los datos ni APIs.
-- No existe endpoint personal de métricas o listado de tests. Se conserva el estado vacío de progreso y se accede a tests por conversaciones/widgets reales.
-- No se añaden likes persistidos ni acciones de guardar ficticias: copiar y continuar por pasos usan la lógica disponible.
-- Reintentar tras streaming interrumpido recupera el historial sin duplicar el prompt. No se inventa regeneración idempotente.
-- No hay funciones docentes/onboarding en este checkout. No se crean ni eliminan funciones ausentes.
-- Los ejemplos de preguntas, documentos, tiempos y notas solo se usan en tests aislados de interfaz, nunca como datos de producción.
+## Adaptaciones
 
-## Segundo pase visual y verificación
-
-Se compararon capturas reales del navegador contra las exportaciones. Se corrigieron el tracking del hero, la altura de las acciones móviles, la alineación de la composición desktop, la distribución tablet, el tamaño de fórmulas, los estados de AnswerOption y la cabecera de resultados. La Home ya no se desplaza automáticamente al fondo cuando falta altura: solo las conversaciones siguen el streaming.
-
-El Orb original adjunto tiene 64×64 píxeles. Se conserva ese asset exacto; al presentarlo a 152 px en desktop su definición queda limitada por el archivo suministrado. Un futuro SVG podrá sustituirlo sin cambiar componentes.
-
-Las pantallas de práctica conservan comprobar respuesta y entregar al servidor; sus controles se adaptan al contrato real aunque el frame estático muestre únicamente Siguiente. Los resultados incluyen porcentaje real en lugar del tiempo ficticio del ejemplo. Progreso y la zona personal de Home no muestran horas, niveles o estadísticas inexistentes.
-
-El botón Analizar archivo reutiliza el envío existente y los IDs reales de adjuntos. El bottom sheet contiene foco, cierra con Escape/tap exterior y devuelve el foco al control de apertura. Markdown mantiene KaTeX real, HTML desactivado y fuentes enlazadas; los pasos numerados reciben el tratamiento editorial azul/lima sin generar una lección artificial.
-
-Verificación en Chromium sobre build de producción: nueve tamaños, claro/oscuro, Home, ajustes y conversación larga, además de tests, resultado, adjuntos, errores recuperables, actividad de búsqueda/escritura, fórmulas y navegación. Las fixtures solo viven en tests. No se afirma equivalencia de píxel para contenido dinámico de IA ni para barras del sistema operativo.
+- **Modo oscuro (derivado, pendiente de aprobación)**: fondo `#0B0E16`, superficie `#161A24`, texto `#F2F4F8` (17,6:1), secundario `#A3ADBF` (7,6:1 sobre superficie), borde `#2A3040`, primario de relleno `#155BFF` (texto blanco 5,3:1), primario como texto `#7AA2FF` (7,8:1), éxito `#6FD08C`, error `#FF8F84`.
+- **Navegación activa**: el canvas usa texto `#155BFF` sobre `rgba(21,91,255,.10)`, que da 4,27:1 (no llega a AA). Se usa `#0E4FE0` (5,3:1) con el mismo fondo.
+- **Tareas**: no hay endpoint de tareas. Se muestran las unidades de estudio de los exámenes (`exams` + `exam_get`). El estado es de solo lectura (completar una unidad tiene efectos en el backend). «Añadir tarea» queda oculto (`tasksSource.canCreate = false`). TODO documentado en `lib/study-data.ts`.
+- **Apuntes**: son los materiales subidos a los exámenes. «Subir apuntes» / «Hacer foto» pasan el archivo en memoria al chat (`lib/pending-files.ts`), donde se sube con el flujo existente.
+- **Ajustes**: sin «Respuesta directa». El nombre es de solo lectura y «Eliminar mi cuenta» abre el modal con la acción deshabilitada: dream-api no tiene `profile_update` ni `account_delete` (`lib/account.ts`).
+- **Test**: radios nativos con `accent-color`, como en el canvas; el icono de acierto/error solo aparece tras corregir.

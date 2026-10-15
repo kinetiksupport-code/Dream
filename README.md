@@ -192,3 +192,8 @@ No se ha desplegado a un servicio externo. El proyecto se puede desplegar como N
 La rama de seguridad conserva Exámenes y observabilidad. [Informe medido](docs/security/REPORT.md), [auditoría inicial](docs/security/AUDIT.md) y [operación/reproducción](docs/security/OPERATIONS.md) distinguen las pruebas aisladas de la capacidad todavía no verificada en producción. La migración de admisión y presupuestos se entrega para revisión; no se aplica ni despliega automáticamente.
 
 `npm run test:security-db` requiere PostgreSQL aislado y verifica cuotas/entregas atómicas. `npm run test:load-server` levanta el harness sintético para k6, limitado a localhost. CI valida código, dependencias de ejecución, migración aislada y navegador sin desplegar.
+
+
+## Interfaz (Claude Design) y PWA
+
+La UI sigue el canvas de Claude Design; ver [DESIGN_IMPLEMENTATION.md](DESIGN_IMPLEMENTATION.md). Rutas nuevas: `/tasks`, `/notes` y `/more`. El service worker (`public/sw.js`) solo cachea estáticos públicos (`offline.html`, iconos y `/_next/static/`). Las actualizaciones se aplican cuando el usuario pulsa «Actualizar». Los iconos se regeneran con `node scripts/generate-icons.mjs`.

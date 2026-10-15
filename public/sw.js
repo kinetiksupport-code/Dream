@@ -11,7 +11,7 @@ const MAX_ASSETS = 150;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC)));
-  // No automatic skipWaiting(): an open chat or exam keeps the version it started with.
+  // No automatic activation: an open chat or exam keeps the version it started with.
 });
 
 self.addEventListener('activate', (event) => {

@@ -13,14 +13,16 @@ test("PWA only caches allowlisted public assets, retains unrelated caches, activ
   });
   const keys = await page.evaluate(() => caches.keys());
   expect(keys).toContain("other-application");
-  expect(keys).toContain("dream-static-v2");
+  expect(keys).toContain("dream-static-v3");
   const cached = await page.evaluate(async () => {
-    const cache = await caches.open("dream-static-v2");
+    const cache = await caches.open("dream-static-v3");
     return (await cache.keys()).map((r) => new URL(r.url).pathname);
   });
   expect(cached.sort()).toEqual([
+    "/apple-touch-icon.png",
     "/icon-192.png",
     "/icon-512.png",
+    "/icon.svg",
     "/offline.html",
   ]);
   await page.reload();
@@ -33,12 +35,20 @@ test("PWA only caches allowlisted public assets, retains unrelated caches, activ
     page.getByRole("status").filter({ hasText: "Sin conexión" }),
   ).toHaveCount(0);
 });
-test("service worker refuses automatic takeover of an active session", async ({
+test("service worker never takes over by itself: activation needs the user's SKIP_WAITING", async ({
   request,
 }) => {
   const worker = await request.get("/sw.js");
   const text = await worker.text();
-  expect(text).not.toContain("skipWaiting(");
+  const install = text.slice(
+    text.indexOf("addEventListener('install'"),
+    text.indexOf("addEventListener('activate'"),
+  );
+  expect(install).not.toContain("skipWaiting(");
+  expect(text.match(/skipWaiting\(/g)).toHaveLength(1);
+  expect(text).toContain(
+    "if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();",
+  );
   expect(text).not.toContain("clients.claim(");
   expect(text).toContain("key.startsWith('dream-static-')");
 });
