@@ -1,30 +1,36 @@
 "use client";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+/**
+ * Accessible dialog. Rendered in a portal on <body> so the rest of the app can
+ * be made inert while it is open; focus is trapped and restored on close.
+ */
 export function Modal({
   children,
   labelledBy,
   onClose,
-  variant = "dialog",
 }: {
   children: ReactNode;
   labelledBy: string;
   onClose: () => void;
-  variant?: "dialog" | "sheet";
 }) {
   const ref = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  const [host, setHost] = useState<HTMLElement | null>(null);
+  useEffect(() => setHost(document.body), []);
   useEffect(() => {
+    if (!host) return;
     const previous = document.activeElement;
-    const main = document.querySelector<HTMLElement>(".workspace");
-    const aside = document.querySelector<HTMLElement>(".sidebar");
-    if (main) main.inert = true;
-    if (aside) aside.inert = true;
+    const app = document.querySelector<HTMLElement>(".app-shell");
+    if (app) app.inert = true;
     const el = ref.current;
-    const initial = el?.querySelector<HTMLElement>(
-      "input,button,a,select,textarea",
-    );
-    initial?.focus();
+    if (!el?.contains(document.activeElement)) {
+      const initial = el?.querySelector<HTMLElement>(
+        "[autofocus],input,button,a,select,textarea",
+      );
+      initial?.focus();
+    }
     function key(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
@@ -50,27 +56,28 @@ export function Modal({
     document.addEventListener("keydown", key);
     return () => {
       document.removeEventListener("keydown", key);
-      if (main) main.inert = false;
-      if (aside) aside.inert = false;
+      if (app) app.inert = false;
       if (previous instanceof HTMLElement) previous.focus();
     };
-  }, []);
-  return (
+  }, [host]);
+  if (!host) return null;
+  return createPortal(
     <div
-      className={`modal-backdrop ${variant === "sheet" ? "sheet-backdrop" : ""}`}
+      className="modal-backdrop"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <section
         ref={ref}
-        className={`modal ${variant === "sheet" ? "bottom-sheet" : ""}`}
+        className="modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
       >
         {children}
       </section>
-    </div>
+    </div>,
+    host,
   );
 }

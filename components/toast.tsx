@@ -1,4 +1,4 @@
-import { Check, CircleAlert, X } from "lucide-react";
+import { AlertIcon, CheckIcon, CloseIcon } from "./icons";
 export function Toast({
   message,
   error = false,
@@ -12,19 +12,23 @@ export function Toast({
 }) {
   return (
     <div
-      className={`toast ${error ? "toast-error" : ""}`}
+      className={`toast${error ? " toast-error" : ""}`}
       role={error ? "alert" : "status"}
     >
-      {error ? <CircleAlert size={18} /> : <Check size={18} />}
+      {error ? <AlertIcon /> : <CheckIcon />}
       <span>{message}</span>
-      {action && <button onClick={action.run}>{action.label}</button>}
+      {action && (
+        <button className="toast-action press" onClick={action.run}>
+          {action.label}
+        </button>
+      )}
       {onClose && (
         <button
-          className="icon-button"
+          className="icon-button press"
           aria-label="Cerrar aviso"
           onClick={onClose}
         >
-          <X size={16} />
+          <CloseIcon />
         </button>
       )}
     </div>
