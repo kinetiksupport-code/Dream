@@ -1815,7 +1815,8 @@ svg.lucide {
   width: 100%;
   background: var(--primary);
   transform-origin: left center;
-  transition: transform var(--dur-rise) var(--ease);
+  /* Moving on screen: ease-in-out (emil-design-eng › easing). */
+  transition: transform var(--dur-rise) var(--ease-in-out);
 }
 .test-topline .spacer {
   width: 64px;
@@ -1858,10 +1859,36 @@ svg.lucide {
   cursor: pointer;
   transition:
     transform var(--dur-press) var(--ease),
-    background-color var(--dur-press) ease;
+    background-color var(--dur-press) ease,
+    border-color var(--dur-press) ease,
+    opacity var(--dur-base) ease;
 }
-.test-option:active {
-  transform: scale(0.99);
+.test-options:not(:disabled) .test-option:active {
+  transform: scale(0.98);
+}
+/* Focus ring on the whole option, not only the 20 px radio. */
+.test-option:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.test-option input:focus-visible {
+  outline: none;
+}
+/* Loading: while Dream checks, the other options step back. */
+.test-options[aria-busy="true"] {
+  cursor: progress;
+}
+.test-options[aria-busy="true"] .test-option:not(.selected) {
+  opacity: 0.55;
+}
+/* Disabled (time over, finishing): every option dims, nothing is pressable. */
+.test-options:disabled:not([aria-busy]):not([data-evaluated]) .test-option {
+  opacity: 0.6;
+}
+/* Corrected: options that are neither the answer nor the pick step back. */
+.test-options[data-evaluated]
+  .test-option:not(.correct):not(.incorrect):not(.selected) {
+  opacity: 0.6;
 }
 .test-option input {
   flex: none;
@@ -1966,7 +1993,8 @@ fieldset:disabled .test-option {
   padding: 20px 24px;
   border-radius: 20px;
   background: var(--surface);
-  animation: rise 220ms var(--ease) both;
+  /* 180 ms entry; a right answer pops its icon, a wrong one nudges 4 px. */
+  animation: feedback-in 180ms var(--ease) both;
 }
 .answer-feedback strong {
   display: flex;
@@ -1974,6 +2002,65 @@ fieldset:disabled .test-option {
   gap: 8px;
   font-size: var(--text-body);
   font-weight: 600;
+}
+/* Claude Design «Test»: 22 px check, stroke 2.25, in the status colour. */
+.feedback-icon {
+  display: inline-flex;
+  flex: none;
+}
+.feedback-icon svg.lucide {
+  stroke-width: 2.25;
+}
+.answer-feedback.correct .feedback-icon {
+  animation: feedback-pop 180ms var(--ease) 60ms both;
+}
+.answer-feedback.incorrect strong {
+  animation: feedback-nudge 240ms var(--ease-in-out) 80ms both;
+}
+.answer-feedback .text-button {
+  margin-left: -12px;
+}
+@keyframes feedback-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes feedback-pop {
+  from {
+    transform: scale(0.9);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes feedback-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+  75% {
+    transform: translateX(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .answer-feedback {
+    animation-name: fade;
+  }
+  .answer-feedback.correct .feedback-icon,
+  .answer-feedback.incorrect strong {
+    animation: none;
+  }
 }
 .answer-feedback.correct {
   background: var(--success-surface);
@@ -1999,6 +2086,18 @@ fieldset:disabled .test-option {
   gap: 8px;
   flex-wrap: wrap;
   margin-left: auto;
+}
+.test-navigation [aria-busy="true"],
+.result-actions [aria-busy="true"] {
+  cursor: progress;
+}
+@media (hover: hover) and (pointer: fine) {
+  .test-topline .exit:hover {
+    background: var(--surface-hover);
+  }
+  .result-review summary:hover {
+    background: var(--state-hover);
+  }
 }
 .test-navigation .primary {
   min-height: 48px;
@@ -2120,6 +2219,24 @@ fieldset:disabled .test-option {
 .review-index {
   font-weight: 600;
   color: var(--text-secondary);
+}
+.review-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+.incorrect-text {
+  color: var(--danger);
+}
+.result-review summary {
+  border-radius: inherit;
+  transition: background-color var(--dur-press) ease;
+}
+.result-actions .primary {
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 24px;
 }
 .correct-text {
   color: var(--success);
