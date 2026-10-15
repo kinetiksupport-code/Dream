@@ -1,9 +1,4 @@
-export interface UserPreferences {
-  pref_step_by_step: boolean;
-  pref_practice_suggestions: boolean;
-  pref_calm_tone: boolean;
-}
-export interface DreamProfile extends UserPreferences {
+export interface DreamProfile {
   email: string;
   display_name: string | null;
 }
@@ -60,12 +55,7 @@ export interface QuizWidget {
   questionCount?: number;
   mode?: "practice" | "exam";
 }
-export type DreamWidget = QuizWidget;
 export type AnswerValue = string | string[] | Record<string, string>;
-export interface TestAnswer {
-  question_id: string;
-  answer: AnswerValue;
-}
 export interface DreamQuestion {
   id: string;
   position: number;
@@ -109,10 +99,4 @@ export interface TestResult {
     prompt: string;
     answer: AnswerValue;
   })[];
-}
-export interface LearningTopic {
-  concept: string;
-  subject: string;
-  topic: string;
-  status: "practicing" | "improving" | "almost_mastered" | "mastered";
 }

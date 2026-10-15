@@ -41,7 +41,6 @@ test("PostHog SDK sends only allowlisted events after consent and stops after re
             profile: {
               display_name: "PRIVATE_CANARY_NAME",
               email: "private-canary@example.test",
-              pref_step_by_step: true,
             },
             service_ready: true,
           }
@@ -61,7 +60,7 @@ test("PostHog SDK sends only allowlisted events after consent and stops after re
   const analytics = page.getByRole("switch", { name: "Analítica de uso" });
   await expect(analytics).toHaveAttribute("aria-checked", "false");
   expect(captures).toEqual([]);
-  const privacySection = page.locator(".settings-group").filter({
+  const privacySection = page.locator("section.group").filter({
     has: page.getByRole("heading", { name: "Datos de uso", exact: true }),
   });
   for (const width of [390, 1440]) {

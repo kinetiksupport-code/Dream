@@ -28,14 +28,14 @@ export type DreamAction =
   | "conversation_rename"
   | "conversation_delete"
   | "conversations_delete_all"
+  | "account_delete"
   | "messages"
   | "chat"
   | "attachment_upload"
   | "test_generate"
   | "test_get"
   | "test_check_answer"
-  | "test_submit"
-  | "preferences_update";
+  | "test_submit";
 export class DreamApiError extends Error {
   constructor(
     message: string,
@@ -224,9 +224,6 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile: {
       email: p.email ?? "",
       display_name: p.display_name ?? "",
-      pref_step_by_step: p.pref_step_by_step ?? true,
-      pref_practice_suggestions: p.pref_practice_suggestions ?? true,
-      pref_calm_tone: p.pref_calm_tone ?? true,
     },
     service_ready: data.service_ready ?? true,
   };
@@ -239,15 +236,7 @@ export function errorMessage(error: unknown) {
     return "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.";
   if (error instanceof SyntaxError)
     return "No se pudo leer la respuesta de Dream. El texto recibido se conserva.";
-  const message =
-    error instanceof Error
-      ? error.message
-      : "Algo no ha ido bien. Inténtalo de nuevo.";
-  if (
-    /\b(profesor(?:es)?|alumn[oa]s?|student|teacher|education_mode|role)\b/i.test(
-      message,
-    )
-  )
-    return "Esta función no está disponible para tu cuenta todavía.";
-  return message;
+  return error instanceof Error
+    ? error.message
+    : "Algo no ha ido bien. Inténtalo de nuevo.";
 }
