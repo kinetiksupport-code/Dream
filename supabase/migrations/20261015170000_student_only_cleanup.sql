@@ -1,8 +1,9 @@
 -- Dream is student-only: remove teacher features, role classification and the
 -- per-user help settings ("Cómo te ayuda Dream"). Checked on 15/10/2026: no
--- teacher invites or links, every profile is a student, and age, birth date and
--- guardian columns are empty. Apply AFTER deploying the dream-api that no longer
--- reads these columns.
+-- teacher invites or links and every profile is a student. Birth date, age band,
+-- guardian and onboarding columns stay: the sign-up consent flow (under-14
+-- guardian permission) needs them. Apply AFTER deploying the dream-api that no
+-- longer reads the dropped columns.
 
 -- New-user trigger without the dropped columns.
 create or replace function private.dream_handle_new_user()
@@ -46,9 +47,4 @@ alter table public.dream_profiles
   drop column if exists pref_calm_tone,
   drop column if exists role,
   drop column if exists education_mode,
-  drop column if exists age_band,
-  drop column if exists birth_date,
-  drop column if exists guardian_required,
-  drop column if exists guardian_confirmed_at,
-  drop column if exists onboarding_completed,
   drop column if exists email_domain;
