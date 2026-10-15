@@ -1,13 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lexend } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { THEME_COLORS } from "@/lib/theme";
 import "./globals.css";
-// Inter is only a fallback after the system stack (-apple-system / SF Pro):
-// not preloaded, so Apple devices never download it.
+// Claude Design: the system stack (SF Pro on Apple) with Inter everywhere
+// else. The font variables live on <html> so --font-stack, defined on :root,
+// can resolve them (on <body> the stack was invalid and every non-Apple device
+// fell back to its default font, e.g. Roboto on Android).
 const inter = Inter({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-inter",
+  display: "swap",
+});
+// Easy-reading option in Ajustes (dyslexia-friendly). Downloaded only on use.
+const lexend = Lexend({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-lexend",
   display: "swap",
   preload: false,
 });
@@ -51,7 +59,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`${inter.variable} ${lexend.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -60,7 +72,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.variable}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>

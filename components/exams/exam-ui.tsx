@@ -133,7 +133,11 @@ export function ProgressLine({
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <i style={{ width: `${value}%` }} />
+      <i
+        style={{
+          transform: `scaleX(${Math.max(0, Math.min(100, value)) / 100})`,
+        }}
+      />
     </div>
   );
 }

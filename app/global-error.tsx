@@ -4,7 +4,7 @@ import { captureDiagnostic } from "@/lib/observability/diagnostics";
 // Replaces the root layout, so globals.css is not loaded: inline, token-equivalent styles.
 const css = `
 :root{--bg:#FFFFFF;--text:#080B14;--muted:#5B6678;--primary:#155BFF;--focus:#155BFF;color-scheme:light dark}
-@media (prefers-color-scheme:dark){:root{--bg:#0B0E16;--text:#F2F4F8;--muted:#A3ADBF;--focus:#7AA2FF}}
+@media (prefers-color-scheme:dark){:root{--bg:#0E1117;--text:#F2F4F8;--muted:#A3ADBF;--focus:#7AA2FF}}
 body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;background:var(--bg);color:var(--text);font:17px/1.5 -apple-system,"SF Pro Text","SF Pro Display",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 main{max-width:440px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
 h1{margin:0;font-size:2.125rem;line-height:1.1;letter-spacing:-.025em}

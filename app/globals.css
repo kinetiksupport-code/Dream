@@ -14,6 +14,8 @@
   --surface-hover: #edf1f8;
   --chip-hover: #eaeef5;
   --elevated: #ffffff;
+  --panel: #f5f7fa; /* sidebar and other chrome */
+  --card: #f5f7fa; /* cards on the page (Claude Design) */
   --text: #080b14;
   --text-secondary: #5b6678;
   --border: #e4e8ef;
@@ -32,6 +34,11 @@
   --success-surface: #eaf6ee;
   --danger: #b42318;
   --danger-surface: #fdeceb;
+  --warning: #8a5a00;
+  --warning-surface: #fff4dc;
+  /* State layers for hover / press (8–12 %) */
+  --state-hover: rgba(8, 11, 20, 0.05);
+  --state-press: rgba(8, 11, 20, 0.08);
   --focus: #155bff;
   --scrim: rgba(8, 11, 20, 0.32);
   --translucent: rgba(255, 255, 255, 0.88);
@@ -56,82 +63,106 @@
   --font-stack: -apple-system, "SF Pro Text", "SF Pro Display",
     var(--font-inter), Inter, system-ui, sans-serif;
   --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  --text-display: 2.75rem; /* 44px desktop */
-  --text-title: 2.125rem; /* 34px */
+  --text-display: clamp(2rem, 1.5rem + 2vw, 2.75rem); /* 32→44px */
+  --text-title: clamp(1.75rem, 1.5rem + 1vw, 2.125rem); /* 28→34px */
   --text-body: 1.0625rem; /* 17px */
   --text-secondary-size: 0.9375rem; /* 15px */
   --text-small: 0.875rem; /* 14px */
   --text-tab: 0.6875rem; /* 11px */
   /* Motion (emil-design-eng) */
-  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out: entering */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* moving on screen */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-pulse: cubic-bezier(0.45, 0, 0.25, 1);
+  --dur-fast: 120ms;
   --dur-press: 160ms;
-  --dur-rise: 280ms;
+  --dur-base: 200ms;
+  --dur-rise: 240ms;
   --dur-pulse: 1.6s;
+  --stagger: 40ms;
   /* Viewport (updated from VisualViewport in providers.tsx) */
   --viewport-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
-/* Dark — explicit choice, or system preference before the theme script runs. */
+/* Dark — layered surfaces (apple-design dark-mode.md: base and elevated):
+   bg #0E1117 → panel #141821 → card #1A1F2B → elevated #222838, hairline
+   borders at 8 %. Contrast: node scripts/design/contrast.mjs. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b0e16;
-  --surface: #161a24;
-  --surface-hover: #1e2330;
-  --chip-hover: #212736;
-  --elevated: #1b202b;
-  --text: #f2f4f8;
-  --text-secondary: #a3adbf;
-  --border: #2a3040;
+  --bg: #0e1117;
+  --panel: #141821;
+  --surface: #1a1f2b;
+  --card: #1a1f2b;
+  --surface-hover: #222838;
+  --chip-hover: #252b3b;
+  --elevated: #222838;
+  --text: #e8ecf4;
+  --text-secondary: #9aa3b5;
+  --border: rgba(255, 255, 255, 0.08);
   --primary: #155bff;
   --primary-hover: #2f6dff;
-  --primary-ink: #7aa2ff;
+  --primary-ink: #6e93ff;
   --primary-ink-tint: #8fb0ff;
-  --primary-tint: rgba(122, 162, 255, 0.1);
+  --primary-tint: rgba(110, 147, 255, 0.1);
   --on-primary: #ffffff;
   --on-primary-secondary: #dfe7ff;
   --accent: #c8f560;
   --on-accent: #080b14;
-  --nav-active: rgba(122, 162, 255, 0.14);
-  --nav-hover: rgba(242, 244, 248, 0.06);
+  --nav-active: rgba(110, 147, 255, 0.14);
+  --nav-hover: rgba(255, 255, 255, 0.06);
   --success: #6fd08c;
   --success-surface: #13281b;
   --danger: #ff8f84;
   --danger-surface: #2e1716;
+  --warning: #f5c451;
+  --warning-surface: #2b2410;
+  --state-hover: rgba(255, 255, 255, 0.08);
+  --state-press: rgba(255, 255, 255, 0.12);
   --focus: #7aa2ff;
   --scrim: rgba(0, 0, 0, 0.56);
-  --translucent: rgba(11, 14, 22, 0.86);
-  --shadow-composer: 0 1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.28);
-  --shadow-popover: 0 1px 2px rgba(0, 0, 0, 0.4),
-    0 12px 32px rgba(0, 0, 0, 0.45);
+  --translucent: rgba(14, 17, 23, 0.86);
+  --shadow-composer: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
     color-scheme: dark;
-    --bg: #0b0e16;
-    --surface: #161a24;
-    --surface-hover: #1e2330;
-    --chip-hover: #212736;
-    --elevated: #1b202b;
-    --text: #f2f4f8;
-    --text-secondary: #a3adbf;
-    --border: #2a3040;
+    --bg: #0e1117;
+    --panel: #141821;
+    --surface: #1a1f2b;
+    --card: #1a1f2b;
+    --surface-hover: #222838;
+    --chip-hover: #252b3b;
+    --elevated: #222838;
+    --text: #e8ecf4;
+    --text-secondary: #9aa3b5;
+    --border: rgba(255, 255, 255, 0.08);
+    --primary: #155bff;
     --primary-hover: #2f6dff;
-    --primary-ink: #7aa2ff;
+    --primary-ink: #6e93ff;
     --primary-ink-tint: #8fb0ff;
-    --primary-tint: rgba(122, 162, 255, 0.1);
-    --nav-active: rgba(122, 162, 255, 0.14);
-    --nav-hover: rgba(242, 244, 248, 0.06);
+    --primary-tint: rgba(110, 147, 255, 0.1);
+    --on-primary: #ffffff;
+    --on-primary-secondary: #dfe7ff;
+    --accent: #c8f560;
+    --on-accent: #080b14;
+    --nav-active: rgba(110, 147, 255, 0.14);
+    --nav-hover: rgba(255, 255, 255, 0.06);
     --success: #6fd08c;
     --success-surface: #13281b;
     --danger: #ff8f84;
     --danger-surface: #2e1716;
+    --warning: #f5c451;
+    --warning-surface: #2b2410;
+    --state-hover: rgba(255, 255, 255, 0.08);
+    --state-press: rgba(255, 255, 255, 0.12);
     --focus: #7aa2ff;
     --scrim: rgba(0, 0, 0, 0.56);
-    --translucent: rgba(11, 14, 22, 0.86);
+    --translucent: rgba(14, 17, 23, 0.86);
+    --shadow-composer: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
   }
 }
 /* Higher contrast on request: stronger separators and secondary text. */
@@ -197,7 +228,6 @@ body {
   font-family: var(--font-stack);
   font-size: var(--text-body);
   line-height: 1.5;
-  font-feature-settings: "tnum";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -293,14 +323,28 @@ svg.lucide {
   transform: none;
 }
 
+/* Easy reading (Ajustes): Lexend, more line height and letter spacing. */
+:root[data-reading="easy"] {
+  --font-stack: var(--font-lexend), Lexend, system-ui, sans-serif;
+}
+:root[data-reading="easy"] body {
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+
+/* Tabular figures only where numbers line up: scores, timers, percentages. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
 /* ==========================================================================
    Motion primitives: press, rise, Orb pulse
    ========================================================================== */
 .press {
   transition:
     transform var(--dur-press) var(--ease),
-    background-color var(--dur-press) ease-out,
-    color var(--dur-press) ease-out;
+    background-color var(--dur-press) ease,
+    color var(--dur-press) ease;
 }
 .press:active:not(:disabled) {
   transform: scale(0.97);
@@ -367,6 +411,8 @@ svg.lucide {
   *::before,
   *::after {
     scroll-behavior: auto !important;
+    /* Reduced motion: keep fades and colour changes, drop movement. */
+    transition-property: opacity, color, background-color, border-color !important;
   }
 }
 
@@ -525,7 +571,8 @@ svg.lucide {
   flex-direction: column;
   gap: 24px;
   padding: calc(24px + var(--safe-top)) 16px calc(24px + var(--safe-bottom));
-  background: var(--surface);
+  background: var(--panel);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 .brand {
@@ -575,6 +622,13 @@ svg.lucide {
   outline: none;
   display: flex;
   flex-direction: column;
+}
+.route-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  animation: fade var(--dur-press) ease-out both;
 }
 .topbar {
   flex: none;
@@ -919,8 +973,10 @@ svg.lucide {
   text-align: left;
   font-size: var(--text-secondary-size);
 }
-.row-menu button:hover {
-  background: var(--surface);
+@media (hover: hover) and (pointer: fine) {
+  .row-menu button:hover {
+    background: var(--surface);
+  }
 }
 .search-field {
   display: flex;
@@ -1506,8 +1562,22 @@ svg.lucide {
   background: var(--elevated);
   box-shadow: var(--shadow-composer);
 }
-.composer:focus-within {
-  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+.composer {
+  position: relative;
+}
+/* Focus ring on the whole box, faded in (opacity only). */
+.composer::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--focus);
+  border-radius: calc(var(--radius-composer) + 3px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) ease;
+}
+.composer:focus-within::after {
+  opacity: 1;
 }
 .composer-hero {
   padding: 20px;
@@ -1742,8 +1812,10 @@ svg.lucide {
   display: block;
   height: 100%;
   border-radius: inherit;
+  width: 100%;
   background: var(--primary);
-  transition: width var(--dur-rise) var(--ease);
+  transform-origin: left center;
+  transition: transform var(--dur-rise) var(--ease);
 }
 .test-topline .spacer {
   width: 64px;
@@ -1786,7 +1858,7 @@ svg.lucide {
   cursor: pointer;
   transition:
     transform var(--dur-press) var(--ease),
-    background-color var(--dur-press) ease-out;
+    background-color var(--dur-press) ease;
 }
 .test-option:active {
   transform: scale(0.99);
