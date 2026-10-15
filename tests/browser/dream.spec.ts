@@ -814,6 +814,16 @@ test("real UI states from stream events and failed upload recovery", async ({
     .fill("Una idea actual");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
   await expect(page.locator(".activity-thinking")).toBeVisible();
+  // "Thinking" shows before the chat request starts: wait for the simulated
+  // stream to exist so the events below are not dropped.
+  await page.waitForFunction(
+    () =>
+      !!(
+        window as typeof window & {
+          qaStream?: ReadableStreamDefaultController<Uint8Array>;
+        }
+      ).qaStream,
+  );
   await page.screenshot({
     path: "test-results/figma-thinking.png",
     animations: "disabled",
