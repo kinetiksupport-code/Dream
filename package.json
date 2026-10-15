@@ -9,6 +9,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "tsx --test tests/*.test.ts",
+    "design:check": "tsx --test tests/design.test.ts && node scripts/design/contrast.mjs",
+    "design:check:browser": "playwright test tests/browser/design.spec.ts",
     "test:browser": "playwright test",
     "format": "prettier --write app components lib tests *.ts *.mjs",
     "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs",
