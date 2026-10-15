@@ -7,6 +7,7 @@ import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supa
 import { DREAM_SYSTEM_PROMPT, dynamicContextFor } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
+import { compactHistory, answerTokenBudget } from './capacity.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
@@ -33,7 +34,8 @@ function safeFailure(error: unknown): Response {
   if (error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError) {
     const status = error.status === 429 ? 429 : error instanceof AdmissionError ? error.status : 503;
     const code = error.code;
-    const message = status === 429 ? code === 'provider_rate_limit' ? 'El proveedor ha limitado las solicitudes. Respeta la espera indicada.' : 'Has alcanzado un límite de Dream. Espera antes de volver a intentarlo.' : status === 409 ? 'Esta solicitud ya está en curso o fue procesada. Abre los datos guardados.' : status === 413 ? 'El archivo o contexto excede el presupuesto permitido por solicitud.' : 'La IA no está disponible ahora. Puedes consultar tus datos guardados.';
+    if (status === 429) console.log(JSON.stringify({ event: 'dream_limit', code, retry_after: error.retryAfter || 0 }));
+    const message = status === 429 ? code === 'provider_daily_limit' ? 'La IA gratis de hoy se ha agotado. Vuelve más tarde.' : code === 'provider_rate_limit' ? 'El proveedor ha limitado las solicitudes. Respeta la espera indicada.' : 'Has alcanzado un límite de Dream. Espera antes de volver a intentarlo.' : status === 409 ? 'Esta solicitud ya está en curso o fue procesada. Abre los datos guardados.' : status === 413 ? 'El archivo o contexto excede el presupuesto permitido por solicitud.' : 'La IA no está disponible ahora. Puedes consultar tus datos guardados.';
     return json({ error: message, code, retry_after: error.retryAfter || 0 }, status, error.retryAfter ? {'Retry-After':String(error.retryAfter)} : {});
   }
   return json({error:'No se pudo completar la operación. Tus datos guardados se conservan.'},503);
@@ -454,7 +456,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const history = await admin.from('dream_messages')
     .select('role,content').eq('conversation_id', conversation.data.id).eq('owner_id', user.id)
     .order('created_at', { ascending: false }).limit(MAX_HISTORY);
-  const priorMessages = (history.data || []).reverse().map((m: any) => ({ role: m.role, content: String(m.content || '').slice(0,4000) }));
+  const priorMessages = compactHistory((history.data || []).reverse());
+  const answerTokens = answerTokenBudget(prompt);
   const educationalSelection = selectEducationalSkills(prompt, priorMessages, true);
   const model = groqModel();
   console.log(JSON.stringify({
@@ -483,7 +486,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   const initialMessages = [...systemMessages, ...priorMessages, {role:'user',content:prompt}];
-  await admission.beforeAttempt('groq', {messages:initialMessages,max_tokens:4096});
+  await admission.beforeAttempt('groq', {messages:initialMessages,max_tokens:answerTokens});
   let initialReservation = true;
   const streamAdmission = async (provider: string, providerBody: Record<string,unknown>) => {
     if (provider === 'groq' && initialReservation) { initialReservation = false; return; }
@@ -525,7 +528,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         const searchKey = searchAvailable;
         const toolDeltas: any[] = [];
         let provisional = '';
-        const baseBody = { model, stream: true, max_tokens: 2048, temperature: 0.5, stream_options: { include_usage: true } };
+        const baseBody = { model, stream: true, max_tokens: answerTokens, temperature: 0.5, stream_options: { include_usage: true } };
         // Buffer the first pass when tools are available so a search can run
         // before any speculative text reaches the student.
         for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: streamAdmission, pause: admission.pause,
@@ -587,8 +590,18 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
             conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: answer.slice(0, 32000)
           });
         }
+        // Nothing answered because of a limit: undo the saved turn so the
+        // client can retry the same message without duplicating it.
+        const limited = !answer.trim() && (error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError) && error.status === 429;
+        let reverted = false;
+        if (limited) {
+          if (attachmentRows.length) await admin.from('dream_attachments').update({ message_id: null }).eq('message_id', userSave.data.id).eq('owner_id', user.id);
+          const removed = await admin.from('dream_messages').delete().eq('id', userSave.data.id).eq('owner_id', user.id);
+          reverted = !removed.error;
+          console.log(JSON.stringify({ event: 'dream_limit', code: (error as { code: string }).code, retry_after: (error as { retryAfter?: number }).retryAfter || 0, reverted }));
+        }
         if (!(error instanceof GroqProviderError && error.code === 'aborted')) {
-          send({ type: 'error', code: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.code : 'stream_failed', retry_after: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.retryAfter : 0, message: error instanceof AdmissionError || error instanceof TavilyError || error instanceof GroqProviderError && error.status === 429 ? (error.status === 429 ? 'Se ha alcanzado un límite de solicitudes. Espera antes de reintentar.' : 'No se pudo consultar el servicio ahora. Tus datos se conservan.') : !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
+          send({ type: 'error', ...(reverted ? { reverted: true } : {}), code: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.code : 'stream_failed', retry_after: error instanceof AdmissionError || error instanceof GroqProviderError || error instanceof TavilyError ? error.retryAfter : 0, message: error instanceof AdmissionError || error instanceof TavilyError || error instanceof GroqProviderError && error.status === 429 ? (error.status === 429 ? 'Se ha alcanzado un límite de solicitudes. Espera antes de reintentar.' : 'No se pudo consultar el servicio ahora. Tus datos se conservan.') : !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
             ? 'No se pudo consultar la web ahora mismo. Prueba de nuevo.' : answer.trim()
             ? 'La respuesta se interrumpió. Lo escrito hasta ahora se conserva.'
             : 'Dream está teniendo problemas para responder ahora mismo. Tu mensaje se ha conservado. Puedes intentarlo de nuevo.' });

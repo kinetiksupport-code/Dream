@@ -1,4 +1,5 @@
 import { retryAfterSeconds } from './admission.mjs';
+import { classifyProviderLimit } from './capacity.mjs';
 export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 export const DEFAULT_MODEL = 'qwen/qwen3.8-27b';
 
@@ -56,6 +57,19 @@ export function createGroqProviderManager({
     health.set(slot, { consecutiveFailures, lastFailureAt: timestamp, cooldownUntil: timestamp + cooldown,
       state: authFailure ? 'unavailable' : cooldown ? 'cooldown' : 'degraded' });
   }
+  // A 429 on any key is the organization's limit: cool down every key.
+  async function rateLimited(response, generationId, operation, pause) {
+    const body = await response.text().then((t) => t.slice(0, 2000)).catch(() => '');
+    const limit = classifyProviderLimit({
+      retryAfter: retryAfterSeconds(response.headers.get('retry-after'), now()),
+      header: (name) => response.headers.get(name), body,
+    });
+    for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + limit.retryAfter * 1000, state: 'cooldown' });
+    safeLog({ generation: generationId, operation, result: limit.code, retry_after: limit.retryAfter,
+      remaining_requests: response.headers.get('x-ratelimit-remaining-requests'), remaining_tokens: response.headers.get('x-ratelimit-remaining-tokens') });
+    await pause?.('groq', limit.retryAfter);
+    return new GroqProviderError(limit.code, { status: 429, retryAfter: limit.retryAfter });
+  }
   function ensureConfigured() { if (!configuredKeys().length) throw new GroqProviderError('missing_key'); }
 
   /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
@@ -79,13 +93,7 @@ export function createGroqProviderManager({
           return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': 'application/json' } });
         }
         const policy = statusPolicy(response.status);
-        if (response.status === 429) {
-          const retryAfter = retryAfterSeconds(response.headers.get('retry-after'), now());
-          await discardResponse(response);
-          for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + retryAfter * 1000, state: 'cooldown' });
-          await pause?.('groq', retryAfter);
-          throw new GroqProviderError('provider_rate_limit', { status: 429, retryAfter });
-        }
+        if (response.status === 429) throw await rateLimited(response, generationId, operation, pause);
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
         await discardResponse(response);
         if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
@@ -122,13 +130,7 @@ export function createGroqProviderManager({
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         if (!response.ok || !response.body) {
           const policy = statusPolicy(response.status);
-        if (response.status === 429) {
-          const retryAfter = retryAfterSeconds(response.headers.get('retry-after'), now());
-          await discardResponse(response);
-          for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + retryAfter * 1000, state: 'cooldown' });
-          await pause?.('groq', retryAfter);
-          throw new GroqProviderError('provider_rate_limit', { status: 429, retryAfter });
-        }
+        if (response.status === 429) throw await rateLimited(response, generationId, operation, pause);
           safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
           await discardResponse(response);
           if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
