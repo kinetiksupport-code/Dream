@@ -104,4 +104,4 @@ Las adaptaciones están en [DESIGN_IMPLEMENTATION.md](DESIGN_IMPLEMENTATION.md).
 
 - `typecheck`, `lint` (0 avisos), `test` (50/50) y `build`: en verde.
 - Playwright sobre el build de producción: 19/19, incluido el nuevo flujo de Ajustes (borrar historial con error y reintento, enlace de contacto para eliminar la cuenta).
-- El `dream-api` desplegado (v22) es un stub; ver `LIMPIEZA.md` §3.
+- El `dream-api` desplegado es el de este repo (v24); ver `LIMPIEZA.md` §3. La migración `student_only_cleanup` sigue pendiente.

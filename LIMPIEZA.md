@@ -14,7 +14,7 @@ Rama `chore/limpieza-dream`, creada desde `feature/dream-ui-pwa` (d5d8321). Crit
 | `docs/security/AUDIT.md`, `OPERATIONS.md`, `REPORT.md` | — | Siguen describiendo la capa de admisión que existe en el código | **Se quedan** |
 | `README.md` | Mezclaba observabilidad, exámenes y el contrato v3 original, con datos de una fecha concreta (Google desactivado el 7/10) | Lectura | **Reescrito** como README único, con enlaces al resto |
 | `DESIGN_IMPLEMENTATION.md`, `EXAMS_IMPLEMENTATION.md`, `OBSERVABILITY.md`, `QA.md` | — | Vigentes | **Se quedan**, enlazados desde el README |
-| «Cómo te ayuda Dream» (`pref_*`) en Ajustes | Carlos quiere quitarlo | Usos: Ajustes, `lib/types.ts`, `getDreamProfile`, la lista de acciones de analítica y los tests | **Borrado en el cliente** (interfaz, tipo, llamada `preferences_update`, tests). Backend: ver §3 |
+| «Cómo te ayuda Dream» (`pref_*`) en Ajustes | Carlos quiere quitarlo | Usos: Ajustes, `lib/types.ts`, `getDreamProfile`, la lista de acciones de analítica y los tests | **Borrado** en el cliente y en `dream-api` (desplegado). Columnas: migración pendiente, ver §3 |
 | Filtro «profesor/alumno/role» en `errorMessage()` | Dream es solo para estudiantes | `resolveDreamMode()` siempre devuelve `role: 'student'`; el cliente no llama a ninguna acción docente | **Borrado** |
 | Modo profesor en `dream-api` (`teacher_invite_*`, `teacher_dashboard`, `dream_teacher_*`, `onboarding`, `mode.mjs`) | Sobra | Ningún archivo del cliente lo usa | **Pregunta**: borrarlo exige desplegar y migrar (§3) |
 | Mantenimiento: `lib/maintenance.ts` + `middleware.ts` + `/api/auth/verify-maintenance` + `/maintenance` | — | Es la única implementación en esta rama; `typecheck` y tests pasan | **Se queda** |
@@ -51,23 +51,15 @@ Ahorro: ≈ 7,8 MB de `docs/` más código y CSS muerto.
 | `qa/dream-maintenance-v2-2026-10-14` | sin PR | Implementación alternativa sobre una base antigua | Cerrar |
 | `claude/friendly-sagan-ehl8ef` | sin PR | Igual que `main` (0 commits propios) | Se puede borrar |
 
-## 3. Necesita decisión de Carlos (backend, despliegue o datos)
+## 3. Hecho con el permiso de Carlos y lo que queda
 
-1. **El `dream-api` desplegado no es el del repo.** La versión 22 activa en Supabase es un stub. `profile` devuelve un perfil falso (`usuario@edudream.es`, «Usuario»), `conversations` y `messages` devuelven listas vacías, y cualquier otra acción responde 503 con «El servicio está en recuperación. Inténtalo en unos minutos.».
-   - Explica el mensaje que viste en Inicio, Chat, Tareas, Apuntes, Exámenes e Historial, que Borrar historial falle y el nombre «Usuario».
-   - Arreglo: desplegar `supabase/functions/dream-api` de este repo (con sus secretos de Groq y Tavily) y aplicar antes las migraciones pendientes de la pila. **No lo he hecho: necesita tu permiso.**
-2. **Preferencias `pref_*` en el backend.** `index.ts` las devuelve y guarda (`preferences_update`), y `prompts.mjs` (líneas 627–633) las usa en el prompt. Hoy el valor por defecto es `true`, pero si alguien las puso a `false` en la base de datos, se sigue respetando.
-   - Para que siempre valgan `true`: en `prompts.mjs`, usar siempre las tres frases de «sí»; quitar `preferences_update`; y, tras una migración, borrar las columnas `pref_*` de `dream_profiles`.
-   - Requiere desplegar y migrar.
-3. **Modo profesor en el backend.** Se pueden borrar `teacher_invite_create`, `teacher_invites`, `teacher_invite_join`, `teacher_link_revoke`, `teacher_dashboard` y `onboarding` de `index.ts`, y `mode.mjs` (cambiar `mode.role` y `mode.educationMode` por constantes de estudiante), y los campos `role`, `education_mode`, `age_band`, `guardian_*` y `needs_role_question` del perfil público.
-   - Con una migración, borrar también las tablas `dream_teacher_invites` y `dream_teacher_student_links` y las columnas de rol del perfil.
-   - Requiere desplegar y migrar.
-4. **`account_delete` (Eliminar mi cuenta).** Propuesta de acción nueva en `dream-api`:
-   - Comprobar el JWT y pedir confirmación en el cuerpo (`confirm: "ELIMINAR"`).
-   - Borrar, en este orden y con el cliente de servicio: respuestas e intentos de test, preguntas y tests, temas aprendidos, sesiones, unidades y materiales de examen, exámenes, adjuntos (incluido el texto extraído; Dream no usa Supabase Storage, así que no hay archivos sueltos), mensajes, conversaciones y perfil. Por último, `auth.admin.deleteUser(user.id)`.
-   - Las tablas de exámenes ya tienen `on delete cascade` hacia `auth.users` (migración `20261008161950`). Las tablas base (perfiles, conversaciones, mensajes, adjuntos, tests) no están en las migraciones del repo: hay que comprobar sus FK antes de confiar en la cascada.
-   - Contadores de admisión: dejarlos caducar o borrarlos.
-   - Mientras tanto, el botón abre un modal con un enlace a `hellodream@edudream.es`. ¿Es la dirección correcta?
+1. **`dream-api` desplegado desde este repo (versión 24).** Sustituye al stub v22 que respondía «El servicio está en recuperación». Ya no tiene preferencias `pref_*`, modo profesor, `onboarding` ni `mode.mjs`: Dream ayuda siempre paso a paso, propone práctica y usa un tono tranquilo.
+   - Orígenes permitidos por defecto: `https://www.edudream.es`, `https://edudream.es`, `http://localhost:3000` y las previews `https://dream-*-kinetik1.vercel.app`. El secreto opcional `DREAM_ALLOWED_ORIGINS` (lista separada por comas) añade más. Comprobado: 204 para esos orígenes y 403 para uno ajeno.
+   - Necesita los secretos de Groq y Tavily en Supabase. Si faltan, el chat responde «servicio de IA no configurado».
+2. **`account_delete` (Eliminar mi cuenta) es real.** Pide `confirm: "ELIMINAR"`, borra las reservas de admisión y llama a `auth.admin.deleteUser`. Todas las tablas de Dream tienen FK a `auth.users` con `on delete cascade` (los eventos de IA quedan con `user_id` nulo). Si falla, el modal muestra el error y el enlace a `hellodream@edudream.es`.
+3. **Migración `20261015170000_student_only_cleanup` (pendiente).** Borra las tablas de profesor y de dominios, `dream_classify_email` y las columnas de rol, edad, tutor y `pref_*` de `dream_profiles`, y actualiza el trigger de alta. Comprobado antes: 0 invitaciones, 0 vínculos, 0 perfiles que no sean de alumno, y nada más depende de eso.
+   - **No se ha aplicado:** la herramienta de Supabase agotó el tiempo dos veces sin cambiar nada. La app funciona igual sin ella, porque el código nuevo ya no lee esas columnas. Para aplicarla: Supabase → SQL Editor → pegar el archivo, o `supabase db push`.
+4. **Ramas sin borrar.** `fix/admission-budget-accuracy` y `feature/landing-login-examenes` ya están integradas; se pueden borrar cuando quieras.
 5. **Datos de uso.** En Vercel → proyecto Dream → Settings → Environment Variables (Production y Preview), y después volver a desplegar:
    - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` = token `phc_…` del proyecto PostHog.
    - `NEXT_PUBLIC_POSTHOG_HOST` = `https://us.i.posthog.com`.
