@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dream – Chat móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:-apple-system,"SF Pro Text","SF Pro Display","Inter",system-ui,sans-serif;color:#080B14;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
+a{color:inherit;text-decoration:none}
+button,input,textarea{font-family:inherit}
+.press{transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease-out,color 160ms ease-out}
+.press:active{transform:scale(.97)}
+.nucleus{transform-box:fill-box;transform-origin:center;animation:pulse 1.6s cubic-bezier(.45,0,.25,1) infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+:focus-visible{outline:2px solid #155BFF;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.press{transition:none}.press:active{transform:none}.nucleus{animation:none}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FFFFFF">
+  <header style="position:absolute;top:0;left:0;right:0;box-sizing:border-box;height:104px;padding:52px 8px 0;display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid #E4E8EF;z-index:2">
+    <a class="press" href="MovilInicio.dc.html" aria-label="Volver a Inicio" style="flex:0 0 44px;height:44px;display:flex;align-items:center;justify-content:center;color:#155BFF">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+    </a>
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center">
+      <h1 style="margin:0;max-width:100%;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Ecuaciones de segundo grado</h1>    </div>
+    <span style="flex:0 0 44px" aria-hidden="true"></span>
+  </header>
+
+  <div style="box-sizing:border-box;height:100%;padding:128px 16px 184px;display:flex;flex-direction:column;justify-content:flex-end;gap:20px;overflow:hidden">
+    <div style="align-self:flex-end;max-width:84%;padding:10px 16px;border-radius:20px 20px 6px 20px;background:#155BFF;color:#FFFFFF;font-size:17px;line-height:1.45">
+      No entiendo cómo resolver una ecuación de segundo grado.
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="display:flex;flex-direction:column;gap:12px;font-size:17px;line-height:1.5">
+        <p style="margin:0">Vamos paso a paso. Empecemos con un ejemplo:</p>
+        <div style="padding:12px 16px;border-radius:14px;background:#F5F7FA;font-size:19px;font-weight:600">x² − 5x + 6 = 0</div>
+        <p style="margin:0">Busca dos números que <strong style="font-weight:600">sumen 5</strong> y que al multiplicarse den <strong style="font-weight:600">6</strong>. ¿Se te ocurren?</p>
+      </div>
+    </div>
+
+    <div style="align-self:flex-end;max-width:84%;padding:10px 16px;border-radius:20px 20px 6px 20px;background:#155BFF;color:#FFFFFF;font-size:17px;line-height:1.45">
+      ¿El 2 y el 3?
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:center" role="status" aria-live="polite">
+      <svg width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="30" fill="#155BFF"/><g transform="rotate(-25 32 32)"><ellipse cx="32" cy="32" rx="22" ry="13" fill="none" stroke="#C8F560" stroke-width="5"/></g><ellipse class="nucleus" cx="31" cy="33" rx="7.5" ry="6.5" fill="#C8F560"/><circle cx="51.9" cy="22.7" r="4.8" fill="#FFFFFF"/></svg>
+      <span style="font-size:15px;color:#5B6678">Comprobando tu respuesta</span>
+    </div>
+  </div>
+
+  <form style="position:absolute;left:12px;right:12px;bottom:96px;display:flex;align-items:center;gap:4px;padding:6px;border:1px solid #E4E8EF;border-radius:24px;background:#FFFFFF;box-shadow:0 1px 2px rgba(8,11,20,.04),0 8px 24px rgba(8,11,20,.06)">
+    <button class="press" type="button" aria-label="Adjuntar archivo" style="flex:0 0 44px;height:44px;border:0;border-radius:50%;background:transparent;color:#5B6678;display:flex;align-items:center;justify-content:center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <label for="msg" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Mensaje para Dream</label>
+    <input id="msg" type="text" placeholder="Escribe tu respuesta" style="flex:1;min-width:0;height:44px;border:0;outline:0;font-size:17px;color:#080B14;background:transparent">
+    <button class="press" type="submit" aria-label="Enviar" style="flex:0 0 44px;height:44px;border:0;border-radius:50%;background:#155BFF;color:#FFFFFF;display:flex;align-items:center;justify-content:center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+    </button>
+  </form>
+
+  <nav aria-label="Principal" style="position:absolute;left:0;right:0;bottom:0;box-sizing:border-box;height:88px;padding:8px 12px 28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:1px solid #E4E8EF">
+    <a class="press" href="MovilInicio.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
+    <a class="press" href="MovilChat.dc.html" aria-current="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#155BFF;font-size:11px;font-weight:600">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Chat</a>
+    <a class="press" href="#" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Tareas</a>
+    <a class="press" href="#" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>Más</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>

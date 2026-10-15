@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Dream – Inicio móvil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:-apple-system,"SF Pro Text","SF Pro Display","Inter",system-ui,sans-serif;color:#080B14;-webkit-font-smoothing:antialiased;font-feature-settings:"tnum"}
+a{color:inherit;text-decoration:none}
+button,input,textarea{font-family:inherit}
+.press{transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease-out,color 160ms ease-out}
+.press:active{transform:scale(.97)}
+.rise{animation:rise 280ms cubic-bezier(.23,1,.32,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+:focus-visible{outline:2px solid #155BFF;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.press{transition:none}.press:active{transform:none}.rise{animation-name:fade}@keyframes fade{from{opacity:0}to{opacity:1}}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;overflow:hidden;background:#FFFFFF">
+  <main style="box-sizing:border-box;height:100%;padding:64px 20px 108px;display:flex;flex-direction:column;justify-content:center;gap:28px">
+    <h1 class="rise" style="margin:0;font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-0.025em;text-wrap:balance">¿Qué quieres entender hoy?</h1>
+
+    <form class="rise" style="animation-delay:50ms;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;border:1px solid #E4E8EF;border-radius:24px;box-shadow:0 1px 2px rgba(8,11,20,.04),0 8px 24px rgba(8,11,20,.05)">
+      <label for="q" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Pregunta a Dream</label>
+      <input id="q" type="text" placeholder="Haz una pregunta" style="flex:1;min-width:0;height:44px;border:0;outline:0;font-size:17px;color:#080B14;background:transparent">
+      <button class="press" type="submit" aria-label="Enviar" style="flex:0 0 44px;height:44px;border:0;border-radius:50%;background:#155BFF;color:#FFFFFF;display:flex;align-items:center;justify-content:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </button>
+    </form>
+
+    <div class="rise" style="animation-delay:100ms;display:flex;flex-wrap:wrap;gap:8px">
+      <a class="press" href="#" style="display:flex;align-items:center;height:44px;padding:0 18px;border-radius:22px;background:#F5F7FA;font-size:15px;font-weight:500">Subir apuntes</a>
+      <a class="press" href="#" style="display:flex;align-items:center;height:44px;padding:0 18px;border-radius:22px;background:#F5F7FA;font-size:15px;font-weight:500">Practicar ejercicios</a>
+      <a class="press" href="#" style="display:flex;align-items:center;height:44px;padding:0 18px;border-radius:22px;background:#F5F7FA;font-size:15px;font-weight:500">Hacer un test</a>
+    </div>
+  </main>
+
+  <nav aria-label="Principal" style="position:absolute;left:0;right:0;bottom:0;box-sizing:border-box;height:88px;padding:8px 12px 28px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:rgba(255,255,255,.88);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:1px solid #E4E8EF">
+    <a class="press" href="MovilInicio.dc.html" aria-current="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#155BFF;font-size:11px;font-weight:600">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
+    <a class="press" href="MovilChat.dc.html" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>Chat</a>
+    <a class="press" href="#" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4z"/><path d="m8 12 3 3 5-6"/></svg>Tareas</a>
+    <a class="press" href="#" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px;color:#5B6678;font-size:11px;font-weight:500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>Más</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {};
+}
+}
+</script>
+</body>
+</html>
