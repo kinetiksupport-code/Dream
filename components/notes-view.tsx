@@ -11,7 +11,7 @@ export function NotesView() {
   return <NotesLayout state={state} onRetry={retry} />;
 }
 
-export function NotesLayout({
+function NotesLayout({
   state,
   onRetry,
 }: {

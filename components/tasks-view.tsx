@@ -11,7 +11,7 @@ export function TasksView() {
   return <TasksLayout state={state} onRetry={retry} />;
 }
 
-export function TasksLayout({
+function TasksLayout({
   state,
   onRetry,
 }: {
