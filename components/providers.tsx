@@ -118,8 +118,11 @@ export function Providers({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Depend on the token string, not the session object, so routine session
+  // refreshes with the same token do not restart the verification loop.
+  const accessToken = session?.access_token;
   useEffect(() => {
-    if (!session?.access_token) return;
+    if (!accessToken) return;
     let alive = true;
 
     async function verifyMaintenanceAccess() {
@@ -127,7 +130,7 @@ export function Providers({ children }: { children: ReactNode }) {
         const response = await fetch("/api/auth/verify-maintenance", {
           method: "POST",
           cache: "no-store",
-          headers: { Authorization: `Bearer ${session!.access_token}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!alive) return;
 
@@ -165,7 +168,7 @@ export function Providers({ children }: { children: ReactNode }) {
       alive = false;
       window.clearInterval(interval);
     };
-  }, [session?.access_token, pathname, router]);
+  }, [accessToken, pathname, router]);
 
   const userId = session?.user.id;
   useEffect(() => {
