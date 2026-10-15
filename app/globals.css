@@ -1247,6 +1247,10 @@ svg.lucide {
   display: flex;
   flex-direction: column;
 }
+/* Inicio grows with its shortcuts so the page scrolls past the tab bar. */
+.chat-view.is-home {
+  min-height: auto;
+}
 .home {
   flex: 1;
   display: flex;

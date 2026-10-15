@@ -113,6 +113,7 @@ export function ChatHome({
               ref={more}
               type="button"
               className="chip chip-more press"
+              aria-label="Más modos de estudio"
               aria-expanded={open}
               aria-controls={modesId}
               onClick={() => setOpen((v) => !v)}

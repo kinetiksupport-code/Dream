@@ -517,7 +517,7 @@ export function ChatExperience({
   );
   if (!study && !loading && !messages.length)
     return (
-      <section className="chat-view is-empty">
+      <section className="chat-view is-empty is-home">
         <ChatHome
           composer={composer("hero")}
           disabled={busy || loading}
