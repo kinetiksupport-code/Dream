@@ -62,7 +62,7 @@ test("PostHog SDK sends only allowlisted events after consent and stops after re
   await expect(analytics).toHaveAttribute("aria-checked", "false");
   expect(captures).toEqual([]);
   const privacySection = page.locator(".settings-group").filter({
-    has: page.getByRole("heading", { name: "Privacidad", exact: true }),
+    has: page.getByRole("heading", { name: "Datos de uso", exact: true }),
   });
   for (const width of [390, 1440]) {
     await page.setViewportSize({ width, height: 900 });

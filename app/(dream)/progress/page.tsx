@@ -1,33 +1,19 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
-import { DreamMark } from "@/components/dream-mark";
+import { Orb } from "@/components/orb";
 export default function Progress() {
   return (
-    <div className="personal-page progress-page">
-      <p className="eyebrow">CADA IDEA CUENTA</p>
-      <h1>
-        Mira cuánto
-        <br />
-        <span>has avanzado.</span>
-      </h1>
-      <p className="page-intro">
-        Lo que practicas hoy ayuda a Dream a acompañarte mañana.
-      </p>
-      <div className="progress-empty">
-        <DreamMark large />
-        <h2>Tu camino, a tu ritmo.</h2>
+    <div className="page page-narrow">
+      <h1 className="title">Progreso</h1>
+      <div className="empty-state">
+        <Orb size={48} />
+        <h2>Tu camino, a tu ritmo</h2>
         <p>
           Dream conserva los conceptos practicados y los resultados de tus tests
-          para adaptar las próximas conversaciones.
+          para adaptar las próximas conversaciones. Aquí verás ese historial
+          cuando el servicio permita consultarlo.
         </p>
-        <p className="muted">
-          La consulta de ese historial todavía no está disponible. Aquí
-          aparecerán tus conceptos y tests cuando el servicio permita
-          consultarlos.
-        </p>
-        <Link className="text-link" href="/chat">
-          Volver a mi Dream
-          <ArrowUpRight size={17} />
+        <Link className="secondary press" href="/chat">
+          Volver a Dream
         </Link>
       </div>
     </div>
