@@ -251,7 +251,9 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
     .getByRole("link", { name: "Más" })
     .click();
   await page.getByRole("link", { name: "Apuntes", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Apuntes" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Apuntes", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
     path: "test-results/notes-mobile-dark.png",
