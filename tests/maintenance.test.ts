@@ -74,3 +74,47 @@ test("maintenance access fails closed when signing secret is absent", async () =
     }
   }
 });
+
+test("maintenance verification accepts a valid token and rejects a forged one", async () => {
+  const oldSecret = process.env.MAINTENANCE_COOKIE_SECRET;
+  try {
+    process.env.MAINTENANCE_COOKIE_SECRET =
+      "test-only-secret-for-dream-maintenance-signing-32-plus-chars";
+    const valid = await createMaintenanceAccessToken(
+      "test-user-id",
+      "hellodream@edudream.es",
+    );
+    assert.equal(await verifyMaintenanceAccessToken(valid), true);
+
+    // Same payload shape, signed with another secret: must not verify.
+    process.env.MAINTENANCE_COOKIE_SECRET =
+      "another-test-only-secret-that-is-also-32-plus-characters";
+    const forged = await createMaintenanceAccessToken(
+      "test-user-id",
+      "hellodream@edudream.es",
+    );
+    process.env.MAINTENANCE_COOKIE_SECRET =
+      "test-only-secret-for-dream-maintenance-signing-32-plus-chars";
+    assert.equal(await verifyMaintenanceAccessToken(forged), false);
+
+    // Valid signature attached to a different (manipulated) payload.
+    const [, signature] = valid.split(".");
+    const manipulatedPayload = Buffer.from(
+      JSON.stringify({
+        sub: "attacker",
+        exp: Math.floor(Date.now() / 1000) + 600,
+        purpose: "dream-maintenance",
+      }),
+    ).toString("base64url");
+    assert.equal(
+      await verifyMaintenanceAccessToken(manipulatedPayload + "." + signature),
+      false,
+    );
+  } finally {
+    if (oldSecret === undefined) {
+      delete process.env.MAINTENANCE_COOKIE_SECRET;
+    } else {
+      process.env.MAINTENANCE_COOKIE_SECRET = oldSecret;
+    }
+  }
+});
