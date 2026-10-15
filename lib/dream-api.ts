@@ -235,15 +235,7 @@ export function errorMessage(error: unknown) {
     return "No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.";
   if (error instanceof SyntaxError)
     return "No se pudo leer la respuesta de Dream. El texto recibido se conserva.";
-  const message =
-    error instanceof Error
-      ? error.message
-      : "Algo no ha ido bien. Inténtalo de nuevo.";
-  if (
-    /\b(profesor(?:es)?|alumn[oa]s?|student|teacher|education_mode|role)\b/i.test(
-      message,
-    )
-  )
-    return "Esta función no está disponible para tu cuenta todavía.";
-  return message;
+  return error instanceof Error
+    ? error.message
+    : "Algo no ha ido bien. Inténtalo de nuevo.";
 }
