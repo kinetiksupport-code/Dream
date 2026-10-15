@@ -56,6 +56,7 @@ const actions = new Set([
   "conversation_rename",
   "conversation_delete",
   "conversations_delete_all",
+  "account_delete",
   "messages",
   "chat",
   "attachment_upload",

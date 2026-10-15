@@ -914,7 +914,7 @@ test("real UI states from stream events and failed upload recovery", async ({
   }
 });
 
-test("Ajustes: delete history end to end, failure stays visible, account deletion points to contact", async ({
+test("Ajustes: delete history end to end, failure stays visible, account deletion with confirmation", async ({
   page,
 }) => {
   await authenticated(page);
@@ -961,7 +961,18 @@ test("Ajustes: delete history end to end, failure stays visible, account deletio
   ).toBeVisible();
   await page.goto("/settings");
   await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
-  await expect(
-    page.getByRole("dialog").getByRole("link", { name: "Pedir que la borren" }),
-  ).toHaveAttribute("href", /^mailto:/);
+  const account = page.getByRole("dialog");
+  const remove = account.getByRole("button", { name: "Eliminar cuenta" });
+  await expect(remove).toBeDisabled();
+  await account
+    .getByRole("textbox", { name: "Escribe ELIMINAR para confirmar" })
+    .fill("ELIMINAR");
+  const request = page.waitForRequest(
+    (req) =>
+      req.url().includes("/functions/v1/dream-api") &&
+      req.postDataJSON()?.action === "account_delete",
+  );
+  await remove.click();
+  expect((await request).postDataJSON().confirm).toBe("ELIMINAR");
+  await expect(page).toHaveURL(/\/login/);
 });

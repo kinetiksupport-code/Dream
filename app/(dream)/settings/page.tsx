@@ -18,7 +18,22 @@ export default function Settings() {
   const [error, setError] = useState("");
   const [cleared, setCleared] = useState(false);
   const [confirm, setConfirm] = useState<"history" | "account" | null>(null);
+  const [confirmText, setConfirmText] = useState("");
   const identity = accountIdentity(session?.user, profile);
+  async function deleteAccount() {
+    if (busy || confirmText.trim() !== "ELIMINAR") return;
+    setBusy(true);
+    setError("");
+    try {
+      await callDream("account_delete", { confirm: "ELIMINAR" });
+    } catch (e) {
+      setError(errorMessage(e));
+      setBusy(false);
+      return;
+    }
+    // The user no longer exists: end the local session and leave.
+    await logout().catch(() => window.location.assign("/login"));
+  }
   async function clearHistory() {
     if (busy) return;
     setBusy(true);
@@ -108,6 +123,7 @@ export default function Settings() {
             className="danger-outline press"
             onClick={() => {
               setError("");
+              setConfirmText("");
               setConfirm("account");
             }}
           >
@@ -183,24 +199,50 @@ export default function Settings() {
           labelledBy="account-delete-title"
           onClose={() => setConfirm(null)}
         >
-          <h2 id="account-delete-title">Eliminar tu cuenta</h2>
+          <h2 id="account-delete-title">¿Eliminar tu cuenta?</h2>
           <p>
-            Todavía no se puede eliminar la cuenta desde la app. Escríbenos y
-            borraremos tu perfil, tus conversaciones, tus apuntes y tus
-            exámenes.
+            Se borrarán para siempre tu perfil, tus conversaciones, tus
+            apuntes, tus exámenes y tus tests. No se puede deshacer.
           </p>
-          <div className="modal-actions">
-            <button
-              className="secondary press"
-              autoFocus
-              onClick={() => setConfirm(null)}
-            >
-              Cerrar
-            </button>
-            <a className="primary press" href={CONTACT}>
-              Pedir que la borren
-            </a>
-          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void deleteAccount();
+            }}
+          >
+            <label className="field">
+              <span>Escribe ELIMINAR para confirmar</span>
+              <input
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                autoComplete="off"
+                autoCapitalize="characters"
+              />
+            </label>
+            {error && (
+              <p className="error" role="alert">
+                {error}{" "}
+                <a className="text-link" href={CONTACT}>
+                  Escríbenos
+                </a>
+              </p>
+            )}
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary press"
+                onClick={() => setConfirm(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                className="primary danger-button press"
+                disabled={busy || confirmText.trim() !== "ELIMINAR"}
+              >
+                {busy ? "Eliminando…" : "Eliminar cuenta"}
+              </button>
+            </div>
+          </form>
         </Modal>
       )}
     </div>
