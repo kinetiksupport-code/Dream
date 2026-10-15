@@ -913,3 +913,55 @@ test("real UI states from stream events and failed upload recovery", async ({
     });
   }
 });
+
+test("Ajustes: delete history end to end, failure stays visible, account deletion points to contact", async ({
+  page,
+}) => {
+  await authenticated(page);
+  let deleted = false;
+  let failNext = true;
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.action === "conversations_delete_all") {
+      if (failNext) {
+        failNext = false;
+        await route.fulfill({
+          status: 503,
+          json: { error: "No se pudo borrar el historial. Inténtalo de nuevo." },
+        });
+        return;
+      }
+      deleted = true;
+      await route.fulfill({ json: { ok: true } });
+      return;
+    }
+    if (body.action === "conversations" && deleted) {
+      await route.fulfill({ json: { items: [] } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Borrar historial" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("¿Borrar todo el historial?");
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "No se pudo borrar el historial",
+  );
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Historial borrado." })).toContainText(
+    "Ya no tienes conversaciones guardadas.",
+  );
+  expect(deleted).toBe(true);
+  await page.goto("/chat?view=recent");
+  await expect(
+    page.getByRole("heading", { name: "Aún no hay conversaciones" }),
+  ).toBeVisible();
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
+  await expect(
+    page.getByRole("dialog").getByRole("link", { name: "Pedir que la borren" }),
+  ).toHaveAttribute("href", /^mailto:/);
+});
