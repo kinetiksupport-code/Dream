@@ -55,6 +55,7 @@ export function compactHistory(messages, { recentFull = 4, olderChars = 400, tot
 const LONG_REQUEST = /\b(apuntes|resumen|resume|esquema completo|tema completo|para imprimir|explicaci[oó]n completa|desarrolla)\b/i;
 export const SHORT_ANSWER_TOKENS = 1200;
 export const LONG_ANSWER_TOKENS = 2048;
-export function answerTokenBudget(prompt) {
-  return LONG_REQUEST.test(String(prompt || '')) ? LONG_ANSWER_TOKENS : SHORT_ANSWER_TOKENS;
+export const wantsLongAnswer = (prompt) => LONG_REQUEST.test(String(prompt || ''));
+export function answerTokenBudget(prompt, { short = SHORT_ANSWER_TOKENS, long = LONG_ANSWER_TOKENS } = {}) {
+  return wantsLongAnswer(prompt) ? long : short;
 }

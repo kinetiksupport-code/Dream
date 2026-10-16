@@ -1,7 +1,9 @@
 import { retryAfterSeconds } from './admission.mjs';
 import { classifyProviderLimit } from './capacity.mjs';
+import { GROQ_NORMAL_MODEL } from './models.mjs';
 export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
-export const DEFAULT_MODEL = 'qwen/qwen3.8-27b';
+// Modelo por defecto (modo Normal, tests y exámenes): se configura en models.mjs.
+export const DEFAULT_MODEL = GROQ_NORMAL_MODEL;
 
 const KEY_NAMES = ['GROQ_API_KEY_1', 'GROQ_API_KEY_2', 'GROQ_API_KEY_3', 'GROQ_API_KEY_4'];
 const TRANSIENT_COOLDOWN_MS = 30_000;
