@@ -1,7 +1,14 @@
 "use client";
 import { memo, useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy, Check, FileText, ArrowRight, ListChecks } from "lucide-react";
+import {
+  Copy,
+  Check,
+  FileText,
+  ArrowRight,
+  ListChecks,
+  RotateCw,
+} from "lucide-react";
 import { Markdown } from "./markdown";
 import { AiStatus } from "./ai-status";
 import { parseDreamContent } from "@/lib/widgets";
@@ -23,6 +30,7 @@ export const MessageView = memo(function MessageView({
   since = null,
   isNew = false,
   onContinue,
+  onRegenerate,
 }: {
   message: Message;
   state?: DreamState;
@@ -31,6 +39,8 @@ export const MessageView = memo(function MessageView({
   /** Only messages created in this session enter with motion. */
   isNew?: boolean;
   onContinue: (text: string) => void;
+  /** Only on the last answer, once it has finished (or was stopped). */
+  onRegenerate?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
   // The label only cross-fades after a click, never on first render.
@@ -69,7 +79,7 @@ export const MessageView = memo(function MessageView({
   const typing = live && !!text;
   return (
     <article
-      className={`message message-assistant${enter}${typing ? " is-typing" : ""}`}
+      className={`message message-assistant${enter}${typing ? " is-typing" : ""}${onRegenerate ? " is-last" : ""}`}
     >
       {/* Polite live region: announced when the answer settles, never steals focus. */}
       <div className="message-body" aria-live="polite" aria-busy={live}>
@@ -119,7 +129,7 @@ export const MessageView = memo(function MessageView({
             Explícamelo por pasos
           </button>
           <button
-            className={`message-action copy-action press${copied ? " is-copied" : ""}`}
+            className={`message-action icon-action copy-action press${copied ? " is-copied" : ""}`}
             aria-label={copied ? "Copiado" : "Copiar respuesta"}
             onClick={async () => {
               try {
@@ -142,6 +152,16 @@ export const MessageView = memo(function MessageView({
               <span aria-hidden="true">{copied ? "Copiado" : "Copiar"}</span>
             </span>
           </button>
+          {onRegenerate && (
+            <button
+              className="message-action icon-action regen-action press"
+              aria-label="Regenerar respuesta"
+              onClick={onRegenerate}
+            >
+              <RotateCw size={18} aria-hidden="true" />
+              <span aria-hidden="true">Regenerar</span>
+            </button>
+          )}
           <span className="visually-hidden" role="status" aria-live="polite">
             {copied ? "Copiado" : ""}
           </span>

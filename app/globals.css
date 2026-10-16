@@ -1754,8 +1754,9 @@ svg.lucide {
   }
 }
 
-/* Message actions: on hover/focus with a pointer, always visible on touch. */
-.copy-action {
+/* Message actions: on hover/focus with a pointer, always visible on touch
+   and on the last answer (where «Regenerar» lives). */
+.icon-action {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);
@@ -1777,6 +1778,9 @@ svg.lucide {
 .copy-action.is-copied {
   color: var(--success);
 }
+.regen-action {
+  gap: 6px;
+}
 .copy-swap {
   display: inline-flex;
   align-items: center;
@@ -1789,7 +1793,7 @@ svg.lucide {
   }
 }
 @media (hover: hover) and (pointer: fine) {
-  .copy-action:hover {
+  .icon-action:hover {
     background: var(--surface-hover);
     color: var(--text);
   }
@@ -1801,7 +1805,8 @@ svg.lucide {
     transition: opacity var(--dur-base) ease;
   }
   .message-assistant:hover .message-actions,
-  .message-assistant:focus-within .message-actions {
+  .message-assistant:focus-within .message-actions,
+  .message-assistant.is-last .message-actions {
     opacity: 1;
   }
 }
