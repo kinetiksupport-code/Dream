@@ -12,7 +12,7 @@
  *   from?: string|null, to?: string|null }} RouteChange
  */
 /** @typedef {{ id: string, position: number, status: 'pending'|'in_progress'|'completed', estimated_minutes: number, topic?: string, title?: string }} RouteUnit */
-/** @typedef {{ mode: 'practice'|'exam', status: string }} RouteSession */
+/** @typedef {{ mode: 'practice'|'exam', status: string, unit_id?: string|null }} RouteSession */
 
 export const ROUTE_NODE_TYPES = /** @type {const} */ (["study", "practice", "review", "mock"]);
 /** Margen sobre los minutos diarios que admite el validador. */
@@ -49,19 +49,26 @@ export function todayIn(timeZone, now = new Date()) {
 
 /**
  * Qué nodos están hechos. Estudio: la unidad está completada. Práctica y repaso:
- * se consumen los tests de práctica terminados en orden. Simulacro: simulacros terminados.
+ * consumen un test de práctica terminado del mismo tema (unit_id); si el servidor no
+ * envía unit_id, cuentan los tests en orden. Simulacro: simulacros terminados.
  * @param {readonly Pick<RouteNode,'type'|'unit_id'>[]} nodes
  * @param {readonly Pick<RouteUnit,'id'|'status'>[]} units
  * @param {readonly RouteSession[]} [sessions]
  */
 export function routeProgress(nodes, units, sessions = []) {
   const status = new Map(units.map((u) => [u.id, u.status]));
-  let practice = sessions.filter((s) => s.status === "completed" && s.mode === "practice").length;
+  const practice = sessions.filter((s) => s.status === "completed" && s.mode === "practice");
   let mock = sessions.filter((s) => s.status === "completed" && s.mode === "exam").length;
+  const take = (/** @type {(s: RouteSession) => boolean} */ match) => {
+    const i = practice.findIndex(match);
+    if (i < 0) return false;
+    practice.splice(i, 1);
+    return true;
+  };
   return nodes.map((node) => {
     if (node.type === "study") return status.get(node.unit_id ?? "") === "completed";
     if (node.type === "mock") return mock-- > 0;
-    return practice-- > 0;
+    return (!!node.unit_id && take((s) => s.unit_id === node.unit_id)) || take((s) => !s.unit_id);
   });
 }
 
@@ -258,6 +265,38 @@ export function diffRoutes(before, after) {
   }
   for (const [k, n] of a) if (!b.has(k)) changes.push({ kind: "removed", ...pick(n), from: n.planned_date });
   return changes.slice(0, 40);
+}
+
+/**
+ * Pide la ruta a la IA, la valida y reintenta una vez. Si vuelve a fallar (o la
+ * admisión corta), devuelve la ruta determinista marcada 'auto' (solo lo pendiente).
+ * @param {{ ask: (system: string, context: string, operation: string) => Promise<unknown>,
+ *   exam: { title: string, subject: string, exam_date: string, daily_minutes: number, difficulties?: string, goal?: string },
+ *   units: readonly RouteUnit[], sessions?: readonly RouteSession[],
+ *   results?: { topic: string, percentage: number, tests: number }[], today: string,
+ *   log?: (event: Record<string, unknown>) => void }} input
+ * @returns {Promise<{ source: 'ai'|'auto', nodes: RouteNode[], attempts: number }>}
+ */
+export async function planRouteWithRetry({ ask, exam, units, sessions = [], results = [], today, log = () => {} }) {
+  const pending = units.filter((u) => u.status !== "completed");
+  const ctx = { units, today, examDate: exam.exam_date, dailyMinutes: exam.daily_minutes };
+  const context = routeContext(exam, pending, results, today);
+  let attempts = 0;
+  if (pending.length && isIsoDate(exam.exam_date) && exam.exam_date >= today)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      attempts += 1;
+      try {
+        const raw = await ask(ROUTE_SYSTEM_PROMPT, context, attempt ? "exam_route_retry" : "exam_route");
+        const v = validateAiRoute(raw, ctx);
+        if (v.ok) return { source: "ai", nodes: v.nodes, attempts };
+        log({ event: "exam_route_invalid", attempt, errors: v.errors.slice(0, 10) });
+      } catch (error) {
+        log({ event: "exam_route_error", attempt });
+        if (error instanceof Error && error.name === "AdmissionError") break;
+      }
+    }
+  const auto = fallbackRoute({ units, sessions, examDate: exam.exam_date, dailyMinutes: exam.daily_minutes, today }).nodes;
+  return { source: "auto", nodes: auto.filter((n) => n.planned_date !== null), attempts };
 }
 
 export const ROUTE_SYSTEM_PROMPT = [

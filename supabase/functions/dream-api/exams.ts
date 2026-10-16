@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { ExamError, id, text, examFields, type Body } from "./validation.ts";
 export { ExamError } from "./validation.ts";
+import { diffRoutes, fallbackRoute, mergeRoute, planRouteWithRetry, routeProgress, todayIn } from "./route-plan.mjs";
 type Answer = string | string[] | Record<string,string>;
 type JsonAI = (system:string,context:string,operation:string,signal?:AbortSignal)=>Promise<unknown>;
 function checked<T>({data,error}:{data:T;error:unknown}):T{if(error)throw new ExamError('No se pudo guardar. Tus datos anteriores se conservan.',503);return data;}
@@ -10,7 +11,7 @@ async function detail(db:SupabaseClient,owner:string,examId:unknown){
  const [u,m,s]=await Promise.all([
  db.from('dream_exam_units').select('*').eq('exam_id',exam.id).eq('owner_id',owner).order('position'),
  db.from('dream_exam_materials').select('attachment_id,dream_attachments(id,file_name,mime_type,size_bytes,status)').eq('exam_id',exam.id).eq('owner_id',owner).order('created_at'),
- db.from('dream_exam_sessions').select('id,mode,status,started_at,submitted_at').eq('exam_id',exam.id).eq('owner_id',owner).order('started_at',{ascending:false}).limit(50)]);
+ db.from('dream_exam_sessions').select('id,mode,status,started_at,submitted_at,unit_id,percentage:result->percentage').eq('exam_id',exam.id).eq('owner_id',owner).order('started_at',{ascending:false}).limit(50)]);
  return {...exam,units:checked(u)??[],materials:(checked(m)??[]).map(row=>row.dream_attachments),sessions:checked(s)??[]};
 }
 export async function examContext(db:SupabaseClient,owner:string,examId:unknown,unitId?:unknown,conversationId?:unknown){
@@ -70,6 +71,8 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  if(!generated||typeof generated!=='object'||!('units' in generated)||!Array.isArray(generated.units)||generated.units.length<1||generated.units.length>20)throw new Error('invalid_plan');
  const units=generated.units.map((u:unknown)=>{if(!u||typeof u!=='object')throw new Error('invalid_unit');const v=u as Body;const minutes=Number(v.estimated_minutes);if(!Number.isInteger(minutes)||minutes<5||minutes>120)throw new Error('invalid_minutes');return {title:text(v.title,200,true),topic:text(v.topic,160,true),summary:text(v.summary,1500,true),estimated_minutes:minutes};});
  checked(await db.rpc('dream_exam_store_plan',{p_exam:exam.id,p_owner:owner,p_units:units}));
+ // Ruta con IA: una sola vez al pasar a ready. Nunca rompe el plan ya guardado.
+ if(routeEnabled())await storeInitialRoute(db,owner,exam.id,ai,signal).catch(()=>console.error(JSON.stringify({event:'exam_route_failed'})));
  return {exam:await detail(db,owner,exam.id)};
  }catch(error) {checked(await db.from('dream_exams').update({status:'failed',plan_error:'No se pudo preparar el plan. Tus temas y materiales están guardados.'}).eq('id',exam.id).eq('owner_id',owner).eq('status','preparing'));if(error instanceof Error && ['AdmissionError','GroqProviderError'].includes(error.name))throw error;throw new ExamError('No se pudo preparar el plan. Tus temas y materiales están guardados. Reintenta cuando el servicio esté disponible.',502);}}
  if(action==='exam_unit_start'||action==='exam_unit_complete'){
@@ -127,5 +130,61 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  if(!response.ok){checked(await db.from('dream_exam_sessions').update({status:'active'}).eq('id',session.id).eq('owner_id',owner));const error=await response.json();throw new ExamError(error.error??'No se pudo corregir.',response.status);}
  const {result}=await response.json();return {session:checked(await db.from('dream_exam_sessions').update({status:'completed',submitted_at:new Date().toISOString(),result}).eq('id',session.id).eq('owner_id',owner).select('*').single())};
  }
+ if(action==='exam_route_regenerate'){
+ if(!routeEnabled())throw new ExamError('La ruta personalizada aún no está disponible.',404);
+ if(exam.status!=='ready')throw new ExamError('Tu plan aún no está listo.',409);
+ const today=routeToday();
+ // Máximo una regeneración por examen y día (reclamo atómico).
+ const claim=checked(await db.from('dream_exams').update({route_regenerated_on:today}).eq('id',exam.id).eq('owner_id',owner).or(`route_regenerated_on.is.null,route_regenerated_on.lt.${today}`).select('id').maybeSingle());
+ if(!claim)throw new ExamError('Ya has ajustado tu ruta hoy. Podrás rehacerla mañana.',429);
+ const trigger=['manual','minutes','date','result'].includes(String(b.trigger))?String(b.trigger):'manual';
+ await regenerateRoute(db,owner,exam.id,ai,signal,trigger,today);
+ return {exam:await detail(db,owner,exam.id)};}
  throw new ExamError('Operación de examen no disponible.');
+}
+
+// ---------------------------------------------------------------- Ruta con IA
+// Apagada por defecto: nada cambia en producción hasta el OK (DREAM_AI_ROUTE_ENABLED=true).
+// Requiere la migración 20261016120000_exam_ai_route.sql aplicada antes de encender el flag.
+function routeEnabled(){return Deno.env.get('DREAM_AI_ROUTE_ENABLED')==='true';}
+function routeToday(){return todayIn(Deno.env.get('DREAM_ROUTE_TIMEZONE')||'Europe/Madrid');}
+type RouteUnitRow={id:string;position:number;status:'pending'|'in_progress'|'completed';estimated_minutes:number;topic:string;title:string};
+type RouteSessionRow={mode:'practice'|'exam';status:string;unit_id?:string|null;percentage?:number|null};
+type StoredNode=ReturnType<typeof fallbackRoute>['nodes'][number];
+/** Media de aciertos por tema de los tests terminados (sin respuestas ni enunciados). */
+function resultsByTopic(units:RouteUnitRow[],sessions:RouteSessionRow[]){
+ const topic=new Map(units.map(u=>[u.id,u.topic]));const sums=new Map<string,{total:number;tests:number}>();
+ for(const s of sessions){if(s.status!=='completed'||typeof s.percentage!=='number'||!s.unit_id)continue;const t=topic.get(s.unit_id);if(!t)continue;const e=sums.get(t)??{total:0,tests:0};e.total+=s.percentage;e.tests+=1;sums.set(t,e);}
+ return [...sums].map(([t,{total,tests}])=>({topic:t,percentage:Math.round(total/tests),tests}));
+}
+/**
+ * Ruta con IA en modo Normal (modelo por defecto de groqJson, temperatura 0.25, JSON
+ * estricto): valida, reintenta una vez y, si falla, ruta determinista 'auto'.
+ */
+function planWithAi(exam:{title:string;subject:string;exam_date:string;daily_minutes:number;difficulties:string;goal:string},units:RouteUnitRow[],sessions:RouteSessionRow[],ai:JsonAI,signal:AbortSignal,today:string){
+ // PARTE G (presupuesto): cada intento pasa por admission.beforeAttempt, que ya reserva
+ // tokens/coste del usuario y globales. Cuando exista el presupuesto de la Parte G,
+ // descontarlo aquí, antes de cada intento: await budget.charge(owner,'exam_route',estimate).
+ return planRouteWithRetry({ask:(system:string,context:string,operation:string)=>ai(system,context,operation,signal),exam,units,sessions,results:resultsByTopic(units,sessions),today,log:(e:Record<string,unknown>)=>console.error(JSON.stringify(e))});
+}
+async function routeInputs(db:SupabaseClient,owner:string,examId:string){
+ const exam=await owned(db,owner,examId);
+ const units=(checked(await db.from('dream_exam_units').select('id,position,status,estimated_minutes,topic,title').eq('exam_id',examId).eq('owner_id',owner).order('position'))??[]) as RouteUnitRow[];
+ const sessions=(checked(await db.from('dream_exam_sessions').select('mode,status,unit_id,percentage:result->percentage').eq('exam_id',examId).eq('owner_id',owner))??[]) as RouteSessionRow[];
+ return {exam,units,sessions};
+}
+async function storeInitialRoute(db:SupabaseClient,owner:string,examId:string,ai:JsonAI,signal:AbortSignal){
+ const {exam,units,sessions}=await routeInputs(db,owner,examId);
+ if(exam.route)return;
+ const today=routeToday();const plan=await planWithAi(exam,units,sessions,ai,signal,today);
+ checked(await db.from('dream_exams').update({route:{version:1,nodes:plan.nodes},route_source:plan.source,route_updated_at:new Date().toISOString()}).eq('id',examId).eq('owner_id',owner).is('route',null));
+}
+/** Conserva los nodos completados y solo reordena lo pendiente. */
+async function regenerateRoute(db:SupabaseClient,owner:string,examId:string,ai:JsonAI,signal:AbortSignal,trigger:string,today:string){
+ const {exam,units,sessions}=await routeInputs(db,owner,examId);
+ const previous:StoredNode[]=Array.isArray(exam.route?.nodes)?exam.route.nodes:fallbackRoute({units,sessions,examDate:exam.exam_date,dailyMinutes:exam.daily_minutes,today}).nodes;
+ const done=routeProgress(previous,units,sessions);
+ const plan=await planWithAi(exam,units,sessions,ai,signal,today);
+ const nodes=mergeRoute(previous,done,plan.nodes);
+ checked(await db.from('dream_exams').update({route:{version:1,nodes,changes:diffRoutes(previous,nodes),trigger},route_source:plan.source,route_updated_at:new Date().toISOString()}).eq('id',examId).eq('owner_id',owner));
 }

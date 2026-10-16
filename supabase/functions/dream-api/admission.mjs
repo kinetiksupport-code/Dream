@@ -16,6 +16,7 @@ export const consumingActions = new Set([
   "exam_prepare",
   "exam_session_create",
   "exam_session_submit",
+  "exam_route_regenerate",
 ]);
 export const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
 

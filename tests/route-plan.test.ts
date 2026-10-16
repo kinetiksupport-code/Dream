@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 import {
   addDays,
@@ -7,6 +8,7 @@ import {
   looksLikeSolution,
   mergeRoute,
   minutesByDay,
+  planRouteWithRetry,
   routeContext,
   routeProgress,
   validateAiRoute,
@@ -350,4 +352,77 @@ test("Inicio: elige el examen listo más cercano que no ha pasado", () => {
   ];
   assert.equal(nearestExam(list, TODAY)?.id, "c");
   assert.equal(nearestExam([], TODAY), null);
+});
+
+test("progreso: una práctica cuenta para su tema; sin unit_id, por orden", () => {
+  const nodes = [
+    { type: "practice" as const, unit_id: "u0" },
+    { type: "practice" as const, unit_id: "u2" },
+    { type: "review" as const },
+  ];
+  const units = [unit(0), unit(1), unit(2)];
+  assert.deepEqual(
+    routeProgress(nodes, units, [
+      { mode: "practice", status: "completed", unit_id: "u2" },
+    ]),
+    [false, true, false],
+  );
+  assert.deepEqual(
+    routeProgress(nodes, units, [
+      { mode: "practice", status: "completed" },
+      { mode: "practice", status: "active" },
+    ]),
+    [true, false, false],
+  );
+});
+
+// ------------------------------------------------------------ Backend (sin desplegar)
+test("migración: columnas de la ruta, restricciones y solo lectura para el alumno", () => {
+  const sql = readFileSync("supabase/migrations/20261016120000_exam_ai_route.sql", "utf8");
+  for (const column of ["route jsonb", "route_source text", "route_updated_at timestamptz", "route_regenerated_on date"])
+    assert.match(sql, new RegExp(`add column if not exists ${column}`));
+  assert.match(sql, /route_source in \('ai', 'auto'\)/);
+  assert.match(sql, /revoke insert, update, delete on public.dream_exams from anon, authenticated/);
+});
+
+test("dream-api: la ruta con IA va detrás de un flag apagado y con límite diario", () => {
+  const code = readFileSync("supabase/functions/dream-api/exams.ts", "utf8");
+  assert.match(code, /Deno\.env\.get\('DREAM_AI_ROUTE_ENABLED'\)==='true'/);
+  assert.match(code, /if\(routeEnabled\(\)\)await storeInitialRoute/);
+  assert.match(code, /if\(!routeEnabled\(\)\)throw new ExamError/);
+  assert.match(code, /route_regenerated_on\.is\.null,route_regenerated_on\.lt\./);
+  assert.match(code, /PARTE G/);
+  // El contexto de la ruta nunca lee materiales, conversaciones ni el perfil.
+  const route = code.slice(code.indexOf("// ---------------------------------------------------------------- Ruta con IA"));
+  assert.doesNotMatch(route, /dream_attachments|dream_conversations|dream_profiles|email|display_name|examContext/);
+});
+
+test("IA: valida, reintenta una vez y cae a la ruta automática", async () => {
+  const examRow = { title: "Álgebra", subject: "Matemáticas", exam_date: "2026-10-20", daily_minutes: 30, difficulties: "", goal: "" };
+  const units = [unit(0), unit(1)];
+  const asks: string[] = [];
+  const run = (answers: unknown[]) =>
+    planRouteWithRetry({
+      exam: examRow,
+      units,
+      today: TODAY,
+      ask: async (_s, _c, op) => {
+        asks.push(op);
+        const a = answers.shift();
+        if (a instanceof Error) throw a;
+        return a;
+      },
+    });
+  let r = await run([good]);
+  assert.deepEqual([r.source, r.attempts, r.nodes.length], ["ai", 1, 5]);
+  r = await run([{ nodes: [] }, good]);
+  assert.deepEqual([r.source, r.attempts], ["ai", 2]);
+  assert.deepEqual(asks.slice(-2), ["exam_route", "exam_route_retry"]);
+  r = await run([{ nodes: [] }, { nodes: [{ type: "study", unit_id: "inventada" }] }]);
+  assert.equal(r.source, "auto");
+  assert.equal(r.attempts, 2);
+  assert.ok(r.nodes.every((n) => n.planned_date && n.planned_date >= TODAY));
+  const limit = Object.assign(new Error("dream_budget"), { name: "AdmissionError" });
+  r = await run([limit, good]);
+  assert.deepEqual([r.source, r.attempts], ["auto", 1]);
 });
