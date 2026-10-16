@@ -78,7 +78,8 @@ const conversations = [
   ["Comentario de texto: estructura", 1],
   ["Verbos irregulares en pasado", 3],
 ].map(([title, daysAgo], i) => ({
-  id: `88888888-8888-4888-8888-88888888888${i}`,
+  // The first one is the open conversation, so the header shows its title.
+  id: i === 0 ? cid : `88888888-8888-4888-8888-88888888888${i}`,
   title,
   updated_at: new Date(Date.now() - Number(daysAgo) * 86_400_000).toISOString(),
 }));
