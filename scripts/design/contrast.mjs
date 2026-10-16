@@ -59,7 +59,8 @@ export function readTokens(css) {
   return { light, dark };
 }
 
-// [foreground, background, minimum ratio, what it is]
+// [foreground, background, minimum ratio, what it is, base under a
+// translucent background (default --bg)]
 export const PAIRS = [
   ["text", "bg", 4.5, "Texto sobre fondo"],
   ["text", "surface", 4.5, "Texto sobre panel"],
@@ -71,6 +72,10 @@ export const PAIRS = [
   ["primary-ink", "bg", 4.5, "Enlace sobre fondo"],
   ["primary-ink", "card", 4.5, "Enlace sobre tarjeta"],
   ["primary-ink-tint", "nav-active", 4.5, "Navegación activa"],
+  ["text", "panel", 4.5, "Navegación inactiva (barra lateral)"],
+  ["primary-ink-tint", "nav-active", 4.5, "Navegación activa (barra lateral)", "panel"],
+  ["text-secondary", "translucent", 4.5, "Pestaña inactiva (barra inferior)"],
+  ["primary-ink-tint", "nav-active", 4.5, "Pestaña activa (barra inferior)", "translucent"],
   ["on-primary", "primary", 4.5, "Texto en botón principal"],
   ["success", "success-surface", 4.5, "Acierto"],
   ["danger", "danger-surface", 4.5, "Error"],
@@ -85,11 +90,13 @@ export function audit(tokens) {
   const rows = [];
   for (const theme of ["light", "dark"]) {
     const t = tokens[theme];
-    for (const [fg, bg, min, what] of PAIRS) {
-      const f = parseColor(t[fg] ?? ""),
+    for (const [fg, bg, min, what, under = "bg"] of PAIRS) {
+      const page = parseColor(t.bg),
+        f = parseColor(t[fg] ?? ""),
         b = parseColor(t[bg] ?? ""),
-        base = parseColor(t.bg);
-      if (!f || !b) {
+        u = parseColor(t[under] ?? "");
+      const base = u && page && u.a < 1 ? blend(u, page) : u;
+      if (!f || !b || !base) {
         rows.push({ theme, fg, bg, min, what, ratio: NaN, ok: false });
         continue;
       }
