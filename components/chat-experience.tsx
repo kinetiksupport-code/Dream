@@ -199,6 +199,8 @@ export function ChatExperience({
     if (!el || !hasThread) return;
     const observer = new ResizeObserver(follow);
     observer.observe(el);
+    // The visible area shrinks too (the composer grows with a long draft).
+    if (scroller.current) observer.observe(scroller.current);
     return () => observer.disconnect();
   }, [hasThread, follow]);
   async function ensureConversation() {

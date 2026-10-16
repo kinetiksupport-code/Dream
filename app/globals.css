@@ -1303,6 +1303,11 @@ svg.lucide {
 .chat-loading {
   justify-content: center;
 }
+/* Its own height (not stretched to the scroller), so the ResizeObserver that
+   keeps the end in view sees the thread grow. */
+.message-thread {
+  align-self: flex-start;
+}
 .older-button {
   align-self: center;
 }
@@ -1780,6 +1785,23 @@ svg.lucide {
 }
 .regen-action {
   gap: 6px;
+}
+/* Phone: the three actions fit on one row; «Regenerar» keeps its icon and
+   its accessible name (aria-label), at 44 × 44. */
+@media (max-width: 639.98px) {
+  .regen-action {
+    justify-content: center;
+    width: var(--touch);
+    padding: 0;
+  }
+  .regen-action > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 .copy-swap {
   display: inline-flex;
