@@ -216,6 +216,25 @@ test("touch: message actions are always visible", async ({ browser }) => {
   await expect(
     page.locator(".message-assistant").first().locator(".message-actions"),
   ).toHaveCSS("opacity", "1");
+  // Last answer: the three actions fit on one row, «Regenerar» as a 44 px icon
+  // with its accessible name, and the thread opens at the very end.
+  const regen = page.getByRole("button", { name: "Regenerar respuesta" });
+  const size = await regen.boundingBox();
+  expect(size?.width ?? 0).toBeGreaterThanOrEqual(44);
+  expect(size?.height ?? 0).toBeGreaterThanOrEqual(44);
+  const row = await page
+    .locator(".message-assistant")
+    .last()
+    .locator(".message-actions")
+    .boundingBox();
+  expect(row?.height ?? 99).toBeLessThan(60);
+  await expect
+    .poll(() =>
+      page
+        .locator(".chat-scroll")
+        .evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight),
+    )
+    .toBeLessThan(2);
   await context.close();
 });
 
@@ -360,6 +379,10 @@ test("generated test: skeleton while it is made, then an elevated card", async (
   await expect(card).toContainText("5 preguntas");
   await expect(card).toContainText("Empezar");
   await expect(card.locator(".quiz-icon svg")).toBeVisible();
+  // The turn has finished (its actions row is in place): the card stays put.
+  await expect(
+    page.getByRole("button", { name: "Regenerar respuesta" }),
+  ).toBeVisible();
   const bg = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
   expect(bg).toBe("rgb(255, 255, 255)"); // --elevated (light)
   // Focus: visible ring.
@@ -383,6 +406,7 @@ test("generated test: skeleton while it is made, then an elevated card", async (
       .evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41),
   ).toBe(2);
   // Pressed: scales down slightly.
+  await card.hover();
   await page.mouse.down();
   await page.waitForTimeout(250);
   expect(
