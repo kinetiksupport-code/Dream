@@ -955,17 +955,22 @@ test("Ajustes: delete history end to end, failure stays visible, account deletio
   });
   await page.goto("/settings");
   await page.getByRole("button", { name: "Borrar historial" }).click();
-  const dialog = page.getByRole("dialog");
+  // Confirmations are alert dialogs (role="alertdialog"), centred.
+  const dialog = page.getByRole("alertdialog");
   await expect(dialog).toContainText("¿Borrar todo el historial?");
   await dialog.getByRole("button", { name: "Borrar historial" }).click();
   await expect(dialog.getByRole("alert")).toContainText(
     "No se pudo borrar el historial",
   );
   await dialog.getByRole("button", { name: "Borrar historial" }).click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.getByRole("status").filter({ hasText: "Historial borrado." })).toContainText(
-    "Ya no tienes conversaciones guardadas.",
-  );
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Historial borrado." }),
+  ).toBeVisible();
+  // With nothing left, the button explains why there is nothing to delete.
+  await expect(
+    page.getByRole("button", { name: "Borrar historial" }),
+  ).toHaveAccessibleDescription(/No tienes conversaciones guardadas/);
   expect(deleted).toBe(true);
   await page.goto("/chat?view=recent");
   await expect(
@@ -973,7 +978,7 @@ test("Ajustes: delete history end to end, failure stays visible, account deletio
   ).toBeVisible();
   await page.goto("/settings");
   await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
-  const account = page.getByRole("dialog");
+  const account = page.getByRole("alertdialog");
   const remove = account.getByRole("button", { name: "Eliminar cuenta" });
   await expect(remove).toBeDisabled();
   await account
