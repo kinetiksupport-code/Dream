@@ -1,7 +1,8 @@
 "use client";
 import { MathBlock } from "./math-block";
 import { normalizeMath } from "@/lib/math";
-import { Children, memo, useState, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
+import { rehypeLearningSteps, rehypeRevealWords } from "@/lib/reveal-words";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -59,23 +60,22 @@ function CodeBlock({ children }: { children?: ReactNode }) {
 const remarkPlugins = [remarkGfm, remarkMath];
 const rehypePlugins: NonNullable<
   Parameters<typeof ReactMarkdown>[0]["rehypePlugins"]
-> = [[rehypeKatex, { strict: false, throwOnError: false, trust: false }]];
+> = [
+  [rehypeKatex, { strict: false, throwOnError: false, trust: false }],
+  rehypeLearningSteps,
+];
+// Answers born in this session: every word in a <span data-w> for the reveal.
+const revealPlugins: typeof rehypePlugins = [
+  ...rehypePlugins,
+  rehypeRevealWords,
+];
 const components: Components = {
-  h3: ({ children }) => (
-    <h3
-      className={
-        Children.toArray(children).some(
-          (child) => typeof child === "string" && /^\d{1,2}\s*[/.]/.test(child),
-        )
-          ? "learning-step"
-          : undefined
-      }
-    >
-      {children}
-    </h3>
-  ),
-  span: ({ className, children, ...props }) =>
-    className?.includes("katex-display") ? (
+  // `node` (the hast element) is not a DOM attribute: keep it off the spans
+  // (with the reveal there is one span per word).
+  span: ({ className, children, ...rest }) => {
+    const props: Omit<typeof rest, "node"> & { node?: unknown } = { ...rest };
+    delete props.node;
+    return className?.includes("katex-display") ? (
       <MathBlock>
         <span className={className} {...props}>
           {children}
@@ -85,7 +85,8 @@ const components: Components = {
       <span className={className} {...props}>
         {children}
       </span>
-    ),
+    );
+  },
   pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
   code: ({ className, children, ...props }) => (
     <code className={className} {...props}>
@@ -102,12 +103,18 @@ const components: Components = {
   ),
 };
 
-const Block = memo(function Block({ content }: { content: string }) {
+const Block = memo(function Block({
+  content,
+  reveal,
+}: {
+  content: string;
+  reveal: boolean;
+}) {
   return (
     <ReactMarkdown
       skipHtml
       remarkPlugins={remarkPlugins}
-      rehypePlugins={rehypePlugins}
+      rehypePlugins={reveal ? revealPlugins : rehypePlugins}
       components={components}
     >
       {content}
@@ -141,19 +148,22 @@ export function splitBlocks(markdown: string): string[] {
 export default function MarkdownRenderer({
   content,
   streaming = false,
+  reveal = false,
 }: {
   content: string;
   streaming?: boolean;
+  /** Wrap words for the reveal (components/message.tsx). Fixed for life. */
+  reveal?: boolean;
 }) {
   const normalized = normalizeMath(content);
   return (
     <div className="markdown">
       {streaming ? (
         splitBlocks(normalized).map((block, i) => (
-          <Block key={i} content={block} />
+          <Block key={i} content={block} reveal={reveal} />
         ))
       ) : (
-        <Block content={normalized} />
+        <Block content={normalized} reveal={reveal} />
       )}
     </div>
   );
