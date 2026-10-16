@@ -1718,25 +1718,45 @@ svg.lucide {
   }
 }
 
-/* Text cursor at the end of the answer while it arrives. */
+/* Text cursor after the last visible word while the answer arrives or is
+   being revealed (it follows the reveal, see «Revelado suave» below). */
 @keyframes caret-blink {
   50% {
     opacity: 0;
   }
 }
-.message-assistant.is-typing
-  .markdown
-  > :last-child:not(ul, ol, pre, table, .math-block, .katex-display)::after,
-.message-assistant.is-typing .markdown > :is(ul, ol):last-child > li:last-child::after {
+.message-assistant:is(.is-typing, .is-revealing) .markdown .is-caret::after {
   content: "";
   display: inline-block;
   width: 2px;
   height: 1.1em;
   margin-left: 2px;
+  /* Takes no room: the words after it never shift when it moves or goes. */
+  margin-right: -4px;
   vertical-align: -0.18em;
   border-radius: 1px;
   background: var(--primary-ink);
   animation: caret-blink 1s steps(1, end) infinite;
+}
+
+/* === Revelado suave === (feat/revelado-suave, Parte I)
+   The answer is laid out whole from the start (same tree as at the end);
+   words fade in with opacity only, 160 ms ease-out, as components/use-reveal
+   marks them .is-shown. Blocks not started yet take no space, so the thread
+   grows with what can be read and nothing jumps when the reveal ends. */
+.markdown [data-w] {
+  transition: opacity var(--dur-press) var(--ease);
+}
+.message-assistant.is-revealing .markdown [data-w]:not(.is-shown),
+.markdown-pending {
+  opacity: 0;
+}
+.message-assistant.is-revealing .markdown > [data-pending] {
+  display: none;
+}
+/* A list item's number or bullet waits for its first word. */
+.message-assistant.is-revealing .markdown li:not(:has([data-w].is-shown))::marker {
+  color: transparent;
 }
 
 /* AI status: Orb + one short line (Claude Design «Comprobando tu respuesta»). */
@@ -2054,10 +2074,7 @@ svg.lucide {
       transform: none;
     }
   }
-  .message-assistant.is-typing
-    .markdown
-    > :last-child:not(ul, ol, pre, table, .math-block, .katex-display)::after,
-  .message-assistant.is-typing .markdown > :is(ul, ol):last-child > li:last-child::after {
+  .message-assistant:is(.is-typing, .is-revealing) .markdown .is-caret::after {
     animation: none; /* fixed cursor, no blinking */
   }
   .quiz-skeleton-icon,
