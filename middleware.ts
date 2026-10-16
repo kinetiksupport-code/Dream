@@ -9,6 +9,10 @@ import {
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
   "/login",
+  "/privacidad",
+  "/terminos",
+  "/cookies",
+  "/aviso-legal",
   "/auth/callback",
   "/api/auth/verify-maintenance",
 ]);
