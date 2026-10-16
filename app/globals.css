@@ -2393,3 +2393,149 @@ fieldset:disabled .test-option {
 .group-list dd {
   margin: 0;
 }
+
+/* === Ajustes === */
+/* Theme change: the whole page cross-fades (opacity only, 200 ms) through a
+   View Transition; nothing moves. Reduced motion keeps the fade. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: ease;
+}
+::view-transition-group(root) {
+  animation: none;
+}
+/* A privacy action that can't run now: the button stays focusable
+   (aria-disabled) and dims; the reason is plain text with an icon right
+   below, in --text-secondary (AA), never only the dimmed colour. */
+.page-settings [aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-settings .press[aria-disabled="true"]:active {
+  transform: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .page-settings .secondary[aria-disabled="true"]:hover,
+  .page-settings .danger-outline[aria-disabled="true"]:hover {
+    background: var(--bg);
+  }
+}
+.settings-why {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  max-width: 56ch;
+  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+  line-height: 1.45;
+}
+.settings-why > svg {
+  flex: none;
+  margin-top: 1px;
+}
+/* Theme control: a pill slides under the chosen option (transform only,
+   ease-in-out because it moves on screen; emil-design-eng › easing). The
+   control is lifted out of the page cross-fade (view-transition-name) and
+   shown live, so the slide and its colour fades play in real time while the
+   rest of the page fades. Reduced motion: the pill jumps, colours still fade. */
+.segmented-theme {
+  position: relative;
+  view-transition-name: theme-control;
+  transition: background-color var(--dur-base) ease;
+}
+.segmented-theme button {
+  position: relative;
+  z-index: 1;
+}
+.segmented-theme button[aria-pressed="true"],
+:root[data-theme="dark"] .segmented-theme button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+}
+.segmented-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 16px) / 3);
+  border-radius: var(--radius-nav);
+  background: var(--bg);
+  box-shadow: 0 1px 2px rgba(8, 11, 20, 0.08);
+  transform: translateX(calc(var(--segment, 2) * (100% + 4px)));
+  transition:
+    transform var(--dur-base) var(--ease-in-out),
+    background-color var(--dur-base) ease;
+}
+.segmented-theme:not([data-settled]) .segmented-indicator {
+  transition: none;
+}
+:root[data-theme="dark"] .segmented-indicator {
+  background: var(--surface-hover);
+}
+::view-transition-old(theme-control) {
+  display: none;
+}
+::view-transition-new(theme-control) {
+  animation: none;
+}
+::view-transition-group(theme-control) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .segmented-indicator {
+    transition: background-color var(--dur-base) ease;
+  }
+}
+/* Confirmation dialogs: always centred, from scale(0.95) + opacity
+   (emil-design-eng: never from zero scale; modals stay centred). */
+.modal-backdrop-alert {
+  align-items: center;
+  padding: 24px 16px;
+}
+.modal-alert {
+  transform-origin: center;
+  animation: modal-pop var(--dur-base) var(--ease) both;
+}
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Exit is faster than the entry and only fades. The backdrop already runs
+   an entry animation, so its exit is an animation too (a transition would
+   lose to the filled entry keyframes). */
+.modal-backdrop[data-leaving] {
+  pointer-events: none;
+  animation: fade-out var(--dur-fast) ease-out both;
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+.toast-shell[data-leaving] {
+  opacity: 0;
+  transition: opacity var(--dur-fast) ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-alert {
+    animation-name: fade;
+  }
+}
+/* Phone: the page overflows .route-view (flex: 1; min-height: 0), so the
+   tab-bar padding on .workspace-main ends up above the last rows. Ajustes
+   reserves the bar's height itself. */
+@media (max-width: 639.98px) {
+  .page-settings {
+    padding-bottom: calc(
+      32px + max(var(--tabbar), calc(60px + var(--safe-bottom)))
+    );
+  }
+}
