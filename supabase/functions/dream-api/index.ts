@@ -4,7 +4,6 @@ import { AdmissionError, consumingActions, createAdmission, readBoundedBody } fr
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
-import { resolveDreamMode, emailDomain, isAutoClassified } from './mode.mjs';
 import { DREAM_SYSTEM_PROMPT, dynamicContextFor } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
@@ -116,37 +115,25 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (consuming) { await admission.admit(String(body.action)); admitted = true; }
   const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
   const email = String(user.email || '').trim().toLowerCase();
-  const domain = emailDomain(email);
 
   let { data: profile } = verified ? {data:verified.profile} : await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) {
+    // Normally created by the auth trigger; this covers a race on first sign-in.
     const insert = await admin.from('dream_profiles').upsert({
       id: user.id,
       email,
-      email_domain: domain,
-      role: 'student',
-      education_mode: true,
-      onboarding_completed: true
+      display_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null
     }, {onConflict:'id',ignoreDuplicates:true});
     const loaded = await admin.from('dream_profiles').select('*').eq('id',user.id).single();
     if (insert.error || loaded.error) return json({ error: 'No se pudo preparar tu perfil.' }, 503);
     profile = loaded.data;
   }
 
-  const mode = resolveDreamMode(user, profile);
+  // Dream is for students only: no roles, onboarding or per-user help settings.
   const publicProfile = {
     email,
-    role: mode.role,
-    education_mode: mode.educationMode,
-    age_band: mode.ageBand,
-    guardian_required: mode.guardianRequired,
-    onboarding_completed: mode.onboardingCompleted,
-    needs_role_question: false,
-    display_name: profile.display_name ?? user.user_metadata?.full_name ?? null,
-    academic_level: profile.academic_level ?? null,
-    pref_step_by_step: profile.pref_step_by_step !== false,
-    pref_practice_suggestions: profile.pref_practice_suggestions !== false,
-    pref_calm_tone: profile.pref_calm_tone !== false
+    display_name: profile.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+    academic_level: profile.academic_level ?? null
   };
 
   if (body.action === 'exams' || String(body.action).startsWith('exam_')) {
@@ -165,83 +152,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ profile: publicProfile, service_ready: groqConfigured() });
   }
 
-  if (body.action === 'onboarding') {
-    if (isAutoClassified(domain)) {
-      return json({ profile: publicProfile, ignored: true });
-    }
-    const role = body.role;
-    if (!['student', 'teacher', 'general'].includes(role)) return json({ error: 'Elige un tipo de uso.' }, 400);
-
-    const patch: Record<string, unknown> = {
-      role,
-      education_mode: role === 'student',
-      updated_at: new Date().toISOString()
-    };
-
-    if (role === 'student') {
-      const birthDate = typeof body.birth_date === 'string' ? body.birth_date : '';
-      const parsedBirth = /^\d{4}-\d{2}-\d{2}$/.test(birthDate) ? new Date(birthDate + 'T00:00:00Z') : null;
-      if (!parsedBirth || Number.isNaN(parsedBirth.valueOf()) || parsedBirth > new Date()) return json({ error: 'Indica una fecha de nacimiento válida.' }, 400);
-      const today = new Date(); let age = today.getUTCFullYear() - parsedBirth.getUTCFullYear();
-      if (today.getUTCMonth() < parsedBirth.getUTCMonth() || (today.getUTCMonth() === parsedBirth.getUTCMonth() && today.getUTCDate() < parsedBirth.getUTCDate())) age--;
-      const ageBand = age < 14 ? 'under_14' : age < 18 ? '14_17' : '18_plus';
-      patch.display_name = typeof body.display_name === 'string' ? body.display_name.trim().slice(0, 80) : null;
-      patch.birth_date = birthDate;
-      patch.academic_level = typeof body.academic_level === 'string' ? body.academic_level.trim().slice(0, 80) : null;
-      if (!patch.display_name || !patch.academic_level) return json({ error: 'Completa tu nombre y nivel educativo.' }, 400);
-      patch.age_band = ageBand;
-      patch.guardian_required = ageBand === 'under_14';
-      patch.guardian_confirmed_at = null;
-      patch.onboarding_completed = true;
-    } else {
-      patch.age_band = null;
-      patch.guardian_required = false;
-      patch.guardian_confirmed_at = null;
-      patch.onboarding_completed = true;
-    }
-
-    const { data: updated, error } = await admin
-      .from('dream_profiles').update(patch).eq('id', user.id).select('*').single();
-    if (error) return json({ error: 'No se pudo guardar tu respuesta.' }, 503);
-
-    const next = resolveDreamMode(user, updated);
-    return json({
-      profile: {
-        email,
-        role: next.role,
-        education_mode: next.educationMode,
-        age_band: next.ageBand,
-        guardian_required: next.guardianRequired,
-        onboarding_completed: next.onboardingCompleted,
-        needs_role_question: false,
-        display_name: updated.display_name ?? user.user_metadata?.full_name ?? null,
-        academic_level: updated.academic_level ?? null,
-        pref_step_by_step: updated.pref_step_by_step !== false,
-        pref_practice_suggestions: updated.pref_practice_suggestions !== false,
-        pref_calm_tone: updated.pref_calm_tone !== false
-      }
-    });
-  }
-
-  // --- preferencias (reales: se guardan y se usan de verdad en el prompt) --
-  if (body.action === 'preferences_update') {
-    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
-    if (typeof body.pref_step_by_step === 'boolean') patch.pref_step_by_step = body.pref_step_by_step;
-    if (typeof body.pref_practice_suggestions === 'boolean') patch.pref_practice_suggestions = body.pref_practice_suggestions;
-    if (typeof body.pref_calm_tone === 'boolean') patch.pref_calm_tone = body.pref_calm_tone;
-
-    const { data: updated, error } = await admin
-      .from('dream_profiles').update(patch).eq('id', user.id).select('*').single();
-    if (error) return json({ error: 'No se pudieron guardar las preferencias.' }, 503);
-
-    return json({
-      profile: {
-        ...publicProfile,
-        pref_step_by_step: updated.pref_step_by_step !== false,
-        pref_practice_suggestions: updated.pref_practice_suggestions !== false,
-        pref_calm_tone: updated.pref_calm_tone !== false
-      }
-    });
+  if (body.action === 'account_delete') {
+    if (body.confirm !== 'ELIMINAR') return json({ error: 'Confirma la eliminación de la cuenta.' }, 400);
+    // Every Dream table references auth.users with ON DELETE CASCADE (AI usage
+    // logs keep only an anonymous SET NULL row). Attachments live in Postgres.
+    await admin.schema('dream_private').from('leases').delete().eq('owner_id', user.id);
+    const removed = await admin.auth.admin.deleteUser(user.id);
+    if (removed.error) return json({ error: 'No se pudo eliminar la cuenta. Inténtalo de nuevo.' }, 503);
+    return json({ ok: true });
   }
 
   if (body.action === 'conversations') {
@@ -344,77 +262,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ attachment: insert.data });
   }
 
-  if (body.action === 'teacher_invite_create') {
-    if (mode.role !== 'teacher') return json({ error: 'Esta acción es solo para profesores.' }, 403);
-    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const bytes = crypto.getRandomValues(new Uint8Array(8));
-    let code = '';
-    for (const value of bytes) code += alphabet[value % alphabet.length];
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    const created = await admin.from('dream_teacher_invites').insert({
-      teacher_id: user.id, code, expires_at: expiresAt
-    }).select('id,code,expires_at,max_uses,uses').single();
-    return created.error ? json({ error: 'No se pudo crear el código.' }, 503) : json({ invite: created.data });
-  }
-
-  if (body.action === 'teacher_invites') {
-    if (mode.role !== 'teacher') return json({ error: 'Esta acción es solo para profesores.' }, 403);
-    const invites = await admin.from('dream_teacher_invites')
-      .select('id,code,expires_at,max_uses,uses,revoked_at,created_at')
-      .eq('teacher_id', user.id).order('created_at', { ascending: false }).limit(20);
-    return invites.error ? json({ error: 'No se pudieron cargar los códigos.' }, 503) : json({ items: invites.data || [] });
-  }
-
-  if (body.action === 'teacher_invite_join') {
-    if (mode.role !== 'student') return json({ error: 'Esta acción es para alumnos.' }, 403);
-    const code = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
-    if (!/^[A-Z2-9]{8}$/.test(code)) return json({ error: 'Código no válido.' }, 400);
-    const invite = await admin.from('dream_teacher_invites').select('*').eq('code', code).maybeSingle();
-    const row = invite.data;
-    if (!row || row.revoked_at || new Date(row.expires_at).getTime() < Date.now() || row.uses >= row.max_uses) {
-      return json({ error: 'Código no válido o caducado.' }, 404);
-    }
-    const linked = await admin.from('dream_teacher_student_links').upsert({
-      teacher_id: row.teacher_id, student_id: user.id, status: 'active', shared_at: new Date().toISOString()
-    }, { onConflict: 'teacher_id,student_id' });
-    if (linked.error) return json({ error: 'No se pudo vincular la cuenta.' }, 503);
-    await admin.from('dream_teacher_invites').update({ uses: row.uses + 1 }).eq('id', row.id);
-    return json({ ok: true });
-  }
-
-  if (body.action === 'teacher_link_revoke') {
-    if (mode.role !== 'teacher') return json({ error: 'Esta acción es solo para profesores.' }, 403);
-    if (!uuid.test(body.student_id || '')) return json({ error: 'Alumno no válido.' }, 400);
-    const changed = await admin.from('dream_teacher_student_links')
-      .update({ status: 'revoked' }).eq('teacher_id', user.id).eq('student_id', body.student_id);
-    return changed.error ? json({ error: 'No se pudo revocar el acceso.' }, 503) : json({ ok: true });
-  }
-
-  if (body.action === 'teacher_dashboard') {
-    if (mode.role !== 'teacher') return json({ error: 'Esta vista es solo para profesores.' }, 403);
-    const links = await admin.from('dream_teacher_student_links').select('student_id').eq('teacher_id', user.id).eq('status', 'active');
-    const ids = (links.data || []).map((row: any) => row.student_id);
-    if (!ids.length) return json({ students: [], summary: { students: 0, tests: 0, topics: 0, needs_review: 0 } });
-    const [profilesResult, topicsResult, attemptsResult] = await Promise.all([
-      admin.from('dream_profiles').select('id,display_name,email,academic_level').in('id', ids),
-      admin.from('dream_learning_topics').select('student_id,concept,status').in('student_id', ids),
-      admin.from('dream_test_attempts').select('student_id').in('student_id', ids).eq('status', 'completed')
-    ]);
-    const topics = topicsResult.data || [];
-    const students = (profilesResult.data || []).map((p: any) => {
-      const own = topics.filter((t: any) => t.student_id === p.id);
-      return { id: p.id, name: p.display_name || String(p.email || '').split('@')[0], level: p.academic_level,
-        practicing: own.filter((t: any) => t.status === 'practicing').length,
-        improving: own.filter((t: any) => ['improving','almost_mastered'].includes(t.status)).length,
-        mastered: own.filter((t: any) => t.status === 'mastered').length,
-        review: own.filter((t: any) => ['new','practicing'].includes(t.status)).slice(0, 3).map((t: any) => t.concept) };
-    });
-    return json({ students, summary: { students: students.length, tests: (attemptsResult.data || []).length, topics: topics.length,
-      needs_review: new Set(topics.filter((t: any) => ['new','practicing'].includes(t.status)).map((t: any) => t.student_id)).size } });
-  }
-
   if (body.action === 'test_generate') {
-    if (mode.role !== 'student') return json({ error: 'Los tests de progreso están disponibles en el perfil de alumno.' }, 403);
     const context = typeof body.context === 'string' ? body.context.trim().slice(0, examInternal ? 30000 : 10000) : '';
     if (!context) return json({ error: 'Necesito un tema para crear el test.' }, 400);
     const count = Math.max(3, Math.min(10, Number(body.question_count) || 5));
@@ -561,10 +409,6 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
 
   if (body.action !== 'chat') return json({ error: 'Acción no válida.' }, 400);
 
-  if (!mode.onboardingCompleted) {
-    return json({ error: 'Completa la configuración inicial para empezar.', code: 'onboarding_required' }, 409);
-  }
-
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
   const searchRequested = wantsWebSearch(prompt);
   if (searchRequested && !tavilyProvider.configured()) return json({error:'La búsqueda web no está configurada. No puedo verificar información actual ahora.'},503);
@@ -611,7 +455,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     .select('role,content').eq('conversation_id', conversation.data.id).eq('owner_id', user.id)
     .order('created_at', { ascending: false }).limit(MAX_HISTORY);
   const priorMessages = (history.data || []).reverse().map((m: any) => ({ role: m.role, content: String(m.content || '').slice(0,4000) }));
-  const educationalSelection = selectEducationalSkills(prompt, priorMessages, mode.educationMode);
+  const educationalSelection = selectEducationalSkills(prompt, priorMessages, true);
   const model = groqModel();
   console.log(JSON.stringify({
     event: 'dream_mode_resolved',
@@ -620,24 +464,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     attachments: attachmentRows.length,
   }));
 
-  let academicMemory: any[] = [];
-  if (mode.role === 'student') {
-    const memoryResult = await admin.from('dream_learning_topics').select('subject,topic,concept,status,evidence_count,correct_count')
-      .eq('student_id', user.id).order('last_evidence_at', { ascending: false }).limit(50);
-    const promptWords = new Set(prompt.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word: string) => word.length > 3));
-    academicMemory = (memoryResult.data || []).filter((row: any) =>
-      [row.subject,row.topic,row.concept].some((value: string) => String(value || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).some(word => promptWords.has(word)))
-    ).slice(0, 5);
-  }
+  const memoryResult = await admin.from('dream_learning_topics').select('subject,topic,concept,status,evidence_count,correct_count')
+    .eq('student_id', user.id).order('last_evidence_at', { ascending: false }).limit(50);
+  const promptWords = new Set(prompt.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((word: string) => word.length > 3));
+  const academicMemory = (memoryResult.data || []).filter((row: any) =>
+    [row.subject,row.topic,row.concept].some((value: string) => String(value || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).some(word => promptWords.has(word)))
+  ).slice(0, 5);
   const systemMessages = [
     { role: 'system', content: DREAM_SYSTEM_PROMPT },
     { role: 'system', content: `Política de conversación actual: responde proporcionalmente y con prosa natural. Para mensajes breves o ambiguos, responde brevemente o pregunta solo lo imprescindible; nunca inventes contexto ausente. No actives una lección por defecto para tareas generales. En un tema nuevo educativo, explica solo una idea, como máximo un ejemplo y, si aporta valor, una comprobación breve; espera el siguiente turno. Si el usuario ya domina una parte, comienza en la duda concreta. Una solicitud explícita de apuntes o resumen completo sí requiere respuesta completa. Para trabajo evaluable, ofrece el siguiente paso o pista y revisa el intento sin dar directamente el resultado. Un test para imprimir se entrega como texto; un test interactivo usa el flujo de test del producto. No inventes fechas ni datos recientes; cuando consultes la web, utiliza solamente los resultados obtenidos y distingue fechas y fuentes.` },
     ...(tavilyProvider.configured() ? [{ role: 'system', content: 'Tienes la herramienta web_search y puedes buscar en internet. Si el usuario pide buscar o investigar, úsala. Si no sabes un dato, o el dato es actual y puedes estar desfasado, búscala antes de responder. No digas que no puedes buscar. No inventes lo que no sepas: busca y responde solo con lo encontrado, citando la fuente.' }] : []),
-    { role: 'system', content: dynamicContextFor(mode, {
-      pref_step_by_step: profile.pref_step_by_step !== false,
-      pref_practice_suggestions: profile.pref_practice_suggestions !== false,
-      pref_calm_tone: profile.pref_calm_tone !== false
-    }, academicMemory) },
+    { role: 'system', content: dynamicContextFor(academicMemory) },
     { role: 'system', content: educationalSkillPrompt(educationalSelection, profile.academic_level) },
   ];
   if (examStudyContext) systemMessages.push({ role: 'system', content: examStudyContext });
@@ -688,7 +525,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         const searchKey = searchAvailable;
         const toolDeltas: any[] = [];
         let provisional = '';
-        const baseBody = { model, stream: true, max_tokens: 2048, temperature: mode.educationMode ? 0.5 : 0.7, stream_options: { include_usage: true } };
+        const baseBody = { model, stream: true, max_tokens: 2048, temperature: 0.5, stream_options: { include_usage: true } };
         // Buffer the first pass when tools are available so a search can run
         // before any speculative text reaches the student.
         for await (const chunk of groqProvider.stream({ generationId, signal: generationSignal, beforeAttempt: streamAdmission, pause: admission.pause,
@@ -779,10 +616,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   } catch (error) { captureEdgeFailure(String(body.action), error instanceof AdmissionError ? error.code : 'edge_failure'); return safeFailure(error); }
   finally { if (admitted && !streamOwnsLease) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'}))); }
 }
+// Browser origins allowed to call dream-api: Dream's own domains, local dev,
+// the project's Vercel previews, plus any extra in DREAM_ALLOWED_ORIGINS
+// (comma separated).
+const DEFAULT_ORIGINS = ['https://www.edudream.es', 'https://edudream.es', 'http://localhost:3000'];
+const VERCEL_PREVIEW = /^https:\/\/dream-[a-z0-9-]+-kinetik1\.vercel\.app$/;
+const configuredOrigins = (Deno.env.get('DREAM_ALLOWED_ORIGINS') ?? '').split(',').map(o => o.trim()).filter(Boolean);
+const originAllowed = (origin: string) =>
+  DEFAULT_ORIGINS.includes(origin) || VERCEL_PREVIEW.test(origin) || configuredOrigins.includes(origin);
 Deno.serve(async (req: Request) => {
   const origin=req.headers.get('origin');
-  const allowed=(Deno.env.get('DREAM_ALLOWED_ORIGINS')??'').split(',').map(o=>o.trim()).filter(Boolean);
-  if(origin && !allowed.includes(origin)) return new Response(JSON.stringify({error:'Origen no permitido.'}),{status:403,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
+  if(origin && !originAllowed(origin)) return new Response(JSON.stringify({error:'Origen no permitido.'}),{status:403,headers:{'Content-Type':'application/json','Cache-Control':'no-store'}});
   const response=await handle(new Request(req,{signal:AbortSignal.any([req.signal,AbortSignal.timeout(150000)])}));
   if(origin) response.headers.set('Access-Control-Allow-Origin',origin);
   return response;

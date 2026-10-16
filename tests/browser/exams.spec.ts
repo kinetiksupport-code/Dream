@@ -121,9 +121,6 @@ async function fixture(page: Page, seed = true) {
           profile: {
             email: "qa@example.test",
             display_name: "Alex",
-            pref_step_by_step: true,
-            pref_practice_suggestions: true,
-            pref_calm_tone: true,
           },
           service_ready: true,
         };
@@ -400,10 +397,12 @@ test("autosave restores the answer and cursor on reload", async ({ page }) => {
   const state = await fixture(page);
   await page.goto(`/exams/${eid}`);
   await page.getByRole("button", { name: "Empezar simulacro" }).click();
-  await page.getByRole("radio").nth(1).check();
+  // Answer only once the saved session has loaded, so the load cannot
+  // overwrite the click.
   await expect(
     page.getByText("Respuestas guardadas", { exact: true }).first(),
   ).toBeVisible();
+  await page.getByRole("radio").nth(1).check();
   await expect
     .poll(() => Object.values(state.sessions)[0]?.answers.q1)
     .toBe("x = 2 o x = 3");

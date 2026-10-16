@@ -226,10 +226,6 @@ export function Providers({ children }: { children: ReactNode }) {
       // viewport. The tab bar hides so the composer sits right above the keys.
       document.documentElement.dataset.keyboard =
         window.innerHeight - height > 150 ? "open" : "closed";
-      document.documentElement.style.setProperty(
-        "--viewport-top",
-        `${viewport?.offsetTop ?? 0}px`,
-      );
     };
     update();
     viewport?.addEventListener("resize", update);

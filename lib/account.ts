@@ -1,14 +1,16 @@
-/**
- * Account actions not yet exposed by dream-api.
- *
- * TODO(backend): dream-api has no `profile_update` (display name) nor
- * `account_delete` action. When they exist, implement them here with
- * callDream(...) and the Ajustes screen enables the controls automatically.
- */
-export const accountActions: {
-  updateDisplayName: ((name: string) => Promise<void>) | null;
-  deleteAccount: (() => Promise<void>) | null;
-} = {
-  updateDisplayName: null,
-  deleteAccount: null,
-};
+import type { User } from "@supabase/supabase-js";
+
+/** Name and email of the signed-in Google account; the profile only fills gaps. */
+export function accountIdentity(
+  user: Pick<User, "email" | "user_metadata"> | null | undefined,
+  profile: { email?: string; display_name?: string | null } | null,
+) {
+  const meta = user?.user_metadata ?? {};
+  const fromGoogle = [meta.full_name, meta.name].find(
+    (value): value is string => typeof value === "string" && !!value.trim(),
+  );
+  return {
+    name: profile?.display_name?.trim() || fromGoogle?.trim() || "",
+    email: user?.email || profile?.email || "",
+  };
+}

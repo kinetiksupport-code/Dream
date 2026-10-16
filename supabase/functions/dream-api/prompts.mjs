@@ -519,33 +519,6 @@ da una pista.
 Elige la herramienta correcta.
 
 ============================================================
-27. PROFESORES
-============================================================
-
-Cuando interactúes con un profesor puedes ayudar a:
-
-- interpretar resultados
-- detectar conceptos problemáticos
-- crear práctica
-- preparar tests
-- resumir progreso académico
-- proponer actividades
-
-No presentes inferencias psicológicas sobre alumnos.
-
-Habla únicamente de evidencia académica disponible.
-
-============================================================
-28. PRIVACIDAD ALUMNO-PROFESOR
-============================================================
-
-No asumas que el profesor puede leer conversaciones privadas completas.
-
-Utiliza datos académicos que el sistema le proporcione explícitamente.
-
-No reveles información privada no autorizada.
-
-============================================================
 29. INCERTIDUMBRE
 ============================================================
 
@@ -605,35 +578,18 @@ Admite incertidumbre.
 Ayuda de verdad.`;
 
 /**
- * Bloque de contexto DINÁMICO por usuario — separado del prompt fijo de
- * arriba (instrucción §7). Incluye rol/edad y, ahora, las preferencias de
- * comportamiento REALES que el usuario ha guardado en Ajustes (no simuladas).
+ * Bloque de contexto DINÁMICO por usuario, separado del prompt fijo de arriba
+ * (instrucción §7). Dream es solo para estudiantes y siempre guía paso a paso,
+ * propone práctica y mantiene un tono tranquilo: no hay ajustes por usuario.
  */
-export function dynamicContextFor(mode, prefs, memory = []) {
-  const lines = ['Contexto proporcionado por el sistema (no lo cites textualmente al usuario):'];
-
-  if (mode?.role === 'student') {
-    lines.push('- Rol: alumno.');
-    if (mode.ageBand === 'under_14') lines.push('- Franja de edad: menor de 14 años. Mantén un registro apropiado para esa edad.');
-    else if (mode.ageBand === '14_17') lines.push('- Franja de edad: 14 a 17 años.');
-    else if (mode.ageBand === '18_plus') lines.push('- Franja de edad: 18 años o más.');
-  } else if (mode?.role === 'teacher') {
-    lines.push('- Rol: profesor/a. Aplica la sección "27. PROFESORES" del comportamiento.');
-  } else {
-    lines.push('- Rol: usuario general, sin contexto educativo específico asociado a la cuenta.');
-  }
-
-  if (prefs) {
-    lines.push(prefs.pref_step_by_step
-      ? '- Preferencia guardada: desglosar explicaciones complejas en pasos.'
-      : '- Preferencia guardada: NO desglosar en pasos salvo que el usuario lo pida; prefiere respuestas directas.');
-    lines.push(prefs.pref_practice_suggestions
-      ? '- Preferencia guardada: proponer un ejercicio de práctica al final de explicaciones educativas, cuando encaje.'
-      : '- Preferencia guardada: NO proponer ejercicios de práctica de forma proactiva.');
-    lines.push(prefs.pref_calm_tone
-      ? '- Preferencia guardada: tono sobrio y conciso, sin artificios retóricos.'
-      : '- Preferencia guardada: tono más libre, sin restricción explícita de sobriedad.');
-  }
+export function dynamicContextFor(memory = []) {
+  const lines = [
+    'Contexto proporcionado por el sistema (no lo cites textualmente al usuario):',
+    '- Rol: alumno.',
+    '- Desglosa las explicaciones complejas en pasos.',
+    '- Propón un ejercicio de práctica al final de las explicaciones educativas, cuando encaje.',
+    '- Tono sobrio y conciso, sin artificios retóricos.',
+  ];
 
   if (Array.isArray(memory) && memory.length) {
     lines.push('- Memoria académica relevante para este tema (usa solo si ayuda):');
@@ -642,9 +598,5 @@ export function dynamicContextFor(mode, prefs, memory = []) {
   lines.push('- Existe un motor de tests interactivos separado. Si decides comprobar varios conceptos ahora, añade la señal <!--DREAM_ACTION:TEST--> y no escribas las preguntas en el chat. Una sola comprobación breve sí puede ir en la conversación. No escribas respuestas correctas de un test activo.');
 
   return lines.join('\n');
-}
-
-export function promptIdFor(mode) {
-  return mode?.educationMode ? 'helix-unified-v1-student-context' : mode?.role === 'teacher' ? 'helix-unified-v1-teacher-context' : 'helix-unified-v1-general-context';
 }
 

@@ -6,9 +6,6 @@ const qid = "32345678-1234-1234-1234-123456789abc";
 const profile = {
   email: "qa@example.test",
   display_name: "Alex",
-  pref_step_by_step: true,
-  pref_practice_suggestions: true,
-  pref_calm_tone: true,
 };
 async function authenticated(page: Page) {
   await page.addInitScript(() => {
@@ -87,9 +84,6 @@ async function authenticated(page: Page) {
           body: '{"type":"activity","activity":"searching"}\n{"type":"delta","text":"Una respuesta real del contrato de prueba."}\n{"type":"complete"}\n',
         });
         return;
-      case "preferences_update":
-        data = { profile: { ...profile, ...body } };
-        break;
       case "attachment_upload":
         data = { attachment: { id: qid, status: "processed" } };
         break;
@@ -228,11 +222,9 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
     "DREAM_WIDGET",
   );
   await page.goto("/settings");
-  await expect(page.getByRole("switch", { name: "Paso a paso" })).toBeChecked();
-  await page.getByRole("switch", { name: "Paso a paso" }).click();
-  await expect(
-    page.getByRole("switch", { name: "Paso a paso" }),
-  ).not.toBeChecked();
+  // Ajustes shows the Google account behind the session; no help-style toggles.
+  await expect(page.getByText("qa@example.test")).toBeVisible();
+  await expect(page.getByText("Cómo te ayuda Dream")).toHaveCount(0);
   await page.screenshot({
     animations: "disabled",
     path: "test-results/settings-light.png",
@@ -259,7 +251,9 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
     .getByRole("link", { name: "Más" })
     .click();
   await page.getByRole("link", { name: "Apuntes", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Apuntes" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Apuntes", exact: true }),
+  ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
     path: "test-results/notes-mobile-dark.png",
@@ -813,6 +807,16 @@ test("real UI states from stream events and failed upload recovery", async ({
     .fill("Una idea actual");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
   await expect(page.locator(".activity-thinking")).toBeVisible();
+  // "Thinking" shows before the chat request starts: wait for the simulated
+  // stream to exist so the events below are not dropped.
+  await page.waitForFunction(
+    () =>
+      !!(
+        window as typeof window & {
+          qaStream?: ReadableStreamDefaultController<Uint8Array>;
+        }
+      ).qaStream,
+  );
   await page.screenshot({
     path: "test-results/figma-thinking.png",
     animations: "disabled",
@@ -920,4 +924,67 @@ test("real UI states from stream events and failed upload recovery", async ({
       animations: "disabled",
     });
   }
+});
+
+test("Ajustes: delete history end to end, failure stays visible, account deletion with confirmation", async ({
+  page,
+}) => {
+  await authenticated(page);
+  let deleted = false;
+  let failNext = true;
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.action === "conversations_delete_all") {
+      if (failNext) {
+        failNext = false;
+        await route.fulfill({
+          status: 503,
+          json: { error: "No se pudo borrar el historial. Inténtalo de nuevo." },
+        });
+        return;
+      }
+      deleted = true;
+      await route.fulfill({ json: { ok: true } });
+      return;
+    }
+    if (body.action === "conversations" && deleted) {
+      await route.fulfill({ json: { items: [] } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Borrar historial" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("¿Borrar todo el historial?");
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "No se pudo borrar el historial",
+  );
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Historial borrado." })).toContainText(
+    "Ya no tienes conversaciones guardadas.",
+  );
+  expect(deleted).toBe(true);
+  await page.goto("/chat?view=recent");
+  await expect(
+    page.getByRole("heading", { name: "Aún no hay conversaciones" }),
+  ).toBeVisible();
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
+  const account = page.getByRole("dialog");
+  const remove = account.getByRole("button", { name: "Eliminar cuenta" });
+  await expect(remove).toBeDisabled();
+  await account
+    .getByRole("textbox", { name: "Escribe ELIMINAR para confirmar" })
+    .fill("ELIMINAR");
+  const request = page.waitForRequest(
+    (req) =>
+      req.url().includes("/functions/v1/dream-api") &&
+      req.postDataJSON()?.action === "account_delete",
+  );
+  await remove.click();
+  expect((await request).postDataJSON().confirm).toBe("ELIMINAR");
+  await expect(page).toHaveURL(/\/login/);
 });

@@ -25,7 +25,7 @@ export function DreamMark({
   );
 }
 
-export const ACTIVITY_LABELS: Record<DreamState, string> = {
+const ACTIVITY_LABELS: Record<DreamState, string> = {
   idle: "Listo",
   thinking: "Pensando",
   searching: "Buscando en Internet",
