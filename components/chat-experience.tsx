@@ -119,6 +119,7 @@ export function ChatExperience({
     setMessages([]);
     setOlderOffset(null);
     pinned.current = true;
+    followed.current = null;
     setAtBottom(true);
     if (!c) {
       const handed = takePendingFiles();
@@ -159,12 +160,30 @@ export function ChatExperience({
     },
     [clearFiles],
   );
+  // scrollTop that auto-scroll last set. If the view is now higher and not at
+  // the bottom, the student scrolled up (even if the scroll event has not
+  // arrived yet): stop following instead of pulling them back down.
+  const followed = useRef<number | null>(null);
+  const follow = useCallback(() => {
+    const el = scroller.current;
+    if (!el || !pinned.current) return;
+    if (
+      followed.current !== null &&
+      el.scrollTop < followed.current - 4 &&
+      el.scrollHeight - el.scrollTop - el.clientHeight >= 80
+    ) {
+      pinned.current = false;
+      setAtBottom(false);
+      return;
+    }
+    el.scrollTop = el.scrollHeight;
+    followed.current = el.scrollTop;
+  }, []);
   useEffect(() => {
     if (!scroller.current) return;
     if (!messages.length && !busy) scroller.current.scrollTop = 0;
-    else if (pinned.current)
-      scroller.current.scrollTop = scroller.current.scrollHeight;
-  }, [messages, state, loading, busy]);
+    else follow();
+  }, [messages, state, loading, busy, follow]);
   // Anything that grows the thread (a streamed paragraph, the AI status that
   // appears at 2 s, a formula) keeps the view at the bottom, but only while
   // the student is there: reading above is never interrupted.
@@ -173,13 +192,10 @@ export function ChatExperience({
   useEffect(() => {
     const el = thread.current;
     if (!el || !hasThread) return;
-    const observer = new ResizeObserver(() => {
-      if (pinned.current && scroller.current)
-        scroller.current.scrollTop = scroller.current.scrollHeight;
-    });
+    const observer = new ResizeObserver(follow);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasThread]);
+  }, [hasThread, follow]);
   async function ensureConversation() {
     if (idRef.current) return idRef.current;
     if (creation.current) return creation.current;
@@ -358,6 +374,7 @@ export function ChatExperience({
     setWaitSince(Date.now());
     setState("thinking");
     pinned.current = true;
+    followed.current = null;
     setAtBottom(true);
     const controller = new AbortController();
     abort.current = controller;
@@ -636,6 +653,7 @@ export function ChatExperience({
           if (el) {
             pinned.current =
               el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            followed.current = pinned.current ? el.scrollTop : null;
             setAtBottom(pinned.current);
           }
         }}
@@ -718,6 +736,7 @@ export function ChatExperience({
             inert={atBottom || undefined}
             onClick={() => {
               pinned.current = true;
+              followed.current = null;
               setAtBottom(true);
               scroller.current?.scrollTo({
                 top: scroller.current.scrollHeight,
