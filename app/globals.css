@@ -26,7 +26,6 @@
   --on-primary-secondary: #dfe7ff;
   --accent: #c8f560;
   --on-accent: #080b14;
-  --on-accent-secondary: #3d4a1f;
   --nav-active: rgba(21, 91, 255, 0.1);
   --nav-hover: rgba(8, 11, 20, 0.05);
   --success: #17692f;
@@ -71,7 +70,6 @@
   --dur-pulse: 1.6s;
   /* Viewport (updated from VisualViewport in providers.tsx) */
   --viewport-height: 100dvh;
-  --viewport-top: 0px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -96,7 +94,6 @@
   --on-primary-secondary: #dfe7ff;
   --accent: #c8f560;
   --on-accent: #080b14;
-  --on-accent-secondary: #3d4a1f;
   --nav-active: rgba(122, 162, 255, 0.14);
   --nav-hover: rgba(242, 244, 248, 0.06);
   --success: #6fd08c;
@@ -1195,66 +1192,6 @@ svg.lucide {
   gap: 8px;
   color: var(--success);
   font-size: var(--text-secondary-size);
-}
-.settings-account {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.avatar {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: var(--on-primary);
-  font-weight: 700;
-}
-/* Legacy settings markup reused by PrivacySettings (observability.tsx). */
-.settings-group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.settings-group > h2 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.settings-group > p {
-  color: var(--text-secondary);
-  font-size: var(--text-secondary-size);
-}
-.settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 64px;
-  padding: 10px 20px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.settings-group > .settings-row:first-of-type {
-  border-radius: var(--radius-card) var(--radius-card) 0 0;
-}
-.settings-group > .settings-row:last-of-type {
-  border-bottom: 0;
-  border-radius: 0 0 var(--radius-card) var(--radius-card);
-}
-.settings-group > .settings-row:only-of-type {
-  border-radius: var(--radius-card);
-}
-.settings-row strong {
-  display: block;
-  font-size: var(--text-body);
-  font-weight: 500;
-}
-.settings-row p {
-  color: var(--text-secondary);
-  font-size: var(--text-small);
 }
 .install-steps {
   margin: 0;
@@ -2365,4 +2302,85 @@ fieldset:disabled .test-option {
 .group-list dt,
 .group-list dd {
   margin: 0;
+}
+
+/* Legal pages */
+.legal-page {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+.legal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+.legal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.legal-head nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--text-small);
+}
+.legal-head nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.legal-head nav a:hover {
+  color: var(--primary-ink);
+}
+.legal-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 16px 64px;
+  font-size: var(--text-body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.legal-body h1 {
+  font-size: var(--text-title);
+  line-height: 1.2;
+  margin: 8px 0 12px;
+}
+.legal-body h2 {
+  font-size: 1.375rem;
+  margin: 2rem 0 0.5rem;
+}
+.legal-body h3 {
+  font-size: 1.125rem;
+  margin: 1.5rem 0 0.4rem;
+}
+.legal-body a {
+  color: var(--primary-ink);
+}
+.legal-body ul,
+.legal-body ol {
+  padding-left: 1.4rem;
+}
+.legal-body table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  margin: 1rem 0;
+}
+.legal-body th,
+.legal-body td {
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.3));
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 120px;
 }

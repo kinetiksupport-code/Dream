@@ -94,6 +94,6 @@ Revisar y aprobar la PR antes de cualquier despliegue de producción. No se han 
 - `npm test`: 15/15 pruebas pasan, incluyendo el SDK real de Sentry con transporte local y canarios privados.
 - `npm run build`: producción correcto; no se generaron mapas públicos sin credenciales de subida.
 - Navegador: 10 comprobaciones de chat/tests/PWA y 4 comprobaciones de Exámenes/observabilidad pasan. La ejecución final enfocada de las cuatro últimas valida el build final, incluido HTTP 429 y revocación.
-- Capturas revisables: [docs/visual-qa/exams](docs/visual-qa/exams).
+- Capturas: Playwright las genera en `test-results/` al ejecutar `npm run test:browser`.
 
 Sentry en un proyecto remoto, upload de source maps y alertas quedan pendientes de credenciales/acceso; PostHog confirma aceptación HTTP pero no se pudo verificar indexación mediante su complemento. No se despliega producción.

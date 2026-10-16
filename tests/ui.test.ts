@@ -193,3 +193,26 @@ test("notes come from exam materials, deduplicated, with readable status", () =>
   assert.equal(noteKind("", "resumen.txt"), "TXT");
   assert.equal(noteKind("", "sin-extension"), "Archivo");
 });
+
+test("Ajustes shows the Google account when the profile has no name", async () => {
+  const { accountIdentity } = await import("../lib/account");
+  const user = {
+    email: "alumna@example.test",
+    user_metadata: { full_name: "Ana Pérez", name: "Ana" },
+  };
+  assert.deepEqual(accountIdentity(user, { email: "", display_name: "" }), {
+    name: "Ana Pérez",
+    email: "alumna@example.test",
+  });
+  assert.deepEqual(
+    accountIdentity({ email: undefined, user_metadata: { name: "Ana" } }, {
+      email: "perfil@example.test",
+      display_name: null,
+    }),
+    { name: "Ana", email: "perfil@example.test" },
+  );
+  assert.equal(
+    accountIdentity(user, { display_name: "Ana P." }).name,
+    "Ana P.",
+  );
+});
