@@ -294,10 +294,10 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/exams");
   await expect(
-    page.getByRole("heading", { name: "Prepárate con calma." }),
+    page.getByRole("heading", { name: "Exámenes", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Nuevo examen", exact: true })
+    .getByRole("link", { name: "Añadir examen", exact: true })
     .first()
     .click();
   await page.getByLabel("Nombre del examen").fill("Álgebra · primer trimestre");
@@ -329,7 +329,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
   expect(chatBody?.exam_id).toBe(e.id);
   expect(chatBody?.unit_id).toBe(e.units[2].id);
   await page.goto(`/exams/${e.id}`);
-  await page.getByRole("button", { name: "Empezar simulacro" }).click();
+  await page.getByRole("button", { name: "Hacer un test de práctica" }).click();
   await page.getByRole("radio").first().check();
   await page.screenshot({ path: "/tmp/dream-exam-qa/question-choice-390.png" });
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
@@ -396,7 +396,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
 test("autosave restores the answer and cursor on reload", async ({ page }) => {
   const state = await fixture(page);
   await page.goto(`/exams/${eid}`);
-  await page.getByRole("button", { name: "Empezar simulacro" }).click();
+  await page.getByRole("button", { name: "Hacer un test de práctica" }).click();
   // Answer only once the saved session has loaded, so the load cannot
   // overwrite the click.
   await expect(
@@ -409,7 +409,7 @@ test("autosave restores the answer and cursor on reload", async ({ page }) => {
   await page.reload();
   await expect(page.getByRole("radio").nth(1)).toBeChecked();
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
-  // Reload only once the new position is saved, or the old one comes back.
+  // Reload only once the new cursor is saved (fc05702 in design/chat).
   await expect
     .poll(() => Object.values(state.sessions)[0]?.question_index)
     .toBe(1);
@@ -423,12 +423,12 @@ test("responsive exam frames, dark mode and screenshots at every required width"
   await fixture(page);
   await page.goto("/exams");
   await expect(
-    page.getByRole("heading", { name: "Prepárate con calma." }),
+    page.getByRole("heading", { name: "Exámenes", exact: true }),
   ).toBeVisible();
   for (const width of [375, 390, 393, 430, 768, 834, 1280, 1440, 1728]) {
     await page.setViewportSize({ width, height: width < 600 ? 844 : 1024 });
     await expect(
-      page.getByRole("heading", { name: "Prepárate con calma." }),
+      page.getByRole("heading", { name: "Exámenes", exact: true }),
     ).toBeVisible();
     expect(
       await page.evaluate(
@@ -473,7 +473,7 @@ test("responsive exam frames, dark mode and screenshots at every required width"
   });
   await page.goto("/exams");
   await expect(
-    page.getByRole("heading", { name: "Prepárate con calma." }),
+    page.getByRole("heading", { name: "Exámenes", exact: true }),
   ).toBeVisible();
   await page.evaluate(() => (document.documentElement.dataset.theme = "dark"));
   await page.screenshot({
