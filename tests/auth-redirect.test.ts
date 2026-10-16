@@ -62,6 +62,26 @@ test("a missing or malformed site URL falls back to the page origin", () => {
       String(siteUrl),
     );
   assert.equal(siteOrigin(" https://www.edudream.es/ "), SITE);
+  // Production had NEXT_PUBLIC_SITE_URL=www.edudream.es, without the scheme.
+  assert.equal(siteOrigin("www.edudream.es"), SITE);
+  assert.equal(siteOrigin("www.edudream.es/"), SITE);
+  assert.equal(
+    getAuthRedirectUrl({
+      origin: "https://edudream.vercel.app",
+      siteUrl: "www.edudream.es",
+      environment: "production",
+    }),
+    "https://www.edudream.es/auth/callback",
+  );
+  assert.equal(
+    canonicalRedirect({
+      url: new URL("https://edudream.vercel.app/login"),
+      method: "GET",
+      siteUrl: "www.edudream.es",
+      environment: "production",
+    })?.href,
+    "https://www.edudream.es/login",
+  );
   assert.equal(siteOrigin("https://www.edudream.es/algo?x=1"), SITE);
 });
 

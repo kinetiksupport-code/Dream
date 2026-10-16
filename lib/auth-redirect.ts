@@ -15,7 +15,12 @@ export function siteOrigin(
 ): string | null {
   if (!value) return null;
   try {
-    const url = new URL(value.trim());
+    // Accept the bare host too ("www.edudream.es"): it is easy to paste in
+    // Vercel without the scheme, and https is the only valid one here.
+    const text = value.trim();
+    const url = new URL(
+      /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`,
+    );
     if (url.protocol !== "https:" && url.hostname !== "localhost") return null;
     return url.origin;
   } catch {
