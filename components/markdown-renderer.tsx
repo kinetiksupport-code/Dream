@@ -10,6 +10,21 @@ import rehypeKatex from "rehype-katex";
 import { Copy, Check } from "lucide-react";
 // KaTeX styles travel with this lazily loaded chunk, not the initial bundle.
 import "katex/dist/katex.min.css";
+import katex from "katex";
+
+// Warm KaTeX (its first render builds internal tables) and its fonts while the
+// browser is idle, so the first formula of a streamed answer is not a long frame.
+if (typeof window !== "undefined") {
+  const warm = () => {
+    try {
+      katex.renderToString("x^2", { throwOnError: false });
+      void document.fonts?.load("1em KaTeX_Main");
+      void document.fonts?.load("italic 1em KaTeX_Math");
+    } catch {}
+  };
+  if ("requestIdleCallback" in window) window.requestIdleCallback(warm);
+  else setTimeout(warm, 200);
+}
 function CodeBlock({ children }: { children?: ReactNode }) {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");

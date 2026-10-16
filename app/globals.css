@@ -1765,6 +1765,15 @@ svg.lucide {
   font-size: var(--text-small);
   font-weight: 500;
 }
+/* The actions row keeps its place (no jump on hover) but sits tighter. */
+.message-assistant .message-actions {
+  margin: -4px 0 -12px;
+}
+@media (max-width: 639.98px) {
+  .chat-retry {
+    margin-left: 32px; /* aligned with the text when it wraps below */
+  }
+}
 .copy-action.is-copied {
   color: var(--success);
 }
@@ -1941,6 +1950,7 @@ svg.lucide {
 /* Errors: icon + cause + «Reintentar», never a loose line of text. */
 .chat-error {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   padding: 12px 12px 12px 16px;
@@ -1955,7 +1965,7 @@ svg.lucide {
   color: var(--danger);
 }
 .chat-error-text {
-  flex: 1;
+  flex: 1 1 200px;
   min-width: 0;
   display: flex;
   flex-direction: column;
