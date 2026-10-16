@@ -31,63 +31,42 @@ function units(statuses: PathUnit["status"][]): PathUnit[] {
 }
 const states = (u: PathUnit[]) => studyPath(u).nodes.map((n) => n.state);
 
-test("cada nodo recibe su estado: completados, actual, a continuación y bloqueados", () => {
+test("cada unidad recibe su estado: completada, a continuación, en curso y pendiente", () => {
   const path = studyPath(
     units(["completed", "completed", "in_progress", "pending", "pending"]),
   );
   assert.deepEqual(
-    path.nodes.map((n) => [n.state, n.unlocked, n.label]),
+    path.nodes.map((n) => [n.state, n.label]),
     [
-      ["completed", true, "Completado"],
-      ["completed", true, "Completado"],
-      ["current", true, "Estás aquí"],
-      ["next", true, "A continuación"],
-      ["locked", false, "Bloqueado"],
+      ["completed", "Completada"],
+      ["completed", "Completada"],
+      ["next", "A continuación"],
+      ["pending", "Pendiente"],
+      ["pending", "Pendiente"],
     ],
   );
-  assert.equal(path.current?.unit.id, "u2");
-  assert.equal(path.next?.unit.id, "u3");
+  assert.equal(path.next?.unit.id, "u2");
   assert.deepEqual([path.completed, path.total, path.percentage], [2, 5, 40]);
   assert.equal(pathAnnouncement(path), "2 de 5 temas completados, 40 %.");
 });
 
-test("sin unidad empezada, la primera pendiente es «A continuación»", () => {
+test("«A continuación» es siempre la primera sin completar; las empezadas después siguen «En curso»", () => {
   assert.deepEqual(states(units(["pending", "pending", "pending"])), [
     "next",
-    "locked",
-    "locked",
+    "pending",
+    "pending",
   ]);
-  assert.deepEqual(states(units(["completed", "pending", "pending"])), [
-    "completed",
-    "next",
-    "locked",
-  ]);
-});
-
-test("respeta el orden por posición y las unidades empezadas fuera de orden", () => {
   const shuffled = units([
     "completed",
-    "in_progress",
     "pending",
     "in_progress",
-    "pending",
+    "completed",
   ]).reverse();
   assert.deepEqual(states(shuffled), [
     "completed",
-    "current",
     "next",
-    "started",
-    "locked",
-  ]);
-  // Un hueco pendiente antes de tu punto actual sigue abierto.
-  assert.deepEqual(
-    states(units(["pending", "completed", "in_progress", "pending"])),
-    ["open", "completed", "current", "next"],
-  );
-  assert.deepEqual(states(units(["pending", "completed", "pending"])), [
-    "next",
+    "in_progress",
     "completed",
-    "locked",
   ]);
 });
 
@@ -95,10 +74,7 @@ test("ruta vacía o terminada", () => {
   const empty = studyPath([]);
   assert.deepEqual([empty.total, empty.percentage, empty.next], [0, 0, null]);
   const done = studyPath(units(["completed", "completed"]));
-  assert.deepEqual(
-    [done.percentage, done.next, done.current],
-    [100, null, null],
-  );
+  assert.deepEqual([done.percentage, done.next], [100, null]);
 });
 
 test("texto compartido: porcentaje, temas y siguiente tema", () => {
