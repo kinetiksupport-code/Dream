@@ -1,10 +1,11 @@
 "use client";
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy, Check, FileText, ArrowUpRight } from "lucide-react";
+import { Copy, Check, FileText, ArrowRight, ListChecks } from "lucide-react";
 import { Markdown } from "./markdown";
-import { DreamActivity } from "./dream-mark";
+import { AiStatus } from "./ai-status";
 import { parseDreamContent } from "@/lib/widgets";
+import { settleStreaming } from "@/lib/stream-text";
 import type { Message, DreamState } from "@/lib/types";
 
 const WORKING = new Set<DreamState>([
@@ -13,22 +14,38 @@ const WORKING = new Set<DreamState>([
   "composing",
   "shaping",
 ]);
+/** States in which text can still arrive (the cursor blinks). */
+const STREAMING = new Set<DreamState>(["thinking", "searching", "composing"]);
 
 export const MessageView = memo(function MessageView({
   message,
   state = "done",
+  since = null,
+  isNew = false,
   onContinue,
 }: {
   message: Message;
   state?: DreamState;
+  /** When the current wait started (send), for the 2 s status delay. */
+  since?: number | null;
+  /** Only messages created in this session enter with motion. */
+  isNew?: boolean;
   onContinue: (text: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
+  // The label only cross-fades after a click, never on first render.
+  const [touched, setTouched] = useState(false);
   const [error, setError] = useState("");
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(false), 1500);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
   const parsed = parseDreamContent(message.content);
+  const enter = isNew ? " message-enter" : "";
   if (message.role === "user")
     return (
-      <article className="message message-user">
+      <article className={`message message-user${enter}`}>
         {message.files && message.files.length > 0 && (
           <div className="message-files">
             {message.files.map((name, i) => (
@@ -47,22 +64,45 @@ export const MessageView = memo(function MessageView({
       </article>
     );
   const working = WORKING.has(state);
+  const live = STREAMING.has(state);
+  const text = live ? settleStreaming(parsed.text) : parsed.text;
+  const typing = live && !!text;
   return (
-    <article className="message message-assistant">
-      {working && <DreamActivity state={state} />}
-      {parsed.text && <Markdown content={parsed.text} />}
+    <article
+      className={`message message-assistant${enter}${typing ? " is-typing" : ""}`}
+    >
+      {/* Polite live region: announced when the answer settles, never steals focus. */}
+      <div className="message-body" aria-live="polite" aria-busy={live}>
+        {text && (
+          // Block mode for answers born in this session: same tree while it
+          // streams and after it completes, so the end never remounts it.
+          <Markdown content={text} streaming={live || isNew} />
+        )}
+      </div>
+      {working && <AiStatus state={state} since={since} />}
       {parsed.widgets.map((w) => (
         <Link
           className="quiz-widget press"
           href={`/tests/${w.testId}`}
           key={w.testId}
         >
+          <span className="quiz-icon" aria-hidden="true">
+            <ListChecks size={22} />
+          </span>
           <span className="quiz-text">
             <small>{w.mode === "exam" ? "Examen" : "Práctica"}</small>
             <strong>{w.title}</strong>
-            {w.questionCount && <span>{w.questionCount} preguntas</span>}
+            {w.questionCount ? (
+              <span>
+                <span className="num">{w.questionCount}</span>{" "}
+                {w.questionCount === 1 ? "pregunta" : "preguntas"}
+              </span>
+            ) : null}
           </span>
-          <ArrowUpRight size={20} />
+          <span className="quiz-start">
+            Empezar
+            <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
+          </span>
         </Link>
       ))}
       {message.stopped && (
@@ -73,25 +113,38 @@ export const MessageView = memo(function MessageView({
       {parsed.text && !working && (
         <div className="message-actions">
           <button
-            className="chip chip-small press"
+            className="chip chip-small message-action press"
             onClick={() => onContinue("Explícamelo por pasos.")}
           >
             Explícamelo por pasos
           </button>
           <button
-            className="icon-button press"
-            aria-label={copied ? "Respuesta copiada" : "Copiar respuesta"}
+            className={`message-action copy-action press${copied ? " is-copied" : ""}`}
+            aria-label={copied ? "Copiado" : "Copiar respuesta"}
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(parsed.text);
+                setError("");
+                setTouched(true);
                 setCopied(true);
               } catch {
-                setError("No se pudo copiar la respuesta.");
+                setError(
+                  "No se pudo copiar la respuesta. Selecciona el texto.",
+                );
               }
             }}
           >
-            {copied ? <Check size={18} /> : <Copy size={18} />}
+            <span
+              className={`copy-swap${touched ? " is-swapping" : ""}`}
+              key={copied ? "on" : "off"}
+            >
+              {copied ? <Check size={18} /> : <Copy size={18} />}
+              <span aria-hidden="true">{copied ? "Copiado" : "Copiar"}</span>
+            </span>
           </button>
+          <span className="visually-hidden" role="status" aria-live="polite">
+            {copied ? "Copiado" : ""}
+          </span>
         </div>
       )}
       {error && (
