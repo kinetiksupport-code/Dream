@@ -229,13 +229,19 @@ export interface RouteView {
   /** El simulacro final se resalta con pocas unidades o pocos días. */
   mockHighlighted: boolean;
 }
-const TYPE_TITLES: Record<RouteNodeType, string> = {
+export const TYPE_LABELS: Record<RouteNodeType, string> = {
   study: "Estudiar",
-  practice: "Test de práctica",
+  practice: "Práctica",
   review: "Repaso",
   mock: "Simulacro",
 };
-export const TYPE_LABELS = TYPE_TITLES;
+function nodeTitle(type: RouteNodeType, unit: ExamUnit | null) {
+  if (type === "study") return unit?.title ?? "Estudiar un tema";
+  if (type === "mock") return "Simulacro del examen";
+  if (type === "practice")
+    return unit ? `Test de «${unit.topic}»` : "Test de lo visto";
+  return unit ? `Repaso de «${unit.topic}»` : "Repaso de tus errores";
+}
 
 export function buildRoute(
   exam: Pick<
@@ -276,12 +282,7 @@ export function buildRoute(
       unit,
       state,
       label: STATE_LABELS[state],
-      title:
-        node.type === "study"
-          ? (unit?.title ?? TYPE_TITLES.study)
-          : node.type === "mock" || !topic
-            ? TYPE_TITLES[node.type]
-            : `${TYPE_TITLES[node.type]}: ${topic}`,
+      title: nodeTitle(node.type, unit),
       topic,
       minutes: node.minutes,
       when: done[i] ? "" : dayLabel(node.planned_date, today),
