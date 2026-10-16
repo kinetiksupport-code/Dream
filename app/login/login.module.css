@@ -95,6 +95,15 @@
   background: var(--danger-surface);
   color: var(--danger);
   font-size: var(--text-secondary-size);
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+.error p {
+  margin: 0;
+}
+.retry {
+  min-height: 44px;
 }
 .legal {
   font-size: var(--text-small);
