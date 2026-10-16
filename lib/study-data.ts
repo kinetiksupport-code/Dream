@@ -20,6 +20,8 @@ export interface StudyTask {
   status: "pending" | "done";
   /** Where "Resolver con Dream" takes the student. */
   href: string | null;
+  /** Exam the unit belongs to (needed to mark it as done). */
+  examId: string;
 }
 
 export interface StudyNote {
@@ -65,6 +67,7 @@ export function examsToTasks(exams: DreamExam[]): StudyTask[] {
           unit.status === "completed"
             ? null
             : `/exams/${exam.id}/study/${unit.id}`,
+        examId: exam.id,
       });
     }
   }
@@ -143,6 +146,14 @@ export const tasksSource: CollectionSource<StudyTask> = {
       ),
     ),
 };
+
+/** Marks a task (an exam study unit) as done. There is no way to undo it. */
+export async function completeStudyTask(task: StudyTask) {
+  await callDream("exam_unit_complete", {
+    exam_id: task.examId,
+    unit_id: task.id,
+  });
+}
 
 export const notesSource: CollectionSource<StudyNote> = {
   canCreate: false,
