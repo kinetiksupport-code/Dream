@@ -5,6 +5,7 @@ import {
   MAINTENANCE_COOKIE_NAME,
   verifyMaintenanceAccessToken,
 } from "@/lib/maintenance";
+import { canonicalRedirect } from "@/lib/auth-redirect";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -19,6 +20,21 @@ const PUBLIC_ROUTES = new Set([
 const STATIC_ASSET = /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|mjs|png|svg|txt|ttf|webmanifest|webp|woff2?)$/i;
 
 export async function middleware(request: NextRequest) {
+  // Production only: send edudream.vercel.app and other secondary hosts to
+  // www.edudream.es so a Google sign-in starts and ends on the same origin.
+  const requested = new URL(request.nextUrl.href);
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    requested.port = "";
+    requested.host = host;
+  }
+  const canonical = canonicalRedirect({
+    url: requested,
+    method: request.method,
+  });
+  if (canonical) return NextResponse.redirect(canonical, 308);
+
   if (!isMaintenanceMode()) {
     return NextResponse.next();
   }

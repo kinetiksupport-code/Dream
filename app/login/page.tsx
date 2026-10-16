@@ -6,6 +6,11 @@ import { useDream } from "@/components/providers";
 import { Orb } from "@/components/orb";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
+import {
+  AUTH_ERRORS,
+  getAuthRedirectUrl,
+  isAuthErrorCode,
+} from "@/lib/auth-redirect";
 import s from "./login.module.css";
 
 export default function Login() {
@@ -13,18 +18,27 @@ export default function Login() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [canRetry, setCanRetry] = useState(false);
   useEffect(() => {
     if (ready && session) router.replace("/chat");
     const params = new URLSearchParams(location.search);
     if (params.has("expired"))
       setError("Tu sesión ha terminado. Entra para continuar.");
-    if (params.has("error"))
-      setError("No se pudo completar el acceso. Inténtalo de nuevo.");
+    const code = params.get("error");
+    if (code !== null) {
+      setError(
+        isAuthErrorCode(code)
+          ? AUTH_ERRORS[code]
+          : "No se pudo completar el acceso. Inténtalo de nuevo.",
+      );
+      setCanRetry(true);
+    }
   }, [ready, session, router]);
   async function login() {
     if (busy || !ready) return;
     setBusy(true);
     setError("");
+    setCanRetry(false);
     try {
       await assertGoogleAvailable();
       try {
@@ -32,7 +46,9 @@ export default function Login() {
       } catch {}
       const { error: authError } = await getSupabase().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${location.origin}/auth/callback` },
+        options: {
+          redirectTo: getAuthRedirectUrl({ origin: location.origin }),
+        },
       });
       if (authError) throw authError;
     } catch (e) {
@@ -92,9 +108,19 @@ export default function Login() {
             {busy ? "Abriendo Google…" : "Continuar con Google"}
           </button>
           {(error || bootError) && (
-            <p role="alert" className={s.error}>
-              {error || bootError}
-            </p>
+            <div role="alert" className={s.error}>
+              <p>{error || bootError}</p>
+              {canRetry && error && (
+                <button
+                  type="button"
+                  className={`press secondary ${s.retry}`}
+                  onClick={() => void login()}
+                  disabled={!ready || busy}
+                >
+                  Volver a intentarlo
+                </button>
+              )}
+            </div>
           )}
           <p className={s.legal}>
             Al continuar, aceptas nuestros{" "}
