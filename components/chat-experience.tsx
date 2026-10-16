@@ -52,13 +52,18 @@ export function ChatExperience({
   // When the current wait started (send): AiStatus shows only after 2 s.
   const [waitSince, setWaitSince] = useState<number | null>(null);
   // How «Reintentar» recovers: resend the same turn, or reload what was saved.
-  const [retry, setRetry] = useState<
-    { kind: "send"; prompt: string; attachmentIds: string[] } | null
-  >(null);
+  const [retry, setRetry] = useState<{
+    kind: "send";
+    prompt: string;
+    attachmentIds: string[];
+    keepDraft: boolean;
+  } | null>(null);
   // Messages created in this session enter with motion; history never does.
   const fresh = useRef(new Set<string>());
   const scroller = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  // True while «Ir al último mensaje» scrolls down smoothly.
+  const jumping = useRef(false);
   const abort = useRef<AbortController | null>(null);
   const lock = useRef(false);
   const creation = useRef<Promise<string> | null>(null);
@@ -80,7 +85,7 @@ export function ChatExperience({
   const c = study?.conversationId ?? params.get("c");
   const newKey = study ? null : params.get("new");
   // Optional ?q= pre-fills (never sends) the composer, e.g. from Apuntes.
-  const prefill = study ? null : params.get("q")?.slice(0, 2000) ?? null;
+  const prefill = study ? null : (params.get("q")?.slice(0, 2000) ?? null);
   const clearFiles = useCallback(() => {
     for (const a of filesRef.current)
       if (a.preview) URL.revokeObjectURL(a.preview);
@@ -208,7 +213,9 @@ export function ChatExperience({
         if (route.current !== origin)
           throw new DOMException("Navegación cambiada", "AbortError");
         if (!r?.conversation?.id) {
-          throw new Error("No se pudo crear la conversación. Inténtalo de nuevo.");
+          throw new Error(
+            "No se pudo crear la conversación. Inténtalo de nuevo.",
+          );
         }
         idRef.current = r.conversation.id;
         setConversationId(r.conversation.id);
@@ -359,11 +366,16 @@ export function ChatExperience({
       },
     ]);
   }
-  async function send(promptOverride?: string, retryIds?: string[]) {
+  async function send(
+    promptOverride?: string,
+    retryIds?: string[],
+    /** Regenerate: leave the student's draft and its files untouched. */
+    keepDraft = false,
+  ) {
     if (
       lock.current ||
       loading ||
-      filesRef.current.some((a) => a.status !== "ready") ||
+      (!keepDraft && filesRef.current.some((a) => a.status !== "ready")) ||
       (!(promptOverride || value).trim() && !filesRef.current.length)
     )
       return;
@@ -381,7 +393,7 @@ export function ChatExperience({
     const prompt =
       (promptOverride || value).trim() ||
       "Ayúdame a comprender estos archivos.";
-    const selected = [...filesRef.current];
+    const selected = keepDraft ? [] : [...filesRef.current];
     const attachmentIds =
       retryIds ?? selected.flatMap((a) => (a.id ? [a.id] : []));
     const userId = crypto.randomUUID();
@@ -396,7 +408,7 @@ export function ChatExperience({
             .querySelector<HTMLTextAreaElement>(".composer textarea")
             ?.focus({ preventScroll: true });
       });
-    setValue("");
+    if (!keepDraft) setValue("");
     setMessages((s) => [
       ...s,
       {
@@ -422,7 +434,7 @@ export function ChatExperience({
     try {
       id = await ensureConversation();
       if (controller.signal.aborted) return;
-      clearFiles();
+      if (!keepDraft) clearFiles();
       const directTest =
         /\b(hazme (?:un |una )?(?:test|examen)|quiero practicar|ponme preguntas|pregúntame|genera (?:un )?(?:test|examen))\b/i.test(
           prompt,
@@ -481,8 +493,8 @@ export function ChatExperience({
           setMessages((list) =>
             list.filter((m) => m.id !== userId && m.id !== assistantId),
           );
-          setValue((current) => current || prompt);
-          setRetry({ kind: "send", prompt, attachmentIds });
+          if (!keepDraft) setValue((current) => current || prompt);
+          setRetry({ kind: "send", prompt, attachmentIds, keepDraft });
         }
         setError(errorMessage(e));
         setState("error");
@@ -549,9 +561,8 @@ export function ChatExperience({
   const focusComposer = useCallback((text: string) => {
     setValue(text);
     requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLTextAreaElement>(
-        ".composer textarea",
-      );
+      const el =
+        document.querySelector<HTMLTextAreaElement>(".composer textarea");
       el?.focus();
       el?.setSelectionRange(text.length, text.length);
     });
@@ -588,8 +599,7 @@ export function ChatExperience({
           {error ? "No se ha podido completar" : "Dream no está disponible"}
         </strong>
         <p>
-          {error ||
-            "El servicio de IA aún no está configurado en el servidor."}
+          {error || "El servicio de IA aún no está configurado en el servidor."}
         </p>
       </div>
       {canRetry && (
@@ -597,8 +607,8 @@ export function ChatExperience({
           className="secondary chat-retry press"
           onClick={() => {
             if (retry) {
-              setValue("");
-              void send(retry.prompt, retry.attachmentIds);
+              if (!retry.keepDraft) setValue("");
+              void send(retry.prompt, retry.attachmentIds, retry.keepDraft);
             } else void reload();
           }}
           disabled={busy || loading}
@@ -641,6 +651,15 @@ export function ChatExperience({
       </section>
     );
   const last = messages.at(-1);
+  // «Regenerar» asks the last question again as a new turn. dream-api has no
+  // regenerate action yet, so the saved history keeps both answers (honest
+  // on reload) instead of a local swap that would disappear.
+  const lastQuestion =
+    last?.role === "assistant"
+      ? messages.findLast((m) => m.role === "user")?.content.trim()
+      : undefined;
+  const regenerate =
+    !busy && lastQuestion ? () => void send(lastQuestion, [], true) : undefined;
   return (
     <section
       className={`chat-view ${messages.length ? "has-messages" : "is-empty"}`}
@@ -650,7 +669,8 @@ export function ChatExperience({
         ref={scroller}
         onScroll={() => {
           const el = scroller.current;
-          if (el) {
+          // The smooth jump passes through «not at the bottom»: not a choice.
+          if (el && !jumping.current) {
             pinned.current =
               el.scrollHeight - el.scrollTop - el.clientHeight < 80;
             followed.current = pinned.current ? el.scrollTop : null;
@@ -682,6 +702,7 @@ export function ChatExperience({
                 since={busy && m.id === last?.id ? waitSince : null}
                 isNew={fresh.current.has(m.id)}
                 onContinue={focusComposer}
+                onRegenerate={m.id === last?.id ? regenerate : undefined}
                 key={m.id}
               />
             ))}
@@ -735,13 +756,27 @@ export function ChatExperience({
             tabIndex={atBottom ? -1 : undefined}
             inert={atBottom || undefined}
             onClick={() => {
+              const el = scroller.current;
               pinned.current = true;
               followed.current = null;
               setAtBottom(true);
-              scroller.current?.scrollTo({
-                top: scroller.current.scrollHeight,
-                behavior: matchMedia("(prefers-reduced-motion: reduce)")
-                  .matches
+              if (!el) return;
+              // If the thread grows during the smooth scroll (a formula, the
+              // AI status), finish exactly at the bottom when it ends.
+              jumping.current = true;
+              let done = false;
+              const land = () => {
+                if (done) return;
+                done = true;
+                el.removeEventListener("scrollend", land);
+                jumping.current = false;
+                follow();
+              };
+              el.addEventListener("scrollend", land);
+              window.setTimeout(land, 700); // no scrollend (older Safari)
+              el.scrollTo({
+                top: el.scrollHeight,
+                behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
                   ? "auto"
                   : "smooth",
               });
