@@ -133,6 +133,25 @@ export const StopIcon = (p: P) => (
     <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />
   </Icon>
 );
+/* Inicio · suggestion chips (same 1.75 px stroke, 24 px grid). */
+export const UploadIcon = (p: P) => (
+  <Icon size={20} {...p}>
+    <path d="M12 15V4M7.5 8.5 12 4l4.5 4.5" />
+    <path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
+  </Icon>
+);
+export const PencilIcon = (p: P) => (
+  <Icon size={20} {...p}>
+    <path d="M4 20h4L19 9a2.83 2.83 0 0 0-4-4L4 16z" />
+    <path d="m13.5 6.5 4 4" />
+  </Icon>
+);
+export const QuizIcon = (p: P) => (
+  <Icon size={20} {...p}>
+    <path d="m4 6 1.5 1.5L8 5M4 13l1.5 1.5L8 12" />
+    <path d="M11 6.5h9M11 13.5h9M11 19.5h9M5 19.5h1" />
+  </Icon>
+);
 export const CloseIcon = (p: P) => (
   <Icon size={18} {...p}>
     <path d="M6 6l12 12M18 6 6 18" />

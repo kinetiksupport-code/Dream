@@ -48,6 +48,9 @@ export function ChatExperience({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [atBottom, setAtBottom] = useState(true);
+  // Inicio: text of the first message while the hero fades out (160 ms).
+  // The request is already running; only the swap of views waits.
+  const [leaving, setLeaving] = useState<string | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
   const abort = useRef<AbortController | null>(null);
@@ -96,6 +99,7 @@ export function ChatExperience({
     setState("idle");
     setValue(prefill ?? "");
     setAnalysisView(false);
+    setLeaving(null);
     clearFiles();
     setError("");
     setMessages([]);
@@ -328,6 +332,10 @@ export function ChatExperience({
     const attachmentIds = selected.flatMap((a) => (a.id ? [a.id] : []));
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
+    if (!study && !messages.length) {
+      setLeaving(prompt);
+      window.setTimeout(() => setLeaving(null), 160);
+    }
     setValue("");
     setMessages((s) => [
       ...s,
@@ -472,8 +480,10 @@ export function ChatExperience({
       const el = document.querySelector<HTMLTextAreaElement>(
         ".composer textarea",
       );
-      el?.focus();
-      el?.setSelectionRange(text.length, text.length);
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(text.length, text.length);
+      el.scrollTop = el.scrollHeight;
     });
   }, []);
   const view = params.get("view");
@@ -481,7 +491,8 @@ export function ChatExperience({
   const composer = (variant: "hero" | "dock") => (
     <Composer
       variant={variant}
-      value={value}
+      value={variant === "hero" && leaving !== null ? leaving : value}
+      sending={variant === "hero" && leaving !== null}
       onChange={setValue}
       onSend={() => void send()}
       onStop={() => abort.current?.abort()}
@@ -492,7 +503,7 @@ export function ChatExperience({
         const a = filesRef.current.find((x) => x.localId === id);
         if (a) enqueueUpload(a);
       }}
-      busy={busy}
+      busy={busy && !(variant === "hero" && leaving !== null)}
       state={state}
       unavailable={loading}
     />
@@ -513,10 +524,11 @@ export function ChatExperience({
       )}
     </div>
   );
-  if (!study && !loading && !messages.length)
+  if (!study && !loading && (!messages.length || leaving !== null))
     return (
       <section className="chat-view is-empty">
         <ChatHome
+          leaving={leaving !== null}
           composer={composer("hero")}
           onPrompt={focusComposer}
           onAttach={() => {
