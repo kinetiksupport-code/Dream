@@ -1754,6 +1754,10 @@ svg.lucide {
 .message-assistant.is-revealing .markdown > [data-pending] {
   display: none;
 }
+/* A list item's number or bullet waits for its first word. */
+.message-assistant.is-revealing .markdown li:not(:has([data-w].is-shown))::marker {
+  color: transparent;
+}
 
 /* AI status: Orb + one short line (Claude Design «Comprobando tu respuesta»). */
 .ai-status {
