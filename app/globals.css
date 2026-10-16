@@ -1885,11 +1885,6 @@ svg.lucide {
 .test-options:disabled:not([aria-busy]):not([data-evaluated]) .test-option {
   opacity: 0.6;
 }
-/* Corrected: options that are neither the answer nor the pick step back. */
-.test-options[data-evaluated]
-  .test-option:not(.correct):not(.incorrect):not(.selected) {
-  opacity: 0.6;
-}
 .test-option input {
   flex: none;
   width: 20px;
