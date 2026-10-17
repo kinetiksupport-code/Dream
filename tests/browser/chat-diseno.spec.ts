@@ -139,14 +139,15 @@ test("cursor blinks while the text arrives and disappears when it completes", as
     "aria-busy",
     "true",
   );
+  // The caret follows the last visible word (soft reveal, lib/reveal.ts).
   const caret = () =>
     answer.evaluate((el) => {
-      const p = el.querySelector(".markdown > :last-child");
+      const p = el.querySelector(".markdown .is-caret");
       if (!p) return null;
       const s = getComputedStyle(p, "::after");
       return { content: s.content, width: s.width, animation: s.animationName };
     });
-  expect(await caret()).toEqual({
+  await expect.poll(caret).toEqual({
     content: '""',
     width: "2px",
     animation: "caret-blink",
@@ -536,15 +537,14 @@ test("reduced motion: no movement, fixed cursor, fades only", async ({
   await emit(page, { type: "delta", text: "Texto que llega" });
   const answer = page.locator(".message-assistant").last();
   await expect(answer).toHaveClass(/is-typing/);
-  expect(
-    await answer.evaluate(
-      (el) =>
-        getComputedStyle(
-          el.querySelector(".markdown > :last-child")!,
-          "::after",
-        ).animationName,
-    ),
-  ).toBe("none");
+  await expect
+    .poll(() =>
+      answer.evaluate((el) => {
+        const caret = el.querySelector(".markdown .is-caret");
+        return caret && getComputedStyle(caret, "::after").animationName;
+      }),
+    )
+    .toBe("none");
   expect(await moving()).toEqual([]);
   await page.locator(".chat-scroll").evaluate((el) => (el.scrollTop = 0));
   await expect(page.locator(".jump-bottom")).toHaveAttribute(

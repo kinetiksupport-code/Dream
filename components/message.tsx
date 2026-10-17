@@ -1,5 +1,5 @@
 "use client";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Copy,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Markdown } from "./markdown";
 import { AiStatus } from "./ai-status";
+import { useReveal } from "./use-reveal";
 import { parseDreamContent } from "@/lib/widgets";
 import { settleStreaming } from "@/lib/stream-text";
 import type { Message, DreamState } from "@/lib/types";
@@ -52,6 +53,15 @@ export const MessageView = memo(function MessageView({
     return () => window.clearTimeout(timer);
   }, [copied]);
   const parsed = parseDreamContent(message.content);
+  const live = STREAMING.has(state);
+  // Answers born in this session appear word by word (lib/reveal.ts); the
+  // history is shown as is.
+  const body = useRef<HTMLDivElement>(null);
+  const { revealing, finish } = useReveal(
+    body,
+    isNew && message.role === "assistant",
+    !live,
+  );
   const enter = isNew ? " message-enter" : "";
   if (message.role === "user")
     return (
@@ -74,53 +84,62 @@ export const MessageView = memo(function MessageView({
       </article>
     );
   const working = WORKING.has(state);
-  const live = STREAMING.has(state);
   const text = live ? settleStreaming(parsed.text) : parsed.text;
   const typing = live && !!text;
   return (
     <article
-      className={`message message-assistant${enter}${typing ? " is-typing" : ""}${onRegenerate ? " is-last" : ""}`}
+      className={`message message-assistant${enter}${typing ? " is-typing" : ""}${onRegenerate ? " is-last" : ""}${revealing ? " is-revealing" : ""}`}
     >
-      {/* Polite live region: announced when the answer settles, never steals focus. */}
-      <div className="message-body" aria-live="polite" aria-busy={live}>
+      {/* Polite live region, busy until the reveal ends: read once, whole,
+          never word by word, and it never takes the focus. A tap or click on
+          the answer shows it all at once. */}
+      <div
+        className="message-body"
+        ref={body}
+        aria-live="polite"
+        aria-busy={live || revealing}
+        onClick={revealing ? finish : undefined}
+      >
         {text && (
           // Block mode for answers born in this session: same tree while it
-          // streams and after it completes, so the end never remounts it.
-          <Markdown content={text} streaming={live || isNew} />
+          // streams, reveals and completes, so the end never remounts it.
+          <Markdown content={text} streaming={live || isNew} reveal={isNew} />
         )}
       </div>
       {working && <AiStatus state={state} since={since} />}
-      {parsed.widgets.map((w) => (
-        <Link
-          className="quiz-widget press"
-          href={`/tests/${w.testId}`}
-          key={w.testId}
-        >
-          <span className="quiz-icon" aria-hidden="true">
-            <ListChecks size={22} />
-          </span>
-          <span className="quiz-text">
-            <small>{w.mode === "exam" ? "Examen" : "Práctica"}</small>
-            <strong>{w.title}</strong>
-            {w.questionCount ? (
-              <span>
-                <span className="num">{w.questionCount}</span>{" "}
-                {w.questionCount === 1 ? "pregunta" : "preguntas"}
-              </span>
-            ) : null}
-          </span>
-          <span className="quiz-start">
-            Empezar
-            <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
-          </span>
-        </Link>
-      ))}
-      {message.stopped && (
+      {/* The test card, the notice and the actions wait for the last word. */}
+      {!revealing &&
+        parsed.widgets.map((w) => (
+          <Link
+            className="quiz-widget press"
+            href={`/tests/${w.testId}`}
+            key={w.testId}
+          >
+            <span className="quiz-icon" aria-hidden="true">
+              <ListChecks size={22} />
+            </span>
+            <span className="quiz-text">
+              <small>{w.mode === "exam" ? "Examen" : "Práctica"}</small>
+              <strong>{w.title}</strong>
+              {w.questionCount ? (
+                <span>
+                  <span className="num">{w.questionCount}</span>{" "}
+                  {w.questionCount === 1 ? "pregunta" : "preguntas"}
+                </span>
+              ) : null}
+            </span>
+            <span className="quiz-start">
+              Empezar
+              <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
+            </span>
+          </Link>
+        ))}
+      {message.stopped && !revealing && (
         <small className="muted">
           Respuesta detenida · Lo recibido se conserva
         </small>
       )}
-      {parsed.text && !working && (
+      {parsed.text && !working && !revealing && (
         <div className="message-actions">
           <button
             className="chip chip-small message-action press"
