@@ -15,6 +15,7 @@ import { Modal } from "./modal";
 import { useDream } from "./providers";
 import { Orb } from "./orb";
 import { NavIndicator } from "./nav-indicator";
+import { usePageTransitions } from "./page-transitions";
 import {
   BackIcon,
   ChatIcon,
@@ -68,6 +69,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
+  // How the page area enters on a route change (forward, back, lateral…).
+  const enter = usePageTransitions(pathname, search);
   const [items, setItems] = useState<Conversation[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [workspaceEmpty, setWorkspaceEmpty] = useState(!search.get("c"));
@@ -332,8 +335,11 @@ export function Shell({ children }: { children: ReactNode }) {
             </header>
           )}
           <main id="main" className="workspace-main" tabIndex={-1}>
-            {/* Short fade on route change (opacity only, 160 ms). */}
-            <div className="route-view" key={pathname}>
+            {/* Page transition: a View Transition on link clicks, or this
+                CSS enter animation (data-enter) on Back/Forward and in
+                browsers without View Transitions. globals.css › «Transiciones
+                entre páginas». */}
+            <div className="route-view" key={pathname} data-enter={enter}>
               {children}
             </div>
           </main>

@@ -172,3 +172,137 @@ test("Spanish interface text keeps its accents", () => {
   }
   assert.deepEqual(bad, []);
 });
+
+// --- New style (PROMPT_EXAMEN_ESTILO.md §6): automatic motion checks -------
+
+/** Every @keyframes block with the properties it animates. */
+const keyframes = cssFiles.flatMap((file) => {
+  const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const out: { file: string; name: string; props: string[] }[] = [];
+  const re = /@keyframes\s+([\w-]+)\s*\{/g;
+  for (let m = re.exec(css); m; m = re.exec(css)) {
+    let i = re.lastIndex;
+    for (let depth = 1; depth && i < css.length; i++)
+      depth += css[i] === "{" ? 1 : css[i] === "}" ? -1 : 0;
+    const body = css.slice(re.lastIndex, i - 1);
+    const props = [
+      ...new Set([...body.matchAll(/([\w-]+)\s*:/g)].map((p) => p[1])),
+    ];
+    out.push({ file, name: m[1], props });
+  }
+  return out;
+});
+
+test("@keyframes animate only transform and opacity (no layout, no colour loops)", () => {
+  assert.ok(keyframes.length > 10, "keyframes were found");
+  const bad = keyframes.flatMap((k) =>
+    k.props
+      .filter(
+        (p) =>
+          !["transform", "opacity", "animation-timing-function"].includes(p),
+      )
+      .map((p) => `${k.file}: @keyframes ${k.name} anima ${p}`),
+  );
+  assert.deepEqual(bad, []);
+});
+
+test("every animation-name used exists as @keyframes", () => {
+  const names = new Set(keyframes.map((k) => k.name));
+  const KEYWORDS =
+    /^(none|infinite|both|forwards|backwards|alternate|reverse|normal|linear|ease|ease-out|ease-in-out|step-start|step-end|paused|running|var|calc|cubic-bezier|linear\(.*|steps)$/;
+  const bad: string[] = [];
+  for (const d of declarations) {
+    if (d.prop !== "animation" && d.prop !== "animation-name") continue;
+    if (/\(/.test(d.value) && d.prop === "animation-name") continue;
+    for (const part of d.value.split(/,(?![^(]*\))/)) {
+      const tokens = part
+        .replace(/[a-z-]+\([^)]*\)/g, " ")
+        .trim()
+        .split(/\s+/)
+        .filter((t) => t && !/^[\d.]+m?s$/.test(t) && !KEYWORDS.test(t));
+      if (tokens[0] && !names.has(tokens[0]))
+        bad.push(`${d.file}: ${d.prop}: ${d.value}`);
+    }
+  }
+  assert.deepEqual(bad, []);
+});
+
+test("scripts never animate layout or `all` (inline styles and WAAPI)", () => {
+  const LAYOUT =
+    /\b(width|height|top|left|right|bottom|margin\w*|padding\w*|inset)\b/;
+  const bad: string[] = [];
+  for (const file of [
+    ...walk("app", /\.tsx?$/),
+    ...walk("components", /\.tsx?$/),
+    ...walk("lib", /\.tsx?$/),
+  ]) {
+    const src = readFileSync(file, "utf8");
+    // transition: "all …" / transitionProperty: "width" in style objects.
+    for (const m of src.matchAll(
+      /transition(?:Property)?\s*:\s*["'`]([^"'`]*)["'`]/g,
+    ))
+      if (/\ball\b/.test(m[1]) || LAYOUT.test(m[1]))
+        bad.push(`${file}: transition "${m[1]}"`);
+    // element.animate([{ width: … }]) — keyframes right after .animate(
+    for (const m of src.matchAll(/\.animate\(\s*\[([\s\S]{0,400}?)\]/g))
+      for (const key of m[1].matchAll(/([A-Za-z]+)\s*:/g))
+        if (LAYOUT.test(key[1])) bad.push(`${file}: animate() con ${key[1]}`);
+  }
+  assert.deepEqual(bad, []);
+});
+
+test("dark tokens match in [data-theme=dark] and prefers-color-scheme", () => {
+  const block = (re: RegExp) => {
+    const m = globals.match(re);
+    assert.ok(m, `bloque ${re} encontrado`);
+    return Object.fromEntries(
+      [...m[1].matchAll(/--([\w-]+):\s*([^;]+);/g)].map((x) => [
+        x[1],
+        x[2].replace(/\s+/g, " ").trim(),
+      ]),
+    );
+  };
+  const forced = block(/:root\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
+  const system = block(
+    /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\)\s*\{([\s\S]*?)\n {2}\}/,
+  );
+  assert.deepEqual(system, forced);
+});
+
+test("the new style's tokens exist in light and dark", () => {
+  const { light, dark } = readTokens(globals);
+  const tones = ["blue", "yellow", "orange", "red", "purple", "green", "lime"];
+  for (const t of tones)
+    for (const theme of [light, dark]) {
+      assert.ok(theme[`pop-${t}`], `--pop-${t}`);
+      assert.ok(theme[`on-pop-${t}`], `--on-pop-${t}`);
+    }
+  for (const k of [
+    "marker",
+    "sticker-ring",
+    "shadow-sticker",
+    "gloss",
+    "grid-line",
+    "text-hero",
+    "weight-hero",
+    "radius-hero",
+    "radius-pill",
+    "ease-spring",
+    "dur-number",
+    "dur-spring",
+    "dur-breathe",
+  ])
+    assert.ok(light[k], `--${k}`);
+});
+
+test("page transitions: 200–280 ms in, faster out, reduced motion ≤ 150 ms", () => {
+  assert.ok(ms("var(--dur-page)") >= 200 && ms("var(--dur-page)") <= 280);
+  assert.ok(ms("var(--dur-page-out)") < ms("var(--dur-page)"));
+  assert.ok(ms("var(--dur-page-reduced)") <= 150);
+  // Only the page area takes part; the theme cross-fade keeps its own rules.
+  assert.match(
+    globals,
+    /:root\[data-page-transition\] \.route-view \{\s*view-transition-name: page;/,
+  );
+  assert.match(globals, /::view-transition-old\(theme-control\)/);
+});

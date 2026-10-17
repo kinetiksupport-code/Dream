@@ -12,6 +12,31 @@
   - Antes de instalar, enseño el comando y espero el OK.
 - **`frontend-design` o similares**: no están disponibles en esta sesión. Aplico el resumen de reglas del encargo.
 
+## Estilo nuevo y transiciones (17/10/2026, `PROMPT_EXAMEN_ESTILO.md`, PR 1)
+
+Skills releídas el 17/10/2026. Detalle completo en `docs/diseno/estilo/README.md`.
+
+- **`emil-design-eng`:**
+  - *Only animate transform and opacity*: las páginas, el número, el orbe, la hoja y el botón 3D solo usan `transform` y `opacity`. Nuevas pruebas sobre `@keyframes` y `element.animate()`.
+  - *ease-out para lo que entra* (`--ease`): las páginas entran en 240 ms y salen en 160 ms; la salida es más rápida que la entrada (*Asymmetric enter/exit*).
+  - *Never animate from scale(0)*: `.pop-in` parte de 0,9.
+  - *Buttons must feel responsive*: `.press` (0,97) y la cara de `.button-3d`, que baja 3 px en `--dur-fast`.
+  - *Momentum-based dismissal* (0,11 px/ms), *Damping at boundaries*, *Pointer capture* y *Multi-touch protection* en `components/bottom-sheet.tsx`.
+  - *CSS variables are inheritable*: al arrastrar, `transform` va en el propio elemento.
+  - *Stagger 30–80 ms* (`--stagger` 40 ms, máximo 8): `.stagger`.
+  - *Springs only for playful bits*: `--ease-spring` solo en `.pop-in` (en el PR 3, también en la ruedecita).
+  - *prefers-reduced-motion*: solo quedan fundidos de 120 ms.
+- **`apple-design`:**
+  - `motion.md › Let people cancel motion`: la navegación nunca espera a una animación. La View Transition espera como mucho 300 ms, y Atrás no espera nunca.
+  - `motion.md › Make motion optional`: el número animado lleva su valor en texto para el lector de pantalla.
+  - `color.md › Make sure all your app's colors work well in light, dark…`: los tonos pop tienen versión oscura; 66 pares AA en claro y oscuro.
+  - `color.md › Avoid using similar colors in control labels if your app has a colorful background`: sobre los fondos pop, el foco usa el color del texto de ese fondo.
+  - `accessibility.md`: el asa de la hoja mide 44 px; la hoja también se cierra con Escape y con sus botones (*sheets: a way out besides swipe*).
+  - `branding.md`: la identidad va en el color, el tipo y los momentos; la navegación sigue siendo la de siempre.
+- **`libraries-dev`:**
+  - El orbe de pensamiento sigue siendo el `orb-pulsing` propio. No instalo `thinking-orbs` ni ningún otro paquete.
+  - Las transiciones de página no llevan efectos: son esperas de menos de 2 s, y la regla es «nada si dura menos de 2 s».
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -41,5 +66,6 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Apuntes | `antes/apuntes-*` | `docs/diseno/apuntes/*` | `apuntes.webm` | #27 |
 | Exámenes | `antes/examenes-*`, `antes/examen-*` | `docs/diseno/examenes/*` | `examenes.webm` | #26 |
 | Login y registro (Parte D) | `antes/login-*` | `docs/diseno/login/*` | `login.webm` | #30 |
+| Estilo nuevo y transiciones entre páginas (PR 1 del encargo de exámenes) | `docs/diseno/estilo/antes/*` | `docs/diseno/estilo/despues/*` | `transiciones-escritorio.webm`, `transiciones-movil.webm` (y `transiciones-antes-*`), `estilo-primitivas.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.

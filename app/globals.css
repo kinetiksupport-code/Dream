@@ -47,6 +47,38 @@
   --translucent: rgba(255, 255, 255, 0.9);
   /* Inicio: halo behind the headline. None in light (Claude Design is flat white). */
   --home-halo: rgba(21, 91, 255, 0);
+  /* New style (PROMPT_EXAMEN_ESTILO.md §2): flat, saturated "pop" fills for
+     whole screens, stickers and 3D pills, each with the text colour that
+     passes AA on it (contrast.mjs). White on yellow/orange fails, so those
+     carry dark ink. */
+  --pop-blue: #1e40d8; /* white 7.55:1 */
+  --on-pop-blue: #ffffff;
+  --pop-yellow: #ffc21a; /* ink 12.15:1 */
+  --on-pop-yellow: #080b14;
+  --pop-orange: #f05a1e; /* ink 5.79:1 */
+  --on-pop-orange: #080b14;
+  --pop-red: #d42a1f; /* white 5.06:1 */
+  --on-pop-red: #ffffff;
+  --pop-purple: #6d3ae0; /* white 6.30:1 */
+  --on-pop-purple: #ffffff;
+  --pop-green: #17803f; /* white 5.00:1 */
+  --on-pop-green: #ffffff;
+  --pop-lime: #c8f560; /* brand lime as a fill */
+  --on-pop-lime: #080b14;
+  /* Hand-drawn highlight under a key word (decorative, not text). */
+  --marker: #ffc21a;
+  /* Stickers: thick light ring and a soft drop shadow. */
+  --sticker-ring: #ffffff;
+  --shadow-sticker:
+    0 2px 4px rgba(8, 11, 20, 0.1), 0 8px 20px rgba(8, 11, 20, 0.16);
+  /* 3D pills: glossy top edge, darker base layer underneath. */
+  --gloss:
+    inset 0 2px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2px 0 rgba(8, 11, 20, 0.08);
+  --depth-3d: 4px;
+  /* Subtle grid on pop backgrounds. */
+  --grid-line: rgba(8, 11, 20, 0.07);
+  --grid-size: 24px;
   /* Elevation */
   --shadow-composer:
     0 1px 2px rgba(8, 11, 20, 0.04), 0 8px 24px rgba(8, 11, 20, 0.05);
@@ -58,6 +90,8 @@
   --radius-panel: 24px;
   --radius-chip: 22px;
   --radius-composer: 24px;
+  --radius-hero: 32px; /* pop screens and big cards */
+  --radius-pill: 999px;
   /* Size */
   --touch: 44px;
   --sidebar: 264px;
@@ -77,6 +111,12 @@
   --text-secondary-size: 0.9375rem; /* 15px */
   --text-small: 0.875rem; /* 14px */
   --text-tab: 0.6875rem; /* 11px */
+  /* Huge, heavy headlines of the new style (40→72 px). Body text keeps the
+     sizes above: long reading stays calm (§2.3). */
+  --text-hero: clamp(2.5rem, 1.75rem + 3.75vw, 4.5rem);
+  --weight-hero: 800;
+  --leading-hero: 1.02;
+  --tracking-hero: -0.035em;
   /* Motion (emil-design-eng) */
   --ease: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out: entering */
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* moving on screen */
@@ -88,6 +128,32 @@
   --dur-rise: 240ms;
   --dur-pulse: 1.6s;
   --stagger: 40ms;
+  /* Motion, new style (PROMPT_EXAMEN_ESTILO.md §3 and §6). Page transitions
+     240 ms in / 160 ms out with --ease; reduced motion: a 120 ms fade. */
+  --dur-page: 240ms;
+  --dur-page-out: 160ms;
+  --dur-page-reduced: 120ms;
+  --page-shift: 24px; /* forward/back slide */
+  --page-rise: 8px; /* lateral (tabs, sections) */
+  --dur-number: 200ms; /* digit roll (AnimatedNumber) */
+  --dur-spring: 250ms; /* small bounce: wheel, 3D objects, Orb success */
+  --dur-breathe: 4.8s; /* Orb at rest (loop) */
+  /* Soft spring with ~6 % overshoot, as a linear() curve (no JS). Only for
+     the wheel snap, objects and the Orb's success hop. */
+  --ease-spring: linear(
+    0,
+    0.18 6.7%,
+    0.41 12.4%,
+    0.63 17.8%,
+    0.82 23.2%,
+    0.98 30%,
+    1.05 36.6%,
+    1.06 40.1%,
+    1.04 48.6%,
+    1.01 56.3%,
+    1 74.9%,
+    1
+  );
   /* Viewport (updated from VisualViewport in providers.tsx) */
   --viewport-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
@@ -135,6 +201,28 @@
   --scrim: rgba(0, 0, 0, 0.56);
   --translucent: rgba(14, 17, 23, 0.86);
   --home-halo: rgba(110, 147, 255, 0.08);
+  --pop-blue: #1a37b8;
+  --on-pop-blue: #ffffff;
+  --pop-yellow: #e8a90c;
+  --on-pop-yellow: #080b14;
+  --pop-orange: #d9501a;
+  --on-pop-orange: #080b14;
+  --pop-red: #b3261e;
+  --on-pop-red: #ffffff;
+  --pop-purple: #5b2fc4;
+  --on-pop-purple: #ffffff;
+  --pop-green: #146c35;
+  --on-pop-green: #ffffff;
+  --pop-lime: #b5e04f;
+  --on-pop-lime: #080b14;
+  --marker: #f5b800;
+  --sticker-ring: #e8ecf4;
+  --shadow-sticker:
+    0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
+  --gloss:
+    inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+  --grid-line: rgba(255, 255, 255, 0.07);
   --shadow-composer:
     0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-popover:
@@ -177,6 +265,28 @@
     --scrim: rgba(0, 0, 0, 0.56);
     --translucent: rgba(14, 17, 23, 0.86);
     --home-halo: rgba(110, 147, 255, 0.08);
+    --pop-blue: #1a37b8;
+    --on-pop-blue: #ffffff;
+    --pop-yellow: #e8a90c;
+    --on-pop-yellow: #080b14;
+    --pop-orange: #d9501a;
+    --on-pop-orange: #080b14;
+    --pop-red: #b3261e;
+    --on-pop-red: #ffffff;
+    --pop-purple: #5b2fc4;
+    --on-pop-purple: #ffffff;
+    --pop-green: #146c35;
+    --on-pop-green: #ffffff;
+    --pop-lime: #b5e04f;
+    --on-pop-lime: #080b14;
+    --marker: #f5b800;
+    --sticker-ring: #e8ecf4;
+    --shadow-sticker:
+      0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
+    --gloss:
+      inset 0 2px 0 rgba(255, 255, 255, 0.22),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+    --grid-line: rgba(255, 255, 255, 0.07);
     --shadow-composer:
       0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
     --shadow-popover:
@@ -689,6 +799,8 @@ svg.lucide {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* First load (data-enter="fade"): short fade. Route changes: see
+     «Transiciones entre páginas» at the end of this file. */
   animation: fade var(--dur-press) ease-out both;
 }
 .topbar {
@@ -3699,5 +3811,542 @@ fieldset:disabled .test-option {
     padding-bottom: calc(
       32px + max(var(--tabbar), calc(60px + var(--safe-bottom)))
     );
+  }
+}
+
+/* ==========================================================================
+   === Estilo nuevo === (PROMPT_EXAMEN_ESTILO.md §2, §3, §6 — PR 1)
+   Base for every later screen: pop surfaces, huge headlines with a
+   hand-drawn marker, stickers, 3D pills, number roll, stagger, the Orb's
+   moods, the draggable bottom sheet and the page transitions. Catalogue
+   and usage: docs/diseno/estilo/README.md. Motion: transform and opacity
+   only, 120–250 ms, ease-out to enter; reduced motion keeps fades.
+   ========================================================================== */
+
+/* --- Tones: one class sets the fill and its AA text colour ---------------- */
+.tone-blue {
+  --tone: var(--pop-blue);
+  --on-tone: var(--on-pop-blue);
+}
+.tone-yellow {
+  --tone: var(--pop-yellow);
+  --on-tone: var(--on-pop-yellow);
+}
+.tone-orange {
+  --tone: var(--pop-orange);
+  --on-tone: var(--on-pop-orange);
+}
+.tone-red {
+  --tone: var(--pop-red);
+  --on-tone: var(--on-pop-red);
+}
+.tone-purple {
+  --tone: var(--pop-purple);
+  --on-tone: var(--on-pop-purple);
+}
+.tone-green {
+  --tone: var(--pop-green);
+  --on-tone: var(--on-pop-green);
+}
+.tone-lime {
+  --tone: var(--pop-lime);
+  --on-tone: var(--on-pop-lime);
+}
+
+/* --- Pop surface: a flat saturated screen or panel ------------------------- */
+/* The focus ring takes the surface's text colour, which passes AA on it. */
+.pop {
+  background-color: var(--tone, var(--pop-blue));
+  color: var(--on-tone, var(--on-pop-blue));
+  --focus: var(--on-tone, var(--on-pop-blue));
+}
+.pop-grid {
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: -1px -1px;
+}
+.pop.pop-grid {
+  --grid-line: rgba(255, 255, 255, 0.12);
+}
+.pop.tone-yellow.pop-grid,
+.pop.tone-orange.pop-grid,
+.pop.tone-lime.pop-grid {
+  --grid-line: rgba(8, 11, 20, 0.08);
+}
+
+/* --- Huge headline + hand-drawn marker ------------------------------------- */
+.hero-title {
+  font-size: var(--text-hero);
+  font-weight: var(--weight-hero);
+  line-height: var(--leading-hero);
+  letter-spacing: var(--tracking-hero);
+  text-wrap: balance;
+}
+/* <span class="marker">palabra</span>: a marker stroke under one key word.
+   Decorative only (the word is the text), so it needs no contrast pair. */
+.marker {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+.marker::after {
+  content: "";
+  position: absolute;
+  left: -0.04em;
+  right: -0.04em;
+  bottom: -0.1em;
+  height: 0.3em;
+  background: var(--marker);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M5 14C46 8 96 5 134 7s50 5 61 0' fill='none' stroke='black' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 20' preserveAspectRatio='none'%3E%3Cpath d='M5 14C46 8 96 5 134 7s50 5 61 0' fill='none' stroke='black' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / 100% 100% no-repeat;
+  transform-origin: left center;
+  pointer-events: none;
+  z-index: -1;
+}
+.marker {
+  z-index: 0;
+}
+/* Optional: the stroke draws itself once when the headline appears. */
+.marker-draw::after {
+  animation: marker-draw var(--dur-page) var(--ease) 120ms both;
+}
+@keyframes marker-draw {
+  from {
+    opacity: 0;
+    transform: scaleX(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Sticker: round, pill or scalloped badge with a ring and soft shadow --- */
+/* components/sticker.tsx. Short label, never the only carrier of meaning. */
+.sticker {
+  --sticker-bg: var(--tone, var(--pop-yellow));
+  --sticker-ink: var(--on-tone, var(--on-pop-yellow));
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  color: var(--sticker-ink);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-align: center;
+  transform: rotate(var(--sticker-tilt, 0deg));
+}
+.sticker-round,
+.sticker-pill {
+  background: var(--sticker-bg);
+  border: 3px solid var(--sticker-ring);
+  box-shadow: var(--shadow-sticker);
+}
+.sticker-round {
+  width: var(--sticker-size, 112px);
+  aspect-ratio: 1;
+  /* Padding from the size, not % (that would follow the parent's width). */
+  padding: calc(var(--sticker-size, 112px) * 0.14);
+  border-radius: 50%;
+  font-size: calc(var(--sticker-size, 112px) * 0.15);
+}
+.sticker-pill {
+  min-height: 32px;
+  padding: 4px 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-small);
+}
+.sticker-scalloped {
+  width: var(--sticker-size, 128px);
+  aspect-ratio: 1;
+  padding: calc(var(--sticker-size, 128px) * 0.2);
+  font-size: calc(var(--sticker-size, 128px) * 0.14);
+}
+.sticker-shape {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 6px 10px rgba(8, 11, 20, 0.2));
+}
+.sticker-shape path {
+  fill: var(--sticker-bg);
+  stroke: var(--sticker-ring);
+  stroke-width: 3;
+  stroke-linejoin: round;
+}
+.sticker-label {
+  position: relative;
+}
+/* Entry for stickers and chips: a small pop from 0.9 (never from 0). */
+.pop-in {
+  animation: pop-in var(--dur-spring) var(--ease-spring) both;
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: rotate(var(--sticker-tilt, 0deg)) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--sticker-tilt, 0deg));
+  }
+}
+
+/* --- 3D pill button (subject buttons, «Crear examen») ---------------------- */
+/* <button class="button-3d tone-red"><span class="button-3d-face">…</span>
+   </button>: the button is the darker base, the face sits on top and sinks
+   on press (transform only). */
+.button-3d {
+  --face: var(--tone, var(--primary));
+  --on-face: var(--on-tone, var(--on-primary));
+  position: relative;
+  display: inline-flex;
+  min-height: calc(52px + var(--depth-3d));
+  padding: 0 0 var(--depth-3d);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--face) 62%, #000);
+  color: var(--on-face);
+  font-weight: 800;
+  font-size: var(--text-body);
+  letter-spacing: -0.01em;
+  vertical-align: top;
+}
+.button-3d-face {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 28px;
+  border-radius: inherit;
+  background: var(--face);
+  box-shadow: var(--gloss);
+  transition: transform var(--dur-fast) var(--ease);
+}
+.button-3d:active:not(:disabled) .button-3d-face {
+  transform: translateY(calc(var(--depth-3d) - 1px));
+}
+.button-3d:disabled {
+  opacity: 0.5;
+}
+
+/* --- Number roll (components/animated-number.tsx) ------------------------- */
+.num-roll {
+  display: inline-grid;
+  justify-items: center;
+  font-variant-numeric: tabular-nums;
+}
+.num-roll > span {
+  grid-area: 1 / 1;
+}
+.num-roll-in[data-dir="up"] {
+  animation: num-in-up var(--dur-number) var(--ease) both;
+}
+.num-roll-in[data-dir="down"] {
+  animation: num-in-down var(--dur-number) var(--ease) both;
+}
+.num-roll-out[data-dir="up"] {
+  animation: num-out-up var(--dur-number) var(--ease) both;
+}
+.num-roll-out[data-dir="down"] {
+  animation: num-out-down var(--dur-number) var(--ease) both;
+}
+@keyframes num-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+}
+@keyframes num-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-0.45em);
+  }
+}
+@keyframes num-out-up {
+  to {
+    opacity: 0;
+    transform: translateY(-0.45em);
+  }
+}
+@keyframes num-out-down {
+  to {
+    opacity: 0;
+    transform: translateY(0.45em);
+  }
+}
+
+/* --- Stagger: children rise one after another (max 8, --stagger apart) ---- */
+/* For lists rendered at once. Rows that come later use staggerDelay() from
+   components/test-experience.tsx with the same --stagger. */
+.stagger > * {
+  animation: rise var(--dur-rise) var(--ease) both;
+}
+.stagger > :nth-child(2) {
+  animation-delay: calc(var(--stagger) * 1);
+}
+.stagger > :nth-child(3) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+.stagger > :nth-child(4) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+.stagger > :nth-child(5) {
+  animation-delay: calc(var(--stagger) * 4);
+}
+.stagger > :nth-child(6) {
+  animation-delay: calc(var(--stagger) * 5);
+}
+.stagger > :nth-child(7) {
+  animation-delay: calc(var(--stagger) * 6);
+}
+.stagger > :nth-child(n + 8) {
+  animation-delay: calc(var(--stagger) * 7);
+}
+
+/* --- Orb moods (components/orb.tsx): geometry and colours untouched -------- */
+/* breathing: the whole Orb at rest; reactions play once on the <svg>. */
+.orb .orb-body {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.orb-breathing .orb-body {
+  animation: orb-breathe var(--dur-breathe) var(--ease-in-out) infinite;
+}
+@keyframes orb-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+}
+.orb-success {
+  animation: orb-hop var(--dur-spring) var(--ease) both;
+}
+@keyframes orb-hop {
+  0% {
+    transform: none;
+  }
+  45% {
+    transform: translateY(-12%) scale(1.06);
+  }
+  100% {
+    transform: none;
+  }
+}
+.orb-error {
+  animation: orb-shake var(--dur-rise) var(--ease-in-out) both;
+}
+@keyframes orb-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  20% {
+    transform: translateX(-6%);
+  }
+  45% {
+    transform: translateX(5%);
+  }
+  70% {
+    transform: translateX(-3%);
+  }
+  85% {
+    transform: translateX(1.5%);
+  }
+}
+
+/* --- Bottom sheet (components/bottom-sheet.tsx, built on Modal) ----------- */
+/* Phones: it rises from the bottom with the drawer curve and closes with a
+   drag or a flick on the grabber. Wider screens: the usual centred dialog. */
+.sheet-grabber {
+  display: none;
+}
+@media (max-width: 639.98px) {
+  .bottom-sheet {
+    animation: sheet-up var(--dur-rise) var(--ease-drawer) both;
+  }
+  .sheet-grabber {
+    position: relative;
+    display: block;
+    flex: none;
+    height: var(--touch);
+    margin: -24px -24px -20px;
+    touch-action: none;
+    cursor: grab;
+  }
+  .sheet-grabber::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 36px;
+    height: 5px;
+    margin-left: -18px;
+    border-radius: 3px;
+    background: var(--border);
+  }
+  .bottom-sheet[data-drag] {
+    animation: none;
+  }
+  .bottom-sheet[data-drag="settle"] {
+    transition: transform var(--dur-base) var(--ease-drawer);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* --- Transiciones entre páginas (§3) --------------------------------------- */
+/* With View Transitions (components/page-transitions.ts): only the page area
+   (.route-view, named "page") moves; the sidebar and tab bar stay put. The
+   old page leaves fast (160 ms), the new one enters with --ease (240 ms).
+   forward: from the right; back: from the left; lateral: a small rise. */
+:root[data-page-transition] .route-view {
+  view-transition-name: page;
+}
+:root[data-page-transition] .segmented-theme {
+  view-transition-name: none;
+}
+:root[data-page-transition]::view-transition-old(root) {
+  display: none;
+}
+:root[data-page-transition]::view-transition-new(root) {
+  animation: none;
+}
+:root[data-page-transition]::view-transition-group(page) {
+  animation: none;
+}
+:root[data-page-transition]::view-transition-old(page),
+:root[data-page-transition]::view-transition-new(page) {
+  mix-blend-mode: normal;
+}
+:root[data-page-transition="forward"]::view-transition-old(page) {
+  animation: page-exit-forward var(--dur-page-out) var(--ease) both;
+}
+:root[data-page-transition="forward"]::view-transition-new(page) {
+  animation: page-enter-forward var(--dur-page) var(--ease) both;
+}
+:root[data-page-transition="back"]::view-transition-old(page) {
+  animation: page-exit-back var(--dur-page-out) var(--ease) both;
+}
+:root[data-page-transition="back"]::view-transition-new(page) {
+  animation: page-enter-back var(--dur-page) var(--ease) both;
+}
+:root[data-page-transition="lateral"]::view-transition-old(page) {
+  animation: fade-out var(--dur-page-out) var(--ease) both;
+}
+:root[data-page-transition="lateral"]::view-transition-new(page) {
+  animation: page-enter-lateral var(--dur-page) var(--ease) both;
+}
+/* Without View Transitions, and on Back/Forward: the new page enters with
+   the same motion (enter only, never holding the navigation back). */
+.route-view[data-enter="forward"] {
+  animation: page-enter-forward var(--dur-page) var(--ease) both;
+}
+.route-view[data-enter="back"] {
+  animation: page-enter-back var(--dur-page) var(--ease) both;
+}
+.route-view[data-enter="lateral"] {
+  animation: page-enter-lateral var(--dur-page) var(--ease) both;
+}
+.route-view[data-enter="vt"],
+.route-view[data-enter="instant"] {
+  animation: none;
+}
+@keyframes page-enter-forward {
+  from {
+    opacity: 0;
+    transform: translateX(var(--page-shift));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes page-enter-back {
+  from {
+    opacity: 0;
+    transform: translateX(calc(var(--page-shift) * -1));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes page-enter-lateral {
+  from {
+    opacity: 0;
+    transform: translateY(var(--page-rise));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes page-exit-forward {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--page-shift) * -0.5));
+  }
+}
+@keyframes page-exit-back {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--page-shift) * 0.5));
+  }
+}
+
+/* --- Reduced motion: fades only, no movement ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .marker-draw::after {
+    animation-name: fade;
+  }
+  .pop-in,
+  .stagger > *,
+  .num-roll-in[data-dir] {
+    animation-name: fade;
+  }
+  .num-roll-out[data-dir] {
+    animation-name: fade-out;
+  }
+  .button-3d:active:not(:disabled) .button-3d-face {
+    transform: none;
+  }
+  .orb-breathing .orb-body {
+    animation: none;
+  }
+  .orb-success,
+  .orb-error {
+    animation: none;
+  }
+  .bottom-sheet {
+    animation-name: fade;
+  }
+  :root[data-page-transition]::view-transition-old(page) {
+    animation: fade-out var(--dur-page-reduced) ease-out both;
+  }
+  :root[data-page-transition]::view-transition-new(page) {
+    animation: fade var(--dur-page-reduced) ease-out both;
+  }
+  .route-view[data-enter="forward"],
+  .route-view[data-enter="back"],
+  .route-view[data-enter="lateral"] {
+    animation: fade var(--dur-page-reduced) ease-out both;
   }
 }
