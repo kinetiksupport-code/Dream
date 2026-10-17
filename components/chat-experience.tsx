@@ -903,12 +903,22 @@ export function ChatExperience({
         onScroll={() => {
           const el = scroller.current;
           // The smooth jump passes through «not at the bottom»: not a choice.
-          if (el && !jumping.current) {
-            pinned.current =
-              el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-            followed.current = pinned.current ? el.scrollTop : null;
-            setAtBottom(pinned.current);
+          if (!el || jumping.current) return;
+          // The event of auto-scroll's own scroll can arrive after the thread
+          // grew again (a history answer swapping to formatted Markdown): the
+          // view did not go up, so it is not the student leaving the bottom.
+          if (
+            pinned.current &&
+            followed.current !== null &&
+            el.scrollTop >= followed.current - 4
+          ) {
+            follow();
+            return;
           }
+          pinned.current =
+            el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+          followed.current = pinned.current ? el.scrollTop : null;
+          setAtBottom(pinned.current);
         }}
       >
         {loading ? (
