@@ -298,6 +298,9 @@ test("fluency: reveal with CPU ×4 (long frames counted)", async ({ page }) => {
   await setup(page);
   await page.setViewportSize({ width: 1280, height: 860 });
   await ask(page, "Explícame las ecuaciones de segundo grado");
+  // Inicio keeps its hero for 160 ms after sending (design/inicio) and then
+  // swaps to the thread: measure the reveal, not that one-off swap.
+  await page.locator(".message-assistant").waitFor();
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   await page.evaluate(() => {
