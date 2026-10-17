@@ -111,7 +111,7 @@ export function useReveal(
       }
       frame.current = requestAnimationFrame(tick);
     },
-    [apply],
+    [apply, root],
   );
 
   // After every commit (a streamed block re-rendered its spans): pick up the
