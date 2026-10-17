@@ -13,12 +13,12 @@ import {
 import { ChatExperience } from "../chat-experience";
 import {
   ExamFrame,
-  ExamLoad,
   ErrorNotice,
   PreparationProgress,
   useExam,
   styles,
 } from "./exam-ui";
+import { ExamDetailSkeleton, LoadError, examStyles } from "./exam-page";
 export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   const { exam, setExam, error, setError, loading, reload } = useExam(id);
   const [unit, setUnit] = useState<ExamUnit | null>(null);
@@ -68,19 +68,22 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
       setBusy(false);
     }
   }
-  if (loading || !exam || !unit?.conversation_id)
+  if (error && (!exam || !unit?.conversation_id))
     return (
-      <ExamLoad
+      <LoadError
         error={error}
+        title="No se ha podido abrir la unidad"
         reload={() => {
+          setError("");
           reload();
           setStartRetry((n) => n + 1);
         }}
       />
     );
+  if (loading || !exam || !unit?.conversation_id) return <ExamDetailSkeleton />;
   return (
     <ExamFrame
-      eyebrow={`ESTUDIAR / ${exam.subject.toUpperCase()}`}
+      eyebrow={`Estudiar · ${exam.subject}`}
       title={unit.title}
       subtitle={`${exam.title} · Unidad ${unit.position + 1} de ${exam.units.length}`}
       aside={
@@ -92,19 +95,23 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
               qué merece otra mirada.
             </p>
             <button
-              className="primary"
+              className="primary press"
               disabled={busy}
+              aria-busy={busy || undefined}
               onClick={() => void practice()}
             >
               {busy ? "Preparando práctica…" : "Practicar esta unidad"}{" "}
-              <ArrowRight size={18} />
+              <ArrowRight size={18} aria-hidden="true" />
             </button>
           </section>
           <section className={styles.card}>
             <h3>Tu plan</h3>
             <PreparationProgress exam={exam} />
-            <p>{unit.estimated_minutes} minutos estimados para esta unidad.</p>
-            <Link className={styles.inlineLink} href={`/exams/${id}/plan`}>
+            <p>
+              <span className="num">{unit.estimated_minutes}</span> minutos
+              estimados para esta unidad.
+            </p>
+            <Link className="text-link press" href={`/exams/${id}/plan`}>
               Ver todas las unidades
             </Link>
             {unit.status === "completed" ? (
@@ -113,8 +120,9 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
               </p>
             ) : (
               <button
-                className="secondary"
+                className="secondary press"
                 disabled={busy}
+                aria-busy={busy || undefined}
                 onClick={() => {
                   setBusy(true);
                   void updateExam("exam_unit_complete", id, { unit_id: unitId })
@@ -137,11 +145,11 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
         </>
       }
     >
-      <div className={styles.studySteps} aria-label="Cómo aprender con Dream">
+      <ol className={examStyles.studySteps} aria-label="Cómo aprender con Dream">
         {["Explicación", "Ejemplo", "Práctica", "Comprensión"].map((s) => (
-          <span key={s}>{s}</span>
+          <li key={s}>{s}</li>
         ))}
-      </div>
+      </ol>
       <div className={styles.studyLayout}>
         <ChatExperience
           study={{
