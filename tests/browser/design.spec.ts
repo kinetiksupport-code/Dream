@@ -13,7 +13,7 @@ async function open(page: Page, name: string) {
     await page.addInitScript(() =>
       localStorage.setItem("dream-storage-notice-v1", "1"),
     );
-  else await mock(page);
+  else await mock(page, { profile: screen.profile });
   await page.goto(screen.path);
   await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
   if (screen.ready) await screen.ready(page).catch(() => {});
