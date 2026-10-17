@@ -286,58 +286,152 @@ function concat(parts) {
   return out;
 }
 // Solo se conservan los bloques necesarios para ver la imagen; todo lo demás
-// (EXIF, GPS, XMP, comentarios, textos, fechas) se descarta.
+// (EXIF, GPS, XMP, comentarios, textos, fechas) se descarta. Del EXIF solo
+// sobrevive la orientación, reescrita en un IFD0 mínimo (las fotos del móvil
+// llegarían giradas a la IA sin ella). GIF no tiene orientación.
 const PNG_KEEP = new Set(['IHDR', 'PLTE', 'IDAT', 'IEND', 'tRNS', 'cHRM', 'gAMA', 'iCCP', 'sBIT', 'sRGB', 'cICP', 'bKGD', 'pHYs', 'acTL', 'fcTL', 'fdAT']);
 const WEBP_KEEP = new Set(['VP8 ', 'VP8L', 'VP8X', 'ALPH', 'ANIM', 'ANMF', 'ICCP']);
 
+// ---- Orientación: lo único del EXIF que se conserva (fotos del móvil).
+/**
+ * Lee la etiqueta Orientation (0x0112) del IFD0 de un bloque TIFF/EXIF
+ * (con o sin el prefijo «Exif\0\0»). Devuelve 2–8, o 0 si no hay o es 1.
+ */
+export function exifOrientation(data) {
+  try {
+    let t = data;
+    if (startsWith(t, ascii('Exif\0\0'))) t = t.subarray(6);
+    if (t.length < 8) return 0;
+    const little = t[0] === 0x49 && t[1] === 0x49;
+    if (!little && !(t[0] === 0x4d && t[1] === 0x4d)) return 0;
+    const v = new DataView(t.buffer, t.byteOffset, t.byteLength);
+    if (v.getUint16(2, little) !== 42) return 0;
+    const ifd = v.getUint32(4, little);
+    if (ifd + 2 > t.length) return 0;
+    const count = Math.min(v.getUint16(ifd, little), 512);
+    for (let k = 0; k < count; k++) {
+      const at = ifd + 2 + k * 12;
+      if (at + 12 > t.length) return 0;
+      if (v.getUint16(at, little) !== 0x0112) continue;
+      if (v.getUint16(at + 2, little) !== 3) return 0; // SHORT
+      const value = v.getUint16(at + 8, little);
+      return value >= 2 && value <= 8 ? value : 0;
+    }
+  } catch { /* EXIF dañado: sin orientación */ }
+  return 0;
+}
+/** TIFF mínimo (big-endian): un único IFD0 con Orientation y nada más. */
+export function minimalOrientationTiff(orientation) {
+  return new Uint8Array([
+    0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08, // cabecera, IFD0 en 8
+    0x00, 0x01, // una entrada
+    0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, orientation, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, // sin IFD siguiente (ni miniatura)
+  ]);
+}
+const CRC_TABLE = new Uint32Array(256).map((_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (const b of bytes) c = CRC_TABLE[(c ^ b) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
 function stripPng(bytes) {
   const parts = [bytes.subarray(0, 8)];
+  let orientation = 0;
   let i = 8;
   while (i + 12 <= bytes.length) {
     const length = u32be(bytes, i);
     const type = fourcc(bytes, i + 4);
     const end = i + 12 + length;
     if (end > bytes.length) throw new UploadError('image_invalid');
+    if (type === 'eXIf' && !orientation) orientation = exifOrientation(bytes.subarray(i + 8, i + 8 + length));
     if (PNG_KEEP.has(type)) parts.push(bytes.subarray(i, end));
     i = end;
-    if (type === 'IEND') return concat(parts);
+    if (type === 'IEND') {
+      // eXIf mínimo con la orientación, justo después de IHDR (antes de IDAT).
+      if (orientation) {
+        const tiff = minimalOrientationTiff(orientation);
+        const body = concat([new Uint8Array(ascii('eXIf')), tiff]);
+        const chunk = new Uint8Array(12 + tiff.length);
+        const view = new DataView(chunk.buffer);
+        view.setUint32(0, tiff.length);
+        chunk.set(body, 4);
+        view.setUint32(8 + tiff.length, crc32(body));
+        parts.splice(2, 0, chunk);
+      }
+      return concat(parts);
+    }
   }
   throw new UploadError('image_invalid');
 }
 function stripJpeg(bytes) {
   const parts = [bytes.subarray(0, 2)];
+  let orientation = 0;
+  let afterApp0 = 1;
+  const finish = () => {
+    // APP1 Exif mínimo: solo Orientation, tras APP0 (JFIF) si lo hay.
+    if (orientation) {
+      const payload = concat([new Uint8Array(ascii('Exif\0\0')), minimalOrientationTiff(orientation)]);
+      const segment = concat([new Uint8Array([0xff, 0xe1, (payload.length + 2) >> 8, (payload.length + 2) & 255]), payload]);
+      parts.splice(afterApp0, 0, segment);
+    }
+    return concat(parts);
+  };
   let i = 2;
   while (i + 4 <= bytes.length) {
     if (bytes[i] !== 0xff) throw new UploadError('image_invalid');
     const marker = bytes[i + 1];
     if (marker === 0xff) { i++; continue; }
     if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) { parts.push(bytes.subarray(i, i + 2)); i += 2; continue; }
-    if (marker === 0xda) { parts.push(bytes.subarray(i)); return concat(parts); }
+    if (marker === 0xda) { parts.push(bytes.subarray(i)); return finish(); }
     if (marker === 0xd9) break;
     const end = i + 2 + u16be(bytes, i + 2);
     if (end > bytes.length) throw new UploadError('image_invalid');
     // APP0 (JFIF) y APP14 (Adobe, color) se quedan; APP1 (EXIF/XMP/GPS),
     // el resto de APPn y los comentarios (COM) se eliminan.
     const isApp = marker >= 0xe0 && marker <= 0xef;
-    if (!(isApp && marker !== 0xe0 && marker !== 0xee) && marker !== 0xfe) parts.push(bytes.subarray(i, end));
+    if (marker === 0xe1 && !orientation) orientation = exifOrientation(bytes.subarray(i + 4, end));
+    if (!(isApp && marker !== 0xe0 && marker !== 0xee) && marker !== 0xfe) {
+      parts.push(bytes.subarray(i, end));
+      if (marker === 0xe0 && parts.length === 2) afterApp0 = 2;
+    }
     i = end;
   }
   throw new UploadError('image_invalid');
 }
 function stripWebp(bytes) {
   const parts = [];
+  let orientation = 0;
+  let extended = null;
   let i = 12;
   while (i + 8 <= bytes.length) {
     const type = fourcc(bytes, i);
     const size = u32le(bytes, i + 4);
     const end = i + 8 + size + (size % 2);
     if (i + 8 + size > bytes.length) throw new UploadError('image_invalid');
+    if (type === 'EXIF' && !orientation) orientation = exifOrientation(bytes.subarray(i + 8, i + 8 + size));
     if (WEBP_KEEP.has(type)) {
       const chunk = bytes.slice(i, Math.min(end, bytes.length));
-      if (type === 'VP8X') chunk[8] &= ~0x0c; // sin banderas de EXIF ni XMP
+      if (type === 'VP8X') { chunk[8] &= ~0x0c; extended = chunk; } // sin banderas de EXIF ni XMP
       parts.push(chunk);
     }
     i = end;
+  }
+  // EXIF mínimo con la orientación (solo en WebP extendido, que es donde
+  // el formato admite EXIF); va al final, como pide la especificación.
+  if (orientation && extended) {
+    const tiff = minimalOrientationTiff(orientation);
+    const chunk = new Uint8Array(8 + tiff.length);
+    chunk.set(ascii('EXIF'), 0);
+    new DataView(chunk.buffer).setUint32(4, tiff.length, true);
+    chunk.set(tiff, 8);
+    extended[8] |= 0x08;
+    parts.push(chunk);
   }
   const body = concat(parts);
   const header = new Uint8Array(12);

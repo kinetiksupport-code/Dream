@@ -5,7 +5,7 @@ import JSZip from "npm:jszip@3.10.1";
 import { bytesToBase64, extractAttachment, UploadError } from "../functions/dream-api/attachments.mjs";
 import {
   MATERIAL_GUARD, UPLOAD_LIMITS, UPLOAD_MESSAGES, checkUploadQuota, hasActiveAnnotation,
-  imageDimensions, sanitizeExtractedText, sanitizeFileName, stripImageMetadata,
+  exifOrientation, imageDimensions, sanitizeExtractedText, sanitizeFileName, stripImageMetadata,
   uploadRejectionLog, wrapStudentMaterial,
 } from "../functions/dream-api/file-guard.mjs";
 import { chatSystemMessages } from "../functions/dream-api/prompts.mjs";
@@ -150,6 +150,31 @@ async function makeOffice(files = {}, ext = "docx") {
 const rels = (type, target, external = false) =>
   `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/${type}" Target="${target}"${external ? ' TargetMode="External"' : ""}/></Relationships>`;
 const b64 = (bytes) => bytesToBase64(bytes);
+
+/** EXIF real (little-endian): Make, descripción con GPS, Orientation y puntero a GPS IFD. */
+function makeExif(orientation) {
+  const make = ascii("Canon SECRETO\0"), desc = ascii("GPS 40.4168 N casa\0");
+  const entries = 4, ifd0 = 8, after = ifd0 + 2 + entries * 12 + 4;
+  const gpsIfd = after + make.length + desc.length;
+  const t = new Uint8Array(gpsIfd + 2 + 12 + 4);
+  const v = new DataView(t.buffer);
+  t.set([0x49, 0x49, 0x2a, 0, 8, 0, 0, 0]);
+  v.setUint16(ifd0, entries, true);
+  const entry = (k, tag, type, count, value) => {
+    const at = ifd0 + 2 + k * 12;
+    v.setUint16(at, tag, true); v.setUint16(at + 2, type, true); v.setUint32(at + 4, count, true);
+    if (type === 3) v.setUint16(at + 8, value, true); else v.setUint32(at + 8, value, true);
+  };
+  entry(0, 0x010e, 2, desc.length, after + make.length);
+  entry(1, 0x010f, 2, make.length, after);
+  entry(2, 0x0112, 3, 1, orientation);
+  entry(3, 0x8825, 4, 1, gpsIfd);
+  t.set(make, after); t.set(desc, after + make.length);
+  v.setUint16(gpsIfd, 1, true);
+  v.setUint16(gpsIfd + 2, 1, true); v.setUint16(gpsIfd + 4, 2, true); v.setUint32(gpsIfd + 6, 2, true); t.set(ascii("N\0"), gpsIfd + 10);
+  return t;
+}
+const MINIMAL_TIFF_6 = [0x4d, 0x4d, 0, 0x2a, 0, 0, 0, 8, 0, 1, 0x01, 0x12, 0, 3, 0, 0, 0, 1, 0, 6, 0, 0, 0, 0, 0, 0];
 
 // ------------------------------------------------------------ pruebas
 Deno.test("firma real: PDF falso, ejecutable renombrado y MIME incoherente se rechazan", async () => {
@@ -381,4 +406,65 @@ Deno.test("una ráfaga de archivos hostiles no rompe el extractor y lo válido s
   assertEquals(double.calls.length, 0);
   const text = await extractAttachment({ fileName: "bien.pdf", mimeType: "application/pdf", base64: b64(makePdf()), signal });
   assert(text.includes("Apuntes de historia"));
+});
+
+Deno.test("orientación: un JPEG con Orientation=6 y GPS sale con Orientation=6 y nada más", () => {
+  const exif = makeExif(6);
+  assertEquals(exifOrientation(exif), 6);
+  const jpeg = new Uint8Array([
+    0xff, 0xd8,
+    ...seg(0xe0, [...ascii("JFIF\0"), 1, 1, 0, 0, 1, 0, 1, 0, 0]),
+    ...seg(0xe1, [...ascii("Exif\0\0"), ...exif]),
+    ...seg(0xe1, ascii("http://ns.adobe.com/xap/1.0/\0<x:xmpmeta>Ana Privada</x:xmpmeta>")),
+    ...seg(0xdb, new Array(65).fill(1)),
+    ...seg(0xc0, [8, 0, 100, 0, 200, 1, 1, 0x11, 0]),
+    ...seg(0xda, [1, 1, 0, 0, 63, 0]), 0x12, 0xff, 0xd9,
+  ]);
+  const clean = stripImageMetadata(jpeg, "jpeg");
+  for (const secret of ["Canon", "SECRETO", "GPS", "casa", "xmpmeta", "Ana"]) assertEquals(contains(clean, secret), false, secret);
+  // SOI, APP0 intacto y justo después el APP1 mínimo: un único IFD0 con Orientation=6.
+  const app0Length = 2 + 16;
+  const app1 = clean.subarray(2 + app0Length);
+  assertEquals([...app1.subarray(0, 4)], [0xff, 0xe1, 0, 34]);
+  assertEquals([...app1.subarray(4, 10)], ascii("Exif\0\0"));
+  assertEquals([...app1.subarray(10, 36)], MINIMAL_TIFF_6);
+  assertEquals(exifOrientation(app1.subarray(4, 36)), 6);
+  assertEquals(imageDimensions(clean, "jpeg"), { width: 200, height: 100 });
+  // Orientation=1 (o sin EXIF): no se escribe ningún EXIF.
+  const upright = new Uint8Array([0xff, 0xd8, ...seg(0xe1, [...ascii("Exif\0\0"), ...makeExif(1)]), ...seg(0xc0, [8, 0, 1, 0, 1, 1, 1, 0x11, 0]), ...seg(0xda, [1, 1, 0, 0, 63, 0]), 0xff, 0xd9]);
+  assertEquals(contains(stripImageMetadata(upright, "jpeg"), "Exif"), false);
+  assertEquals(contains(stripImageMetadata(makeJpeg(), "jpeg"), "Exif"), false);
+});
+
+Deno.test("orientación: PNG (eXIf) y WebP (EXIF) conservan solo Orientation", () => {
+  const exif = makeExif(6);
+  const png = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+    ...pngChunk("IHDR", [...be32(64), ...be32(32), 8, 2, 0, 0, 0]),
+    ...pngChunk("IDAT", [0x78, 0x9c, 0x63, 0, 0, 0, 1, 0, 1]),
+    ...pngChunk("eXIf", [...exif]),
+    ...pngChunk("IEND", []),
+  ]);
+  const cleanPng = stripImageMetadata(png, "png");
+  for (const secret of ["Canon", "SECRETO", "GPS", "casa"]) assertEquals(contains(cleanPng, secret), false, secret);
+  // eXIf mínimo justo después de IHDR (antes de IDAT) y con CRC correcto.
+  const at = 8 + 25;
+  assertEquals(String.fromCharCode(...cleanPng.subarray(at + 4, at + 8)), "eXIf");
+  assertEquals([...cleanPng.subarray(at + 8, at + 34)], MINIMAL_TIFF_6);
+  assertEquals(new DataView(cleanPng.buffer).getUint32(at + 34), crc32(cleanPng.subarray(at + 4, at + 34)));
+  assertEquals(String.fromCharCode(...cleanPng.subarray(at + 42, at + 46)), "IDAT");
+
+  const body = [
+    ...ascii("WEBP"),
+    ...riffChunk("VP8X", [0x08, 0, 0, 0, ...le24(63), ...le24(31)]),
+    ...riffChunk("VP8 ", [0x10, 0x02, 0, 0x9d, 0x01, 0x2a, 64, 0, 32, 0, 1, 2, 3]),
+    ...riffChunk("EXIF", [...exif]),
+  ];
+  const webp = stripImageMetadata(new Uint8Array([...ascii("RIFF"), ...le32(body.length), ...body]), "webp");
+  for (const secret of ["Canon", "SECRETO", "GPS", "casa"]) assertEquals(contains(webp, secret), false, secret);
+  assertEquals(webp[20] & 0x0c, 0x08, "bandera EXIF sí, XMP no");
+  const exifAt = webp.length - 34;
+  assertEquals(String.fromCharCode(...webp.subarray(exifAt, exifAt + 4)), "EXIF");
+  assertEquals([...webp.subarray(exifAt + 8)], MINIMAL_TIFF_6);
+  assertEquals(new DataView(webp.buffer).getUint32(4, true), webp.length - 8);
 });
