@@ -43,6 +43,7 @@ export function useReveal(
   const shown = useRef(0);
   const caret = useRef<HTMLElement | null>(null);
   const frame = useRef(0);
+  const stale = useRef(false);
   const completeRef = useRef(complete);
 
   /** Mark words [from, n) visible, move the caret, unhide started blocks. */
@@ -80,6 +81,23 @@ export function useReveal(
   const tick = useCallback(
     (now: number) => {
       frame.current = 0;
+      // The Markdown chunk may still be resolving (plain-text fallback, no
+      // words yet), for example when the answer mounted already complete
+      // after Inicio's hand-off: wait for the real tree instead of ending
+      // the reveal with zero words, then pick the words up again (the
+      // Suspense resolution does not re-render this component).
+      if (root.current?.querySelector(".markdown-pending")) {
+        stale.current = true;
+        frame.current = requestAnimationFrame(tick);
+        return;
+      }
+      if (stale.current && root.current) {
+        stale.current = false;
+        units.current = Array.from(
+          root.current.querySelectorAll<HTMLElement>("[data-w]"),
+        );
+        apply(shown.current, 0);
+      }
       const c = clockOf(clock);
       const total = units.current.length;
       const done = completeRef.current;
