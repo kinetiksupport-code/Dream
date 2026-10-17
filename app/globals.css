@@ -2546,3 +2546,26 @@ fieldset:disabled .test-option {
     transition: none;
   }
 }
+/* Móvil · Inicio: the hero composer is a grid; modes get their own row. */
+@media (max-width: 639.98px) {
+  .composer-hero .composer-tools {
+    display: contents;
+  }
+  .composer-hero .attachment-list {
+    grid-row: 1;
+  }
+  .composer-hero .mode-picker {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    margin: 0 0 4px;
+  }
+  .composer-hero .attach-button,
+  .composer-hero textarea,
+  .composer-hero .send-button {
+    grid-row: 3;
+  }
+  .composer-hero .composer-offline {
+    grid-row: 4;
+  }
+}
