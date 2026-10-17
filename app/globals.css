@@ -3007,8 +3007,10 @@ fieldset:disabled .test-option {
   color: var(--text-secondary);
   text-decoration: none;
 }
-.legal-head nav a:hover {
-  color: var(--primary-ink);
+@media (hover: hover) and (pointer: fine) {
+  .legal-head nav a:hover {
+    color: var(--primary-ink);
+  }
 }
 .legal-body {
   max-width: 760px;
@@ -3183,7 +3185,7 @@ fieldset:disabled .test-option {
   border-radius: inherit;
   background: var(--primary);
   transform-origin: left center;
-  transition: transform 600ms var(--ease);
+  transition: transform var(--dur-rise) var(--ease);
 }
 .usage-bar[data-level="full"] .usage-fill {
   background: var(--danger);

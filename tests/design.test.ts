@@ -152,7 +152,7 @@ test("fonts load on <html> so the font stack resolves (Inter, latin-ext)", () =>
 
 test("Spanish interface text keeps its accents", () => {
   const MISSING =
-    /\b(Explicamelo|Explicame|examenes|leccion|lecciones|sesion|informacion|configuracion|conversacion|busqueda|ultimo|ultima|facil|dificil|pagina|numero|titulo|rapido|tambien|aqui|todavia|despues|segun|ademas)\b/i;
+    /\b(Explicamelo|Explicame|examenes|leccion|sesion|informacion|configuracion|conversacion|busqueda|ultimo|ultima|facil|dificil|pagina|numero|titulo|rapido|tambien|aqui|todavia|despues|segun|ademas)\b/i;
   const bad: string[] = [];
   for (const file of [
     ...walk("app", /\.tsx$/),
