@@ -1,5 +1,11 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
@@ -8,6 +14,7 @@ import { AiStatus } from "@/components/ai-status";
 import { ArrowDown, CircleAlert, RotateCw } from "lucide-react";
 import { Composer } from "@/components/composer";
 import { MessageView } from "@/components/message";
+import { preloadMarkdown } from "@/components/markdown";
 import { ChatHome } from "@/components/chat-home";
 import { NextStepCard } from "@/components/exams/next-step-card";
 import { Recents } from "@/components/recents";
@@ -120,6 +127,17 @@ export function ChatExperience({
   // Inicio: text of the first message while the hero fades out (160 ms).
   // The request is already running; only the swap of views waits.
   const [leaving, setLeaving] = useState<string | null>(null);
+  // The hero composer had the focus when Inicio handed off: the docked one
+  // takes it as soon as it mounts (the hero stays for those 160 ms).
+  const handFocus = useRef(false);
+  useLayoutEffect(() => {
+    if (leaving !== null || !handFocus.current) return;
+    handFocus.current = false;
+    if (!document.activeElement?.closest(".composer"))
+      document
+        .querySelector<HTMLTextAreaElement>(".composer textarea")
+        ?.focus({ preventScroll: true });
+  }, [leaving]);
   // When the current wait started (send): AiStatus shows only after 2 s.
   const [waitSince, setWaitSince] = useState<number | null>(null);
   // How «Reintentar» recovers: resend the same turn, or reload what was saved.
@@ -153,7 +171,7 @@ export function ChatExperience({
   useEffect(() => {
     // Warm the Markdown chunk so the first streamed answer does not swap from
     // the plain-text fallback to formatted text mid-stream.
-    void import("@/components/markdown-renderer");
+    void preloadMarkdown();
   }, []);
   useEffect(() => {
     setWorkspaceEmpty(!messages.length && !loading);
@@ -192,6 +210,7 @@ export function ChatExperience({
     setValue(prefill ?? "");
     setAnalysisView(false);
     setLeaving(null);
+    handFocus.current = false;
     clearFiles();
     setError("");
     setRetry(null);
@@ -480,12 +499,14 @@ export function ChatExperience({
     const assistantId = crypto.randomUUID();
     fresh.current.add(userId);
     fresh.current.add(assistantId);
-    if (!study && !messages.length) {
+    const handOff = !study && !messages.length;
+    if (handOff) {
+      handFocus.current = !!document.activeElement?.closest(".composer");
       setLeaving(prompt);
       window.setTimeout(() => setLeaving(null), 160);
     }
     // The hero composer becomes the docked one: keep the typing focus there.
-    if (document.activeElement?.closest(".composer"))
+    else if (document.activeElement?.closest(".composer"))
       requestAnimationFrame(() => {
         if (!document.activeElement?.closest(".composer"))
           document
