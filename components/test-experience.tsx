@@ -90,7 +90,11 @@ export function AnswerInput({
               />
               {evaluation && (correct || state === "incorrect") && (
                 <span className="option-index" aria-hidden="true">
-                  {state === "incorrect" ? <X size={15} /> : <Check size={15} />}
+                  {state === "incorrect" ? (
+                    <X size={15} />
+                  ) : (
+                    <Check size={15} />
+                  )}
                 </span>
               )}
               <Markdown content={option} />
@@ -442,7 +446,7 @@ export function TestExperience({ id }: { id: string }) {
           >
             <i
               style={{
-                width: `${((index + 1) / test.questions.length) * 100}%`,
+                transform: `scaleX(${(index + 1) / test.questions.length})`,
               }}
             />
           </div>

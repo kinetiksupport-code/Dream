@@ -409,6 +409,10 @@ test("autosave restores the answer and cursor on reload", async ({ page }) => {
   await page.reload();
   await expect(page.getByRole("radio").nth(1)).toBeChecked();
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
+  // Reload only once the new position is saved, or the old one comes back.
+  await expect
+    .poll(() => Object.values(state.sessions)[0]?.question_index)
+    .toBe(1);
   await page.reload();
   await expect(page.getByLabel("Tu respuesta", { exact: true })).toBeVisible();
 });

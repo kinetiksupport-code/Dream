@@ -255,7 +255,10 @@ export function Shell({ children }: { children: ReactNode }) {
             </header>
           )}
           <main id="main" className="workspace-main" tabIndex={-1}>
-            {children}
+            {/* Short fade on route change (opacity only, 160 ms). */}
+            <div className="route-view" key={pathname}>
+              {children}
+            </div>
           </main>
         </div>
         {!focus && (

@@ -180,9 +180,11 @@
 }
 .progress i {
   height: 100%;
+  width: 100%;
   background: var(--primary);
   display: block;
-  transition: width var(--dur-press) var(--ease);
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease);
 }
 .preparation {
   display: flex;
@@ -381,11 +383,13 @@
   align-items: center;
   border: 1px solid transparent;
   transition:
-    background var(--dur-press) var(--ease),
-    border-color var(--dur-press) var(--ease);
+    background-color var(--dur-press) ease,
+    border-color var(--dur-press) ease;
 }
-.unit:hover {
-  border-color: var(--primary-ink);
+@media (hover: hover) and (pointer: fine) {
+  .unit:hover {
+    border-color: var(--primary-ink);
+  }
 }
 .unit > div {
   flex: 1;
