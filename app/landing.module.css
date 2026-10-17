@@ -142,8 +142,10 @@
   padding: 0 8px;
   color: var(--text-secondary);
 }
-.footer a:hover {
-  color: var(--text);
+@media (hover: hover) and (pointer: fine) {
+  .footer a:hover {
+    color: var(--text);
+  }
 }
 @media (max-width: 639.98px) {
   .hero {
