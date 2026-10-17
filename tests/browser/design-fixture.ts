@@ -161,6 +161,73 @@ export async function mock(page: Page, opts: { pendingChat?: boolean } = {}) {
   });
 }
 
+/** Apuntes: three exams whose materials match the Claude Design canvas
+ * (ready PDF, processing photo, unreadable PDF), or none for the empty state.
+ * Registered after mock(), so it wins for the `exams` action only. */
+export async function withNotes(page: Page, kind: "full" | "empty" = "full") {
+  const material = (
+    id: string,
+    file_name: string,
+    mime_type: string,
+    status: string,
+  ) => ({
+    id,
+    file_name,
+    mime_type,
+    size_bytes: 240 * 1024,
+    status,
+  });
+  const exams =
+    kind === "empty"
+      ? []
+      : [
+          exam,
+          {
+            ...exam,
+            id: "22222222-2222-4222-8222-222222222221",
+            title: "Física · dinámica",
+            subject: "Física",
+            materials: [
+              material(
+                "77777777-7777-4777-8777-777777777771",
+                "Fotos de la pizarra.jpg",
+                "image/jpeg",
+                "processing",
+              ),
+            ],
+          },
+          {
+            ...exam,
+            id: "22222222-2222-4222-8222-222222222222",
+            title: "Historia · Tema 2",
+            subject: "Historia",
+            materials: [
+              material(
+                "77777777-7777-4777-8777-777777777772",
+                "Historia · Tema 2.pdf",
+                "application/pdf",
+                "failed",
+              ),
+            ],
+          },
+        ];
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const body = route.request().postDataJSON();
+    const data =
+      body?.action === "exams"
+        ? { exams }
+        : body?.action === "exam_get"
+          ? { exam: exams.find((e) => e.id === body.exam_id) ?? exam }
+          : null;
+    if (!data) return route.fallback();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify(data),
+    });
+  });
+}
+
 export const VIEWPORTS = [
   { name: "movil", width: 390, height: 844 },
   { name: "escritorio", width: 1440, height: 900 },
@@ -194,7 +261,15 @@ export const SCREENS: Screen[] = [
     },
   },
   { name: "tareas", path: "/tasks" },
-  { name: "apuntes", path: "/notes" },
+  {
+    name: "apuntes",
+    path: "/notes",
+    ready: async (p) => {
+      await withNotes(p);
+      await p.reload();
+      await p.getByText("Fotos de la pizarra").waitFor();
+    },
+  },
   { name: "examenes", path: "/exams" },
   { name: "examen", path: `/exams/${eid}` },
   { name: "historial", path: "/chat?view=recent" },

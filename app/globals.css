@@ -1032,17 +1032,12 @@ svg.lucide {
   flex-direction: column;
   gap: 12px;
 }
-.skeleton-list span,
-.skeleton-card {
+.skeleton-list span {
   display: block;
   height: 56px;
   border-radius: var(--radius-card);
   background: var(--surface);
   animation: shimmer 1.4s ease-in-out infinite;
-}
-.skeleton-card {
-  height: 200px;
-  border-radius: 20px;
 }
 @keyframes shimmer {
   50% {
@@ -1051,74 +1046,12 @@ svg.lucide {
 }
 @media (prefers-reduced-motion: reduce) {
   .skeleton-list span,
-  .skeleton-card,
   .row-menu {
     animation: none;
   }
 }
 
-/* Apuntes: card grid */
-.card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 16px;
-}
-.note-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 24px;
-  min-height: 200px;
-  padding: 20px;
-  border-radius: 20px;
-  background: var(--surface);
-}
-.note-card h2 {
-  font-size: var(--text-body);
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  overflow-wrap: anywhere;
-}
-.note-card .meta {
-  font-size: var(--text-small);
-  color: var(--text-secondary);
-}
-.note-status {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: var(--text-small);
-  font-weight: 600;
-  line-height: 1.4;
-  color: var(--text-secondary);
-}
-.note-status svg {
-  flex: none;
-  margin-top: 1px;
-}
-.note-status.ready {
-  color: var(--success);
-}
-.note-status.failed {
-  color: var(--danger);
-}
-.card-action {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  padding: 0 16px;
-  border-radius: var(--radius-chip);
-  background: var(--bg);
-  color: var(--primary-ink);
-  font-size: var(--text-secondary-size);
-  font-weight: 600;
-}
-@media (hover: hover) and (pointer: fine) {
-  .card-action:hover {
-    background: var(--surface-hover);
-  }
-}
+/* Apuntes: components/notes-view.module.css */
 
 /* Grouped lists (Ajustes, Más) */
 .group {
