@@ -12,8 +12,19 @@ export function privacySignal(): boolean {
         .globalPrivacyControl === true)
   );
 }
+/**
+ * Pages that carry a secret in the URL (the QR upload link, /subir/<token>)
+ * never send analytics or diagnostics, whatever the saved choice.
+ */
+export function isPrivatePath(pathname: string): boolean {
+  return pathname === "/subir" || pathname.startsWith("/subir/");
+}
 export function readPrivacy(): PrivacyPreferences {
-  if (typeof window === "undefined" || privacySignal())
+  if (
+    typeof window === "undefined" ||
+    privacySignal() ||
+    isPrivatePath(window.location.pathname)
+  )
     return { analytics: false, diagnostics: false };
   try {
     const p: unknown = JSON.parse(localStorage.getItem(key) || "{}");
