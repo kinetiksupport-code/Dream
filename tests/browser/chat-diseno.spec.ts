@@ -562,6 +562,9 @@ test("fluency: streaming 2.5 s with CPU ×4 has no long frames", async ({
   await page.setViewportSize({ width: 1280, height: 860 });
   await sendFromHome(page, "Explícame las ecuaciones de segundo grado");
   await streamReady(page);
+  // Inicio keeps its hero for 160 ms after sending (design/inicio) and then
+  // swaps to the thread: measure the streaming, not that one-off swap.
+  await page.locator(".message-assistant").waitFor();
   const cdp = await page.context().newCDPSession(page);
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
   await page.evaluate(() => {
