@@ -398,7 +398,7 @@ test("conversation rename/delete, keyboard dialog and PWA assets", async ({
   await page
     .getByRole("button", { name: "Opciones de Una idea sobre el universo" })
     .click();
-  await page.getByRole("button", { name: "Renombrar", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Renombrar", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Nombre de conversación" })
     .fill("Otra perspectiva");
@@ -409,10 +409,13 @@ test("conversation rename/delete, keyboard dialog and PWA assets", async ({
   await page
     .getByRole("button", { name: "Opciones de Otra perspectiva" })
     .click();
-  await page.getByRole("button", { name: "Eliminar", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
+  // Historial: delete has undo instead of a confirmation dialog.
+  await page.getByRole("menuitem", { name: "Borrar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Deshacer" }).click();
+  await expect(
+    page.getByRole("link", { name: /^Otra perspectiva/ }),
+  ).toBeVisible();
   const manifest = await page.request.get("/manifest.webmanifest");
   expect(manifest.ok()).toBeTruthy();
   expect((await manifest.json()).display).toBe("standalone");

@@ -5,6 +5,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
   type ComponentType,
 } from "react";
@@ -28,13 +29,19 @@ import { callDream, errorMessage } from "@/lib/dream-api";
 import { Toast } from "./toast";
 import type { Conversation } from "@/lib/types";
 import { activeNav, isFocusRoute, type NavKey } from "@/lib/navigation";
+import { isDefaultTitle, titleFromPrompt } from "@/lib/conversation-title";
+/** Time to undo a deleted conversation before it is really deleted. */
+export const UNDO_MS = 5000;
 interface ConversationsContext {
   items: Conversation[];
   loaded: boolean;
   refresh: () => Promise<void>;
   add: (c: Conversation) => void;
   onRename: (c: Conversation) => void;
+  /** Hides the conversation and deletes it after UNDO_MS unless undone. */
   onDelete: (c: Conversation) => void;
+  /** First message of a «Nueva conversación»: name it from the question. */
+  autoTitle: (id: string, prompt: string) => void;
   setWorkspaceEmpty: (empty: boolean) => void;
   setPageTitle: (title: string | null) => void;
 }
@@ -66,8 +73,14 @@ export function Shell({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState("");
   const [editing, setEditing] = useState<Conversation | null>(null);
   const [title, setTitle] = useState("");
-  const [deleting, setDeleting] = useState<Conversation | null>(null);
+  // Deleted but still undoable (hidden from the list until the toast ends).
+  const [pending, setPending] = useState<Conversation | null>(null);
+  const [deleteError, setDeleteError] = useState<Conversation | null>(null);
   const [busy, setBusy] = useState(false);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
   const refresh = useCallback(async () => {
     try {
       const r = await callDream<{ items: Conversation[] }>("conversations");
@@ -105,21 +118,74 @@ export function Shell({ children }: { children: ReactNode }) {
       setBusy(false);
     }
   }
-  async function remove() {
-    if (!deleting || busy) return;
-    setBusy(true);
-    try {
-      await callDream("conversation_delete", { conversation_id: deleting.id });
-      setItems((s) => s.filter((c) => c.id !== deleting.id));
-      if (search.get("c") === deleting.id) router.push("/chat");
-      setDeleting(null);
-      setToast("Conversación eliminada.");
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
+  // Delete with undo: the row disappears now, the API call waits for the
+  // toast to run out (apple-design undo-and-redo.md, feedback.md).
+  const commitDelete = useCallback(
+    async (c: Conversation) => {
+      setPending((p) => (p?.id === c.id ? null : p));
+      setDeleteError(null);
+      setItems((s) => s.filter((x) => x.id !== c.id));
+      try {
+        await callDream("conversation_delete", { conversation_id: c.id });
+        if (search.get("c") === c.id) router.push("/chat");
+      } catch {
+        // Put it back where it was and offer to try again.
+        setItems((s) =>
+          s.some((x) => x.id === c.id)
+            ? s
+            : [...s, c].sort((a, b) =>
+                b.updated_at.localeCompare(a.updated_at),
+              ),
+        );
+        setDeleteError(c);
+      }
+    },
+    [router, search],
+  );
+  const scheduleDelete = useCallback(
+    (c: Conversation) => {
+      const previous = pendingRef.current;
+      if (previous && previous.id !== c.id) void commitDelete(previous);
+      setDeleteError(null);
+      setToast("");
+      setPending(c);
+    },
+    [commitDelete],
+  );
+  const undoDelete = useCallback(() => setPending(null), []);
+  useEffect(() => {
+    if (!pending) return;
+    // Ctrl/Cmd+Z undoes too, unless a text field is using it.
+    function key(e: KeyboardEvent) {
+      if (
+        !(e.metaKey || e.ctrlKey) ||
+        e.shiftKey ||
+        e.key.toLowerCase() !== "z"
+      )
+        return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, [contenteditable='true']")) return;
+      e.preventDefault();
+      setPending(null);
     }
-  }
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [pending]);
+  const autoTitle = useCallback((id: string, prompt: string) => {
+    const current = itemsRef.current.find((c) => c.id === id);
+    if (current && !isDefaultTitle(current.title)) return;
+    const title = titleFromPrompt(prompt, new Date());
+    setItems((s) => s.map((c) => (c.id === id ? { ...c, title } : c)));
+    callDream("conversation_rename", { conversation_id: id, title }).catch(() =>
+      setItems((s) =>
+        s.map((c) =>
+          c.id === id && c.title === title
+            ? { ...c, title: current?.title ?? "Nueva conversación" }
+            : c,
+        ),
+      ),
+    );
+  }, []);
   if (!ready || !session || !profile)
     return (
       <main className="boot">
@@ -131,10 +197,7 @@ export function Shell({ children }: { children: ReactNode }) {
               {bootError}
             </p>
             <div className="button-row">
-              <button
-                className="primary"
-                onClick={() => void refreshProfile()}
-              >
+              <button className="primary" onClick={() => void refreshProfile()}>
                 Reintentar
               </button>
               <button
@@ -161,8 +224,9 @@ export function Shell({ children }: { children: ReactNode }) {
     view,
   });
   const focus = isFocusRoute(pathname);
+  const visible = pending ? items.filter((c) => c.id !== pending.id) : items;
   const currentConversation = items.find((c) => c.id === conversationId);
-  const chatHref = items[0] ? `/chat?c=${items[0].id}` : "/chat";
+  const chatHref = visible[0] ? `/chat?c=${visible[0].id}` : "/chat";
   const nav: NavItem[] = [
     { key: "home", label: "Inicio", href: "/chat", icon: HomeIcon },
     { key: "chat", label: "Chat", href: chatHref, icon: ChatIcon },
@@ -211,7 +275,7 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <Context.Provider
       value={{
-        items,
+        items: visible,
         loaded,
         refresh,
         add: (c) => setItems((s) => [c, ...s.filter((x) => x.id !== c.id)]),
@@ -219,7 +283,8 @@ export function Shell({ children }: { children: ReactNode }) {
           setEditing(c);
           setTitle(c.title);
         },
-        onDelete: setDeleting,
+        onDelete: scheduleDelete,
+        autoTitle,
         setWorkspaceEmpty,
         setPageTitle,
       }}
@@ -272,69 +337,37 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </nav>
         )}
-        {(editing || deleting) && (
-          <Modal
-            labelledBy="dialog-title"
-            onClose={() => {
-              setEditing(null);
-              setDeleting(null);
-            }}
-          >
-            <h2 id="dialog-title">
-              {editing ? "Cambiar nombre" : "¿Eliminar conversación?"}
-            </h2>
-            {editing ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void rename();
-                }}
-              >
-                <label className="field">
-                  <span>Nombre de conversación</span>
-                  <input
-                    autoFocus
-                    value={title}
-                    maxLength={120}
-                    onChange={(e) => setTitle(e.target.value)}
-                  />
-                </label>
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() => setEditing(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button className="primary" disabled={busy || !title.trim()}>
-                    Guardar
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <p>
-                  Se eliminará de tu Dream. Esta acción no se puede deshacer.
-                </p>
-                <div className="modal-actions">
-                  <button
-                    className="secondary"
-                    autoFocus
-                    onClick={() => setDeleting(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    className="primary danger-button"
-                    disabled={busy}
-                    onClick={() => void remove()}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </>
-            )}
+        {editing && (
+          <Modal labelledBy="dialog-title" onClose={() => setEditing(null)}>
+            <h2 id="dialog-title">Cambiar nombre</h2>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void rename();
+              }}
+            >
+              <label className="field">
+                <span>Nombre de conversación</span>
+                <input
+                  autoFocus
+                  value={title}
+                  maxLength={120}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+              </label>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setEditing(null)}
+                >
+                  Cancelar
+                </button>
+                <button className="primary" disabled={busy || !title.trim()}>
+                  Guardar
+                </button>
+              </div>
+            </form>
             {error && (
               <p className="error" role="alert">
                 {error}
@@ -342,12 +375,35 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </Modal>
         )}
-        {toast && (
-          <div className="toast-position">
-            <Toast message={toast} onClose={() => setToast("")} />
+        {pending ? (
+          <div className="toast-position" key={pending.id}>
+            <Toast
+              message="Conversación borrada"
+              action={{ label: "Deshacer", run: undoDelete }}
+              duration={UNDO_MS}
+              onExpire={() => void commitDelete(pending)}
+            />
           </div>
+        ) : deleteError ? (
+          <div className="toast-position">
+            <Toast
+              message="No se pudo borrar la conversación."
+              error
+              onClose={() => setDeleteError(null)}
+              action={{
+                label: "Reintentar",
+                run: () => void commitDelete(deleteError),
+              }}
+            />
+          </div>
+        ) : (
+          toast && (
+            <div className="toast-position">
+              <Toast message={toast} onClose={() => setToast("")} />
+            </div>
+          )
         )}
-        {error && !editing && !deleting && (
+        {error && !editing && (
           <div className="toast-position">
             <Toast
               message={error}
