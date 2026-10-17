@@ -42,6 +42,8 @@
   --focus: #155bff;
   --scrim: rgba(8, 11, 20, 0.32);
   --translucent: rgba(255, 255, 255, 0.88);
+  /* Inicio: halo behind the headline. None in light (Claude Design is flat white). */
+  --home-halo: rgba(21, 91, 255, 0);
   /* Elevation */
   --shadow-composer: 0 1px 2px rgba(8, 11, 20, 0.04),
     0 8px 24px rgba(8, 11, 20, 0.05);
@@ -123,6 +125,7 @@
   --focus: #7aa2ff;
   --scrim: rgba(0, 0, 0, 0.56);
   --translucent: rgba(14, 17, 23, 0.86);
+  --home-halo: rgba(110, 147, 255, 0.08);
   --shadow-composer: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
 }
@@ -161,6 +164,7 @@
     --focus: #7aa2ff;
     --scrim: rgba(0, 0, 0, 0.56);
     --translucent: rgba(14, 17, 23, 0.86);
+    --home-halo: rgba(110, 147, 255, 0.08);
     --shadow-composer: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
     --shadow-popover: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
   }
@@ -2374,4 +2378,148 @@ fieldset:disabled .test-option {
 .group-list dt,
 .group-list dd {
   margin: 0;
+}
+
+/* === Inicio === (chat-home.tsx, composer.tsx hero) ======================
+   Greeting with context above the headline, a static halo in dark, chips
+   with icons entering in a stagger, the send button that wakes up when there
+   is text, and the hero fading out towards the chat after sending. */
+.home-head {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+/* Static, low-opacity radial halo (dark only via --home-halo). No motion.
+   Contrast measured at its centre: scripts/design/contrast.mjs. */
+.home-head::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -56px 0;
+  /* The ellipse fits inside the box, so no edge of it is ever cut. */
+  background: radial-gradient(
+    50% 50% at 50% 50%,
+    var(--home-halo),
+    transparent
+  );
+  pointer-events: none;
+}
+.home-hello {
+  font-size: var(--text-body);
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.home-greeting {
+  color: var(--text);
+  font-weight: 600;
+}
+.home-context strong {
+  color: var(--text);
+  font-weight: 600;
+}
+/* The context arrives later: it fades in (opacity only), never moves. */
+.home-context-text {
+  animation: fade var(--dur-base) var(--ease) both;
+}
+/* One-line skeleton. Invisible for the first 300 ms, so a quick answer
+   never flashes it; then a slow opacity pulse (no shimmer sweep). */
+.home-context-skeleton {
+  display: inline-block;
+  vertical-align: -0.15em;
+  width: min(22em, 100%);
+  height: 1em;
+  animation: fade var(--dur-base) var(--ease) 300ms backwards;
+}
+.home-context-skeleton span {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: var(--state-press);
+  animation: shimmer 1.4s ease-in-out 500ms infinite;
+}
+.home-chip {
+  gap: 8px;
+  padding: 0 18px 0 14px;
+  /* backwards, not both: once in, .press:active can scale it again. */
+  animation: rise var(--dur-rise) var(--ease) backwards;
+  animation-delay: calc(100ms + var(--i, 0) * var(--stagger));
+}
+.chip-icon {
+  display: inline-grid;
+  color: var(--text-secondary);
+  transition: color var(--dur-press) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .home-chip:hover .chip-icon {
+    color: var(--primary-ink);
+  }
+}
+.home-chip:active:not(:disabled) {
+  background: var(--chip-hover);
+}
+/* Send button: asleep while the box is empty, awake with text
+   (colour + scale 0.9 → 1, 160 ms, --ease via .press). */
+.composer-hero .send-button:disabled {
+  opacity: 1;
+  background: var(--state-press);
+  color: var(--text-secondary);
+  transform: scale(0.9);
+}
+/* Grows with the text without animating height. */
+@supports (field-sizing: content) {
+  .composer textarea {
+    field-sizing: content;
+    max-height: 180px;
+  }
+}
+/* After sending: the button shrinks and the hero fades towards the chat.
+   Exit is quicker than the entrance; nothing waits for it. */
+.home.is-leaving .home-inner {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  transition:
+    opacity var(--dur-press) var(--ease),
+    transform var(--dur-press) var(--ease);
+  pointer-events: none;
+}
+.composer.is-sending .send-button {
+  transform: scale(0.9);
+}
+@media (max-width: 639.98px) {
+  /* Greeting on its own line, context under it in a smaller size. */
+  .home-context {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--text-secondary-size);
+  }
+  .home-context:empty {
+    display: none;
+  }
+  /* Three chips in two rows, like the Móvil · Inicio canvas. */
+  .home-chips {
+    gap: 8px 6px;
+  }
+  .home-chip {
+    gap: 6px;
+    padding: 0 14px 0 12px;
+  }
+  .home-chip svg {
+    width: 18px;
+    height: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-chip {
+    animation-name: fade;
+  }
+  .home-context-skeleton span {
+    animation: none;
+  }
+  .composer-hero .send-button:disabled,
+  .composer.is-sending .send-button,
+  .home.is-leaving .home-inner {
+    transform: none;
+  }
 }
