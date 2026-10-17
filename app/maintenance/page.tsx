@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Orb } from "@/components/orb";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
+import { getAuthRedirectUrl } from "@/lib/auth-redirect";
 import styles from "./maintenance.module.css";
 
 export default function MaintenancePage() {
@@ -21,7 +22,7 @@ export default function MaintenancePage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${location.origin}/auth/callback`,
+          redirectTo: getAuthRedirectUrl({ origin: location.origin }),
         },
       });
       if (error) throw error;
