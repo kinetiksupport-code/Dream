@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Lexend } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { THEME_COLORS } from "@/lib/theme";
+import { READING_BOOT } from "@/lib/reading";
 import "./globals.css";
 // Claude Design: the system stack (SF Pro on Apple) with Inter everywhere
 // else. The font variables live on <html> so --font-stack, defined on :root,
@@ -68,7 +69,8 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('dream-theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}",
+              "try{var t=localStorage.getItem('dream-theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}" +
+              READING_BOOT,
           }}
         />
       </head>

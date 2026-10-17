@@ -78,6 +78,8 @@ export const PAIRS = [
   ["warning", "warning-surface", 4.5, "Aviso"],
   ["accent", "primary", 3, "Lima sobre azul (números grandes)"],
   ["focus", "bg", 3, "Anillo de foco"],
+  ["switch-off", "surface", 3, "Interruptor apagado"],
+  ["primary", "surface", 3, "Interruptor encendido"],
 ];
 
 /** @param {{ light: Record<string, string>, dark: Record<string, string> }} tokens */
