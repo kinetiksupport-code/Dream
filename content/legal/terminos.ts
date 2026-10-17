@@ -1,6 +1,6 @@
 export const terminos = String.raw`# Términos y condiciones
 
-*Última actualización: 16 de octubre de 2026 (versión provisional).*
+*Última actualización: 17 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién ofrece Dream
 
@@ -23,7 +23,11 @@ Dream es una web (instalable como app) con un tutor de inteligencia artificial q
 
 ## 4. Dream es gratis, con límites de uso
 
-Dream es **gratuito** y hoy no se cobra nada. El plan gratuito no tiene un número fijo de mensajes, pero sí **límites de uso razonable** para que el servicio funcione para todos. Cuando hay mucha demanda puedes tener que esperar en una **cola** o volver más tarde, y la IA puede dejar de estar disponible unas horas o hasta el día siguiente. Podemos cambiar estos límites. Si en el futuro se añade un plan de pago, te lo comunicaremos antes y no se te cobrará nada sin que lo aceptes expresamente.
+Dream es **gratuito** y hoy no se cobra nada. El plan gratuito no tiene un número fijo de mensajes, pero sí **límites de uso razonable** para que el servicio funcione para todos. Cuando hay mucha demanda puedes tener que esperar en una **cola** o volver más tarde, y la IA puede dejar de estar disponible unas horas o hasta el día siguiente. Podemos cambiar estos límites.
+
+**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Cada modo tiene su propio límite de uso, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. Si agotas un modo, no podrás usarlo hasta que acabe la ventana, pero puedes seguir con otro modo que aún tenga uso disponible. En Ajustes, en «Límite de uso», ves qué parte has usado de cada modo y cuándo se reinicia.
+
+Si en el futuro se añade un plan de pago, te lo comunicaremos antes y no se te cobrará nada sin que lo aceptes expresamente.
 
 ## 5. Cómo ayuda la IA (y sus límites)
 
@@ -126,7 +130,7 @@ Dream se ofrece "tal cual", sin garantía de funcionar sin interrupciones. Puede
 
 ## 11. Responsabilidad
 
-Dream es una herramienta de apoyo y se ofrece gratis y "tal cual". **No garantizamos que las respuestas sean correctas, completas o actuales, ni que consigas una nota, un aprobado o un resultado concreto.** En la medida que permita la ley, no nos hacemos responsables de: decisiones que tomes basadas en lo que diga la IA; tus resultados en exámenes o trabajos; sanciones de tu centro por usar Dream de forma indebida; pérdida de datos, errores, interrupciones o retrasos del servicio; ni de fallos de los proveedores que usamos (Google, Supabase, Vercel, Groq, Tavily). Tu responsabilidad es contrastar lo importante. Esto no limita los derechos que la ley te reconoce como consumidor ni nuestra responsabilidad por dolo o negligencia grave.
+Dream es una herramienta de apoyo y se ofrece gratis y "tal cual". **No garantizamos que las respuestas sean correctas, completas o actuales, ni que consigas una nota, un aprobado o un resultado concreto.** En la medida que permita la ley, no nos hacemos responsables de: decisiones que tomes basadas en lo que diga la IA; tus resultados en exámenes o trabajos; sanciones de tu centro por usar Dream de forma indebida; pérdida de datos, errores, interrupciones o retrasos del servicio; ni de fallos de los proveedores que usamos (Google, Supabase, Vercel, Groq, Cloudflare, Tavily). Tu responsabilidad es contrastar lo importante. Esto no limita los derechos que la ley te reconoce como consumidor ni nuestra responsabilidad por dolo o negligencia grave.
 
 ## 12. Baja de la cuenta
 

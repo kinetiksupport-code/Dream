@@ -1,6 +1,6 @@
 export const cookies = String.raw`# Almacenamiento en tu dispositivo y cookies
 
-*Última actualización: 16 de octubre de 2026 (versión provisional).*
+*Última actualización: 17 de octubre de 2026 (versión provisional).*
 
 Dream guarda pequeños datos en tu navegador. Los necesarios para que funcione no requieren consentimiento; los de estadísticas solo se activan si tú lo aceptas en Ajustes.
 
@@ -8,6 +8,7 @@ Dream guarda pequeños datos en tu navegador. Los necesarios para que funcione n
 | --- | --- | --- | --- |
 | Sesión de inicio de sesión (Supabase / Google) | Mantenerte conectado | Necesario | No hace falta |
 | dream-theme (almacenamiento local) | Recordar tema claro u oscuro | Necesario | No hace falta |
+| dream-ai-mode (almacenamiento local) | Recordar el modo de la IA que eliges (Rápido, Normal o Pensar más) | Necesario | No hace falta |
 | dream-login-pending (almacenamiento de sesión) | Completar el inicio de sesión | Necesario | No hace falta |
 | Preferencias de privacidad (almacenamiento local) | Recordar tu elección sobre estadísticas y errores | Necesario | No hace falta |
 | Caché de la app instalable (service worker) | Cargar más rápido y mostrar una página sin conexión; solo guarda archivos de la app, no tus conversaciones | Necesario | No hace falta |

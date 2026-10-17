@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 16 de octubre de 2026 (versión provisional).*
+*Última actualización: 17 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -15,7 +15,7 @@ El responsable del tratamiento de tus datos es **Carlos Sánchez**, a título pa
 | Conversaciones con el tutor y tus mensajes | Lo que escribes o dictas | Responderte y guardar tu historial | Ejecución del servicio |
 | Archivos que subes (fotos, PDF, Word, PowerPoint, Excel, texto) | Los subes tú, desde el dispositivo o escaneando el QR con el móvil | Leer su contenido para ayudarte a estudiar | Ejecución del servicio |
 | Exámenes, temas, fechas, planes de estudio, tests, respuestas y notas | Lo creas tú o lo genera Dream | Preparar tus exámenes y simulacros | Ejecución del servicio |
-| Datos técnicos de uso: número de mensajes, tokens y coste por usuario, bloqueos por abuso | Se generan al usar la IA | Evitar abusos y mantener el servicio gratuito dentro de un uso razonable | Interés legítimo |
+| Datos técnicos de uso: número de mensajes, tokens y coste por usuario, tokens gastados en cada modo de IA (Rápido, Normal, Pensar más) por ventana de 5 horas, bloqueos por abuso. Sin el texto de los mensajes | Se generan al usar la IA | Evitar abusos y mantener el servicio gratuito dentro de un uso razonable | Interés legítimo |
 | Estadísticas anónimas y errores | Solo si lo activas en Ajustes | Mejorar Dream | Tu consentimiento |
 | Audio del micrófono (dictado por voz) | Solo cuando pulsas el botón de voz | Convertir tu voz en texto | Tu consentimiento (el navegador te lo pide) |
 
@@ -28,11 +28,11 @@ No pedimos teléfono, dirección, DNI ni datos de pago. Hoy Dream no cobra nada.
 1. **Entras con Google.** Google confirma quién eres y nos da tu correo (y tu nombre si lo comparte). Nunca vemos tu contraseña de Google. Con eso se crea tu perfil en nuestra base de datos.
 2. **Te presentas.** Nos dices tu nombre, tu fecha de nacimiento y tu nivel (por ejemplo 2.º de Bachillerato). La fecha de nacimiento solo sirve para calcular tu franja de edad (menor de 14, de 14 a 17 o adulto) y saber si hace falta tutor; no la usamos para nada más.
 3. **Escribes un mensaje al tutor.** Tu navegador lo envía por una conexión cifrada a nuestro servidor en Supabase. El servidor comprueba que eres tú, mira que no te hayas pasado de los límites de uso y guarda tu mensaje en tu conversación.
-4. **El servidor pide la respuesta a la IA.** Envía a Groq el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
+4. **El servidor pide la respuesta a la IA.** Envía a Groq (o a Cloudflare Workers AI, si Groq no responde o si usas el modo «Pensar más») el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
 5. **Si hace falta buscar en internet,** el servidor envía a Tavily una consulta corta (máximo 300 caracteres) que escribe el propio tutor. Como esa consulta puede reflejar lo que preguntaste, evita poner nombres, teléfonos o datos privados en tus preguntas.
 6. **Subes un archivo.** El servidor lo abre, extrae el texto (las imágenes se leen con un modelo de IA de Groq) y guarda solo ese texto. El archivo original no se guarda. Ese texto se usa para responderte y para crear tus tests y simulacros.
 7. **Preparas un examen.** Guardamos el título, la asignatura, la fecha, los temas, tus dificultades y objetivo, el plan que genera la IA, y tus respuestas y resultados de cada test o simulacro.
-8. **Controlamos el uso.** Para que el servicio gratuito aguante, apuntamos cuántas peticiones, búsquedas y "tokens" (unidades de texto) gastas por minuto y día, y su coste aproximado. Con ello se forma la cola de espera y se bloquea, de forma automática y temporal, a quien abusa del sistema. Estos registros no contienen el texto de tus mensajes.
+8. **Controlamos el uso.** Para que el servicio gratuito aguante, apuntamos cuántas peticiones, búsquedas y "tokens" (unidades de texto) gastas por minuto y día, y su coste aproximado. También apuntamos cuántos tokens gastas en cada modo de IA (Rápido, Normal o Pensar más) dentro de tu ventana de 5 horas, y aparte los que gasta el proveedor de respaldo (Cloudflare) cuando responde en lugar de Groq. Con ello se forma la cola de espera y se bloquea, de forma automática y temporal, a quien abusa del sistema. Estos registros no contienen el texto de tus mensajes.
 9. **Estadísticas y errores (solo si lo aceptas).** Se envía un identificador aleatorio y eventos genéricos (por ejemplo "se abrió un examen"), nunca el contenido de tus mensajes ni de tus archivos, sin grabar la pantalla y sin localizarte por IP. Puedes apagarlo en Ajustes y se deja de enviar.
 10. **Borrado.** Si borras el historial en Ajustes, se eliminan tus conversaciones y sus mensajes. Si pides eliminar la cuenta, se borran tu perfil, tus exámenes, planes, tests, archivos extraídos y conversaciones.
 
@@ -59,6 +59,7 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Vercel** (alojamiento de la web). Puede registrar datos técnicos de conexión como la dirección IP.
 - **Google** (inicio de sesión con tu cuenta de Google).
 - **Groq** (proveedor de inteligencia artificial que ejecuta el modelo Qwen). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder. Tus mensajes **no incluyen tu correo ni tu nombre**.
+- **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
 - **PostHog** y **Sentry** (estadísticas y errores), solo si tú lo activas en Ajustes. Funcionan de forma anónima: sin grabación de pantalla, sin contenido de tus mensajes y sin geolocalización por IP.
 
@@ -66,11 +67,11 @@ No cedemos tus datos a nadie más salvo obligación legal.
 
 ## 5. Transferencias internacionales
 
-Algunos de estos proveedores (por ejemplo Groq, Vercel, Tavily, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo.
+Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo. En el caso de Cloudflare Workers AI no sabemos en qué región se ejecuta el modelo de IA, así que tus mensajes pueden tratarse fuera de la Unión Europea (transferencia internacional).
 
 ## 6. Inteligencia artificial
 
-Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
+Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
 
 Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. No se toman decisiones automáticas con efectos legales sobre ti. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
 
