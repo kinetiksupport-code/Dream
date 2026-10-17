@@ -14,6 +14,7 @@ import { callDream, streamDreamChat, errorMessage } from "@/lib/dream-api";
 import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
+import { AI_NOTICE } from "@/lib/consent";
 import type {
   Conversation,
   Message,
@@ -517,7 +518,12 @@ export function ChatExperience({
     return (
       <section className="chat-view is-empty">
         <ChatHome
-          composer={composer("hero")}
+          composer={
+            <>
+              {composer("hero")}
+              <p className="ai-notice">{AI_NOTICE}</p>
+            </>
+          }
           onPrompt={focusComposer}
           onAttach={() => {
             setAnalysisView(true);
@@ -637,9 +643,7 @@ export function ChatExperience({
         )}
         {errorBanner}
         {composer("dock")}
-        <p className="composer-footnote">
-          Dream puede equivocarse. Pregunta, compara y comprende.
-        </p>
+        <p className="ai-notice">{AI_NOTICE}</p>
         <span className="visually-hidden">
           {conversationId ? "Conversación guardada" : "Nueva conversación"}
         </span>

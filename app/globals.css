@@ -1646,10 +1646,17 @@ svg.lucide {
   font-size: var(--text-small);
   color: var(--text-secondary);
 }
-.composer-footnote {
+/* AI disclosure (EU AI Act, art. 50): fixed and quiet next to the composer,
+   from the first message and on every width. Same design as PR #12. */
+.ai-notice {
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
   color: var(--text-secondary);
+  text-wrap: balance;
+}
+.home-inner .ai-notice {
+  margin-top: 10px;
 }
 .attachment-list {
   display: flex;
@@ -2328,9 +2335,6 @@ fieldset:disabled .test-option {
   }
   .composer-dock {
     padding: 6px;
-  }
-  .composer-footnote {
-    display: none;
   }
   .test-page,
   .result-page {
