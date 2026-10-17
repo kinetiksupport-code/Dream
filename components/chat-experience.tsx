@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { DreamActivity } from "@/components/dream-mark";
-import { BackIcon } from "@/components/icons";
+import { AiStatus } from "@/components/ai-status";
+import { ArrowDown, CircleAlert, RotateCw } from "lucide-react";
 import { Composer } from "@/components/composer";
 import { MessageView } from "@/components/message";
 import { ChatHome } from "@/components/chat-home";
@@ -33,7 +34,7 @@ export function ChatExperience({
   const params = useSearchParams();
   const router = useRouter();
   const { serviceReady } = useDream();
-  const { refresh, add, setWorkspaceEmpty } = useConversations();
+  const { refresh, add, setWorkspaceEmpty, setPageTitle } = useConversations();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(
     study?.conversationId ?? params.get("c"),
@@ -48,8 +49,21 @@ export function ChatExperience({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [atBottom, setAtBottom] = useState(true);
+  // When the current wait started (send): AiStatus shows only after 2 s.
+  const [waitSince, setWaitSince] = useState<number | null>(null);
+  // How «Reintentar» recovers: resend the same turn, or reload what was saved.
+  const [retry, setRetry] = useState<{
+    kind: "send";
+    prompt: string;
+    attachmentIds: string[];
+    keepDraft: boolean;
+  } | null>(null);
+  // Messages created in this session enter with motion; history never does.
+  const fresh = useRef(new Set<string>());
   const scroller = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
+  // True while «Ir al último mensaje» scrolls down smoothly.
+  const jumping = useRef(false);
   const abort = useRef<AbortController | null>(null);
   const lock = useRef(false);
   const creation = useRef<Promise<string> | null>(null);
@@ -61,12 +75,17 @@ export function ChatExperience({
   const uploadQueue = useRef<Attachment[]>([]);
   const uploadWorker = useRef(false);
   useEffect(() => {
+    // Warm the Markdown chunk so the first streamed answer does not swap from
+    // the plain-text fallback to formatted text mid-stream.
+    void import("@/components/markdown-renderer");
+  }, []);
+  useEffect(() => {
     setWorkspaceEmpty(!messages.length && !loading);
   }, [messages.length, loading, setWorkspaceEmpty]);
   const c = study?.conversationId ?? params.get("c");
-  const fresh = study ? null : params.get("new");
+  const newKey = study ? null : params.get("new");
   // Optional ?q= pre-fills (never sends) the composer, e.g. from Apuntes.
-  const prefill = study ? null : params.get("q")?.slice(0, 2000) ?? null;
+  const prefill = study ? null : (params.get("q")?.slice(0, 2000) ?? null);
   const clearFiles = useCallback(() => {
     for (const a of filesRef.current)
       if (a.preview) URL.revokeObjectURL(a.preview);
@@ -77,7 +96,7 @@ export function ChatExperience({
     uploadQueue.current = [];
   }, []);
   useEffect(() => {
-    const key = c ?? fresh ?? "new";
+    const key = c ?? newKey ?? "new";
     if (c && justCreated.current === c) {
       justCreated.current = null;
       route.current = key;
@@ -98,9 +117,14 @@ export function ChatExperience({
     setAnalysisView(false);
     clearFiles();
     setError("");
+    setRetry(null);
+    setWaitSince(null);
+    fresh.current = new Set();
+    setPageTitle(null);
     setMessages([]);
     setOlderOffset(null);
     pinned.current = true;
+    followed.current = null;
     setAtBottom(true);
     if (!c) {
       const handed = takePendingFiles();
@@ -112,12 +136,15 @@ export function ChatExperience({
     }
     const controller = new AbortController();
     setLoading(true);
-    callDream<{ items: Message[]; next_offset?: number | null }>(
-      "messages",
-      { conversation_id: c },
-      controller.signal,
-    )
+    callDream<{
+      items: Message[];
+      next_offset?: number | null;
+      // Not sent by dream-api today; used if it starts returning the title.
+      conversation?: { title?: string };
+      title?: string;
+    }>("messages", { conversation_id: c }, controller.signal)
       .then((r) => {
+        setPageTitle(r.conversation?.title || r.title || null);
         setOlderOffset(r.next_offset ?? null);
         setMessages(
           r.items.filter((m) => m.role === "user" || m.role === "assistant"),
@@ -130,7 +157,7 @@ export function ChatExperience({
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [c, fresh, prefill, clearFiles]);
+  }, [c, newKey, prefill, clearFiles, setPageTitle]);
   useEffect(
     () => () => {
       abort.current?.abort();
@@ -138,12 +165,44 @@ export function ChatExperience({
     },
     [clearFiles],
   );
+  // scrollTop that auto-scroll last set. If the view is now higher and not at
+  // the bottom, the student scrolled up (even if the scroll event has not
+  // arrived yet): stop following instead of pulling them back down.
+  const followed = useRef<number | null>(null);
+  const follow = useCallback(() => {
+    const el = scroller.current;
+    if (!el || !pinned.current) return;
+    if (
+      followed.current !== null &&
+      el.scrollTop < followed.current - 4 &&
+      el.scrollHeight - el.scrollTop - el.clientHeight >= 80
+    ) {
+      pinned.current = false;
+      setAtBottom(false);
+      return;
+    }
+    el.scrollTop = el.scrollHeight;
+    followed.current = el.scrollTop;
+  }, []);
   useEffect(() => {
     if (!scroller.current) return;
     if (!messages.length && !busy) scroller.current.scrollTop = 0;
-    else if (pinned.current)
-      scroller.current.scrollTop = scroller.current.scrollHeight;
-  }, [messages, state, loading, busy]);
+    else follow();
+  }, [messages, state, loading, busy, follow]);
+  // Anything that grows the thread (a streamed paragraph, the AI status that
+  // appears at 2 s, a formula) keeps the view at the bottom, but only while
+  // the student is there: reading above is never interrupted.
+  const thread = useRef<HTMLDivElement>(null);
+  const hasThread = messages.length > 0 && !loading;
+  useEffect(() => {
+    const el = thread.current;
+    if (!el || !hasThread) return;
+    const observer = new ResizeObserver(follow);
+    observer.observe(el);
+    // The visible area shrinks too (the composer grows with a long draft).
+    if (scroller.current) observer.observe(scroller.current);
+    return () => observer.disconnect();
+  }, [hasThread, follow]);
   async function ensureConversation() {
     if (idRef.current) return idRef.current;
     if (creation.current) return creation.current;
@@ -156,7 +215,9 @@ export function ChatExperience({
         if (route.current !== origin)
           throw new DOMException("Navegación cambiada", "AbortError");
         if (!r?.conversation?.id) {
-          throw new Error("No se pudo crear la conversación. Inténtalo de nuevo.");
+          throw new Error(
+            "No se pudo crear la conversación. Inténtalo de nuevo.",
+          );
         }
         idRef.current = r.conversation.id;
         setConversationId(r.conversation.id);
@@ -296,39 +357,60 @@ export function ChatExperience({
       },
       signal,
     );
+    const testId = crypto.randomUUID();
+    fresh.current.add(testId);
     setMessages((s) => [
       ...s,
       {
-        id: crypto.randomUUID(),
+        id: testId,
         role: "assistant",
         content: r.assistant_message,
       },
     ]);
   }
-  async function send(promptOverride?: string) {
+  async function send(
+    promptOverride?: string,
+    retryIds?: string[],
+    /** Regenerate: leave the student's draft and its files untouched. */
+    keepDraft = false,
+  ) {
     if (
       lock.current ||
       loading ||
-      filesRef.current.some((a) => a.status !== "ready") ||
+      (!keepDraft && filesRef.current.some((a) => a.status !== "ready")) ||
       (!(promptOverride || value).trim() && !filesRef.current.length)
     )
       return;
     lock.current = true;
     setBusy(true);
     setError("");
+    setRetry(null);
+    setWaitSince(Date.now());
     setState("thinking");
     pinned.current = true;
+    followed.current = null;
     setAtBottom(true);
     const controller = new AbortController();
     abort.current = controller;
     const prompt =
       (promptOverride || value).trim() ||
       "Ayúdame a comprender estos archivos.";
-    const selected = [...filesRef.current];
-    const attachmentIds = selected.flatMap((a) => (a.id ? [a.id] : []));
+    const selected = keepDraft ? [] : [...filesRef.current];
+    const attachmentIds =
+      retryIds ?? selected.flatMap((a) => (a.id ? [a.id] : []));
     const userId = crypto.randomUUID();
     const assistantId = crypto.randomUUID();
-    setValue("");
+    fresh.current.add(userId);
+    fresh.current.add(assistantId);
+    // The hero composer becomes the docked one: keep the typing focus there.
+    if (document.activeElement?.closest(".composer"))
+      requestAnimationFrame(() => {
+        if (!document.activeElement?.closest(".composer"))
+          document
+            .querySelector<HTMLTextAreaElement>(".composer textarea")
+            ?.focus({ preventScroll: true });
+      });
+    if (!keepDraft) setValue("");
     setMessages((s) => [
       ...s,
       {
@@ -340,10 +422,21 @@ export function ChatExperience({
     ]);
     let answer = "";
     let id: string | null = null;
+    // Deltas arrive faster than the screen paints: group them so the thread
+    // re-renders (and re-parses the Markdown) at most once per frame.
+    let frame = 0;
+    const flush = () => {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      const content = answer;
+      setMessages((s) =>
+        s.map((m) => (m.id === assistantId ? { ...m, content } : m)),
+      );
+    };
     try {
       id = await ensureConversation();
       if (controller.signal.aborted) return;
-      clearFiles();
+      if (!keepDraft) clearFiles();
       const directTest =
         /\b(hazme (?:un |una )?(?:test|examen)|quiero practicar|ponme preguntas|pregúntame|genera (?:un )?(?:test|examen))\b/i.test(
           prompt,
@@ -368,11 +461,7 @@ export function ChatExperience({
             if (event.type === "delta") {
               answer += event.text;
               setState("composing");
-              setMessages((s) =>
-                s.map((m) =>
-                  m.id === assistantId ? { ...m, content: answer } : m,
-                ),
-              );
+              if (!frame) frame = requestAnimationFrame(flush);
             } else if (event.type === "activity") {
               setState(
                 event.activity === "searching" ? "searching" : "thinking",
@@ -381,6 +470,7 @@ export function ChatExperience({
           },
           controller.signal,
         );
+        flush();
         if (
           parseDreamContent(answer).requestTest &&
           !parseDreamContent(answer).widgets.length
@@ -391,6 +481,8 @@ export function ChatExperience({
       void refresh();
     } catch (e) {
       if (abort.current !== controller) return;
+      if (answer) flush();
+      else if (frame) cancelAnimationFrame(frame);
       if (controller.signal.aborted) {
         setMessages((s) =>
           s.map((m) => (m.id === assistantId ? { ...m, stopped: true } : m)),
@@ -403,13 +495,15 @@ export function ChatExperience({
           setMessages((list) =>
             list.filter((m) => m.id !== userId && m.id !== assistantId),
           );
-          setValue((current) => current || prompt);
+          if (!keepDraft) setValue((current) => current || prompt);
+          setRetry({ kind: "send", prompt, attachmentIds, keepDraft });
         }
         setError(errorMessage(e));
         setState("error");
       }
     } finally {
       if (abort.current === controller) {
+        setWaitSince(null);
         setBusy(false);
         lock.current = false;
         abort.current = null;
@@ -469,9 +563,8 @@ export function ChatExperience({
   const focusComposer = useCallback((text: string) => {
     setValue(text);
     requestAnimationFrame(() => {
-      const el = document.querySelector<HTMLTextAreaElement>(
-        ".composer textarea",
-      );
+      const el =
+        document.querySelector<HTMLTextAreaElement>(".composer textarea");
       el?.focus();
       el?.setSelectionRange(text.length, text.length);
     });
@@ -497,17 +590,32 @@ export function ChatExperience({
       unavailable={loading}
     />
   );
+  // Errors say what happened and offer the way out (apple-design
+  // generative-ai.md › «describe what happened… and offer a clear next step»).
+  const canRetry = !!error && (!!retry || !!conversationId);
   const errorBanner = (!serviceReady || error) && (
     <div className="chat-error" role="alert">
-      <p>
-        {error || "El servicio de IA aún no está configurado en el servidor."}
-      </p>
-      {error && conversationId && (
+      <CircleAlert className="chat-error-icon" size={20} aria-hidden="true" />
+      <div className="chat-error-text">
+        <strong>
+          {error ? "No se ha podido completar" : "Dream no está disponible"}
+        </strong>
+        <p>
+          {error || "El servicio de IA aún no está configurado en el servidor."}
+        </p>
+      </div>
+      {canRetry && (
         <button
-          className="secondary press"
-          onClick={() => void reload()}
-          disabled={busy}
+          className="secondary chat-retry press"
+          onClick={() => {
+            if (retry) {
+              if (!retry.keepDraft) setValue("");
+              void send(retry.prompt, retry.attachmentIds, retry.keepDraft);
+            } else void reload();
+          }}
+          disabled={busy || loading}
         >
+          <RotateCw size={16} aria-hidden="true" />
           Reintentar
         </button>
       )}
@@ -545,6 +653,15 @@ export function ChatExperience({
       </section>
     );
   const last = messages.at(-1);
+  // «Regenerar» asks the last question again as a new turn. dream-api has no
+  // regenerate action yet, so the saved history keeps both answers (honest
+  // on reload) instead of a local swap that would disappear.
+  const lastQuestion =
+    last?.role === "assistant"
+      ? messages.findLast((m) => m.role === "user")?.content.trim()
+      : undefined;
+  const regenerate =
+    !busy && lastQuestion ? () => void send(lastQuestion, [], true) : undefined;
   return (
     <section
       className={`chat-view ${messages.length ? "has-messages" : "is-empty"}`}
@@ -554,9 +671,11 @@ export function ChatExperience({
         ref={scroller}
         onScroll={() => {
           const el = scroller.current;
-          if (el) {
+          // The smooth jump passes through «not at the bottom»: not a choice.
+          if (el && !jumping.current) {
             pinned.current =
               el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+            followed.current = pinned.current ? el.scrollTop : null;
             setAtBottom(pinned.current);
           }
         }}
@@ -566,7 +685,7 @@ export function ChatExperience({
             <DreamActivity state="thinking" label="Abriendo la conversación" />
           </div>
         ) : messages.length ? (
-          <div className="message-thread">
+          <div className="message-thread" ref={thread}>
             {olderOffset !== null && (
               <button
                 className="secondary older-button press"
@@ -582,12 +701,29 @@ export function ChatExperience({
               <MessageView
                 message={m}
                 state={busy && m.id === last?.id ? state : "done"}
+                since={busy && m.id === last?.id ? waitSince : null}
+                isNew={fresh.current.has(m.id)}
                 onContinue={focusComposer}
+                onRegenerate={m.id === last?.id ? regenerate : undefined}
                 key={m.id}
               />
             ))}
             {busy && last?.role !== "assistant" && (
-              <DreamActivity state={state} />
+              <AiStatus state={state} since={waitSince} />
+            )}
+            {busy && state === "shaping" && (
+              <div
+                className="quiz-skeleton message-enter"
+                aria-hidden="true"
+                data-testid="quiz-skeleton"
+              >
+                <span className="quiz-skeleton-icon" />
+                <span className="quiz-skeleton-lines">
+                  <span />
+                  <span />
+                  <span />
+                </span>
+              </div>
             )}
           </div>
         ) : (
@@ -614,25 +750,42 @@ export function ChatExperience({
         )}
       </div>
       <div className="composer-area">
-        {!atBottom && messages.length > 0 && (
+        {messages.length > 0 && (
           <button
             className="jump-bottom press"
+            data-visible={!atBottom}
+            aria-hidden={atBottom || undefined}
+            tabIndex={atBottom ? -1 : undefined}
+            inert={atBottom || undefined}
             onClick={() => {
+              const el = scroller.current;
               pinned.current = true;
+              followed.current = null;
               setAtBottom(true);
-              scroller.current?.scrollTo({
-                top: scroller.current.scrollHeight,
-                behavior: matchMedia("(prefers-reduced-motion: reduce)")
-                  .matches
+              if (!el) return;
+              // If the thread grows during the smooth scroll (a formula, the
+              // AI status), finish exactly at the bottom when it ends.
+              jumping.current = true;
+              let done = false;
+              const land = () => {
+                if (done) return;
+                done = true;
+                el.removeEventListener("scrollend", land);
+                jumping.current = false;
+                follow();
+              };
+              el.addEventListener("scrollend", land);
+              window.setTimeout(land, 700); // no scrollend (older Safari)
+              el.scrollTo({
+                top: el.scrollHeight,
+                behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
                   ? "auto"
                   : "smooth",
               });
             }}
           >
-            <span className="jump-icon" aria-hidden="true">
-              <BackIcon size={16} />
-            </span>
-            Volver al final
+            <ArrowDown size={16} aria-hidden="true" />
+            Ir al último mensaje
           </button>
         )}
         {errorBanner}

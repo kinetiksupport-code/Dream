@@ -578,13 +578,13 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
       await expect(page.locator(".message")).toHaveCount(12);
       await page.locator(".chat-scroll").evaluate((el) => (el.scrollTop = 0));
       await expect(
-        page.getByRole("button", { name: "Volver al final" }),
+        page.getByRole("button", { name: "Ir al último mensaje" }),
       ).toBeVisible();
       await page.screenshot({
         path: `test-results/long-${size.name}-${theme}.png`,
         animations: "disabled",
       });
-      await page.getByRole("button", { name: "Volver al final" }).click();
+      await page.getByRole("button", { name: "Ir al último mensaje" }).click();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,

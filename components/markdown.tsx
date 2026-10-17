@@ -4,7 +4,14 @@ import { lazy, Suspense } from "react";
 // react-markdown, remark/rehype and KaTeX load on demand, outside the initial JS.
 const MarkdownRenderer = lazy(() => import("./markdown-renderer"));
 
-export function Markdown({ content }: { content: string }) {
+export function Markdown({
+  content,
+  streaming = false,
+}: {
+  content: string;
+  /** Re-parse only the block being written (see splitBlocks). */
+  streaming?: boolean;
+}) {
   return (
     <Suspense
       fallback={
@@ -13,7 +20,7 @@ export function Markdown({ content }: { content: string }) {
         </div>
       }
     >
-      <MarkdownRenderer content={content} />
+      <MarkdownRenderer content={content} streaming={streaming} />
     </Suspense>
   );
 }

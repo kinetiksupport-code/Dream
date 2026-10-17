@@ -124,6 +124,8 @@ export function Composer({
   return (
     <div
       className={`composer composer-${variant}${busy ? " is-streaming" : ""}`}
+      // Hook for the "border-beam" (> 3 s wait) once Carlos approves it.
+      data-state={busy ? state : undefined}
       onDragOver={(e) => {
         e.preventDefault();
       }}
@@ -166,12 +168,10 @@ export function Composer({
           la red.
         </p>
       )}
+      {/* The detailed state (Pensando, Buscando…) is announced by AiStatus in
+          the thread; here only that an answer is in progress. */}
       <span className="visually-hidden" role="status">
-        {state === "searching"
-          ? "Buscando en la web"
-          : busy
-            ? "Dream está respondiendo"
-            : ""}
+        {busy ? "Dream está respondiendo" : ""}
       </span>
     </div>
   );
