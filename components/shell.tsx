@@ -28,6 +28,8 @@ import { callDream, errorMessage } from "@/lib/dream-api";
 import { Toast } from "./toast";
 import type { Conversation } from "@/lib/types";
 import { activeNav, isFocusRoute, type NavKey } from "@/lib/navigation";
+import { needsConsent } from "@/lib/consent";
+import { WelcomeConsent } from "./welcome-consent";
 interface ConversationsContext {
   items: Conversation[];
   loaded: boolean;
@@ -154,6 +156,10 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
       </main>
     );
+  // Parte D: no chat, apuntes or exámenes until the sign-up consent is saved.
+  // Ajustes stays open so the student can sign out or delete their data.
+  if (needsConsent(profile) && !pathname.startsWith("/settings"))
+    return <WelcomeConsent />;
   const conversationId = search.get("c");
   const view = search.get("view");
   const current = activeNav(pathname, {
