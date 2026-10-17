@@ -1,3 +1,7 @@
+/* === Login ===
+   Two panels on desktop (brand on --surface, form on --bg), one centred
+   column on phones. No Claude Design board exists for this screen: the
+   tokens, type scale and states come from the cimientos (globals.css). */
 .login {
   display: flex;
   min-height: 100dvh;
@@ -15,8 +19,11 @@
 .brand {
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: 12px;
   min-height: var(--touch);
+  padding-right: 8px;
+  border-radius: var(--radius-nav);
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -27,7 +34,10 @@
   gap: 16px;
   max-width: 480px;
 }
-.pitch p {
+.pitchTitle {
+  margin: 0;
+}
+.pitch p:not(.pitchTitle) {
   color: var(--text-secondary);
 }
 .formPanel {
@@ -48,13 +58,14 @@
 }
 .mobileBrand {
   display: none;
+  border-radius: 50%;
 }
 .heading {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.heading h2 {
+.heading h1 {
   font-size: var(--text-title);
   line-height: 1.1;
   font-weight: 700;
@@ -62,7 +73,11 @@
 }
 .heading p {
   color: var(--text-secondary);
+  text-wrap: balance;
 }
+
+/* Google button: rest, hover (fine pointer only), pressed (.press, 0.97),
+   focus (global ring), loading (aria-busy) and disabled (not ready yet). */
 .googleButton {
   display: flex;
   align-items: center;
@@ -78,41 +93,111 @@
   font-size: var(--text-body);
   font-weight: 600;
   box-shadow: var(--shadow-composer);
+  transition:
+    transform var(--dur-press) var(--ease),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
 }
 .googleButton:disabled {
-  opacity: 0.6;
-  cursor: wait;
+  opacity: 0.5;
+  box-shadow: none;
+}
+.googleButton[aria-busy="true"] {
+  cursor: progress;
 }
 @media (hover: hover) and (pointer: fine) {
-  .googleButton:hover:not(:disabled) {
-    background: var(--surface);
+  .googleButton:hover:not(:disabled):not([aria-busy="true"]) {
+    background-color: var(--surface-hover);
+  }
+  .brand:hover,
+  .back:hover {
+    background-color: var(--state-hover);
   }
 }
-.error {
+/* Loading: a ring where the Google mark was, so the label keeps its place. */
+.spinner {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--primary-ink);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.4;
+  }
+}
+
+/* Messages: icon + text, never colour alone. */
+.error,
+.notice {
   width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   padding: 12px 16px;
   border-radius: var(--radius-card);
+  font-size: var(--text-secondary-size);
+  line-height: 1.4;
+  text-align: left;
+}
+.error {
   background: var(--danger-surface);
   color: var(--danger);
-  font-size: var(--text-secondary-size);
+}
+.notice {
+  background: var(--surface);
+  color: var(--text);
+}
+.error > svg,
+.notice > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.errorBody {
   display: grid;
   gap: 10px;
   justify-items: start;
 }
-.error p {
+.errorBody p {
   margin: 0;
 }
 .retry {
   min-height: 44px;
 }
+
 .legal {
   font-size: var(--text-small);
+  line-height: 1.6;
   color: var(--text-secondary);
+  text-wrap: pretty;
 }
+/* Inline links in a sentence: vertical padding grows the hit area to 44 px
+   without changing the line height. */
 .legal a {
+  padding-block: 14px;
   color: var(--primary-ink);
+  font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+.back {
+  padding: 0 12px;
+  border-radius: var(--radius-nav);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The ring stops turning and breathes instead: still says «working». */
+  .spinner {
+    animation: breathe 1.2s ease-in-out infinite;
+  }
 }
 @media (max-width: 1023.98px) {
   .brandPanel {
@@ -120,5 +205,19 @@
   }
   .mobileBrand {
     display: block;
+  }
+}
+/* Landscape phones: drop the mark and tighten so the button is in view. */
+@media (max-height: 500px) {
+  .formPanel {
+    align-items: flex-start;
+    padding-top: calc(20px + var(--safe-top));
+    padding-bottom: calc(20px + var(--safe-bottom));
+  }
+  .form {
+    gap: 16px;
+  }
+  .mobileBrand {
+    display: none;
   }
 }
