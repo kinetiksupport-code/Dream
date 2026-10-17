@@ -582,7 +582,38 @@ Ayuda de verdad.`;
  * (instrucción §7). Dream es solo para estudiantes y siempre guía paso a paso,
  * propone práctica y mantiene un tono tranquilo: no hay ajustes por usuario.
  */
-export function dynamicContextFor(memory = []) {
+/**
+ * Atajos del chat (lista cerrada; ids validados en validation.ts). Cada uno
+ * añade UNA línea corta al contexto dinámico, nunca al prompt fijo de arriba,
+ * para no romper la caché de tokens. Ninguno da la solución: pistas y preguntas.
+ */
+export const CHAT_SHORTCUT_PROMPTS = Object.freeze({
+  explain: 'Quiere entender una duda. Si no dice cuál, pregúntala. Explica una sola idea con un ejemplo y comprueba con una pregunta.',
+  review_last: 'Quiere repasar su último test o lección (lo nombrado en el mensaje o la memoria reciente). Haz 2 o 3 preguntas cortas, una cada vez.',
+  weak_points: 'Quiere conocer sus puntos débiles. Usa solo la memoria académica; si no hay, haz 2 o 3 preguntas de diagnóstico, una cada vez.',
+  study_style: 'Quiere cambiar cómo estudia. Pregunta qué no le funciona y propón un solo cambio concreto.',
+  exam_date: 'Su fecha de examen ha cambiado. Pregunta la nueva fecha y ayúdale a priorizar lo que falta. No digas que has cambiado su plan.',
+  teach: 'Modo enseñar: guía paso a paso con preguntas y espera su respuesta en cada paso.',
+  eli5: 'Modo muy sencillo: palabras de todos los días y una comparación cotidiana, sin tecnicismos. Termina con una pregunta fácil.',
+  key_concepts: 'Modo conceptos clave: de 3 a 5 conceptos, una línea cada uno. Pregunta cuál le cuesta más.',
+  connect: 'Modo relacionar: muestra cómo se unen 2 o 3 conceptos y pídele que añada otra relación.',
+  test_understanding: 'Modo comprobar: una pregunta de aplicación o de por qué cada vez. Si falla, da una pista.',
+});
+
+/**
+ * Línea del atajo para el contexto dinámico ('' si no hay atajo).
+ * @param {string | null | undefined} shortcut
+ */
+export function shortcutInstruction(shortcut) {
+  const text = shortcut && Object.hasOwn(CHAT_SHORTCUT_PROMPTS, shortcut) ? CHAT_SHORTCUT_PROMPTS[shortcut] : '';
+  return text ? `- Atajo elegido por el alumno: ${text} No des la solución: solo pistas y preguntas.` : '';
+}
+
+/**
+ * @param {any[]} [memory]
+ * @param {string | null} [shortcut]
+ */
+export function dynamicContextFor(memory = [], shortcut = null) {
   const lines = [
     'Contexto proporcionado por el sistema (no lo cites textualmente al usuario):',
     '- Rol: alumno.',
@@ -595,6 +626,8 @@ export function dynamicContextFor(memory = []) {
     lines.push('- Memoria académica relevante para este tema (usa solo si ayuda):');
     for (const item of memory) lines.push(`  - ${item.subject} / ${item.topic} / ${item.concept}: ${item.status} (${item.correct_count}/${item.evidence_count} evidencias correctas).`);
   } else lines.push('- No hay memoria académica relevante para esta consulta. No inventes progreso anterior.');
+  const shortcutLine = shortcutInstruction(shortcut);
+  if (shortcutLine) lines.push(shortcutLine);
   lines.push('- Existe un motor de tests interactivos separado. Si decides comprobar varios conceptos ahora, añade la señal <!--DREAM_ACTION:TEST--> y no escribas las preguntas en el chat. Una sola comprobación breve sí puede ir en la conversación. No escribas respuestas correctas de un test activo.');
 
   return lines.join('\n');
@@ -660,14 +693,14 @@ export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes bus
  */
 export function chatSystemMessages(modeId, {
   fallback = false, search = false, academicMemory = [], skillPrompt = '',
-  examContext = '', attachmentContext = '', attachmentChars = null,
+  examContext = '', attachmentContext = '', attachmentChars = null, shortcut = null,
 } = {}) {
   const messages = [
     { role: 'system', content: systemPromptFor(modeId, { fallback }) },
     { role: 'system', content: CONVERSATION_POLICY },
   ];
   if (search) messages.push({ role: 'system', content: SEARCH_TOOL_PROMPT });
-  messages.push({ role: 'system', content: dynamicContextFor(academicMemory) });
+  messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut) });
   if (skillPrompt) messages.push({ role: 'system', content: skillPrompt });
   if (examContext) messages.push({ role: 'system', content: examContext });
   if (attachmentContext) {

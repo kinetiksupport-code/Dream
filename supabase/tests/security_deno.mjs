@@ -1,6 +1,11 @@
-import { assertEquals, assertRejects } from "jsr:@std/assert@1.0.14";
+import { assertEquals, assertRejects, assertThrows } from "jsr:@std/assert@1.0.14";
 import JSZip from "npm:jszip@3.10.1";
 import { extractAttachment } from "../functions/dream-api/attachments.mjs";
+import { chatShortcut, CHAT_SHORTCUTS } from "../functions/dream-api/validation.ts";
+import {
+  CHAT_SHORTCUT_PROMPTS,
+  dynamicContextFor,
+} from "../functions/dream-api/prompts.mjs";
 Deno.test(
   "real Office extractors accept synthetic DOCX/PPTX/XLSX and reject expansion bombs",
   async () => {
@@ -117,3 +122,15 @@ Deno.test(
     assertEquals(text.includes("Concepto PDF verificado"), true);
   },
 );
+
+Deno.test("chat shortcut is optional, closed and only reaches the dynamic context", () => {
+  assertEquals(chatShortcut(undefined), null);
+  assertEquals(chatShortcut("eli5"), "eli5");
+  for (const bad of ["", "ELI5", "system", 3, ["eli5"], { id: "eli5" }])
+    assertThrows(() => chatShortcut(bad));
+  assertEquals(Object.keys(CHAT_SHORTCUT_PROMPTS).sort(), [...CHAT_SHORTCUTS].sort());
+  const context = dynamicContextFor([], "eli5");
+  assertEquals(context.includes(CHAT_SHORTCUT_PROMPTS.eli5), true);
+  assertEquals(context.includes("No des la solución"), true);
+  assertEquals(dynamicContextFor([]).includes("Atajo"), false);
+});

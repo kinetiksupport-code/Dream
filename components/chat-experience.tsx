@@ -40,6 +40,7 @@ import {
 import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
+import { shortcutPrompt, type ChatShortcutId } from "@/lib/chat-shortcuts";
 import type {
   Conversation,
   Message,
@@ -377,7 +378,7 @@ export function ChatExperience({
       },
     ]);
   }
-  async function send(promptOverride?: string) {
+  async function send(promptOverride?: string, shortcut?: ChatShortcutId) {
     if (
       lock.current ||
       loading ||
@@ -434,6 +435,7 @@ export function ChatExperience({
           attachment_ids: attachmentIds,
           mode,
           ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
+          ...(shortcut ? { shortcut } : {}),
         };
         // Short limits (busy minute, queue) wait and resend the same message;
         // only when nothing was saved, so the turn is never duplicated.
@@ -701,10 +703,13 @@ export function ChatExperience({
   );
   if (!study && !loading && !messages.length)
     return (
-      <section className="chat-view is-empty">
+      <section className="chat-view is-empty is-home">
         <ChatHome
           composer={composer("hero")}
-          onPrompt={focusComposer}
+          disabled={busy || loading}
+          onShortcut={(s, detail) =>
+            void send(shortcutPrompt(s.label, value.trim() || detail), s.id)
+          }
           onAttach={() => {
             setAnalysisView(true);
             document
