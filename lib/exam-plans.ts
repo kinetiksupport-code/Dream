@@ -9,6 +9,8 @@ export interface ExamUnit {
   estimated_minutes: number;
   status: "pending" | "in_progress" | "completed";
   conversation_id: string | null;
+  /** Set by `exam_unit_complete` (dream-api selects every unit column). */
+  completed_at?: string | null;
 }
 export interface ExamMaterial {
   id: string;
@@ -28,6 +30,10 @@ export interface ExamSession extends ExamSessionSummary {
   test_id: string | null;
   generation_error?: string | null;
   exam_id: string;
+  /** Unit practised in this session; null for a full-exam simulation. */
+  unit_id?: string | null;
+  /** Previous session whose mistakes this review practises. */
+  source_session_id?: string | null;
   answers: Record<string, AnswerValue>;
   question_index: number;
   revision: number;

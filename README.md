@@ -71,7 +71,7 @@ Con `MAINTENANCE_MODE=true`, solo las cuentas de la lista de `lib/maintenance.ts
 | `/tests/[id]` | Test de práctica o examen |
 | `/settings` | Ajustes: cuenta, tema, instalar, privacidad |
 | `/more` | «Más» en móvil |
-| `/progress` | Estado del progreso (sin historial consultable todavía) |
+| `/progress` | Progreso: preparación frente al objetivo, previsión, lagunas, árbol de temas, simulacros y ritmo (calculado sin IA en `lib/progress.ts`) |
 
 ## Cómo está hecho
 
