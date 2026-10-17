@@ -9,7 +9,7 @@ import {
   Check,
   Clock3,
   RotateCcw,
-  X,
+  TriangleAlert,
 } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
@@ -18,7 +18,15 @@ import {
   type ExamSession,
 } from "@/lib/exam-plans";
 import type { AnswerValue, DreamTest, Evaluation } from "@/lib/types";
-import { AnswerInput, hasAnswer } from "../test-experience";
+import {
+  AnswerFeedback,
+  AnswerInput,
+  hasAnswer,
+  hasReference,
+  staggerDelay,
+  useScoreCount,
+} from "../test-experience";
+import { useQuestionEnter, type Direction } from "../test-motion";
 import { Markdown } from "../markdown";
 import {
   ExamFrame,
@@ -41,6 +49,7 @@ export function ExamSessionView({
   const [test, setTest] = useState<DreamTest | null>(null);
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState<Direction>("forward");
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saveStatus, setSaveStatus] = useState("");
@@ -49,6 +58,9 @@ export function ExamSessionView({
   const [showTime, setShowTime] = useState(true);
   const [retry, setRetry] = useState(0);
   const [dirty, setDirty] = useState(false);
+  // Timer warnings are announced once each (aria-live polite), never per tick.
+  const [announcement, setAnnouncement] = useState("");
+  const announced = useRef<string[]>([]);
   const sessionRef = useRef<ExamSession | null>(null);
   const answersRef = useRef<Record<string, AnswerValue>>({});
   const indexRef = useRef(0);
@@ -57,6 +69,10 @@ export function ExamSessionView({
   const nextId = useRef<string | null>(null);
   const mounted = useRef(true);
   const changeVersion = useRef(0);
+  const questionRef = useQuestionEnter<HTMLElement>(
+    confirm ? undefined : test?.questions[index]?.id,
+    direction,
+  );
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -100,6 +116,25 @@ export function ExamSessionView({
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
   }, [deadline, session?.status]);
+  const left =
+    deadline === null ? null : Math.ceil((deadline - now) / 1000);
+  const threshold =
+    left === null || left <= 0 || session?.status !== "active"
+      ? ""
+      : left <= 60
+        ? "one"
+        : left <= 300
+          ? "five"
+          : "";
+  useEffect(() => {
+    if (!threshold || announced.current.includes(threshold)) return;
+    announced.current.push(threshold);
+    setAnnouncement(
+      threshold === "one"
+        ? "Queda 1 minuto del simulacro."
+        : "Quedan 5 minutos del simulacro.",
+    );
+  }, [threshold]);
   const persist = useCallback(
     async (nextIndex?: number) => {
       const run = async () => {
@@ -171,6 +206,7 @@ export function ExamSessionView({
     setError("");
     try {
       if (!expired) await persist(position);
+      setDirection(position >= indexRef.current ? "forward" : "back");
       indexRef.current = position;
       setIndex(position);
       setConfirm(false);
@@ -270,6 +306,8 @@ export function ExamSessionView({
       setBusy(false);
     }
   }
+  const remaining = left === null ? null : Math.max(0, left);
+  const warning = threshold;
   if (loading || !exam || !session)
     return (
       <ExamLoad
@@ -366,8 +404,9 @@ export function ExamSessionView({
                 nuevas y explicaciones de Dream.
               </p>
               <button
-                className="primary"
+                className="primary press"
                 disabled={busy || result.items.every((i) => i.is_correct)}
+                aria-busy={busy || undefined}
                 onClick={() => void practiceErrors()}
               >
                 {busy ? "Preparando repaso…" : "Repasar mis errores"}{" "}
@@ -406,19 +445,12 @@ export function ExamSessionView({
       >
         <section className={`${styles.card} ${styles.blue}`}>
           <p className={styles.cardEyebrow}>TU RESULTADO</p>
-          <p className={styles.score}>
-            {result.score}
-            <span> / {result.total}</span>
-          </p>
+          <SessionScore score={result.score} total={result.total} />
           <h2>
             {result.percentage >= 60
               ? "Las ideas van tomando forma."
               : "Una buena pista para continuar."}
           </h2>
-          <p>
-            {result.percentage}% · Nota{" "}
-            {((result.score / Math.max(1, result.total)) * 10).toFixed(1)}/10
-          </p>
         </section>
         <div className={styles.stats}>
           <div className={styles.stat}>
@@ -445,7 +477,8 @@ export function ExamSessionView({
               <a
                 key={item.question_id}
                 href={`#review-${item.question_id}`}
-                className={item.is_correct ? styles.correct : styles.incorrect}
+                style={{ animationDelay: staggerDelay(i) }}
+                className={`rise press ${item.is_correct ? styles.correct : styles.incorrect}`}
                 aria-label={`Pregunta ${i + 1}: ${item.is_correct ? "correcta" : "por revisar"}`}
               >
                 {i + 1}
@@ -468,7 +501,8 @@ export function ExamSessionView({
         <h2 className={styles.sectionTitle}>Revisa, comprende, continúa.</h2>
         {result.items.map((item, i) => (
           <section
-            className={`${styles.card} ${styles.review}`}
+            className={`${styles.card} ${styles.review} rise`}
+            style={{ animationDelay: staggerDelay(i) }}
             key={item.question_id}
             id={`review-${item.question_id}`}
           >
@@ -477,15 +511,23 @@ export function ExamSessionView({
               <span
                 className={item.is_correct ? styles.correct : styles.incorrect}
               >
-                {item.is_correct ? <Check size={18} /> : <X size={18} />}{" "}
+                {item.is_correct ? (
+                  <Check size={18} aria-hidden="true" />
+                ) : (
+                  <TriangleAlert size={18} aria-hidden="true" />
+                )}{" "}
                 {item.is_correct ? "Correcta" : "Por revisar"}
               </span>
             </div>
             <Markdown content={item.prompt} />
             <small>Tu respuesta</small>
             <Markdown content={formatAnswer(item.answer)} />
-            <small>Respuesta de referencia</small>
-            <Markdown content={formatAnswer(item.correct_answer)} />
+            {hasReference(item.correct_answer) && (
+              <>
+                <small>Respuesta de referencia</small>
+                <Markdown content={formatAnswer(item.correct_answer)} />
+              </>
+            )}
             <Markdown content={item.feedback} />
           </section>
         ))}
@@ -530,17 +572,12 @@ export function ExamSessionView({
       : ["short_answer", "fill_blank"].includes(q?.type)
         ? "RESPUESTA ABIERTA"
         : "TIPO TEST";
-  const timeRemaining =
-    deadline === null ? null : Math.max(0, Math.ceil((deadline - now) / 1000));
   const formatted =
-    timeRemaining === null
+    remaining === null
       ? "Sin límite"
-      : `${Math.floor(timeRemaining / 60)
+      : `${Math.floor(remaining / 60)
           .toString()
-          .padStart(
-            2,
-            "0",
-          )}:${(timeRemaining % 60).toString().padStart(2, "0")}`;
+          .padStart(2, "0")}:${(remaining % 60).toString().padStart(2, "0")}`;
   return (
     <ExamFrame
       eyebrow={
@@ -610,18 +647,39 @@ export function ExamSessionView({
       }
     >
       {deadline !== null && (
-        <div className={styles.timer}>
-          <span className={styles.badge}>
-            <Clock3 size={13} />
-            {expired
-              ? "Tiempo terminado"
-              : showTime
-                ? `${formatted} restantes`
-                : "Temporizador activo"}
+        <div className={styles.sessionTimer} data-warning={warning || undefined}>
+          <span className={`${styles.badge} ${styles.clock}`}>
+            {warning ? (
+              <TriangleAlert size={15} aria-hidden="true" />
+            ) : (
+              <Clock3 size={15} aria-hidden="true" />
+            )}
+            {expired ? (
+              "Tiempo terminado"
+            ) : showTime || warning ? (
+              <span>
+                <span className="num">{formatted}</span> restantes
+              </span>
+            ) : (
+              "Temporizador activo"
+            )}
           </span>
-          <button onClick={() => setShowTime((v) => !v)}>
-            {showTime ? "Ocultar tiempo" : "Mostrar tiempo"}
-          </button>
+          {warning && (
+            <span className={styles.timerNote}>
+              {warning === "one" ? "Queda 1 minuto." : "Quedan 5 minutos."}
+            </span>
+          )}
+          {!warning && !expired && (
+            <button
+              className="press"
+              onClick={() => setShowTime((v) => !v)}
+            >
+              {showTime ? "Ocultar tiempo" : "Mostrar tiempo"}
+            </button>
+          )}
+          <p className="visually-hidden" aria-live="polite">
+            {announcement}
+          </p>
         </div>
       )}
       {confirm ? (
@@ -666,16 +724,27 @@ export function ExamSessionView({
               <span>
                 {test.topic.toUpperCase()} · {practice ? "REPASO" : typeLabel}
               </span>
-              <strong>
+              <strong className="num" aria-hidden="true">
                 {index + 1} / {test.questions.length}
               </strong>
+              <span className="visually-hidden" aria-live="polite">
+                Pregunta {index + 1} de {test.questions.length}
+              </span>
             </div>
-            <ProgressLine
-              value={((index + 1) / test.questions.length) * 100}
-              label="Pregunta actual"
-            />
+            <div className={styles.questionProgress}>
+              <ProgressLine
+                value={((index + 1) / test.questions.length) * 100}
+                label="Pregunta actual"
+                valueText={`Pregunta ${index + 1} de ${test.questions.length}`}
+              />
+            </div>
           </div>
-          <section className={styles.question} key={q.id}>
+          <section
+            className={styles.question}
+            key={q.id}
+            ref={questionRef}
+            data-direction={direction}
+          >
             <div className="question-prompt">
               <Markdown content={q.prompt} />
             </div>
@@ -686,6 +755,7 @@ export function ExamSessionView({
               question={q}
               value={answers[q.id]}
               disabled={busy || expired || !!evaluation[q.id]}
+              busy={busy}
               evaluation={practice ? evaluation[q.id] : undefined}
               onChange={(value) => {
                 const next = { ...answersRef.current, [q.id]: value };
@@ -697,18 +767,9 @@ export function ExamSessionView({
               }}
             />
             {practice && evaluation[q.id] && (
-              <div
-                className={`answer-feedback ${evaluation[q.id].is_correct ? "correct" : "incorrect"}`}
-                role="status"
-              >
-                <strong>
-                  {evaluation[q.id].is_correct
-                    ? "Bien pensado."
-                    : "Vamos a darle otra mirada."}
-                </strong>
-                <Markdown content={evaluation[q.id].feedback} />
+              <AnswerFeedback evaluation={evaluation[q.id]}>
                 <button
-                  className={styles.inlineLink}
+                  className={`${styles.inlineLink} press`}
                   onClick={() =>
                     setEvaluation((s) => {
                       const next = { ...s };
@@ -717,14 +778,15 @@ export function ExamSessionView({
                     })
                   }
                 >
-                  Volver a intentarlo
+                  <RotateCcw size={16} aria-hidden="true" /> Volver a intentarlo
                 </button>
-              </div>
+              </AnswerFeedback>
             )}
             {practice && !evaluation[q.id] && (
               <button
-                className="primary"
+                className="primary press"
                 disabled={busy || !hasAnswer(q, answers[q.id])}
+                aria-busy={busy || undefined}
                 onClick={() => void check()}
               >
                 {busy ? "Comprobando…" : "Comprobar respuesta"}
@@ -732,15 +794,16 @@ export function ExamSessionView({
             )}
             <div className={styles.actions}>
               <button
-                className="secondary"
+                className="secondary press"
                 disabled={busy || index === 0}
                 onClick={() => void navigate(index - 1)}
               >
                 <ArrowLeft size={16} /> Anterior
               </button>
               <button
-                className="primary"
+                className="primary press"
                 disabled={busy}
+                aria-busy={busy || undefined}
                 onClick={() =>
                   void (index === test.questions.length - 1 || expired
                     ? review()
@@ -785,4 +848,31 @@ function formatAnswer(value: AnswerValue | undefined) {
             .map(([a, b]) => `${a} → ${b}`)
             .join("\n\n")
         : value || "Sin respuesta";
+}
+/** Result score of a simulacro: counts up, skippable, final value for AT. */
+function SessionScore({ score, total }: { score: number; total: number }) {
+  const count = useScoreCount(score, total);
+  const grade = ((score / Math.max(1, total)) * 10).toFixed(1);
+  const percentage = Math.round((score / Math.max(1, total)) * 100);
+  return (
+    <>
+      <p className={`${styles.score} num`} data-counting={!count.done}>
+        <span className="visually-hidden">
+          {score} / {total}
+        </span>
+        <span aria-hidden="true">
+          {count.score}
+          <span> / {total}</span>
+        </span>
+      </p>
+      <p className="num">
+        <span className="visually-hidden">
+          {percentage}% · Nota {grade}/10
+        </span>
+        <span aria-hidden="true">
+          {count.percentage}% · Nota {count.grade}/10
+        </span>
+      </p>
+    </>
+  );
 }

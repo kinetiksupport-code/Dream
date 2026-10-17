@@ -120,9 +120,12 @@ export function ErrorNotice({ error }: { error: string }) {
 export function ProgressLine({
   value,
   label,
+  valueText,
 }: {
   value: number;
   label: string;
+  /** Spoken value, e.g. «Pregunta 2 de 5», when a percentage says less. */
+  valueText?: string;
 }) {
   return (
     <div
@@ -132,6 +135,7 @@ export function ProgressLine({
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={100}
+      aria-valuetext={valueText}
     >
       <i
         style={{

@@ -800,3 +800,66 @@
     gap: 24px;
   }
 }
+
+/* === Test y simulacro (design/test) ===
+   Barra de pregunta con --ease-in-out, temporizador fijo con avisos suaves
+   a 5 y 1 minuto (color --warning + icono + texto, sin parpadeo). */
+.questionProgress .progress i {
+  transition: transform var(--dur-rise) var(--ease-in-out);
+}
+.sessionTimer {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 0 0 24px;
+  padding: 8px 0;
+  background: var(--bg);
+  font-size: 0.875rem;
+}
+.sessionTimer button {
+  min-height: var(--touch);
+  padding: 0 12px;
+  margin-left: auto;
+  border-radius: var(--radius-nav);
+  color: var(--primary-ink);
+  font-weight: 600;
+}
+.clock {
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition:
+    color var(--dur-base) ease,
+    background-color var(--dur-base) ease;
+}
+.sessionTimer[data-warning] .clock {
+  color: var(--warning);
+  background: var(--warning-surface);
+}
+.timerNote {
+  color: var(--warning);
+  font-weight: 600;
+  animation: noteIn var(--dur-base) ease both;
+}
+@keyframes noteIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .sessionTimer button:hover {
+    background: var(--surface-hover);
+  }
+  .palette button:hover:not(:disabled):not([aria-current="true"]) {
+    border-color: var(--border);
+  }
+}
