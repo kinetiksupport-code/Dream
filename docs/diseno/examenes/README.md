@@ -21,7 +21,7 @@
 | Pestañas de texto de 40 px | Control segmentado de 36 px, con 44 px de área táctil gracias a `::after` | apple `accessibility.md › Offer sufficiently sized controls` |
 | Carga: Orb a pantalla completa | Esqueleto con la forma de la lista (título, botón, segmentado y dos tarjetas). Solo pulso de opacidad, `aria-busy` y estado «Cargando tus exámenes» | apple `loading.md › Show something as soon as possible` |
 | Vacío: tarjeta de texto | Ilustración SVG en línea con los tokens de color (se adapta al oscuro), «Aún no tienes exámenes» y botón «Preparar un examen» | apple `writing.md › Provide clear next steps on any blank screens` |
-| Detalle con cuenta atrás azul, siguiente unidad, ritmo y materiales en la columna lateral | Jerarquía de Claude Design: bloque con asignatura, fecha, «Basado en…», días (`.num` grande), progreso y «Hacer un test de práctica». Debajo, «Plan de estudio» en filas de 64 px | Claude Design. La cuenta atrás lima sobre azul se cambia por el número en `--primary-ink` porque Claude Design no tiene ese bloque |
+| Detalle con cuenta atrás azul, siguiente unidad, ritmo y materiales en la columna lateral | Jerarquía de Claude Design: bloque con asignatura, fecha, «Basado en…», días (`.num` grande), progreso y «Simulacro de examen». Debajo, «Plan de estudio» en filas de 64 px | Claude Design. La cuenta atrás lima sobre azul se cambia por el número en `--primary-ink` porque Claude Design no tiene ese bloque |
 | Filas de unidad en tarjetas grandes | Filas como en Claude Design: etiqueta de 96 px («Hecha» con ✓, «Hoy», «Unidad N»), título, minutos y «Empezar / Seguir / Repasar» con chevron. En móvil, la etiqueta va encima y solo queda el chevron | Claude Design móvil. apple `lists-and-tables.md › Keep item text succinct` |
 | Etiquetas «Hoy», «Mañana» y «[Día 3]» de Claude Design | «Hecha», «Hoy» y «Unidad N» | El backend no reparte unidades por días. Poner fechas sería inventarlas |
 | Preparando: «Dream está organizando tus temas.» y un botón | Orbe, «Dream está preparando tu plan» (`role=status`, `aria-live`) y tres pasos concretos con los temas reales. Avisa de que puedes salir, comprueba solo cada 6 s (como mucho 20 veces) y ofrece «Comprobar ahora» con `aria-busy` | apple `progress-indicators.md › Avoid vague terms like loading`; `feedback.md` |
@@ -60,7 +60,7 @@ En `components/exams/exam-page.tsx › PreparingState`, el `<Orb>` va dentro de 
 - Sin scroll lateral a 360, 390 y 430 px, y en horizontal a 844 × 390.
 
 **Cambios en `exams.spec.ts`:**
-- Textos nuevos: «Exámenes», «Añadir examen» y «Hacer un test de práctica».
+- Textos nuevos: «Exámenes», «Añadir examen» y «Simulacro de examen».
 - Arreglo de la carrera del autoguardado: espera a `question_index = 1` antes de recargar (fc05702 de `design/chat`).
 
 ## Capturas y grabación

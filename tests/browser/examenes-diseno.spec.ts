@@ -357,7 +357,7 @@ test.describe("examenes microinteracciones", () => {
     await expect(page.getByRole("heading", { name: "Matemáticas", level: 2 })).toBeVisible();
     await expect(page.getByText("Basado en Tema 4 · Ecuaciones")).toBeVisible();
     await expect(page.locator("[class*=count] .num")).toHaveText("12");
-    await expect(page.getByRole("button", { name: "Hacer un test de práctica" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Simulacro de examen" })).toBeVisible();
     const rows = page.locator("a[class*=planRow]");
     await expect(rows).toHaveCount(4);
     await expect(rows.nth(0)).toContainText("Hecha");

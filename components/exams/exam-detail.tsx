@@ -256,10 +256,10 @@ export function ExamDetail({
                 {busy ? (
                   <>
                     <span className={s.spinner} aria-hidden="true" /> Preparando
-                    el test…
+                    el simulacro…
                   </>
                 ) : (
-                  "Hacer un test de práctica"
+                  "Simulacro de examen"
                 )}
               </button>
               <div className={s.timer}>

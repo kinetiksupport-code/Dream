@@ -329,7 +329,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
   expect(chatBody?.exam_id).toBe(e.id);
   expect(chatBody?.unit_id).toBe(e.units[2].id);
   await page.goto(`/exams/${e.id}`);
-  await page.getByRole("button", { name: "Hacer un test de práctica" }).click();
+  await page.getByRole("button", { name: "Simulacro de examen" }).click();
   await page.getByRole("radio").first().check();
   await page.screenshot({ path: "/tmp/dream-exam-qa/question-choice-390.png" });
   await page.getByRole("button", { name: "Guardar y siguiente" }).click();
@@ -396,7 +396,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
 test("autosave restores the answer and cursor on reload", async ({ page }) => {
   const state = await fixture(page);
   await page.goto(`/exams/${eid}`);
-  await page.getByRole("button", { name: "Hacer un test de práctica" }).click();
+  await page.getByRole("button", { name: "Simulacro de examen" }).click();
   // Answer only once the saved session has loaded, so the load cannot
   // overwrite the click.
   await expect(
