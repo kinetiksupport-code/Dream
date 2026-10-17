@@ -11,8 +11,8 @@ No hace falta tocar la configuración: `verify_jwt` sigue en `true`. Comprobado 
 
 ## Cómo funciona
 
-1. El ordenador (con sesión) llama a `upload_session_create` con el examen en borrador. Recibe el token una sola vez y la ruta `/subir/<token>`, y pinta el QR.
-2. El móvil abre `/subir/<token>` (sin sesión). La página llama a `upload_qr_connect`: el primer móvil que entra queda atado a la sesión con una llave aleatoria propia. Otro móvil con el mismo enlace recibe «Este código ya no vale».
+1. El ordenador (con sesión) llama a `upload_session_create` con el examen en borrador. Recibe el token una sola vez y el enlace `/subir#<token>`, y pinta el QR.
+2. El móvil abre `/subir#<token>` (sin sesión). El token va en el fragmento (`#`), que el navegador nunca envía al servidor. La página lo lee de `location.hash`, lo borra de la barra y del historial con `history.replaceState` y lo manda en el cuerpo. Lo guarda en `sessionStorage` de esa pestaña para que una recarga tras la cámara siga funcionando. Después llama a `upload_qr_connect`: el primer móvil que entra queda atado a la sesión con una llave aleatoria propia. Otro móvil con el mismo enlace recibe «Este código ya no vale».
 3. Cada archivo va a `upload_qr_file`, que dentro de `dream-api` recorre **la misma ruta que la subida desde el ordenador**, como el dueño del examen: `exam_upload_start` → `attachment_upload` (validación y extracción, la que deje la rama `security/subidas-seguras`) → `exam_material_add`. Lleva la misma admisión (`attachment_upload` consume).
 4. El ordenador consulta `upload_session_status` con sondeo corto y ve aparecer cada archivo (`processing` → `processed` o `failed`).
 5. Al pasar de paso o salir, el ordenador llama a `upload_session_close` y el enlace deja de valer al momento. Si nadie lo renueva, caduca a los 10 minutos.
@@ -53,7 +53,7 @@ Todas por `POST` a `NEXT_PUBLIC_DREAM_API_URL`. Errores: `{ error, code, retry_a
 
 `upload_session_create { exam_id }` →
 ```json
-{ "session": { "id": "uuid", "token": "43 caracteres", "url": "/subir/<token>", "expires_at": "ISO", "ttl_seconds": 600, "max_uploads": 10 } }
+{ "session": { "id": "uuid", "token": "43 caracteres", "url": "/subir#<token>", "expires_at": "ISO", "ttl_seconds": 600, "max_uploads": 10 } }
 ```
 El token solo sale aquí. Crear otra sesión cierra la anterior del mismo alumno. Errores: 400 `invalid_request`, 409 `exam_not_editable` (el examen ya no es borrador), 429 `upload_session_rate`.
 
@@ -97,6 +97,6 @@ Nunca devuelven datos del examen ni del alumno. Errores:
 - **Misma validación.** El móvil no tiene su propia validación de archivos: `dream-api` despacha internamente `attachment_upload` con el dueño del examen (igual que `exam_session_create` despacha `test_generate`). El endurecimiento de `security/subidas-seguras` (PR #31: `file-guard.mjs`, firma real, macros, PDF activo, nombres, cuota por usuario y minuto) está en esa ruta, así que se aplica también al QR sin código aparte; sus mensajes y su `retry_after` llegan tal cual al móvil. Comprobado que las dos ramas se unen sin conflictos.
 - **Un solo móvil por código.** El primero que se conecta recibe una llave aleatoria (guardada en `sessionStorage` de esa pestaña para sobrevivir a una recarga tras la cámara). Solo se guarda su hash.
 - **Errores que no filtran.** Todo lo que tenga que ver con el código da el mismo 404 y la misma página («Este código ya no vale»).
-- **El token no se registra.** Va en el cuerpo, nunca en cabeceras ni en registros. Los registros de `dream-api` solo guardan `{event:"upload_qr", action, outcome}`. La página `/subir/*` no envía analítica ni diagnóstico aunque el alumno los haya aceptado (`isPrivatePath` en `lib/observability/privacy.ts`), lleva `Cache-Control: no-store`, `Referrer-Policy: no-referrer` y `X-Robots-Tag: noindex` (middleware y `next.config.ts`) y `robots: noindex`.
-- **Riesgo que queda:** la ruta `/subir/<token>` aparece en los registros de peticiones de Vercel, como cualquier URL. Se mitiga con la caducidad corta, el hash y el atado a un móvil. Si Carlos quiere que no aparezca nunca, la alternativa es poner el token en el fragmento (`/subir#<token>`), que no llega al servidor; cambia la URL que pidió.
+- **El token no se registra.** Va en el cuerpo, nunca en cabeceras ni en registros. Los registros de `dream-api` solo guardan `{event:"upload_qr", action, outcome}`. La página `/subir` (y cualquier `/subir/*`) no envía analítica ni diagnóstico aunque el alumno los haya aceptado (`isPrivatePath` en `lib/observability/privacy.ts`), lleva `Cache-Control: no-store`, `Referrer-Policy: no-referrer` y `X-Robots-Tag: noindex` (middleware y `next.config.ts`) y `robots: noindex`.
+- **Token en el fragmento, no en la ruta** (decisión técnica del 17/10). `/subir#<token>` no llega nunca al servidor, así que no queda en los registros de peticiones de Vercel ni en los de la CDN. Cualquier `/subir/<algo>` redirige (307) a `/subir` sin el token, con las mismas cabeceras, y la página muestra «Este código ya no vale». Si se escanea otro código en la misma pestaña, solo cambia el fragmento: la página lo detecta (`hashchange`) y empieza de cero.
 - **QR propio.** `lib/qr.ts` (unos 300 líneas, sin dependencias): modo byte, corrección M, versiones 1 a 10. Se carga con `import()` solo al pintar el panel. Probado contra matrices de referencia de segno 1.6.6 (versiones 1, 2, 5, 6, 7, 8, 9 y 10, las 8 máscaras): `tests/qr.test.ts`. No hace falta instalar nada.

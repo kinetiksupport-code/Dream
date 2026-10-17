@@ -1,4 +1,4 @@
-# Subida desde el móvil (`/subir/[token]`)
+# Subida desde el móvil (`/subir#<token>`)
 
 Pantalla nueva (PR 5): no hay «antes». Capturas con la API simulada (`CAPTURAS_DIR=docs/diseno/subir npx playwright test tests/browser/subir.spec.ts`), a 390 y 1280 px, claro y oscuro.
 

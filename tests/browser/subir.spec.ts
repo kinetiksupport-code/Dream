@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Request } from "@playwright/test";
-// /subir/[token]: the phone page of the QR upload, with dream-api mocked.
+// /subir#<token>: the phone page of the QR upload, with dream-api mocked.
 // With CAPTURAS_DIR set it also saves the screenshots for docs/diseno/subir.
 test.use({ serviceWorkers: "block" });
 
@@ -64,8 +64,15 @@ test("connects, uploads with Procesando archivo… then the tick, and counts", a
     if (/posthog|sentry|ingest/i.test(r.url())) telemetry.push(r.url());
   });
 
-  const response = await page.goto(`/subir/${TOKEN}`);
+  const pageRequests: string[] = [];
+  page.on("request", (r) => {
+    if (new URL(r.url()).pathname.startsWith("/subir"))
+      pageRequests.push(r.url());
+  });
+  const response = await page.goto(`/subir#${TOKEN}`);
   const headers = response!.headers();
+  // The token travels only in the fragment: never in a request to the site.
+  expect(pageRequests.every((u) => !u.includes(TOKEN))).toBe(true);
   expect(headers["cache-control"]).toContain("no-store");
   expect(headers["referrer-policy"]).toBe("no-referrer");
   expect(headers["x-robots-tag"]).toContain("noindex");
@@ -84,6 +91,9 @@ test("connects, uploads with Procesando archivo… then the tick, and counts", a
   await expect(
     page.getByText("Este código es solo para ti y caduca."),
   ).toBeVisible();
+  // ...and is wiped from the address bar and history at once.
+  expect(page.url()).not.toContain(TOKEN);
+  expect(new URL(page.url()).pathname).toBe("/subir");
   // No app chrome: no menu, no tab bar, no links into the account.
   await expect(page.getByRole("navigation")).toHaveCount(0);
   await expect(page.getByRole("link")).toHaveCount(0);
@@ -163,7 +173,7 @@ test("a rejected file shows the reason and can be retried", async ({
     }
     return { body: { ok: true, uploads: 1, max_uploads: 10 } };
   });
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await page.locator('input[type="file"][multiple]').setInputFiles({
     name: "apuntes.pdf",
     mimeType: "application/pdf",
@@ -185,7 +195,7 @@ test("invalid, expired or malformed codes get one friendly page without reasons"
       code: "upload_link_invalid",
     },
   }));
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await expect(
     page.getByRole("heading", { name: "Este código ya no vale" }),
   ).toBeVisible();
@@ -195,7 +205,7 @@ test("invalid, expired or malformed codes get one friendly page without reasons"
   ).toHaveCount(0);
   expect(seen).toHaveLength(1);
 
-  await page.goto("/subir/esto-no-es-un-codigo");
+  await page.goto("/subir#esto-no-es-un-codigo");
   await expect(
     page.getByRole("heading", { name: "Este código ya no vale" }),
   ).toBeVisible();
@@ -210,7 +220,7 @@ test("the code expiring mid-session switches to the friendly page", async ({
       ? { body: connected }
       : { status: 404, body: { error: "x", code: "upload_link_invalid" } },
   );
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await page.locator('input[type="file"][multiple]').setInputFiles({
     name: "a.txt",
     mimeType: "text/plain",
@@ -232,7 +242,7 @@ test("no connection: says so and retries", async ({ page }) => {
           body: JSON.stringify(connected),
         }),
   );
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await expect(
     page.getByRole("heading", { name: "No hay conexión" }),
   ).toBeVisible();
@@ -256,7 +266,7 @@ test("reduced motion: no movement, the tick appears without drawing", async ({
       ? { body: connected }
       : { body: { ok: true, uploads: 1, max_uploads: 10 } },
   );
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await page.locator('input[type="file"][multiple]').setInputFiles({
     name: "a.txt",
     mimeType: "text/plain",
@@ -296,7 +306,7 @@ for (const vp of VIEWPORTS)
         return { body: { ok: true, uploads: n, max_uploads: 10 } };
       });
       const suffix = `${vp.name}-${scheme === "light" ? "claro" : "oscuro"}`;
-      await page.goto(`/subir/${TOKEN}`);
+      await page.goto(`/subir#${TOKEN}`);
       await page
         .getByRole("heading", { name: "Conectado con tu ordenador" })
         .waitFor();
@@ -338,7 +348,7 @@ for (const vp of VIEWPORTS)
         path: `${OUT}/subidos-${suffix}.png`,
         fullPage: true,
       });
-      await page.goto("/subir/codigo-no-valido");
+      await page.goto("/subir#codigo-no-valido");
       await page
         .getByRole("heading", { name: "Este código ya no vale" })
         .waitFor();
@@ -361,7 +371,7 @@ test("capturas subir movimiento reducido", async ({ browser }) => {
       ? { body: connected }
       : { body: { ok: true, uploads: 1, max_uploads: 10 } },
   );
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await page.locator('input[type="file"][multiple]').setInputFiles({
     name: "tema-1.pdf",
     mimeType: "application/pdf",
@@ -389,20 +399,56 @@ test("grabación subir", async ({ browser }) => {
     await new Promise((r) => setTimeout(r, 1200));
     return { body: { ok: true, uploads: 1, max_uploads: 10 } };
   });
-  await page.goto(`/subir/${TOKEN}`);
+  await page.goto(`/subir#${TOKEN}`);
   await page.waitForTimeout(1200);
   await page.getByRole("button", { name: "Subir archivo" }).hover();
   await page.mouse.down();
   await page.waitForTimeout(200);
   await page.mouse.up();
-  await page
-    .locator('input[type="file"][multiple]')
-    .setInputFiles({
-      name: "tema-1.pdf",
-      mimeType: "application/pdf",
-      buffer: Buffer.from("%PDF"),
-    });
+  await page.locator('input[type="file"][multiple]').setInputFiles({
+    name: "tema-1.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF"),
+  });
   await page.getByText("Listo. Ya está en tu ordenador.").waitFor();
   await page.waitForTimeout(1200);
   await context.close();
+});
+
+test("reload after the camera keeps the code (this tab only)", async ({
+  page,
+}) => {
+  const seen = await mockApi(page, () => ({ body: connected }));
+  await page.goto(`/subir#${TOKEN}`);
+  await expect(
+    page.getByRole("heading", { name: "Conectado con tu ordenador" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Conectado con tu ordenador" }),
+  ).toBeVisible();
+  expect(seen.map((s) => [s.body.token, s.body.device_key])).toEqual([
+    [TOKEN, undefined],
+    [TOKEN, DEVICE],
+  ]);
+});
+
+test("a token in the path is dropped: redirect to /subir with the same headers", async ({
+  page,
+  request,
+}) => {
+  const direct = await request.get(`/subir/${TOKEN}`, { maxRedirects: 0 });
+  expect(direct.status()).toBe(307);
+  expect(direct.headers().location).toMatch(/\/subir$/);
+  expect(direct.headers().location).not.toContain(TOKEN);
+  expect(direct.headers()["cache-control"]).toContain("no-store");
+  expect(direct.headers()["referrer-policy"]).toBe("no-referrer");
+  expect(direct.headers()["x-robots-tag"]).toContain("noindex");
+  const seen = await mockApi(page, () => ({ body: connected }));
+  await page.goto(`/subir/${TOKEN}`);
+  expect(page.url()).not.toContain(TOKEN);
+  await expect(
+    page.getByRole("heading", { name: "Este código ya no vale" }),
+  ).toBeVisible();
+  expect(seen).toHaveLength(0);
 });

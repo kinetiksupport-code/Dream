@@ -32,7 +32,7 @@ export interface CreatedUploadSession {
   id: string;
   /** Shown once (inside the QR). Never store or log it. */
   token: string;
-  /** Absolute link for the QR, e.g. https://www.edudream.es/subir/<token>. */
+  /** Absolute link for the QR: https://www.edudream.es/subir#<token> (fragment, never sent to a server). */
   url: string;
   expiresAt: string;
   ttlSeconds: number;

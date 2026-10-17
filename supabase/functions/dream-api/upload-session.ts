@@ -116,10 +116,11 @@ export async function desktopUploadAction(db: UploadDb, owner: string, body: Row
       if (row.status === 409) throw new UploadSessionError(409, 'exam_not_editable', 'Este examen ya no admite archivos nuevos.');
       throw new UploadSessionError(400, 'invalid_request', 'No se pudo crear el código.');
     }
-    // El token sale una sola vez, en esta respuesta. No se puede volver a pedir.
+    // El token sale una sola vez, en esta respuesta. Va en el fragmento (#), que
+    // el navegador no envía al servidor: no queda en registros de Vercel.
     return {
       session: {
-        id: row.session_id, token, url: `/subir/${token}`, expires_at: row.expires_at,
+        id: row.session_id, token, url: `/subir#${token}`, expires_at: row.expires_at,
         ttl_seconds: UPLOAD_QR.ttlSeconds, max_uploads: UPLOAD_QR.limits.max_uploads,
       },
     };

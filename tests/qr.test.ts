@@ -220,9 +220,9 @@ test("capacity per version at level M and the version limit", () => {
   );
   assert.equal(encodeQr("a".repeat(14)).version, 1);
   assert.equal(encodeQr("a".repeat(15)).version, 2);
-  // Dream's real link (30 + 43 characters) fits version 5.
+  // Dream's real link (https://www.edudream.es/subir# + 43 characters) fits version 5.
   assert.equal(
-    encodeQr("https://www.edudream.es/subir/" + "A".repeat(43)).version,
+    encodeQr("https://www.edudream.es/subir#" + "A".repeat(43)).version,
     5,
   );
   assert.throws(() => encodeQr("a".repeat(214)), /demasiado largo/);

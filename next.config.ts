@@ -19,6 +19,14 @@ const config: NextConfig = {
       },
       {
         // Upload link from the QR: see middleware.ts (same values).
+        source: "/subir",
+        headers: [
+          { key: "Cache-Control", value: "no-store, max-age=0" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+        ],
+      },
+      {
         source: "/subir/:path*",
         headers: [
           { key: "Cache-Control", value: "no-store, max-age=0" },

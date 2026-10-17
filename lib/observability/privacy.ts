@@ -13,7 +13,7 @@ export function privacySignal(): boolean {
   );
 }
 /**
- * Pages that carry a secret in the URL (the QR upload link, /subir/<token>)
+ * Pages that carry a secret in the URL (the QR upload link, /subir#<token>)
  * never send analytics or diagnostics, whatever the saved choice.
  */
 export function isPrivatePath(pathname: string): boolean {

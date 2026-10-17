@@ -1,5 +1,5 @@
 /**
- * Phone side of the QR upload (/subir/[token]). No user session: the token in
+ * Phone side of the QR upload (/subir#<token>). No user session: the token in
  * the body is the only credential, sent to dream-api with the
  * `X-Dream-Channel: qr` header. Nothing here touches analytics or
  * diagnostics, and the token is never logged or stored.
@@ -155,4 +155,30 @@ export function saveDeviceKey(token: string, key: string) {
   try {
     sessionStorage.setItem(deviceSlot(token), key);
   } catch {}
+}
+
+/**
+ * Reads the token from the fragment (/subir#<token>), removes it from the
+ * address bar and history at once, and keeps it for this tab only so a
+ * reload after the camera still works. Returns "" when there is none.
+ */
+const TOKEN_SLOT = "dream-qr-token";
+export function takeTokenFromLocation(): string {
+  const fromHash = decodeURIComponent(window.location.hash.slice(1)).trim();
+  if (fromHash) {
+    window.history.replaceState(
+      window.history.state,
+      "",
+      window.location.pathname + window.location.search,
+    );
+    try {
+      sessionStorage.setItem(TOKEN_SLOT, fromHash);
+    } catch {}
+    return fromHash;
+  }
+  try {
+    return sessionStorage.getItem(TOKEN_SLOT) ?? "";
+  } catch {
+    return "";
+  }
 }

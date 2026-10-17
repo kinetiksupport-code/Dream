@@ -10,6 +10,7 @@ import {
   qrUploadFile,
   readDeviceKey,
   saveDeviceKey,
+  takeTokenFromLocation,
   tokenLooksValid,
 } from "@/lib/upload-qr";
 import styles from "./upload.module.css";
@@ -29,11 +30,13 @@ const countText = (n: number, max: number) =>
     : `Has subido ${n} archivos de ${max}`;
 
 /**
- * /subir/[token]: the phone side of "upload from your phone". No menu, no
+ * /subir#<token>: the phone side of "upload from your phone". No menu, no
  * account data, no analytics. It only connects and uploads to the exam
  * the computer opened; any problem with the code shows one friendly page.
  */
-export function MobileUpload({ token }: { token: string }) {
+export function MobileUpload() {
+  // null until read from the fragment on the phone (never sent to a server).
+  const [token, setToken] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("connecting");
   const [items, setItems] = useState<Item[]>([]);
   const [uploads, setUploads] = useState(0);
@@ -46,8 +49,19 @@ export function MobileUpload({ token }: { token: string }) {
   const picker = useRef<HTMLInputElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
+  useEffect(() => {
+    const read = () => setToken(takeTokenFromLocation());
+    read();
+    // Scanning another code in the same tab only changes the fragment.
+    window.addEventListener("hashchange", read);
+    return () => window.removeEventListener("hashchange", read);
+  }, []);
+
   const connect = useCallback(async () => {
+    if (token === null) return;
     setPhase("connecting");
+    setItems([]); // a new code starts a new list
+    setUploads(0);
     if (!tokenLooksValid(token)) return setPhase("invalid");
     try {
       const c = await qrConnect(token, readDeviceKey(token));
@@ -85,7 +99,7 @@ export function MobileUpload({ token }: { token: string }) {
     (item: Item) => {
       // One file at a time: photos taken in a row wait their turn.
       queue.current = queue.current.then(async () => {
-        if (!device.current) return;
+        if (!device.current || !token) return;
         patch(item.id, { status: "processing" });
         try {
           const r = await qrUploadFile(token, device.current, item.file);

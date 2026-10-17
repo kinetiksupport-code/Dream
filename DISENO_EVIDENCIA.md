@@ -41,11 +41,11 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Apuntes | `antes/apuntes-*` | `docs/diseno/apuntes/*` | `apuntes.webm` | #27 |
 | Exámenes | `antes/examenes-*`, `antes/examen-*` | `docs/diseno/examenes/*` | `examenes.webm` | #26 |
 | Login y registro (Parte D) | `antes/login-*` | `docs/diseno/login/*` | `login.webm` | #30 |
-| Subida desde el móvil con QR (`/subir/[token]`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
-### Subida desde el móvil con QR (`/subir/[token]`, PR 5)
+### Subida desde el móvil con QR (`/subir#<token>`, PR 5)
 
 - **emil-design-eng:** «Buttons must feel responsive» → `.press` (escala 0,97) en «Hacer foto», «Subir archivo/Subir otro» y «Reintentar». «Never animate from scale(0)» → el tick entra desde `scale(0.8)` con opacidad (`upload.module.css`, `@keyframes pop`). Entradas con `--ease` (ease-out fuerte) y `--dur-rise` (240 ms); el trazo del tick se dibuja con `stroke-dashoffset` en `@keyframes draw` (240 ms), nunca en `transition`. «Stagger» corto: titular, texto y botones con `rise`, `rise-1`, `rise-2` (50 ms). Reducido: filas, tick y QR solo con fundido; el trazo aparece ya dibujado (prueba en `tests/browser/subir.spec.ts`).
 - **apple-design:** `loading.md › Showing progress` («Clearly communicate that content is loading») → cada archivo dice «Procesando archivo…» con el orbe pulsando, y «En espera…» si va en cola. `feedback.md › Best practices` («Consider integrating status feedback into your interface») → el estado vive en la fila y en el contador «Has subido N archivos de 10» (`role="status"`), sin alertas. «Show people when a command can’t be carried out and help them understand why» → el motivo del rechazo en la fila y «Reintentar». `writing.md › Be action oriented` → botones con verbo. `privacy.md` → la cámara solo se abre al pulsar «Hacer foto» (`capture="environment"`). Botones de 56 px, foco al titular al cambiar de estado.

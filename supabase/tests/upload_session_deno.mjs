@@ -74,7 +74,7 @@ Deno.test("crear: el token sale una vez y solo se guarda su hash", async () => {
   const result = await desktopUploadAction(db, OWNER, { action: "upload_session_create", exam_id: EXAM });
   const { token, url, id, ttl_seconds, max_uploads } = result.session;
   assertMatch(token, SECRET_PATTERN);
-  assertEquals(url, `/subir/${token}`);
+  assertEquals(url, `/subir#${token}`);
   assertEquals(id, SESSION);
   assertEquals(ttl_seconds, 600);
   assertEquals(max_uploads, UPLOAD_QR.limits.max_uploads);
