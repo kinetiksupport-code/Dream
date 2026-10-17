@@ -1,27 +1,61 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Clock3 } from "lucide-react";
+import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
-  updateExam,
+  daysUntil,
   examDateLabel,
+  preparation,
   sessionPath,
+  updateExam,
+  type DreamExam,
   type ExamSession,
 } from "@/lib/exam-plans";
+import { ErrorNotice, Materials, useExam } from "./exam-ui";
 import {
-  ExamFrame,
-  ExamLoad,
-  ErrorNotice,
-  Countdown,
-  NextUnit,
-  Materials,
-  PreparationProgress,
-  UnitRow,
-  useExam,
-  styles,
-} from "./exam-ui";
+  DaysChip,
+  ExamDetailSkeleton,
+  ExamPage,
+  FailedState,
+  LoadError,
+  PlanRows,
+  PreparingState,
+  examStyles as s,
+} from "./exam-page";
+
+/** «Basado en Tema 4 · Ecuaciones.pdf» (Claude Design hero line). */
+function basedOn(exam: DreamExam) {
+  const first = exam.materials[0]?.file_name.replace(/\.[^.]+$/, "");
+  if (first) return `Basado en ${first}`;
+  if (exam.topics.length) return `Temas: ${exam.topics.slice(0, 3).join(", ")}`;
+  return null;
+}
+
+function Progress({ exam }: { exam: DreamExam }) {
+  const p = preparation(exam);
+  return (
+    <div className={s.progressRow}>
+      <span>
+        <span className="num">{p.percentage} %</span> del plan ·{" "}
+        <span className="num">{p.completed}</span> de{" "}
+        <span className="num">{p.total}</span> unidades
+      </span>
+      <span
+        className={s.track}
+        role="progressbar"
+        aria-label="Unidades del plan completadas"
+        aria-valuenow={p.percentage}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <i style={{ transform: `scaleX(${p.percentage / 100})` }} />
+      </span>
+    </div>
+  );
+}
+
 export function ExamDetail({
   id,
   plan = false,
@@ -32,12 +66,35 @@ export function ExamDetail({
   const { exam, setExam, error, setError, loading, reload } = useExam(id);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [timer, setTimer] = useState(false);
   const [minutes, setMinutes] = useState(30);
   const [rhythm, setRhythm] = useState(false);
   const [daily, setDaily] = useState(20);
   const lock = useRef(false);
   const requestId = useRef<string | null>(null);
+  const preparing = exam?.status === "preparing";
+
+  // While the plan is being prepared, check again every 6 s (max. 20 times).
+  useEffect(() => {
+    if (!preparing) return;
+    let tries = 0;
+    const c = new AbortController();
+    const timerId = window.setInterval(() => {
+      if (++tries > 20) return window.clearInterval(timerId);
+      void callDream<{ exam: DreamExam }>("exam_get", { exam_id: id }, c.signal)
+        .then((r) => {
+          if (r.exam.status !== "preparing") setExam(r.exam);
+        })
+        .catch(() => {});
+    }, 6000);
+    return () => {
+      c.abort();
+      window.clearInterval(timerId);
+    };
+  }, [preparing, id, setExam]);
+
   async function simulate() {
     if (lock.current) return;
     lock.current = true;
@@ -57,7 +114,6 @@ export function ExamDetail({
       router.push(sessionPath(id, session.id));
     } catch (e) {
       setError(errorMessage(e));
-    } finally {
       lock.current = false;
       setBusy(false);
     }
@@ -84,186 +140,277 @@ export function ExamDetail({
       setBusy(false);
     }
   }
-  if (loading || !exam) return <ExamLoad error={error} reload={reload} />;
-  if (["draft", "failed", "preparing"].includes(exam.status))
+  async function retryPlan() {
+    setRetrying(true);
+    setError("");
+    try {
+      setExam(await updateExam("exam_prepare", id));
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setRetrying(false);
+    }
+  }
+  async function checkNow() {
+    setChecking(true);
+    try {
+      setExam(
+        (await callDream<{ exam: DreamExam }>("exam_get", { exam_id: id }))
+          .exam,
+      );
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  if (loading && !exam) return <ExamDetailSkeleton />;
+  if (!exam)
     return (
-      <ExamFrame
-        eyebrow="TU PREPARACIÓN"
-        title={exam.title}
-        subtitle={
-          exam.status === "preparing"
-            ? "Dream está organizando tus temas."
-            : "Tu borrador está guardado."
-        }
-      >
-        <section className={styles.card}>
-          <p>
-            {exam.plan_error ||
-              "Retoma el asistente para revisar tus temas y preparar el plan."}
-          </p>
-          <Link className="primary" href={`/exams/new?id=${id}`}>
-            Retomar preparación <ArrowRight size={18} />
-          </Link>
-          <button className="secondary" onClick={reload}>
-            Actualizar estado
-          </button>
-        </section>
-      </ExamFrame>
+      <LoadError
+        error={error}
+        reload={reload}
+        title="No se ha podido abrir el examen"
+      />
     );
-  return (
-    <ExamFrame
-      eyebrow={plan ? "PLAN DE ESTUDIO" : "TU EXAMEN"}
-      title={plan ? "Un plan. Pequeños pasos." : exam.title}
-      subtitle={`${exam.subject} · ${examDateLabel(exam.exam_date)} · ${exam.topics.length} temas`}
-      aside={
-        <>
-          <Countdown exam={exam} />
-          <NextUnit exam={exam} />
-          <section className={styles.card}>
-            <h3>Tu ritmo, tu plan</h3>
+
+  const back = plan
+    ? { href: `/exams/${id}`, label: exam.title }
+    : { href: "/exams", label: "Exámenes" };
+  const subtitle = `${exam.subject} · ${examDateLabel(exam.exam_date)}`;
+
+  if (exam.status !== "ready" && exam.status !== "completed")
+    return (
+      <ExamPage title={exam.title} subtitle={subtitle} back={back}>
+        {exam.status === "preparing" ? (
+          <PreparingState
+            topics={exam.topics}
+            onRefresh={() => void checkNow()}
+            checking={checking}
+          />
+        ) : exam.status === "failed" ? (
+          <FailedState
+            cause={exam.plan_error}
+            onRetry={() => void retryPlan()}
+            retrying={retrying}
+            editHref={`/exams/new?id=${id}`}
+          />
+        ) : (
+          <section className={s.stateCard}>
+            <h2>Borrador guardado</h2>
             <p>
-              {exam.daily_minutes} minutos al día. Las duraciones de las
-              unidades son estimaciones de Dream.
+              Faltan los temas o la revisión. Retoma el asistente para preparar
+              el plan.
             </p>
-            {rhythm ? (
-              <form
-                className={styles.form}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void adjust();
-                }}
-              >
-                <label>
-                  Minutos al día
-                  <input
-                    type="number"
-                    min={5}
-                    max={120}
-                    value={daily}
-                    onChange={(e) => setDaily(Number(e.target.value))}
-                  />
-                </label>
-                <button className="primary" disabled={busy}>
-                  Guardar ritmo
-                </button>
-                <button
-                  type="button"
-                  className="text-button"
-                  onClick={() => setRhythm(false)}
-                >
-                  Cancelar
-                </button>
-              </form>
-            ) : (
-              <button
-                className={styles.inlineLink}
-                onClick={() => {
-                  setDaily(exam.daily_minutes);
-                  setRhythm(true);
-                }}
-              >
-                Ajustar mi ritmo
-              </button>
-            )}
+            <Link className="primary press" href={`/exams/new?id=${id}`}>
+              Seguir preparando <ArrowRight size={18} aria-hidden="true" />
+            </Link>
           </section>
-        </>
-      }
-    >
-      <section className={styles.card}>
-        <div className={styles.examCardTop}>
-          <h3>Tu preparación</h3>
-          <span className={styles.badge}>
-            {exam.status === "completed" ? "Completado" : "A tu ritmo"}
-          </span>
-        </div>
-        <PreparationProgress exam={exam} />
-        {!plan && (
-          <Link className={styles.cardLink} href={`/exams/${id}/plan`}>
-            Ver plan de estudio <ArrowRight size={16} />
-          </Link>
         )}
-        <Link className={styles.cardLink} href={`/exams/${id}/ruta`}>
-          Ver mi ruta de estudio <ArrowRight size={16} />
+        <ErrorNotice error={error} />
+      </ExamPage>
+    );
+
+  const days = daysUntil(exam.exam_date);
+  const soon = days !== null && days >= 0 && days <= 3;
+
+  if (plan)
+    return (
+      <ExamPage title="Plan de estudio" subtitle={subtitle} back={back}>
+        <section className={s.hero}>
+          <Progress exam={exam} />
+          <p className={s.hint}>
+            <span className="num">{exam.daily_minutes}</span> minutos al día.
+            Los minutos de cada unidad son una estimación de Dream.
+          </p>
+        </section>
+        <section className={s.section} aria-labelledby="plan-units">
+          <h2 id="plan-units">Tus unidades</h2>
+          <PlanRows examId={id} units={exam.units} detailed />
+        </section>
+        <ErrorNotice error={error} />
+      </ExamPage>
+    );
+
+  const based = basedOn(exam);
+  return (
+    <ExamPage title={exam.title} back={back}>
+      <section className={s.hero} aria-labelledby="exam-hero" id="simulacro">
+        <div className={s.heroTop}>
+          <div>
+            <h2 id="exam-hero">{exam.subject}</h2>
+            <p className={s.heroMeta}>
+              {examDateLabel(exam.exam_date)}
+              {based ? ` · ${based}` : ""}
+            </p>
+          </div>
+          {days !== null && days > 1 ? (
+            <p className={s.count} data-soon={soon || undefined}>
+              <strong className="num">{days}</strong>
+              <small>días para el examen</small>
+            </p>
+          ) : (
+            <DaysChip date={exam.exam_date} />
+          )}
+        </div>
+        <Progress exam={exam} />
+        {exam.status !== "completed" && (
+          <>
+            <div className={s.heroActions}>
+              <button
+                className="primary press"
+                disabled={busy}
+                aria-busy={busy || undefined}
+                onClick={() => void simulate()}
+              >
+                {busy ? (
+                  <>
+                    <span className={s.spinner} aria-hidden="true" /> Preparando
+                    el simulacro…
+                  </>
+                ) : (
+                  "Simulacro de examen"
+                )}
+              </button>
+              <div className={s.timer}>
+                <label className={s.check}>
+                  <input
+                    type="checkbox"
+                    checked={timer}
+                    onChange={(e) => setTimer(e.target.checked)}
+                    disabled={busy}
+                  />
+                  Con temporizador
+                </label>
+                {timer && (
+                  <label className={s.minutes}>
+                    <input
+                      type="number"
+                      className="num"
+                      min={1}
+                      max={240}
+                      value={minutes}
+                      disabled={busy}
+                      onChange={(e) => setMinutes(Number(e.target.value))}
+                    />
+                    minutos
+                  </label>
+                )}
+              </div>
+            </div>
+            <p className={s.hint}>
+              Simulacro de 10 preguntas sobre tus temas. Las explicaciones
+              llegan al entregar.
+            </p>
+          </>
+        )}
+        <ErrorNotice error={error} />
+      </section>
+
+      <section className={s.section} aria-labelledby="exam-plan">
+        <h2 id="exam-plan">Plan de estudio</h2>
+        <PlanRows examId={id} units={exam.units} />
+        <Link
+          className={`text-link press ${s.sectionLink}`}
+          href={`/exams/${id}/ruta`}
+        >
+          Ver mi ruta de estudio <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+        <Link
+          className={`text-link press ${s.sectionLink}`}
+          href={`/exams/${id}/plan`}
+        >
+          Ver el plan completo <ArrowRight size={16} aria-hidden="true" />
         </Link>
       </section>
-      <h2 className={styles.sectionTitle}>
-        {plan ? "Tus unidades de estudio" : "Por dónde seguir"}
-      </h2>
-      {exam.units.map((unit) => (
-        <UnitRow key={unit.id} examId={id} unit={unit} />
-      ))}
-      {!plan && (
-        <>
-          <section className={styles.card}>
-            <h3>Tus materiales</h3>
-            <Materials materials={exam.materials} />
-          </section>
-          <section className={styles.card} id="simulacro">
-            <h2>Pon en práctica lo que sabes.</h2>
-            <p>
-              Un simulacro de 10 preguntas, con los tipos que encajen con tu
-              temario. Las explicaciones aparecen después de entregar.
-            </p>
-            <div className={styles.form}>
-              <label className={styles.timer}>
-                <span>
-                  <Clock3 size={16} /> Temporizador opcional
-                </span>
-                <input
-                  type="checkbox"
-                  checked={timer}
-                  onChange={(e) => setTimer(e.target.checked)}
-                  disabled={busy}
-                />
-              </label>
-              {timer && (
-                <label>
-                  Duración (minutos)
-                  <input
-                    type="number"
-                    min={1}
-                    max={240}
-                    value={minutes}
-                    disabled={busy}
-                    onChange={(e) => setMinutes(Number(e.target.value))}
-                  />
-                </label>
-              )}
-            </div>
-            <button
-              className="primary"
-              disabled={busy}
-              onClick={() => void simulate()}
-            >
-              {busy ? "Preparando simulacro…" : "Empezar simulacro"}{" "}
-              <ArrowRight size={18} />
-            </button>
-          </section>
-        </>
-      )}
-      {!!exam.sessions.length && (
-        <section className={styles.card}>
-          <h3>{plan ? "Tu práctica" : "Tus simulacros y repasos"}</h3>
-          {exam.sessions.map((s) => (
-            <Link
-              className={styles.cardLink}
-              href={sessionPath(id, s.id)}
-              key={s.id}
-            >
-              {s.mode === "exam" ? "Simulacro" : "Repaso"} ·{" "}
-              {s.status === "completed"
-                ? "Ver resultado"
-                : s.status === "grading"
-                  ? "Consultar corrección"
-                  : "Continuar"}{" "}
-              <ArrowRight size={16} />
-            </Link>
-          ))}
+
+      <div className={s.panels}>
+        <section className={s.panel}>
+          <h3>Tus materiales</h3>
+          <Materials materials={exam.materials} />
         </section>
-      )}
-      {exam.status !== "completed" && (
+        <section className={s.panel}>
+          <h3>Tu ritmo</h3>
+          <p>
+            <span className="num">{exam.daily_minutes}</span> minutos al día.
+          </p>
+          {rhythm ? (
+            <form
+              className={s.inline}
+              onSubmit={(e) => {
+                e.preventDefault();
+                void adjust();
+              }}
+            >
+              <div className={s.field}>
+                <label htmlFor="exam-daily">Minutos al día</label>
+                <input
+                  id="exam-daily"
+                  className="num"
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={daily}
+                  onChange={(e) => setDaily(Number(e.target.value))}
+                />
+              </div>
+              <button
+                className="primary press"
+                disabled={busy}
+                aria-busy={busy || undefined}
+              >
+                Guardar
+              </button>
+              <button
+                type="button"
+                className="text-button press"
+                onClick={() => setRhythm(false)}
+              >
+                Cancelar
+              </button>
+            </form>
+          ) : (
+            <button
+              className="text-button press"
+              style={{ alignSelf: "flex-start", marginLeft: -12 }}
+              onClick={() => {
+                setDaily(exam.daily_minutes);
+                setRhythm(true);
+              }}
+            >
+              Ajustar mi ritmo
+            </button>
+          )}
+        </section>
+        {!!exam.sessions.length && (
+          <section className={s.panel}>
+            <h3>Tus simulacros y repasos</h3>
+            {exam.sessions.map((x) => (
+              <Link
+                className={`${s.linkRow} press`}
+                href={sessionPath(id, x.id)}
+                key={x.id}
+              >
+                <span>
+                  {x.mode === "exam" ? "Simulacro" : "Repaso"} ·{" "}
+                  {x.status === "completed"
+                    ? "Ver resultado"
+                    : x.status === "grading"
+                      ? "Consultar corrección"
+                      : "Continuar"}
+                </span>
+                <ChevronRight size={18} aria-hidden="true" />
+              </Link>
+            ))}
+          </section>
+        )}
+      </div>
+
+      {exam.status !== "completed" ? (
         <button
-          className="secondary"
+          className="secondary press"
+          style={{ alignSelf: "flex-start" }}
           disabled={busy}
           onClick={() => {
             setBusy(true);
@@ -273,13 +420,13 @@ export function ExamDetail({
               .finally(() => setBusy(false));
           }}
         >
-          <Check size={18} /> Marcar examen como completado
+          <Check size={18} aria-hidden="true" /> Marcar examen como completado
         </button>
+      ) : (
+        <p className={s.status}>
+          <Check size={16} aria-hidden="true" /> Examen completado
+        </p>
       )}
-      <ErrorNotice error={error} />
-      <Link className={styles.inlineLink} href="/exams">
-        Volver a mis exámenes
-      </Link>
-    </ExamFrame>
+    </ExamPage>
   );
 }

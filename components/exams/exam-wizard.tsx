@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowRight, ArrowLeft, Upload, Check } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, Upload } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
+  daysUntil,
+  examDateLabel,
   getExam,
   updateExam,
   type DreamExam,
@@ -11,16 +13,46 @@ import {
 } from "@/lib/exam-plans";
 import { fileAccept, validateFile, toBase64 } from "@/lib/attachments";
 import { AttachmentItem } from "../attachment";
-import { DreamMark, DreamActivity } from "../dream-mark";
 import type { Attachment } from "@/lib/types";
+import { ErrorNotice, Materials } from "./exam-ui";
 import {
-  ExamFrame,
-  ExamLoad,
-  ErrorNotice,
-  Countdown,
-  Materials,
-  styles,
-} from "./exam-ui";
+  ExamDetailSkeleton,
+  ExamPage,
+  FailedState,
+  PreparingState,
+  examStyles as s,
+} from "./exam-page";
+type FieldKey = "title" | "subject" | "exam_date" | "topics";
+type FieldErrors = Partial<Record<FieldKey, string>>;
+/** Errors say what is missing and how to fix it (apple writing.md). */
+export function validateExam(
+  fields: Pick<ExamFields, "title" | "subject" | "exam_date">,
+  topics?: string,
+): FieldErrors {
+  const e: FieldErrors = {};
+  if (!fields.title.trim())
+    e.title = "Escribe un nombre, por ejemplo «Álgebra · primer trimestre».";
+  if (!fields.subject.trim())
+    e.subject = "Elige una asignatura de la lista o escríbela.";
+  const days = fields.exam_date ? daysUntil(fields.exam_date) : null;
+  if (!fields.exam_date) e.exam_date = "Elige el día del examen.";
+  else if (days === null) e.exam_date = "Usa una fecha válida (día, mes y año).";
+  else if (days < 0) e.exam_date = "Elige hoy o un día futuro.";
+  if (topics !== undefined && !topics.trim())
+    e.topics = "Añade al menos un tema, uno por línea.";
+  return e;
+}
+function FieldError({ id, children }: { id: string; children?: ReactNode }) {
+  return children ? (
+    <p className={s.fieldError} id={id}>
+      <AlertCircle size={16} aria-hidden="true" />
+      {children}
+    </p>
+  ) : null;
+}
+function Spinner() {
+  return <span className={s.spinner} aria-hidden="true" />;
+}
 const initial: ExamFields = {
   title: "",
   subject: "",
@@ -41,6 +73,8 @@ export function ExamWizard() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(!!params.get("id"));
   const [files, setFiles] = useState<Attachment[]>([]);
+  const [invalid, setInvalid] = useState<FieldErrors>({});
+  const [failed, setFailed] = useState(false);
   const examId = useRef(params.get("id") || crypto.randomUUID());
   const lock = useRef(false);
   const input = useRef<HTMLInputElement>(null);
@@ -79,7 +113,22 @@ export function ExamWizard() {
     return () => c.abort();
   }, [params, router]);
   function change<K extends keyof ExamFields>(key: K, value: ExamFields[K]) {
-    setFields((s) => ({ ...s, [key]: value }));
+    setFields((f) => ({ ...f, [key]: value }));
+    if (key in invalid) setInvalid((e) => ({ ...e, [key]: undefined }));
+  }
+  /** Validates the current step; focuses the first field with an error. */
+  function check() {
+    const errors = validateExam(fields, step === 1 ? topics : undefined);
+    if (step === 0) delete errors.topics;
+    else if (step === 1) {
+      delete errors.title;
+      delete errors.subject;
+      delete errors.exam_date;
+    }
+    setInvalid(errors);
+    const first = (Object.keys(errors) as FieldKey[])[0];
+    if (first) document.getElementById(`exam-${first}`)?.focus();
+    return !first;
   }
   const values = () => ({
     ...fields,
@@ -109,7 +158,7 @@ export function ExamWizard() {
     return pending;
   }
   async function next() {
-    if (lock.current) return;
+    if (lock.current || !check()) return;
     lock.current = true;
     setBusy(true);
     setError("");
@@ -204,6 +253,7 @@ export function ExamWizard() {
     lock.current = true;
     setBusy(true);
     setError("");
+    setFailed(false);
     setStep(3);
     try {
       const saved = await save();
@@ -211,6 +261,7 @@ export function ExamWizard() {
       router.replace(`/exams/${saved.id}`);
     } catch (e) {
       setError(errorMessage(e));
+      setFailed(true);
     } finally {
       lock.current = false;
       setBusy(false);
@@ -219,97 +270,77 @@ export function ExamWizard() {
   const pending = files.some((f) => f.status !== "ready");
   const storedMaterials =
     exam?.materials.filter((m) => !files.some((f) => f.id === m.id)) || [];
-  if (loading)
-    return <ExamLoad error={error} reload={() => router.refresh()} />;
-  const titles = [
-    "Empecemos por tu examen.",
-    "Tus apuntes son el punto de partida.",
-    "Todo listo para organizarte.",
-    "Tus apuntes empiezan a encajar.",
-  ];
+  if (loading) return <ExamDetailSkeleton />;
+  const names = ["Datos", "Temas y apuntes", "Revisar"];
+  const days = fields.exam_date ? daysUntil(fields.exam_date) : null;
+  const describe = (key: FieldKey, help?: string) =>
+    [invalid[key] ? `exam-${key}-error` : "", help ?? ""].join(" ").trim() ||
+    undefined;
   return (
-    <ExamFrame
-      eyebrow={
-        step === 3
-          ? "DREAM ESTÁ PREPARANDO TU PLAN"
-          : `NUEVO EXAMEN / PASO ${step + 1} DE 3`
-      }
-      title={titles[step]}
+    <ExamPage
+      title={params.get("id") ? "Preparar examen" : "Añadir examen"}
       subtitle={
-        step === 3
-          ? "Del material al siguiente paso."
-          : "Tres pasos sencillos. Dream se ocupa de organizar el resto."
+        step === 3 ? (
+          fields.title
+        ) : (
+          <>
+            Paso <span className="num">{step + 1}</span> de{" "}
+            <span className="num">3</span> · {names[step]}
+          </>
+        )
       }
-      aside={
-        <>
-          {fields.exam_date && (
-            <Countdown
-              exam={{ exam_date: fields.exam_date, title: fields.title }}
-            />
-          )}
-          <section className={`${styles.card} ${step > 0 ? styles.lime : ""}`}>
-            <h2>
-              {step === 0
-                ? "Una fecha. Un punto de partida."
-                : step === 1
-                  ? "De tu temario a tu plan."
-                  : "Esto preparará Dream."}
-            </h2>
-            <p>
-              {step === 0
-                ? "Añade lo que quieres preparar. Tú eliges el ritmo."
-                : step === 1
-                  ? "Tus temas y materiales ayudarán a Dream a dividir la preparación en pasos manejables."
-                  : "Unidades de estudio, conversaciones para entenderlas y práctica basada en tus temas."}
-            </p>
-            <small>{fields.daily_minutes} minutos al día · A tu ritmo</small>
-          </section>
-        </>
-      }
+      back={{ href: "/exams", label: "Exámenes" }}
     >
       {step < 3 && (
-        <ol className={styles.steps} aria-label="Pasos del asistente">
-          {["Datos", "Materiales", "Revisar"].map((name, i) => (
+        <ol className={s.stepper} aria-label="Pasos para añadir el examen">
+          {names.map((name, i) => (
             <li
-              className={styles.step}
               key={name}
               aria-current={i === step ? "step" : undefined}
+              data-done={i < step || undefined}
             >
-              <span>{i < step ? <Check size={14} /> : i + 1}</span>
-              {i + 1} · {name}
+              {name}
             </li>
           ))}
         </ol>
       )}
       {step === 0 && (
         <form
-          className={`${styles.card} ${styles.form}`}
+          className={s.form}
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
             void next();
           }}
         >
           <h2>¿Qué vas a preparar?</h2>
-          <label>
-            Nombre del examen
+          <div className={s.field}>
+            <label htmlFor="exam-title">Nombre del examen</label>
             <input
+              id="exam-title"
               value={fields.title}
               onChange={(e) => change("title", e.target.value)}
               maxLength={160}
               required
+              aria-invalid={!!invalid.title || undefined}
+              aria-describedby={describe("title")}
               placeholder="Por ejemplo, Álgebra · primer trimestre"
             />
-          </label>
-          <div className={styles.row}>
-            <label>
-              Asignatura
+            <FieldError id="exam-title-error">{invalid.title}</FieldError>
+          </div>
+          <div className={s.pair}>
+            <div className={s.field}>
+              <label htmlFor="exam-subject">Asignatura</label>
               <input
+                id="exam-subject"
                 list="exam-subjects"
                 value={fields.subject}
                 onChange={(e) => change("subject", e.target.value)}
                 maxLength={80}
                 required
-                placeholder="Elige o escribe una asignatura"
+                aria-invalid={!!invalid.subject || undefined}
+                aria-describedby={describe("subject")}
+                placeholder="Elige o escribe una"
               />
               <datalist id="exam-subjects">
                 {[
@@ -322,33 +353,59 @@ export function ExamWizard() {
                   "Programación",
                   "Filosofía",
                   "Economía",
-                ].map((s) => (
-                  <option key={s} value={s} />
+                ].map((x) => (
+                  <option key={x} value={x} />
                 ))}
               </datalist>
-            </label>
-            <label>
-              Fecha del examen
+              <FieldError id="exam-subject-error">{invalid.subject}</FieldError>
+            </div>
+            <div className={s.field}>
+              <label htmlFor="exam-exam_date">Fecha del examen</label>
               <input
+                id="exam-exam_date"
                 type="date"
+                className="num"
                 value={fields.exam_date}
                 onChange={(e) => change("exam_date", e.target.value)}
                 required
+                aria-invalid={!!invalid.exam_date || undefined}
+                aria-describedby={describe("exam_date", "exam-date-help")}
               />
-            </label>
+              <FieldError id="exam-exam_date-error">
+                {invalid.exam_date}
+              </FieldError>
+              {!invalid.exam_date && days !== null && days >= 0 && (
+                <p className={s.help} id="exam-date-help" aria-live="polite">
+                  {days === 0 ? (
+                    "Es hoy."
+                  ) : days === 1 ? (
+                    "Es mañana."
+                  ) : (
+                    <>
+                      Quedan <span className="num">{days}</span> días.
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
           </div>
-          <label>
-            ¿Qué te gustaría conseguir?
+          <div className={s.field}>
+            <label htmlFor="exam-goal">
+              ¿Qué te gustaría conseguir?{" "}
+              <span className={s.optional}>(opcional)</span>
+            </label>
             <input
+              id="exam-goal"
               value={fields.goal}
               onChange={(e) => change("goal", e.target.value)}
               maxLength={1000}
               placeholder="Entender las ideas y llegar con confianza"
             />
-          </label>
-          <label>
-            Tu rato de estudio al día
+          </div>
+          <div className={s.field}>
+            <label htmlFor="exam-daily">Tu rato de estudio al día</label>
             <select
+              id="exam-daily"
               value={fields.daily_minutes}
               onChange={(e) => change("daily_minutes", Number(e.target.value))}
             >
@@ -358,84 +415,121 @@ export function ExamWizard() {
                 </option>
               ))}
             </select>
-          </label>
-          <div className={styles.actions}>
+          </div>
+          <div className={s.formActions}>
             <button
               type="button"
-              className="secondary"
+              className="secondary press"
               disabled={busy}
               onClick={() => router.push("/exams")}
             >
-              Cancelar <ArrowRight size={18} />
+              Cancelar
             </button>
-            <button className="primary" disabled={busy}>
-              {busy ? "Guardando…" : "Siguiente: materiales"}{" "}
-              <ArrowRight size={18} />
+            <button
+              className="primary press"
+              disabled={busy}
+              aria-busy={busy || undefined}
+            >
+              {busy ? (
+                <>
+                  <Spinner /> Guardando…
+                </>
+              ) : (
+                <>
+                  Siguiente: materiales{" "}
+                  <ArrowRight size={18} aria-hidden="true" />
+                </>
+              )}
             </button>
           </div>
         </form>
       )}
       {step === 1 && (
-        <section className={`${styles.card} ${styles.form}`}>
+        <form
+          className={s.form}
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            void next();
+          }}
+        >
           <h2>¿Qué entra en el examen?</h2>
-          <label>
-            Temas
+          <div className={s.field}>
+            <label htmlFor="exam-topics">Temas</label>
             <textarea
-              aria-label="Temas"
-              aria-describedby="exam-topics-help"
+              id="exam-topics"
+              aria-describedby={describe("topics", "exam-topics-help")}
+              aria-invalid={!!invalid.topics || undefined}
               value={topics}
-              onChange={(e) => setTopics(e.target.value)}
-              placeholder="Un tema por línea"
+              onChange={(e) => {
+                setTopics(e.target.value);
+                if (invalid.topics)
+                  setInvalid((x) => ({ ...x, topics: undefined }));
+              }}
+              placeholder={"Ecuaciones\nFactorización"}
               maxLength={5000}
             />
-            <small id="exam-topics-help">
-              Hasta 30 temas. Puedes separarlos por líneas o punto y coma.
-            </small>
-          </label>
-          <label>
-            ¿Qué te cuesta más?
+            <FieldError id="exam-topics-error">{invalid.topics}</FieldError>
+            <p className={s.help} id="exam-topics-help">
+              Uno por línea, hasta 30. También puedes separarlos con punto y
+              coma.
+            </p>
+          </div>
+          <div className={s.field}>
+            <label htmlFor="exam-difficulties">
+              ¿Qué te cuesta más? <span className={s.optional}>(opcional)</span>
+            </label>
             <textarea
+              id="exam-difficulties"
               value={fields.difficulties}
               onChange={(e) => change("difficulties", e.target.value)}
               maxLength={4000}
               placeholder="Cuéntale a Dream dónde te atascas"
             />
-          </label>
-          <input
-            ref={input}
-            type="file"
-            accept={fileAccept}
-            multiple
-            className="visually-hidden"
-            aria-label="Adjuntar materiales del examen"
-            onChange={(e) => {
-              void attach(Array.from(e.target.files || []));
-              e.target.value = "";
-            }}
-          />
-          <button
-            className={styles.dropzone}
-            disabled={busy}
-            onClick={() => input.current?.click()}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
-              e.preventDefault();
-              void attach(Array.from(e.dataTransfer.files));
-            }}
-          >
-            <Upload size={28} />
-            <span>Añade tus apuntes</span>
-            <small>
-              PDF, Word, imágenes, PowerPoint, Excel y más.
-              <br />
-              Hasta 4 archivos · Documentos e imágenes: 8 MB · Texto: 500 KB
-            </small>
-          </button>
+          </div>
+          <div className={s.field}>
+            <span className={s.fieldLabel}>
+              Tus apuntes <span className={s.optional}>(opcional)</span>
+            </span>
+            <input
+              ref={input}
+              type="file"
+              accept={fileAccept}
+              multiple
+              className="visually-hidden"
+              tabIndex={-1}
+              aria-label="Adjuntar materiales del examen"
+              onChange={(e) => {
+                void attach(Array.from(e.target.files || []));
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              className={`${s.dropzone} press`}
+              disabled={busy}
+              onClick={() => input.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                void attach(Array.from(e.dataTransfer.files));
+              }}
+            >
+              <Upload size={24} aria-hidden="true" />
+              <span>Añade tus apuntes</span>
+              <small>
+                PDF, Word, imágenes, PowerPoint o Excel. Hasta{" "}
+                <span className="num">4</span> archivos de{" "}
+                <span className="num">8</span> MB.
+              </small>
+            </button>
+          </div>
           {storedMaterials.map((m) => (
             <div key={m.id}>
               <Materials materials={[m]} />
               <button
-                className={styles.inlineLink}
+                type="button"
+                className="text-button danger press"
                 disabled={busy}
                 onClick={() =>
                   void updateExam("exam_material_remove", examId.current, {
@@ -445,7 +539,7 @@ export function ExamWizard() {
                     .catch((e) => setError(errorMessage(e)))
                 }
               >
-                Eliminar {m.file_name}
+                Quitar {m.file_name}
               </button>
             </div>
           ))}
@@ -460,51 +554,55 @@ export function ExamWizard() {
               onRetry={() => void upload(f)}
             />
           ))}
-          <div className={styles.actions}>
+          {pending && (
+            <p className={s.help} role="status">
+              Espera a que terminen de subir tus apuntes.
+            </p>
+          )}
+          <div className={s.formActions}>
             <button
-              className="secondary"
+              type="button"
+              className="secondary press"
               disabled={busy}
               onClick={() => setStep(0)}
             >
-              <ArrowLeft size={16} /> Volver
+              <ArrowLeft size={18} aria-hidden="true" /> Volver
             </button>
             <button
-              className="primary"
-              disabled={busy || pending || !topics.trim()}
-              onClick={() => void next()}
+              className="primary press"
+              disabled={busy || pending}
+              aria-busy={busy || undefined}
             >
-              {busy ? "Guardando…" : "Revisar mi examen"}{" "}
-              <ArrowRight size={18} />
+              {busy ? (
+                <>
+                  <Spinner /> Guardando…
+                </>
+              ) : (
+                <>
+                  Revisar mi examen <ArrowRight size={18} aria-hidden="true" />
+                </>
+              )}
             </button>
           </div>
-        </section>
+        </form>
       )}
       {step === 2 && (
-        <section className={styles.card}>
-          <div className={styles.examCardTop}>
-            <h2>{fields.title}</h2>
-            <button
-              className={styles.inlineLink}
-              disabled={busy}
-              onClick={() => setStep(0)}
-            >
-              Editar datos
-            </button>
-          </div>
-          <dl className={styles.summary}>
+        <section className={s.form} aria-labelledby="exam-review">
+          <h2 id="exam-review">{fields.title}</h2>
+          <dl className={s.summary}>
             <div>
               <dt>Asignatura</dt>
               <dd>{fields.subject}</dd>
             </div>
             <div>
               <dt>Fecha</dt>
-              <dd>{fields.exam_date}</dd>
+              <dd>{examDateLabel(fields.exam_date)}</dd>
             </div>
             <div>
               <dt>Temas</dt>
-              <dd className={styles.chips}>
+              <dd className={s.chips}>
                 {values().topics.map((t, i) => (
-                  <span className={styles.badge} key={i}>
+                  <span className={s.chip} key={i}>
                     {t}
                   </span>
                 ))}
@@ -517,56 +615,49 @@ export function ExamWizard() {
               </div>
             )}
             <div>
-              <dt>Materiales</dt>
+              <dt>Apuntes</dt>
               <dd>
                 <Materials materials={exam?.materials || []} />
               </dd>
             </div>
           </dl>
-          <div className={styles.actions}>
+          <p className={s.help}>
+            Dream dividirá tus temas en unidades cortas, con una conversación
+            para entender cada una. No resuelve el examen por ti.
+          </p>
+          <div className={s.formActions}>
             <button
-              className="secondary"
+              type="button"
+              className="secondary press"
               disabled={busy}
-              onClick={() => setStep(1)}
+              onClick={() => setStep(0)}
             >
-              Volver a materiales
+              Editar datos
             </button>
             <button
-              className="primary"
+              className="primary press"
               disabled={busy || pending}
+              aria-busy={busy || undefined}
               onClick={() => void generate()}
             >
-              Generar plan de estudio <ArrowRight size={18} />
+              Generar plan de estudio{" "}
+              <ArrowRight size={18} aria-hidden="true" />
             </button>
           </div>
         </section>
       )}
-      {step === 3 && (
-        <section className={`${styles.card} ${styles.preparing}`}>
-          <DreamMark size={96} />
-          <DreamActivity state={error ? "error" : "thinking"} />
-          <h2>
-            {error ? "Lo retomamos cuando quieras." : "Organizando tus temas"}
-          </h2>
-          <p>
-            {error
-              ? "Tus datos y materiales están guardados en tu cuenta."
-              : "Dream está construyendo tu plan a partir de los temas y materiales guardados. Puedes volver a este borrador si sales de la página."}
-          </p>
-          <Materials materials={exam?.materials || []} />
-          {!busy && (
-            <div className={styles.actions}>
-              <button className="secondary" onClick={() => setStep(2)}>
-                Revisar datos
-              </button>
-              <button className="primary" onClick={() => void generate()}>
-                Reintentar preparación
-              </button>
-            </div>
-          )}
-        </section>
-      )}
-      <ErrorNotice error={error} />
-    </ExamFrame>
+      {step === 3 &&
+        (failed ? (
+          <FailedState
+            cause={error}
+            onRetry={() => void generate()}
+            retrying={busy}
+            editHref={`/exams/new?id=${examId.current}`}
+          />
+        ) : (
+          <PreparingState topics={values().topics} />
+        ))}
+      {!(step === 3 && failed) && <ErrorNotice error={error} />}
+    </ExamPage>
   );
 }
