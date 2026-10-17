@@ -10,6 +10,18 @@ import { MessageView } from "@/components/message";
 import { ChatHome } from "@/components/chat-home";
 import { Recents } from "@/components/recents";
 import { FileCard } from "@/components/attachment";
+import { ModePicker } from "@/components/mode-picker";
+import {
+  WARN_PERCENT,
+  alternativeMode,
+  clockTime,
+  formatResetIn,
+  pickMode,
+  readStoredMode,
+  storeMode,
+  type AiModeId,
+} from "@/lib/ai-modes";
+import { useAiUsage } from "@/lib/use-ai-usage";
 import Link from "next/link";
 import {
   callDream,
@@ -84,6 +96,21 @@ export function ChatExperience({
     null,
   );
   const [dailyLimit, setDailyLimit] = useState(false);
+  // Modo de la IA: el elegido en este navegador si sigue disponible.
+  const { usage, refresh: refreshUsage } = useAiUsage();
+  const [preferredMode, setPreferredMode] = useState<string | null>(null);
+  useEffect(() => setPreferredMode(readStoredMode()), []);
+  const mode = pickMode(usage, preferredMode);
+  const chooseMode = useCallback((next: AiModeId) => {
+    setPreferredMode(next);
+    storeMode(next);
+    setModeLimit(null);
+  }, []);
+  // El servidor ha dicho que el modo está agotado (antes de que llegue el uso).
+  const [modeLimit, setModeLimit] = useState<{
+    mode: AiModeId;
+    resetAt: number;
+  } | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [atBottom, setAtBottom] = useState(true);
   const scroller = useRef<HTMLDivElement>(null);
@@ -405,6 +432,7 @@ export function ChatExperience({
           conversation_id: id,
           prompt,
           attachment_ids: attachmentIds,
+          mode,
           ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
         };
         // Short limits (busy minute, queue) wait and resend the same message;
@@ -496,9 +524,17 @@ export function ChatExperience({
           setValue((current) => current || prompt);
         }
         const limit = limitOf(e);
-        setDailyLimit(limit?.kind === "daily");
-        setError(limit?.kind === "daily" ? dailyText(limit) : errorMessage(e));
-        setState("error");
+        if (limit?.kind === "mode") {
+          // Mode used up: say when it comes back and offer another mode.
+          setModeLimit({ mode, resetAt: limit.resetAt });
+          setState("idle");
+        } else {
+          setDailyLimit(limit?.kind === "daily");
+          setError(
+            limit?.kind === "daily" ? dailyText(limit) : errorMessage(e),
+          );
+          setState("error");
+        }
       }
     } finally {
       if (abort.current === controller) {
@@ -506,6 +542,7 @@ export function ChatExperience({
         lock.current = false;
         abort.current = null;
       }
+      void refreshUsage();
     }
   }
   async function reload() {
@@ -586,8 +623,47 @@ export function ChatExperience({
       busy={busy}
       state={state}
       unavailable={loading}
+      modes={
+        <ModePicker
+          usage={usage}
+          value={mode}
+          onChange={chooseMode}
+          disabled={busy}
+        />
+      }
     />
   );
+  const current = usage.modes.find((m) => m.id === mode);
+  const spentAt =
+    current?.blocked && current.resets_at
+      ? Date.parse(current.resets_at)
+      : modeLimit?.mode === mode && modeLimit.resetAt > Date.now()
+        ? modeLimit.resetAt
+        : null;
+  const alternative = alternativeMode(usage, mode);
+  const modeBanner = spentAt ? (
+    <div className="chat-limit" role="alert">
+      <p>
+        Has usado todo el modo {current?.label ?? "elegido"} por ahora. Vuelve a
+        estar disponible a las {clockTime(new Date(spentAt).toISOString())}.
+        {!alternative && " Los demás modos también están agotados."}
+      </p>
+      {alternative && (
+        <button
+          type="button"
+          className="secondary press"
+          onClick={() => chooseMode(alternative.id)}
+        >
+          Cambiar a {alternative.label}
+        </button>
+      )}
+    </div>
+  ) : current && current.percent >= WARN_PERCENT && current.resets_at ? (
+    <p className="mode-notice" role="status">
+      Has usado el {current.percent} % del modo {current.label}. Se reinicia en{" "}
+      {formatResetIn(Date.parse(current.resets_at) - Date.now())}.
+    </p>
+  ) : null;
   const errorBanner = (!serviceReady || error) && (
     <div className="chat-error" role="alert">
       <p>
@@ -636,6 +712,7 @@ export function ChatExperience({
               ?.click();
           }}
         >
+          {modeBanner}
           {errorBanner}
           {analysisView && attachments[0] && (
             <FileCard
@@ -745,6 +822,7 @@ export function ChatExperience({
           </button>
         )}
         {waitBanner}
+        {modeBanner}
         {errorBanner}
         {composer("dock")}
         <p className="composer-footnote">

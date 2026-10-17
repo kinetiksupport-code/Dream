@@ -23,6 +23,7 @@ export type DreamAction =
   | "exam_session_save"
   | "exam_session_submit"
   | "profile"
+  | "ai_usage"
   | "conversations"
   | "conversation_create"
   | "conversation_rename"
@@ -137,6 +138,7 @@ export async function streamDreamChat(
     attachment_ids: string[];
     exam_id?: string;
     unit_id?: string;
+    mode?: string;
   },
   onEvent: (event: DreamStreamEvent) => void,
   signal: AbortSignal,

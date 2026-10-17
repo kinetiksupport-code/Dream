@@ -1,6 +1,6 @@
 "use client";
 import { AttachmentItem } from "./attachment";
-import { useEffect, useRef, type ClipboardEvent } from "react";
+import { useEffect, useRef, type ClipboardEvent, type ReactNode } from "react";
 import { PlusIcon, SendIcon, StopIcon } from "./icons";
 import type { Attachment, DreamState } from "@/lib/types";
 import { fileAccept } from "@/lib/attachments";
@@ -20,6 +20,7 @@ export function Composer({
   unavailable = false,
   variant = "dock",
   placeholder,
+  modes,
 }: {
   value: string;
   onChange: (s: string) => void;
@@ -35,6 +36,8 @@ export function Composer({
   /** "hero": large composer of the empty state. "dock": single row under a thread. */
   variant?: "hero" | "dock";
   placeholder?: string;
+  /** Selector de modo de la IA (Rápido, Normal, Pensar más). */
+  modes?: ReactNode;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -149,16 +152,22 @@ export function Composer({
         <>
           {field}
           <div className="composer-controls">
-            {attach}
+            <div className="composer-tools">
+              {attach}
+              {modes}
+            </div>
             {send}
           </div>
         </>
       ) : (
-        <div className="composer-row">
-          {attach}
-          {field}
-          {send}
-        </div>
+        <>
+          {modes && <div className="composer-modes">{modes}</div>}
+          <div className="composer-row">
+            {attach}
+            {field}
+            {send}
+          </div>
+        </>
       )}
       {!online && (
         <p className="composer-offline" role="status">

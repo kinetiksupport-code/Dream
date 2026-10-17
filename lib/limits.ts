@@ -3,7 +3,9 @@
 
 export type LimitState =
   | { kind: "wait"; seconds: number; position?: number }
-  | { kind: "daily"; resetAt: number; scope: "user" | "global" };
+  | { kind: "daily"; resetAt: number; scope: "user" | "global" }
+  // One mode used up in the student's 5-hour window: switch mode or wait.
+  | { kind: "mode"; resetAt: number };
 
 const WAIT_CODES = new Set([
   "dream_queue",
@@ -31,6 +33,8 @@ export function limitFor(
   position?: number,
 ): LimitState | null {
   const seconds = Math.max(1, Math.ceil(retryAfter || 0));
+  if (code === "dream_mode_limit")
+    return { kind: "mode", resetAt: now + seconds * 1000 };
   if (WAIT_CODES.has(code) && seconds <= LONGEST_WAIT_SECONDS)
     return {
       kind: "wait",
