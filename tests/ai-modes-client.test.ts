@@ -17,7 +17,14 @@ test("usage from the server keeps only modes, percentages and reset time", () =>
   const usage = parseUsage({
     window: { started_at: new Date(NOON).toISOString(), ends_at: resets },
     modes: [
-      { id: "fast", label: "llama", percent: 12.4, blocked: false, resets_at: resets, tokens: 999 },
+      {
+        id: "fast",
+        label: "llama",
+        percent: 12.4,
+        blocked: false,
+        resets_at: resets,
+        tokens: 999,
+      },
       { id: "normal", percent: 140, blocked: true, resets_at: resets },
       { id: "secret-model", percent: 1 },
     ],
