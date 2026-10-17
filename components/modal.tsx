@@ -26,11 +26,6 @@ export function Modal({
   leaving?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
-  // Captured while rendering: an autoFocus field inside takes focus before
-  // effects run, and focus must go back to what opened the dialog.
-  const opener = useRef(
-    typeof document === "undefined" ? null : document.activeElement,
-  );
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   // The control that opened the dialog, read on the first render: by the time

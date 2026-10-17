@@ -1498,6 +1498,11 @@ svg.lucide {
 .chat-loading {
   justify-content: center;
 }
+/* Its own height (not stretched to the scroller), so the ResizeObserver that
+   keeps the end in view sees the thread grow. */
+.message-thread {
+  align-self: flex-start;
+}
 .older-button {
   align-self: center;
 }
@@ -1506,7 +1511,6 @@ svg.lucide {
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-  animation: rise var(--dur-rise) var(--ease) both;
 }
 .message-user {
   align-items: flex-end;
@@ -1562,34 +1566,6 @@ svg.lucide {
 }
 .activity-error {
   color: var(--danger);
-}
-.quiz-widget {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  color: var(--text);
-  max-width: 480px;
-}
-.quiz-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.quiz-text small {
-  font-size: var(--text-small);
-  color: var(--primary-ink);
-  font-weight: 600;
-}
-.quiz-text strong {
-  font-weight: 600;
-}
-.quiz-text span {
-  font-size: var(--text-small);
-  color: var(--text-secondary);
 }
 .study-conversation-empty {
   align-self: center;
@@ -1920,23 +1896,321 @@ svg.lucide {
   color: var(--text-secondary);
   font-size: var(--text-secondary-size);
 }
-.chat-error {
+/* === Chat === (design/chat: Chat.dc.html, MovilChat.dc.html)
+   Motion: emil-design-eng (only transform/opacity, --ease to enter, hover
+   behind the hover media query). Waits: libraries-dev (nothing under 2 s). */
+
+/* New messages only: 8 px rise + fade, 200 ms. History never animates. */
+.message-enter {
+  transition:
+    opacity var(--dur-base) var(--ease),
+    transform var(--dur-base) var(--ease);
+}
+@starting-style {
+  .message-enter {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Text cursor at the end of the answer while it arrives. */
+@keyframes caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.message-assistant.is-typing
+  .markdown
+  > :last-child:not(ul, ol, pre, table, .math-block, .katex-display)::after,
+.message-assistant.is-typing .markdown > :is(ul, ol):last-child > li:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.18em;
+  border-radius: 1px;
+  background: var(--primary-ink);
+  animation: caret-blink 1s steps(1, end) infinite;
+}
+
+/* AI status: Orb + one short line (Claude Design «Comprobando tu respuesta»). */
+.ai-status {
+  min-height: 28px;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.ai-status-label {
+  display: flex;
+  flex-direction: column;
+  transition: opacity var(--dur-fast) ease;
+}
+.ai-status-label small {
+  font-size: var(--text-small);
+}
+@starting-style {
+  .ai-status,
+  .ai-status-label {
+    opacity: 0;
+  }
+}
+
+/* Message actions: on hover/focus with a pointer, always visible on touch
+   and on the last answer (where «Regenerar» lives). */
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 14px;
+  border-radius: var(--radius-chip);
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 500;
+}
+/* The actions row keeps its place (no jump on hover) but sits tighter. */
+.message-assistant .message-actions {
+  margin: -4px 0 -12px;
+}
+@media (max-width: 639.98px) {
+  .chat-retry {
+    margin-left: 32px; /* aligned with the text when it wraps below */
+  }
+}
+.copy-action.is-copied {
+  color: var(--success);
+}
+.regen-action {
+  gap: 6px;
+}
+/* Phone: the three actions fit on one row; «Regenerar» keeps its icon and
+   its accessible name (aria-label), at 44 × 44. */
+@media (max-width: 639.98px) {
+  .regen-action {
+    justify-content: center;
+    width: var(--touch);
+    padding: 0;
+  }
+  .regen-action > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+.copy-swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity var(--dur-fast) ease;
+}
+@starting-style {
+  .copy-swap.is-swapping {
+    opacity: 0;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .icon-action:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+  }
+  .copy-action.is-copied:hover {
+    color: var(--success);
+  }
+  .message-assistant .message-actions {
+    opacity: 0;
+    transition: opacity var(--dur-base) ease;
+  }
+  .message-assistant:hover .message-actions,
+  .message-assistant:focus-within .message-actions,
+  .message-assistant.is-last .message-actions {
+    opacity: 1;
+  }
+}
+
+/* Generated test: elevated card with a clear «Empezar». */
+.quiz-widget {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: 520px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--elevated);
+  color: var(--text);
+  box-shadow: var(--shadow-composer);
+}
+/* Stronger shadow on hover, faded in (box-shadow itself is not animated). */
+.quiz-widget::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow: var(--shadow-popover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) ease;
+}
+.quiz-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--nav-active);
+  color: var(--primary-ink-tint);
+}
+.quiz-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.quiz-text small {
+  font-size: var(--text-small);
+  color: var(--primary-ink);
+  font-weight: 600;
+}
+.quiz-text strong {
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.quiz-text > span {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+.quiz-start {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  padding: 0 14px 0 18px;
+  border-radius: var(--radius-chip);
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: var(--text-secondary-size);
+  font-weight: 600;
+  transition: background-color var(--dur-press) ease;
+}
+.quiz-arrow {
+  transition: transform var(--dur-base) var(--ease);
+}
+.quiz-widget.press:active:not(:disabled) {
+  transform: scale(0.98);
+}
+@media (hover: hover) and (pointer: fine) {
+  .quiz-widget:hover {
+    transform: translateY(-2px);
+  }
+  .quiz-widget:hover::after {
+    opacity: 1;
+  }
+  .quiz-widget:hover .quiz-start {
+    background: var(--primary-hover);
+  }
+  .quiz-widget:hover .quiz-arrow {
+    transform: translateX(2px);
+  }
+  .quiz-widget.press:hover:active {
+    transform: translateY(-1px) scale(0.98);
+  }
+}
+
+/* Skeleton of the card while the test is being generated. */
+.quiz-skeleton {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 520px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--elevated);
+  box-shadow: var(--shadow-composer);
+}
+.quiz-skeleton-icon,
+.quiz-skeleton-lines span {
+  display: block;
+  background: var(--state-press);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.quiz-skeleton-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
+.quiz-skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.quiz-skeleton-lines span {
+  height: 12px;
+  border-radius: 6px;
+}
+.quiz-skeleton-lines span:nth-child(1) {
+  width: 28%;
+}
+.quiz-skeleton-lines span:nth-child(2) {
+  width: 72%;
+  height: 16px;
+}
+.quiz-skeleton-lines span:nth-child(3) {
+  width: 36%;
+}
+
+/* Errors: icon + cause + «Reintentar», never a loose line of text. */
+.chat-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 12px;
   padding: 12px 12px 12px 16px;
   border-radius: var(--radius-card);
   background: var(--danger-surface);
-  color: var(--danger);
+  color: var(--text);
   font-size: var(--text-secondary-size);
 }
+.chat-error-icon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--danger);
+}
+.chat-error-text {
+  flex: 1 1 200px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-error-text strong {
+  color: var(--danger);
+  font-weight: 600;
+}
+.chat-retry {
+  flex: none;
+  align-self: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+/* «Ir al último mensaje»: fades and rises in; leaves faster than it enters. */
 .jump-bottom {
   position: absolute;
   top: -52px;
   left: 50%;
   width: auto !important;
-  transform: translateX(-50%);
+  transform: translate(-50%, 0);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1946,15 +2220,59 @@ svg.lucide {
   background: var(--elevated);
   border: 1px solid var(--border);
   box-shadow: var(--shadow-popover);
+  color: var(--text);
   font-size: var(--text-small);
   font-weight: 600;
+  transition:
+    opacity var(--dur-base) var(--ease),
+    transform var(--dur-base) var(--ease),
+    background-color var(--dur-press) ease;
+}
+.jump-bottom[data-visible="false"] {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+  pointer-events: none;
+  transition-duration: var(--dur-fast);
 }
 .jump-bottom:active:not(:disabled) {
-  transform: translateX(-50%) scale(0.97);
+  transform: translate(-50%, 0) scale(0.97);
 }
-.jump-icon {
-  display: inline-grid;
-  transform: rotate(-90deg);
+@media (hover: hover) and (pointer: fine) {
+  .jump-bottom:hover {
+    background: var(--surface-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @starting-style {
+    .message-enter {
+      transform: none;
+    }
+  }
+  .message-assistant.is-typing
+    .markdown
+    > :last-child:not(ul, ol, pre, table, .math-block, .katex-display)::after,
+  .message-assistant.is-typing .markdown > :is(ul, ol):last-child > li:last-child::after {
+    animation: none; /* fixed cursor, no blinking */
+  }
+  .quiz-skeleton-icon,
+  .quiz-skeleton-lines span {
+    animation: none;
+  }
+  .jump-bottom[data-visible="false"],
+  .jump-bottom:active:not(:disabled) {
+    transform: translate(-50%, 0);
+  }
+  .quiz-widget.press:active:not(:disabled) {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+  .quiz-widget:hover,
+  .quiz-widget.press:hover:active,
+  .quiz-widget:hover .quiz-arrow {
+    transform: none;
+  }
 }
 
 /* ==========================================================================

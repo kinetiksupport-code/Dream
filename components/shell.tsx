@@ -69,7 +69,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Conversation[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [workspaceEmpty, setWorkspaceEmpty] = useState(!search.get("c"));
-  const [, setPageTitle] = useState<string | null>(null);
+  const [pageTitle, setPageTitle] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [editing, setEditing] = useState<Conversation | null>(null);
@@ -317,7 +317,11 @@ export function Shell({ children }: { children: ReactNode }) {
               >
                 <BackIcon />
               </Link>
-              <h1>{currentConversation?.title || "Conversación"}</h1>
+              <h1>
+                {currentConversation?.title ||
+                  pageTitle ||
+                  "Nueva conversación"}
+              </h1>
               <span className="topbar-spacer" aria-hidden="true" />
             </header>
           )}
