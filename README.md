@@ -4,7 +4,7 @@ Dream es una web educativa en español para estudiantes. Te ayuda a entender lo 
 
 - **Frontend**: Next.js 15 (App Router), React 19, TypeScript estricto, Tailwind CSS 4.
 - **Backend**: Supabase (Auth con Google, Postgres con RLS) y la Edge Function `dream-api`.
-- **IA**: Qwen a través de Groq, y búsqueda web con Tavily, solo desde `dream-api`. Las claves viven en los secretos de Supabase, nunca en este repositorio.
+- **IA**: modos «Rápido» y «Normal» con Groq; «Pensar más» y el respaldo con Cloudflare Workers AI (apagados hasta el OK, ver [docs/MODOS_IA.md](docs/MODOS_IA.md)); búsqueda web con Tavily. Todo solo desde `dream-api`. Las claves viven en los secretos de Supabase, nunca en este repositorio.
 - **Plan**: gratis, sin cobros.
 
 ## Documentos
@@ -15,6 +15,7 @@ Dream es una web educativa en español para estudiantes. Te ayuda a entender lo 
 | [EXAMS_IMPLEMENTATION.md](EXAMS_IMPLEMENTATION.md) | Exámenes: rutas, migraciones, recuperación y límites |
 | [OBSERVABILITY.md](OBSERVABILITY.md) | PostHog y Sentry con consentimiento |
 | [docs/security/](docs/security/REPORT.md) | Seguridad, admisión y pruebas de carga ([auditoría](docs/security/AUDIT.md), [operación](docs/security/OPERATIONS.md)) |
+| [docs/MODOS_IA.md](docs/MODOS_IA.md) | Modos de la IA, límite por ventanas de 5 h y respaldo con Cloudflare |
 | [QA.md](QA.md) | Qué se ha verificado y qué no |
 | [LIMPIEZA.md](LIMPIEZA.md) | Inventario de la limpieza y decisiones pendientes |
 | [docs/README.md](docs/README.md) | Referencias de diseño guardadas en `docs/` |

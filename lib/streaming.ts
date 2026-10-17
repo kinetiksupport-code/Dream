@@ -20,6 +20,7 @@ const streamCodes = new Set([
   "dream_admission_busy",
   "dream_budget",
   "dream_queue",
+  "dream_mode_limit",
   "provider_rate_limit",
   "provider_daily_limit",
   "all_keys_cooling_down",

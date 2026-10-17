@@ -1,3 +1,5 @@
+import { GROQ_NORMAL_MODEL } from "./models.mjs";
+
 export class AdmissionError extends Error {
   constructor(code, status = 429, retryAfter = 5) {
     super(code);
@@ -17,7 +19,9 @@ export const consumingActions = new Set([
   "exam_session_create",
   "exam_session_submit",
 ]);
-export const DEFAULT_GROQ_MODEL = "qwen/qwen3.8-27b";
+export const DEFAULT_GROQ_MODEL = GROQ_NORMAL_MODEL;
+// Proveedores de IA que se cuentan en tokens (mismo formato de petición).
+const TOKEN_PROVIDERS = new Set(["groq", "cloudflare"]);
 
 export function estimateTokens(value) {
   const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
@@ -27,7 +31,7 @@ export function estimateTokens(value) {
 }
 
 export function estimateRequest(provider, body) {
-  if (provider !== "groq") return { input: 0, output: 0, images: 0, model: null };
+  if (!TOKEN_PROVIDERS.has(provider)) return { input: 0, output: 0, images: 0, model: null };
   let images = 0;
   const messages = Array.isArray(body?.messages) ? body.messages : [];
   const serialized = JSON.stringify(messages, (key, value) => {

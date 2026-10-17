@@ -79,6 +79,8 @@ export default function LandingPage() {
         <nav aria-label="Legal">
           <Link href="/privacidad">Privacidad</Link>
           <Link href="/terminos">Términos</Link>
+          <Link href="/cookies">Cookies</Link>
+          <Link href="/aviso-legal">Aviso legal</Link>
         </nav>
       </footer>
     </div>

@@ -4,6 +4,7 @@ import { Sun, Moon, Monitor, Check } from "lucide-react";
 import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
 import { InstallDream } from "@/components/install-dream";
+import { UsageLimits } from "@/components/usage-limits";
 import { useDream } from "@/components/providers";
 import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
@@ -96,6 +97,8 @@ export default function Settings() {
           ))}
         </div>
       </section>
+
+      <UsageLimits />
 
       <InstallDream />
 

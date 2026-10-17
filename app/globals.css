@@ -2321,3 +2321,251 @@ fieldset:disabled .test-option {
 .chat-error {
   flex-wrap: wrap;
 }
+
+/* Legal pages */
+.legal-page {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+.legal-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+.legal-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+.legal-head nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  font-size: var(--text-small);
+}
+.legal-head nav a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+.legal-head nav a:hover {
+  color: var(--primary-ink);
+}
+.legal-body {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 16px 64px;
+  font-size: var(--text-body);
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.legal-body h1 {
+  font-size: var(--text-title);
+  line-height: 1.2;
+  margin: 8px 0 12px;
+}
+.legal-body h2 {
+  font-size: 1.375rem;
+  margin: 2rem 0 0.5rem;
+}
+.legal-body h3 {
+  font-size: 1.125rem;
+  margin: 1.5rem 0 0.4rem;
+}
+.legal-body a {
+  color: var(--primary-ink);
+}
+.legal-body ul,
+.legal-body ol {
+  padding-left: 1.4rem;
+}
+.legal-body table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: var(--text-small);
+  margin: 1rem 0;
+}
+.legal-body th,
+.legal-body td {
+  border: 1px solid var(--border, rgba(128, 128, 128, 0.3));
+  padding: 8px 10px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 120px;
+}
+
+/* ==========================================================================
+   AI modes (Rápido · Normal · Pensar más) and usage limits
+   ========================================================================== */
+.composer-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.composer-modes {
+  display: flex;
+  padding: 0 0 0 4px;
+}
+.mode-picker {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: var(--surface);
+}
+.mode-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-chip);
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mode-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+.mode-option:has(input:checked) {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(8, 11, 20, 0.08);
+}
+:root[data-theme="dark"] .mode-option:has(input:checked) {
+  background: var(--surface-hover);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .mode-option:has(input:checked) {
+    background: var(--surface-hover);
+  }
+}
+.mode-option:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.mode-option:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.mode-option[data-blocked] {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .mode-option:hover:not(:has(input:checked, input:disabled)) {
+    color: var(--text);
+  }
+}
+@media (max-width: 639.98px) {
+  .mode-option {
+    padding: 0 10px;
+  }
+}
+.mode-notice {
+  padding: 0 8px;
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+.chat-limit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 12px 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-secondary-size);
+}
+.chat-limit p {
+  flex: 1 1 240px;
+}
+.usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.usage-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.usage-label {
+  font-size: var(--text-body);
+}
+.usage-bar {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--border);
+}
+.usage-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--primary);
+  transform-origin: left center;
+  transition: transform 600ms var(--ease);
+}
+.usage-bar[data-level="full"] .usage-fill {
+  background: var(--danger);
+}
+.usage-reset {
+  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+}
+@media (prefers-reduced-motion: reduce) {
+  .usage-fill {
+    transition: none;
+  }
+}
+/* Móvil · Inicio: the hero composer is a grid; modes get their own row. */
+@media (max-width: 639.98px) {
+  .composer-hero .composer-tools {
+    display: contents;
+  }
+  .composer-hero .attachment-list {
+    grid-row: 1;
+  }
+  .composer-hero .mode-picker {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: start;
+    margin: 0 0 4px;
+  }
+  .composer-hero .attach-button,
+  .composer-hero textarea,
+  .composer-hero .send-button {
+    grid-row: 3;
+  }
+  .composer-hero .composer-offline {
+    grid-row: 4;
+  }
+}
