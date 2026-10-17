@@ -4,16 +4,19 @@ export function Toast({
   error = false,
   onClose,
   action,
+  announce = true,
 }: {
   message: string;
   error?: boolean;
+  /** False when a parent aria-live region already announces the message. */
+  announce?: boolean;
   onClose?: () => void;
   action?: { label: string; run: () => void };
 }) {
   return (
     <div
       className={`toast${error ? " toast-error" : ""}`}
-      role={error ? "alert" : "status"}
+      role={announce ? (error ? "alert" : "status") : undefined}
     >
       {error ? <AlertIcon /> : <CheckIcon />}
       <span>{message}</span>
