@@ -155,6 +155,9 @@ test.describe("registro: casillas de consentimiento", () => {
   }) => {
     await welcome(page);
     await page.getByLabel("Fecha de nacimiento").fill(birth(12));
+    // Measure the boxes at rest: mid-entrance (@starting-style rise) the
+    // transformed box can read 43.9999 px (float rounding of a fractional y).
+    await page.waitForFunction(() => document.getAnimations().length === 0);
     for (const name of [AI, GUARDIAN]) {
       const box = page.getByRole("checkbox", { name });
       const input = await box.boundingBox();
