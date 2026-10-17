@@ -37,7 +37,8 @@ export type DreamAction =
   | "test_generate"
   | "test_get"
   | "test_check_answer"
-  | "test_submit";
+  | "test_submit"
+  | "consent";
 export class DreamApiError extends Error {
   constructor(
     message: string,
@@ -235,13 +236,35 @@ export async function getDreamProfile(signal?: AbortSignal) {
   if (!p || typeof p !== "object") {
     throw new Error("No se pudo cargar tu perfil. Inténtalo de nuevo.");
   }
-  return {
-    profile: {
-      email: p.email ?? "",
-      display_name: p.display_name ?? "",
-    },
-    service_ready: data.service_ready ?? true,
+  const profile: DreamProfile = {
+    email: p.email ?? "",
+    display_name: p.display_name ?? "",
   };
+  // Consent fields only exist once dream-api sends them (docs/CONSENTIMIENTO.md).
+  // Copied only when present, so today's server keeps the gate off.
+  if (p.ai_consent_at !== undefined) {
+    profile.ai_consent_at = p.ai_consent_at ?? null;
+    profile.age_band = p.age_band ?? null;
+    profile.guardian_required = p.guardian_required === true;
+    profile.guardian_confirmed_at = p.guardian_confirmed_at ?? null;
+  }
+  return { profile, service_ready: data.service_ready ?? true };
+}
+
+/**
+ * Saves the sign-up consent (Parte D).
+ *
+ * TODO(dream-api): the `consent` action does not exist yet. It is designed in
+ * docs/CONSENTIMIENTO.md and needs Carlos's OK to deploy. Until then the
+ * welcome screen never shows (see needsConsent), so this is never called in
+ * production; the browser tests answer it with a mock.
+ */
+export function saveConsent(input: {
+  birth_date: string;
+  guardian_confirmed: boolean;
+  ai_consent: boolean;
+}) {
+  return callDream<{ profile?: unknown }>("consent", input);
 }
 export function errorMessage(error: unknown) {
   if (

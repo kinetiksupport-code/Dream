@@ -16,7 +16,11 @@ for (const screen of SCREENS)
           await page.addInitScript(() =>
             localStorage.setItem("dream-storage-notice-v1", "1"),
           );
-        else await mock(page, { pendingChat: screen.pendingChat });
+        else
+          await mock(page, {
+            pendingChat: screen.pendingChat,
+            profile: screen.profile,
+          });
         await page.goto(screen.path);
         await page
           .waitForLoadState("networkidle", { timeout: 5000 })

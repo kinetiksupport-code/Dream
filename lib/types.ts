@@ -1,4 +1,5 @@
-export interface DreamProfile {
+import type { ConsentProfile } from "./consent";
+export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
 }

@@ -65,6 +65,7 @@ const actions = new Set([
   "test_get",
   "test_check_answer",
   "test_submit",
+  "consent",
 ]);
 export function sectionForPath(path: string): Section {
   const segment = path.split("?")[0].split("/")[1];
