@@ -25,7 +25,7 @@ Carlos pasó dos fotos de Threads. Son capturas de App Store de otro diseñador,
 |---|---|---|
 | Fondo saturado y plano por pantalla | Superficie `.pop` con un tono (`.tone-*`) | `app/globals.css` › Estilo nuevo |
 | Cuadrícula fina | `.pop-grid` (`--grid-line`, `--grid-size`) | ídem |
-| Titular enorme y pesado | `.hero-title` (`--text-hero` 40→72 px, peso 800) | ídem |
+| Titular enorme y pesado | `.hero-title` (`--text-hero` 40→72 px, Inter 800 en cursiva real) | ídem |
 | Palabra subrayada a mano | `.marker` (trazo SVG en máscara, `--marker`); `.marker-draw` lo dibuja una vez | ídem |
 | Chapas escalopadas o redondas con borde blanco y sombra | `<Sticker>` (`scalloped`, `round`, `pill`) | `components/sticker.tsx` |
 | Píldoras 3D con sombra inferior y brillo | `.button-3d` + `.button-3d-face` | `app/globals.css` |
@@ -33,7 +33,7 @@ Carlos pasó dos fotos de Threads. Son capturas de App Store de otro diseñador,
 | Objetos 3D | **PR 2 y PR 6** (iconos y modelos) | — |
 
 **Lo que no copio:**
-- La cursiva: Inter no tiene una cursiva pesada cargada, y una cursiva sintética se lee peor. Los titulares van rectos, en peso 800. Si Carlos la quiere, hay que cargar la cursiva de Inter (unos 30 KB más).
+- ~~La cursiva~~ **Actualizado el 17/10 (decisión de Carlos): los titulares `.hero-title` van en la cursiva real de Inter, peso 800** (`app/layout.tsx` › `interHero`, `next/font` con `latin` y `latin-ext`, `preload: false`). Solo se descarga en las páginas que pintan un `.hero-title`: 25,9 KB (woff2, latín básico, que cubre el español) y 39,2 KB más solo si aparece algún carácter de `latin-ext`. Nunca se sintetiza (`font-synthesis: none`). Con «Lectura fácil» (Lexend) el titular vuelve a ir recto.
 - El texto blanco sobre amarillo o naranja: no pasa el contraste AA (1,62:1 y 3,39:1). Ahí el texto va en tinta oscura.
 
 ## Comprobación: View Transitions en Next.js
@@ -200,6 +200,6 @@ Se reutilizan sin duplicar: `--ease`, `--ease-in-out`, `--ease-drawer`, `--dur-f
 
 ## Para Carlos
 
-1. ¿Titulares en cursiva pesada, como en las fotos? Hay que cargar la cursiva de Inter (unos 30 KB).
+1. ~~¿Titulares en cursiva pesada?~~ Decidido: sí (17/10). Hecho en este PR, ver «Lo que no copio».
 2. Paleta: ¿te valen el amarillo `#FFC21A` y el naranja `#F05A1E` con texto oscuro? El texto blanco sobre ellos no pasa AA.
 3. ¿Qué color de fondo dominante quieres en cada pantalla clave? Por ejemplo: Exámenes en azul, el asistente en amarillo y «listo» en morado. Lo aplico en los PR siguientes.

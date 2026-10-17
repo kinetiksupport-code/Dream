@@ -3877,12 +3877,21 @@ fieldset:disabled .test-option {
 }
 
 /* --- Huge headline + hand-drawn marker ------------------------------------- */
+/* Real Inter 800 italic (app/layout.tsx › interHero), never a synthetic
+   slant; Lexend (easy reading) keeps upright headlines. */
 .hero-title {
+  font-family: var(--font-hero), var(--font-stack);
+  font-style: italic;
+  font-synthesis: none;
   font-size: var(--text-hero);
   font-weight: var(--weight-hero);
   line-height: var(--leading-hero);
   letter-spacing: var(--tracking-hero);
   text-wrap: balance;
+}
+:root[data-reading="easy"] .hero-title {
+  font-family: var(--font-stack);
+  font-style: normal;
 }
 /* <span class="marker">palabra</span>: a marker stroke under one key word.
    Decorative only (the word is the text), so it needs no contrast pair. */
