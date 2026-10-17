@@ -50,6 +50,7 @@ const actions = new Set([
   "exam_session_get",
   "exam_session_save",
   "exam_session_submit",
+  "exam_route_regenerate",
   "profile",
   "conversations",
   "conversation_create",
