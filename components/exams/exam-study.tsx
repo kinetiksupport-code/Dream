@@ -107,6 +107,12 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
             <Link className={styles.inlineLink} href={`/exams/${id}/plan`}>
               Ver todas las unidades
             </Link>
+            <Link
+              className={styles.inlineLink}
+              href={`/exams/${id}/ruta${unit.status === "completed" ? `?hecho=${unit.id}` : ""}`}
+            >
+              {unit.status === "completed" ? "Volver a mi ruta" : "Ver mi ruta"}
+            </Link>
             {unit.status === "completed" ? (
               <p>
                 <Check size={16} /> Unidad completada

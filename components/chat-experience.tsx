@@ -8,6 +8,7 @@ import { BackIcon } from "@/components/icons";
 import { Composer } from "@/components/composer";
 import { MessageView } from "@/components/message";
 import { ChatHome } from "@/components/chat-home";
+import { NextStepCard } from "@/components/exams/next-step-card";
 import { Recents } from "@/components/recents";
 import { FileCard } from "@/components/attachment";
 import { ModePicker } from "@/components/mode-picker";
@@ -719,6 +720,7 @@ export function ChatExperience({
         >
           {modeBanner}
           {errorBanner}
+          {!analysisView && <NextStepCard />}
           {analysisView && attachments[0] && (
             <FileCard
               attachment={attachments[0]}

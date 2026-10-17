@@ -65,8 +65,19 @@ export function ExamDetail({
   async function adjust() {
     setBusy(true);
     try {
-      setExam(await updateExam("exam_rhythm", id, { daily_minutes: daily }));
+      const updated = await updateExam("exam_rhythm", id, {
+        daily_minutes: daily,
+      });
+      setExam(updated);
       setRhythm(false);
+      // Ruta con IA (si el servidor la tiene): al cambiar los minutos se reordena lo pendiente.
+      if (updated.route_source && updated.daily_minutes !== exam?.daily_minutes)
+        void callDream<{ exam: typeof updated }>("exam_route_regenerate", {
+          exam_id: id,
+          trigger: "minutes",
+        })
+          .then((r) => setExam(r.exam))
+          .catch(() => undefined);
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -171,6 +182,9 @@ export function ExamDetail({
             Ver plan de estudio <ArrowRight size={16} />
           </Link>
         )}
+        <Link className={styles.cardLink} href={`/exams/${id}/ruta`}>
+          Ver mi ruta de estudio <ArrowRight size={16} />
+        </Link>
       </section>
       <h2 className={styles.sectionTitle}>
         {plan ? "Tus unidades de estudio" : "Por dónde seguir"}
@@ -184,7 +198,7 @@ export function ExamDetail({
             <h3>Tus materiales</h3>
             <Materials materials={exam.materials} />
           </section>
-          <section className={styles.card}>
+          <section className={styles.card} id="simulacro">
             <h2>Pon en práctica lo que sabes.</h2>
             <p>
               Un simulacro de 10 preguntas, con los tipos que encajen con tu

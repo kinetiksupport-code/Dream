@@ -1,5 +1,6 @@
 import { callDream, type DreamAction } from "./dream-api";
 import type { AnswerValue, TestResult } from "./types";
+import type { StoredRoute } from "../supabase/functions/dream-api/route-plan.mjs";
 export interface ExamUnit {
   id: string;
   position: number;
@@ -25,6 +26,10 @@ export interface ExamSessionSummary {
   status: "generating" | "failed" | "active" | "grading" | "completed";
   started_at: string;
   submitted_at: string | null;
+  /** Unidad del test (si es de un tema). Lo envía dream-api desde la ruta con IA. */
+  unit_id?: string | null;
+  /** Porcentaje de aciertos de un test terminado. */
+  percentage?: number | null;
 }
 export interface ExamSession extends ExamSessionSummary {
   test_id: string | null;
@@ -57,6 +62,11 @@ export interface DreamExam extends ExamFields {
   units: ExamUnit[];
   materials: ExamMaterial[];
   sessions: ExamSessionSummary[];
+  /** Ruta guardada (IA o automática). Ausente hasta aplicar la migración de la ruta. */
+  route?: StoredRoute | null;
+  route_source?: "ai" | "auto" | null;
+  route_updated_at?: string | null;
+  route_regenerated_on?: string | null;
 }
 export interface ExamIndex extends ExamFields {
   id: string;
