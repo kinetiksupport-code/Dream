@@ -14,6 +14,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "./modal";
 import { useDream } from "./providers";
 import { Orb } from "./orb";
+import { NavIndicator } from "./nav-indicator";
 import {
   BackIcon,
   ChatIcon,
@@ -268,7 +269,7 @@ export function Shell({ children }: { children: ReactNode }) {
       aria-current={active ? "page" : undefined}
       title={n.label}
     >
-      <n.icon size={className === "tab" ? 24 : 22} />
+      <n.icon size={className.startsWith("tab") ? 24 : 22} />
       <span className="nav-label">{n.label}</span>
     </Link>
   );
@@ -295,6 +296,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </a>
         {!focus && (
           <nav className="sidebar" aria-label="Principal">
+            <NavIndicator activeKey={current} />
             <Link className="brand" href="/chat" title="Dream">
               <Orb size={32} />
               <span className="nav-label">Dream</span>
@@ -328,6 +330,7 @@ export function Shell({ children }: { children: ReactNode }) {
         </div>
         {!focus && (
           <nav className="tabbar" aria-label="Principal">
+            <NavIndicator activeKey={moreActive ? "more" : current} />
             {tabs.map((n) =>
               link(
                 n,

@@ -202,6 +202,7 @@ export const SCREENS: Screen[] = [
   { name: "examen", path: `/exams/${eid}` },
   { name: "historial", path: "/chat?view=recent" },
   { name: "ajustes", path: "/settings" },
+  { name: "mas", path: "/more" },
   {
     name: "test",
     path: `/tests/${tid}`,
