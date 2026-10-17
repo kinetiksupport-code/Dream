@@ -77,6 +77,9 @@ const conversations = [
   ["Nueva conversación", 1],
   ["Comentario de texto: estructura", 1],
   ["Verbos irregulares en pasado", 3],
+  // Historial: older groups and a legacy «Nueva conversación».
+  ["Fotosíntesis: fase luminosa", 9],
+  ["Nueva conversación", 40],
 ].map(([title, daysAgo], i) => ({
   id: `88888888-8888-4888-8888-88888888888${i}`,
   title,

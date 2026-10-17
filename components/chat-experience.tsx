@@ -33,7 +33,7 @@ export function ChatExperience({
   const params = useSearchParams();
   const router = useRouter();
   const { serviceReady } = useDream();
-  const { refresh, add, setWorkspaceEmpty } = useConversations();
+  const { refresh, add, setWorkspaceEmpty, autoTitle } = useConversations();
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(
     study?.conversationId ?? params.get("c"),
@@ -340,9 +340,12 @@ export function ChatExperience({
     ]);
     let answer = "";
     let id: string | null = null;
+    const firstTurn = !messages.length && !study;
     try {
       id = await ensureConversation();
       if (controller.signal.aborted) return;
+      // Historial: name a «Nueva conversación» after its first question.
+      if (firstTurn) autoTitle(id, prompt);
       clearFiles();
       const directTest =
         /\b(hazme (?:un |una )?(?:test|examen)|quiero practicar|ponme preguntas|pregúntame|genera (?:un )?(?:test|examen))\b/i.test(

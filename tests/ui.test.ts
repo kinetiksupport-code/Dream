@@ -87,7 +87,8 @@ test("navigation maps every design screen to its route", () => {
   assert.equal(isFocusRoute("/exams/a"), false);
 });
 
-test("history groups by Hoy, Ayer, Esta semana and Anteriores", () => {
+test("history groups by Hoy, Ayer, Esta semana, Este mes and Más antiguas", () => {
+  // Thursday 15/10/2026: the week started on Monday 12.
   const now = new Date(2026, 9, 15, 12);
   const at = (days: number) =>
     new Date(2026, 9, 15 - days, 9).toISOString();
@@ -96,6 +97,7 @@ test("history groups by Hoy, Ayer, Esta semana and Anteriores", () => {
       { id: "a", title: "A", updated_at: at(0) },
       { id: "b", title: "B", updated_at: at(1) },
       { id: "c", title: "C", updated_at: at(3) },
+      { id: "m", title: "M", updated_at: at(5) },
       { id: "d", title: "D", updated_at: at(30) },
       { id: "e", title: "E", updated_at: "not a date" },
     ],
@@ -107,7 +109,8 @@ test("history groups by Hoy, Ayer, Esta semana and Anteriores", () => {
       ["Hoy", ["a"]],
       ["Ayer", ["b"]],
       ["Esta semana", ["c"]],
-      ["Anteriores", ["d", "e"]],
+      ["Este mes", ["m"]],
+      ["Más antiguas", ["d", "e"]],
     ],
   );
 });

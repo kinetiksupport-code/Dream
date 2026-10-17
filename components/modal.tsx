@@ -15,13 +15,18 @@ export function Modal({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLElement>(null);
+  // Captured while rendering: an autoFocus field inside takes focus before
+  // effects run, and focus must go back to what opened the dialog.
+  const opener = useRef(
+    typeof document === "undefined" ? null : document.activeElement,
+  );
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
   const [host, setHost] = useState<HTMLElement | null>(null);
   useEffect(() => setHost(document.body), []);
   useEffect(() => {
     if (!host) return;
-    const previous = document.activeElement;
+    const previous = opener.current;
     const app = document.querySelector<HTMLElement>(".app-shell");
     if (app) app.inert = true;
     const el = ref.current;
