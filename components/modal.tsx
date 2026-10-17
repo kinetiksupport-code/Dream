@@ -1,5 +1,11 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 /**
  * Accessible dialog. Rendered in a portal on <body> so the rest of the app can
@@ -35,7 +41,11 @@ export function Modal({
   );
   const [host, setHost] = useState<HTMLElement | null>(null);
   useEffect(() => setHost(document.body), []);
-  useEffect(() => {
+  // Layout effect: Escape, the focus trap and the inert app are in place in
+  // the same commit that shows the dialog. As a passive effect they waited
+  // for the next frame, and an Escape pressed right away (a keyboard user
+  // who opens and closes at once) was lost and the dialog stayed open.
+  useLayoutEffect(() => {
     if (!host) return;
     const previous = opener.current;
     const app = document.querySelector<HTMLElement>(".app-shell");
