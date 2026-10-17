@@ -161,10 +161,10 @@ test("tasks come from exam units in order, with a study link while pending", () 
     }),
   ]);
   assert.deepEqual(
-    tasks.map((t) => [t.title, t.status, t.href]),
+    tasks.map((t) => [t.title, t.status, t.href, t.examId]),
     [
-      ["Primera", "pending", "/exams/exam-1/study/u1"],
-      ["Segunda", "done", null],
+      ["Primera", "pending", "/exams/exam-1/study/u1", "exam-1"],
+      ["Segunda", "done", null, "exam-1"],
     ],
   );
   assert.match(tasks[0].context, /^Asignatura · Examen el /);

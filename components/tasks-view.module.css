@@ -1,0 +1,349 @@
+/* === Tareas === (Claude Design «Tareas» and «Móvil · Tareas»)
+   Motion: only transform, opacity and colour fades (emil-design-eng).
+   Hover only with a fine pointer; reduced motion keeps fades only. */
+
+.page {
+  gap: 40px;
+}
+
+/* «Resolver un ejercicio» panel */
+.solveText {
+  font-size: var(--text-body);
+  line-height: 1.5;
+}
+.compactOnly {
+  display: none;
+}
+
+/* Sections and rows */
+.section {
+  display: flex;
+  flex-direction: column;
+}
+.sectionTitle {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.sectionTitle:focus {
+  outline: none;
+}
+.sectionTitle:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+}
+.row:last-child {
+  border-bottom: 0;
+}
+
+/* The pressable part: checkbox and text. One label, one 44 px+ target. */
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  align-self: stretch;
+  padding: 0 12px 0 0;
+  border-radius: var(--radius-nav);
+}
+label.main {
+  cursor: pointer;
+}
+.checkSlot {
+  position: relative;
+  flex: 0 0 var(--touch);
+  height: var(--touch);
+  display: grid;
+  place-items: center;
+}
+.check,
+.doneBox {
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  border: 1.75px solid var(--text-secondary);
+  border-radius: 6px;
+  background-color: transparent;
+  transition:
+    background-color var(--dur-press) ease,
+    border-color var(--dur-press) ease;
+}
+.check {
+  cursor: pointer;
+}
+.check:checked,
+.doneBox {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.tick {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--on-primary);
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity var(--dur-press) var(--ease),
+    transform var(--dur-press) var(--ease);
+}
+.check:checked + .tick {
+  opacity: 1;
+  transform: none;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0;
+}
+/* Long titles wrap between words (and hyphenate in Spanish), never sideways. */
+.title {
+  font-size: var(--text-body);
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-wrap: pretty;
+  transition: color var(--dur-press) ease;
+}
+.meta {
+  font-size: var(--text-small);
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+/* Each part moves to the next line as a whole; a part longer than the line
+   (a long subject name) still wraps inside itself. */
+.part,
+.doneLabel {
+  display: inline-block;
+  max-width: 100%;
+}
+.doneLabel {
+  font-weight: 600;
+}
+.row[data-checked] .title,
+.row[data-done] .title {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+
+.action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 16px;
+  border-radius: var(--radius-nav);
+  color: var(--primary-ink);
+  font-size: var(--text-secondary-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.allDone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 64px;
+  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+}
+.allDone svg {
+  color: var(--success);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  label.main:hover {
+    background-color: var(--state-hover);
+  }
+  label.main:hover .check:not(:checked) {
+    border-color: var(--text);
+  }
+  .action:hover {
+    background-color: var(--surface-hover);
+  }
+}
+label.main:active {
+  background-color: var(--state-press);
+}
+
+/* Loading: the list's own shape. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+}
+.skeletonHeading,
+.skeletonBox,
+.skeletonText > span,
+.skeletonAction {
+  display: block;
+  background: var(--surface);
+  animation: tasks-shimmer 1.4s var(--ease-pulse) infinite;
+}
+.skeletonHeading {
+  width: 120px;
+  height: 22px;
+  margin-bottom: 14px;
+  border-radius: 6px;
+}
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--border);
+}
+.skeletonRow:last-child {
+  border-bottom: 0;
+}
+.skeletonBox {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0 11px;
+  border-radius: 6px;
+}
+.skeletonText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.skeletonText > span {
+  height: 14px;
+  border-radius: 7px;
+}
+.skeletonText > span + span {
+  height: 10px;
+}
+.skeletonAction {
+  flex: none;
+  width: 148px;
+  height: 20px;
+  border-radius: 10px;
+}
+.skeletonRow:nth-child(3) span {
+  animation-delay: var(--stagger);
+}
+.skeletonRow:nth-child(4) span {
+  animation-delay: calc(var(--stagger) * 2);
+}
+@keyframes tasks-shimmer {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Toasts: undo and save error stacked, never on top of each other. */
+.toasts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Empty state */
+.empty {
+  align-items: flex-start;
+}
+.illustration {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Móvil · Tareas (Claude Design): the photo button is the page's one action,
+   section names are small and secondary, the action goes under the title. */
+@media (max-width: 639.98px) {
+  .page {
+    gap: 24px;
+  }
+  .solve {
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    gap: 8px;
+  }
+  .solveText {
+    display: none;
+  }
+  .compactOnly {
+    display: inline;
+  }
+  .solve :global(.button-row) {
+    flex-direction: column;
+  }
+  .solve :global(.button-row) > button {
+    width: 100%;
+  }
+  .solve :global(.button-row) > :global(.primary) {
+    min-height: 48px;
+    border-radius: 24px;
+    font-size: var(--text-body);
+  }
+  .sectionTitle {
+    margin-bottom: 4px;
+    font-size: var(--text-secondary-size);
+    color: var(--text-secondary);
+    letter-spacing: 0;
+  }
+  .row {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .main {
+    flex-basis: 100%;
+    gap: 4px;
+    margin-left: -11px;
+    padding-right: 0;
+  }
+  /* Under the title, aligned with it (44 − 11 + 4 = 37 px, minus padding). */
+  .action {
+    min-height: var(--touch);
+    margin: -6px 0 8px 25px;
+    padding: 0 12px;
+  }
+  /* Text starts where the real titles do: 22 + 3 + 12 = 37 px (44 − 11 + 4). */
+  .skeletonBox {
+    margin: 0 3px 0 0;
+  }
+  .skeletonAction {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tick {
+    transform: none;
+  }
+  .skeletonHeading,
+  .skeletonBox,
+  .skeletonText > span,
+  .skeletonAction {
+    animation: none;
+  }
+}

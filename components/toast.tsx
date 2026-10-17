@@ -16,9 +16,12 @@ export function Toast({
   action,
   duration,
   onExpire,
+  announce = true,
 }: {
   message: string;
   error?: boolean;
+  /** False when a parent aria-live region already announces the message. */
+  announce?: boolean;
   onClose?: () => void;
   action?: { label: string; run: () => void };
   duration?: number;
@@ -58,9 +61,9 @@ export function Toast({
   return (
     <div
       className={`toast${error ? " toast-error" : ""}`}
-      role={error ? "alert" : "status"}
-      aria-live={error ? "assertive" : "polite"}
-      aria-atomic="true"
+      role={announce ? (error ? "alert" : "status") : undefined}
+      aria-live={announce ? (error ? "assertive" : "polite") : undefined}
+      aria-atomic={announce ? true : undefined}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}

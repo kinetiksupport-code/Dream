@@ -1,5 +1,5 @@
 "use client";
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { CameraIcon } from "./icons";
 import { fileAccept } from "@/lib/attachments";
@@ -11,10 +11,12 @@ import { setPendingFiles } from "@/lib/pending-files";
  */
 export function UploadButtons({
   camera = true,
+  cameraLabel = "Hacer foto",
   uploadLabel = "Subir archivo",
   uploadClassName = "secondary",
 }: {
   camera?: boolean;
+  cameraLabel?: ReactNode;
   uploadLabel?: string;
   uploadClassName?: string;
 }) {
@@ -37,7 +39,7 @@ export function UploadButtons({
             onClick={() => photo.current?.click()}
           >
             <CameraIcon />
-            Hacer foto
+            {cameraLabel}
           </button>
           <input
             ref={photo}
