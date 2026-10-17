@@ -7,6 +7,7 @@ import {
   daysUntil,
   examDateLabel,
   getExam,
+  MAX_EXAM_MATERIALS,
   updateExam,
   type DreamExam,
   type ExamFields,
@@ -36,7 +37,8 @@ export function validateExam(
     e.subject = "Elige una asignatura de la lista o escríbela.";
   const days = fields.exam_date ? daysUntil(fields.exam_date) : null;
   if (!fields.exam_date) e.exam_date = "Elige el día del examen.";
-  else if (days === null) e.exam_date = "Usa una fecha válida (día, mes y año).";
+  else if (days === null)
+    e.exam_date = "Usa una fecha válida (día, mes y año).";
   else if (days < 0) e.exam_date = "Elige hoy o un día futuro.";
   if (topics !== undefined && !topics.trim())
     e.topics = "Añade al menos un tema, uno por línea.";
@@ -214,9 +216,11 @@ export function ExamWizard() {
       (exam?.materials.length || 0) +
         liveFiles.current.filter((f) => !f.id).length +
         list.length >
-      4
+      MAX_EXAM_MATERIALS
     ) {
-      setError("Puedes adjuntar hasta 4 archivos en este plan.");
+      setError(
+        `Puedes adjuntar hasta ${MAX_EXAM_MATERIALS} archivos en este plan.`,
+      );
       return;
     }
     const added = list.map((file) => ({

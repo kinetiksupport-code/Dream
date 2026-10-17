@@ -58,7 +58,7 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  const attachment=id(b.attachment_id);
  if(action==='exam_material_add'){
  const a=checked(await db.from('dream_attachments').select('id').eq('id',attachment).eq('owner_id',owner).eq('conversation_id',exam.conversation_id).eq('status','processed').maybeSingle());if(!a)throw new ExamError('Archivo no disponible.',404);
- const linked=await db.rpc('dream_exam_link_material',{p_exam:exam.id,p_owner:owner,p_attachment:attachment});if(linked.error)throw new ExamError('No se pudo asociar el archivo. El plan admite hasta 4 materiales; revisa su estado.',409);
+ const linked=await db.rpc('dream_exam_link_material',{p_exam:exam.id,p_owner:owner,p_attachment:attachment});if(linked.error)throw new ExamError('No se pudo asociar el archivo. El plan admite hasta 20 materiales; revisa su estado.',409);
  }else checked(await db.from('dream_exam_materials').delete().eq('exam_id',exam.id).eq('owner_id',owner).eq('attachment_id',attachment));
  return {exam:await detail(db,owner,exam.id)};}
  if(action==='exam_prepare'){

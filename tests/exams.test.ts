@@ -56,3 +56,24 @@ test("server rejects invalid dates, unbounded subjects/topics and daily limits",
     "12345678-1234-1234-1234-123456789abc",
   );
 });
+
+test("materials per exam: client limit matches the latest migration (20)", async () => {
+  const { readdirSync, readFileSync } = await import("node:fs");
+  const { MAX_EXAM_MATERIALS } = await import("../lib/exam-plans");
+  const latest = readdirSync("supabase/migrations")
+    .filter((f) =>
+      readFileSync(`supabase/migrations/${f}`, "utf8").includes(
+        "function public.dream_exam_link_material",
+      ),
+    )
+    .sort()
+    .at(-1)!;
+  const sql = readFileSync(`supabase/migrations/${latest}`, "utf8");
+  const limit = Number(
+    sql.match(
+      /count\(\*\) from public\.dream_exam_materials where exam_id=p_exam\)>=(\d+)/,
+    )?.[1],
+  );
+  assert.equal(MAX_EXAM_MATERIALS, 20);
+  assert.equal(limit, MAX_EXAM_MATERIALS, latest);
+});

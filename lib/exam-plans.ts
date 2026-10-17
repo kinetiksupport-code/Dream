@@ -1,6 +1,8 @@
 import { callDream, type DreamAction } from "./dream-api";
 import type { AnswerValue, TestResult } from "./types";
 import type { StoredRoute } from "../supabase/functions/dream-api/route-plan.mjs";
+/** Materials per exam; the server enforces it in dream_exam_link_material. */
+export const MAX_EXAM_MATERIALS = 20;
 export interface ExamUnit {
   id: string;
   position: number;

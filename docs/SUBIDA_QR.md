@@ -41,7 +41,7 @@ No hace falta tocar la configuración: `verify_jwt` sigue en `true`. Comprobado 
 | Bytes recibidos por sesión | 40 MB (cuentan también los fallidos) | `limits.max_bytes` |
 | Archivos a la vez | 2 | `limits.max_in_flight` |
 | Tamaño y formato de cada archivo | los de `attachment_upload` | `attachments.mjs` |
-| Materiales por examen | los de `dream_exam_link_material` (hoy 4) | migración de exámenes |
+| Materiales por examen | 20, en `dream_exam_link_material` | migración `20261018160000_exam_materials_limit.sql` |
 
 La IP solo se guarda como SHA-256 dentro de los contadores (se borran a los 2 días).
 
@@ -100,3 +100,11 @@ Nunca devuelven datos del examen ni del alumno. Errores:
 - **El token no se registra.** Va en el cuerpo, nunca en cabeceras ni en registros. Los registros de `dream-api` solo guardan `{event:"upload_qr", action, outcome}`. La página `/subir` (y cualquier `/subir/*`) no envía analítica ni diagnóstico aunque el alumno los haya aceptado (`isPrivatePath` en `lib/observability/privacy.ts`), lleva `Cache-Control: no-store`, `Referrer-Policy: no-referrer` y `X-Robots-Tag: noindex` (middleware y `next.config.ts`) y `robots: noindex`.
 - **Token en el fragmento, no en la ruta** (decisión técnica del 17/10). `/subir#<token>` no llega nunca al servidor, así que no queda en los registros de peticiones de Vercel ni en los de la CDN. Cualquier `/subir/<algo>` redirige (307) a `/subir` sin el token, con las mismas cabeceras, y la página muestra «Este código ya no vale». Si se escanea otro código en la misma pestaña, solo cambia el fragmento: la página lo detecta (`hashchange`) y empieza de cero.
 - **QR propio.** `lib/qr.ts` (unos 300 líneas, sin dependencias): modo byte, corrección M, versiones 1 a 10. Se carga con `import()` solo al pintar el panel. Probado contra matrices de referencia de segno 1.6.6 (versiones 1, 2, 5, 6, 7, 8, 9 y 10, las 8 máscaras): `tests/qr.test.ts`. No hace falta instalar nada.
+
+## Tope de materiales por examen: 20 (decisión de Carlos, 17/10)
+
+- Migración nueva `20261018160000_exam_materials_limit.sql` (sin aplicar): redefine `dream_exam_link_material` con 20 en vez de 4, con la misma firma y los mismos permisos. La migración ya aplicada no se toca.
+- `exams.ts` (mensaje de error), `lib/exam-plans.ts` (`MAX_EXAM_MATERIALS = 20`) y `exam-wizard.tsx` (usa la constante). Una prueba (`tests/exams.test.ts`) comprueba que el número del cliente coincide con la última migración que define la función.
+- Límites que **no** cambian, porque son otra cosa: 4 adjuntos por mensaje del chat y 4 archivos a la vez en Apuntes.
+- **Contexto de la IA:** `examContext` (plan, chat y simulacros) sigue acotado a 20.000 caracteres de material. En esta rama el recorte es al final del texto unido, así que con muchos archivos los primeros ocupan todo. Con `wrapStudentMaterial` del PR #31, el presupuesto se reparte por igual entre los archivos (unos 800 caracteres cada uno con 20). `supabase/tests/exam_context_deno.mjs` comprueba el tope siempre, y el reparto cuando `file-guard.mjs` está presente.
+- Probado en PostgreSQL local con `scripts/security/exam-materials-integration.mjs`: 20 entran, el 21 da error y volver a asociar uno ya incluido no cuenta.
