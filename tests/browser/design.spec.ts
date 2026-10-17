@@ -181,7 +181,11 @@ test("theme choice wins over the system: Claro stays light on a dark system", as
       theme: document.documentElement.dataset.theme,
       bg: getComputedStyle(document.body).backgroundColor,
     }));
-  expect(await state()).toEqual({ theme: "light", bg: "rgb(255, 255, 255)" });
+  // The change runs inside a View Transition (Ajustes cross-fade), a frame
+  // after the click, so wait for it.
+  await expect
+    .poll(state)
+    .toEqual({ theme: "light", bg: "rgb(255, 255, 255)" });
   await page.reload();
   expect(await state()).toEqual({ theme: "light", bg: "rgb(255, 255, 255)" });
   await expect(page.getByRole("button", { name: "Claro" })).toHaveAttribute(

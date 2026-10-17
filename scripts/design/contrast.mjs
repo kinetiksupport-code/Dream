@@ -73,9 +73,21 @@ export const PAIRS = [
   ["primary-ink", "card", 4.5, "Enlace sobre tarjeta"],
   ["primary-ink-tint", "nav-active", 4.5, "Navegación activa"],
   ["text", "panel", 4.5, "Navegación inactiva (barra lateral)"],
-  ["primary-ink-tint", "nav-active", 4.5, "Navegación activa (barra lateral)", "panel"],
+  [
+    "primary-ink-tint",
+    "nav-active",
+    4.5,
+    "Navegación activa (barra lateral)",
+    "panel",
+  ],
   ["text-secondary", "translucent", 4.5, "Pestaña inactiva (barra inferior)"],
-  ["primary-ink-tint", "nav-active", 4.5, "Pestaña activa (barra inferior)", "translucent"],
+  [
+    "primary-ink-tint",
+    "nav-active",
+    4.5,
+    "Pestaña activa (barra inferior)",
+    "translucent",
+  ],
   ["on-primary", "primary", 4.5, "Texto en botón principal"],
   ["success", "success-surface", 4.5, "Acierto"],
   ["danger", "danger-surface", 4.5, "Error"],
@@ -85,6 +97,8 @@ export const PAIRS = [
   ["focus", "bg", 3, "Anillo de foco"],
   ["text", "home-halo", 4.5, "Titular sobre el halo de Inicio"],
   ["text-secondary", "home-halo", 4.5, "Saludo sobre el halo de Inicio"],
+  ["switch-off", "surface", 3, "Interruptor apagado"],
+  ["primary", "surface", 3, "Interruptor encendido"],
 ];
 
 /** @param {{ light: Record<string, string>, dark: Record<string, string> }} tokens */
