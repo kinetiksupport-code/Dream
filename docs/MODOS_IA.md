@@ -92,7 +92,7 @@ Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 t
 
 ## 5. Base de datos: migración pendiente (NO aplicada)
 
-[`supabase/migrations/20261016120000_ai_modes_windows.sql`](../supabase/migrations/20261016120000_ai_modes_windows.sql):
+[`supabase/migrations/20261017090000_ai_modes_windows.sql`](../supabase/migrations/20261017090000_ai_modes_windows.sql):
 
 - **Tablas** en `dream_private`: `ai_windows`, `ai_usage` y `ai_usage_attempts`.
   - RLS activada y sin políticas; sin permisos para `anon` ni `authenticated`.
@@ -142,7 +142,7 @@ Están en el código y no en un secreto, para que activarlos pase por revisión 
 ## 8. Qué necesita el OK de Carlos
 
 1. **Presupuestos** de la §3 (30.000 / 40.000 / 12.000 tokens por 5 h).
-2. **Migración** `20261016120000_ai_modes_windows.sql`: revisar, hacer copia de seguridad y aplicarla en staging antes que en producción.
+2. **Migración** `20261017090000_ai_modes_windows.sql`: revisar, hacer copia de seguridad y aplicarla en staging antes que en producción.
 3. **Despliegue** de `dream-api`, después de la migración.
 4. **Secretos** `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` en Supabase. El token solo necesita el permiso de Workers AI.
 5. **Confirmar** el identificador del modelo de Cloudflare, su precio y el **cupo real** de neuronas al día. Confirmar también los precios de Groq de la migración y los cupos de Llama 3.1 8B en `console.groq.com/settings/limits`; pueden ser distintos de los de Qwen.
