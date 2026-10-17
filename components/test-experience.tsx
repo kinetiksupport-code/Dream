@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, X, RotateCcw } from "lucide-react";
@@ -14,6 +14,12 @@ import type {
 import { DreamActivity } from "./dream-mark";
 import { Markdown } from "./markdown";
 import { useConversations } from "./shell";
+import {
+  selectionHaptic,
+  useCountProgress,
+  useQuestionEnter,
+  type Direction,
+} from "./test-motion";
 export function hasAnswer(q: DreamQuestion, a: AnswerValue | undefined) {
   if (a === undefined) return false;
   if (q.type === "matching")
@@ -32,12 +38,15 @@ export function AnswerInput({
   onChange,
   disabled,
   evaluation,
+  busy = false,
 }: {
   question: DreamQuestion;
   value: AnswerValue | undefined;
   onChange: (v: AnswerValue) => void;
   disabled: boolean;
   evaluation?: Evaluation;
+  /** Waiting for the server (checking or saving): dims the other options. */
+  busy?: boolean;
 }) {
   if (["multiple_choice", "multiple_select", "true_false"].includes(q.type)) {
     const multiple = q.type === "multiple_select";
@@ -46,7 +55,12 @@ export function AnswerInput({
         ? ["Verdadero", "Falso"]
         : q.options;
     return (
-      <fieldset className="test-options" disabled={disabled}>
+      <fieldset
+        className="test-options"
+        disabled={disabled}
+        aria-busy={busy || undefined}
+        data-evaluated={evaluation ? "" : undefined}
+      >
         <legend className="visually-hidden">
           {multiple
             ? "Selecciona una o más respuestas"
@@ -78,6 +92,7 @@ export function AnswerInput({
                 value={option}
                 checked={checked}
                 onChange={() => {
+                  selectionHaptic();
                   if (multiple) {
                     const list = Array.isArray(value) ? value : [];
                     onChange(
@@ -161,11 +176,56 @@ export function AnswerInput({
     </label>
   );
 }
+/**
+ * Feedback after checking an answer. Always icon + title + the explanation
+ * the API returns (never a worked solution of our own). Enters in 180 ms; a
+ * right answer pops its icon, a wrong one nudges sideways 4 px at most.
+ */
+export function AnswerFeedback({
+  evaluation,
+  children,
+}: {
+  evaluation: Evaluation;
+  children?: ReactNode;
+}) {
+  const ok = evaluation.is_correct;
+  return (
+    <div
+      className={`answer-feedback ${ok ? "correct" : "incorrect"}`}
+      role="status"
+    >
+      <strong>
+        <span className="feedback-icon" aria-hidden="true">
+          {ok ? <Check size={22} /> : <X size={22} />}
+        </span>
+        {ok ? "Bien pensado." : "Todavía no."}
+      </strong>
+      {evaluation.feedback && <Markdown content={evaluation.feedback} />}
+      {children}
+    </div>
+  );
+}
+/**
+ * The score counts up from 0 in ~600 ms (skippable with any key or tap). The
+ * accessible name is the final score from the first frame, so a screen reader
+ * never hears the intermediate numbers.
+ */
+export function useScoreCount(score: number, total: number) {
+  const p = useCountProgress();
+  const safeTotal = Math.max(total, 1);
+  return {
+    done: p >= 1,
+    score: Math.round(score * p),
+    grade: ((score / safeTotal) * 10 * p).toFixed(1),
+    percentage: Math.round(((score / safeTotal) * 100 * p)),
+  };
+}
 export function TestExperience({ id }: { id: string }) {
   const router = useRouter();
   const { setPageTitle } = useConversations();
   const [test, setTest] = useState<DreamTest | null>(null);
   const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState<Direction>("forward");
   const [answers, setAnswers] = useState<Record<string, AnswerValue>>({});
   const [evaluations, setEvaluations] = useState<Record<string, Evaluation>>(
     {},
@@ -180,6 +240,14 @@ export function TestExperience({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
+  const questionRef = useQuestionEnter<HTMLElement>(
+    test?.questions[index]?.id,
+    direction,
+  );
+  function go(next: number) {
+    setDirection(next > index ? "forward" : "back");
+    setIndex(next);
+  }
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
@@ -289,45 +357,7 @@ export function TestExperience({ id }: { id: string }) {
   if (result)
     return (
       <div className="test-page result-page">
-        <div className="result-heading">
-          <p className="eyebrow">{test.title}</p>
-          <div>
-            <h1>
-              {result.score} <span>/ {result.total}</span>
-            </h1>
-            <p>
-              {result.percentage}% · {result.score} respuestas correctas · Nota{" "}
-              {((result.score / Math.max(result.total, 1)) * 10).toFixed(1)}/10
-            </p>
-          </div>
-          <div>
-            <h2>
-              {result.percentage === 100
-                ? "Todo encaja."
-                : result.percentage >= 60
-                  ? "Las ideas van tomando forma."
-                  : "Ya sabes por dónde seguir."}
-            </h2>
-            <p>
-              Cada intento te ayuda a ver lo que entiendes y lo que merece otra
-              mirada.
-            </p>
-          </div>
-        </div>
-        <div className="result-stats">
-          <div>
-            <strong>{result.score}</strong>
-            <span>Correctas</span>
-          </div>
-          <div>
-            <strong>{result.total - result.score}</strong>
-            <span>Por revisar</span>
-          </div>
-          <div>
-            <strong>{result.percentage}%</strong>
-            <span>Aciertos</span>
-          </div>
-        </div>
+        <ResultSummary title={test.title} result={result} />
         <div className="result-concepts">
           {result.mastered.length > 0 && (
             <section>
@@ -359,11 +389,13 @@ export function TestExperience({ id }: { id: string }) {
         <div className="result-actions">
           {result.items.some((i) => !i.is_correct) && (
             <button
-              className="primary"
+              className="primary press"
               disabled={busy}
+              aria-busy={busy || undefined}
               onClick={() => void practiceErrors()}
             >
-              {busy ? "Preparando…" : "Practicar mis errores"}
+              <RotateCcw size={17} aria-hidden="true" />
+              {busy ? "Preparando repaso…" : "Repasar mis errores"}
             </button>
           )}
           <Link className="secondary press" href="/chat">
@@ -378,13 +410,24 @@ export function TestExperience({ id }: { id: string }) {
         <section className="result-review">
           <h2>Una mirada a tus respuestas</h2>
           {result.items.map((item, i) => (
-            <details key={item.question_id}>
+            <details
+              key={item.question_id}
+              className="rise"
+              style={{ animationDelay: staggerDelay(i) }}
+            >
               <summary>
                 <span className="review-index">
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 <span>{item.prompt}</span>
-                <span className={item.is_correct ? "correct-text" : "muted"}>
+                <span
+                  className={`review-state ${item.is_correct ? "correct-text" : "incorrect-text"}`}
+                >
+                  {item.is_correct ? (
+                    <Check size={15} aria-hidden="true" />
+                  ) : (
+                    <X size={15} aria-hidden="true" />
+                  )}
                   {item.is_correct ? "Correcto" : "Reforzar"}
                 </span>
               </summary>
@@ -395,7 +438,7 @@ export function TestExperience({ id }: { id: string }) {
                     ? item.answer
                     : JSON.stringify(item.answer)}
                 </p>
-                {!item.is_correct && (
+                {!item.is_correct && hasReference(item.correct_answer) && (
                   <>
                     <p className="eyebrow">Referencia</p>
                     <p>
@@ -433,7 +476,7 @@ export function TestExperience({ id }: { id: string }) {
           Salir
         </Link>
         <div className="test-progress">
-          <p>
+          <p className="num" aria-live="polite">
             Pregunta {index + 1} de {test.questions.length}
           </p>
           <div
@@ -443,6 +486,7 @@ export function TestExperience({ id }: { id: string }) {
             aria-valuenow={index + 1}
             aria-valuemin={0}
             aria-valuemax={test.questions.length}
+            aria-valuetext={`Pregunta ${index + 1} de ${test.questions.length}`}
           >
             <i
               style={{
@@ -460,7 +504,12 @@ export function TestExperience({ id }: { id: string }) {
         </p>
         <h1 className="visually-hidden">{test.title}</h1>
       </div>
-      <section className="question" key={question.id}>
+      <section
+        className="question"
+        key={question.id}
+        ref={questionRef}
+        data-direction={direction}
+      >
         <div className="question-prompt">
           <Markdown content={question.prompt} />
         </div>
@@ -471,6 +520,7 @@ export function TestExperience({ id }: { id: string }) {
           question={question}
           value={answers[question.id]}
           disabled={busy || !!evaluation}
+          busy={checking}
           evaluation={evaluation}
           onChange={(v) => setAnswers((s) => ({ ...s, [question.id]: v }))}
         />
@@ -478,20 +528,10 @@ export function TestExperience({ id }: { id: string }) {
           <DreamActivity state="thinking" label="Comprobando tu respuesta" />
         )}
         {evaluation && (
-          <div
-            className={`answer-feedback ${evaluation.is_correct ? "correct" : "incorrect"}`}
-            role="status"
-          >
-            <strong>
-              {evaluation.is_correct ? <Check size={22} /> : <X size={22} />}
-              {evaluation.is_correct
-                ? "Bien pensado."
-                : "Vamos a darle otra mirada."}
-            </strong>
-            <Markdown content={evaluation.feedback} />
+          <AnswerFeedback evaluation={evaluation}>
             {!evaluation.is_correct && (
               <button
-                className="text-button"
+                className="text-button press"
                 onClick={() =>
                   setEvaluations((s) => {
                     const next = { ...s };
@@ -500,17 +540,18 @@ export function TestExperience({ id }: { id: string }) {
                   })
                 }
               >
+                <RotateCcw size={16} aria-hidden="true" />
                 Volver a intentarlo
               </button>
             )}
-          </div>
+          </AnswerFeedback>
         )}
       </section>
       <div className="test-navigation">
         <button
-          className="text-button"
+          className="text-button press"
           disabled={index === 0 || busy}
-          onClick={() => setIndex((s) => s - 1)}
+          onClick={() => go(index - 1)}
         >
           <ArrowLeft size={17} />
           Anterior
@@ -518,8 +559,9 @@ export function TestExperience({ id }: { id: string }) {
         <div>
           {test.mode === "practice" && !evaluation && (
             <button
-              className="primary"
+              className="primary press"
               disabled={busy || !hasAnswer(question, answers[question.id])}
+              aria-busy={checking || undefined}
               onClick={() => void check()}
             >
               {busy ? "Comprobando…" : "Comprobar respuesta"}
@@ -529,18 +571,19 @@ export function TestExperience({ id }: { id: string }) {
             <button
               className={
                 test.mode === "practice" && !evaluation
-                  ? "text-button"
-                  : "primary"
+                  ? "text-button press"
+                  : "primary press"
               }
               disabled={busy || !hasAnswer(question, answers[question.id])}
-              onClick={() => setIndex((s) => s + 1)}
+              onClick={() => go(index + 1)}
             >
               Siguiente
             </button>
           ) : (
             <button
-              className="primary"
+              className="primary press"
               disabled={busy || !allAnswered}
+              aria-busy={(busy && !checking) || undefined}
               onClick={() => void submit()}
             >
               {busy ? "Corrigiendo…" : "Terminar y ver resultado"}
@@ -562,5 +605,83 @@ export function TestExperience({ id }: { id: string }) {
           : "Sin prisa. Lo importante es entender lo que hay detrás de cada respuesta."}
       </p>
     </div>
+  );
+}
+
+/** Staggered entry for result rows: --stagger per row, capped at 8 rows. */
+export function staggerDelay(i: number) {
+  return `calc(var(--stagger) * ${Math.min(i, 8)})`;
+}
+/** Only show a reference answer when the API actually sent one. */
+export function hasReference(value: AnswerValue | undefined | null) {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") return !!value.trim();
+  if (Array.isArray(value)) return value.length > 0;
+  return Object.keys(value).length > 0;
+}
+function ResultSummary({
+  title,
+  result,
+}: {
+  title: string;
+  result: TestResult;
+}) {
+  const count = useScoreCount(result.score, result.total);
+  const grade = ((result.score / Math.max(result.total, 1)) * 10).toFixed(1);
+  return (
+    <>
+      <div className="result-heading">
+        <p className="eyebrow">{title}</p>
+        <div>
+          <h1 className="num result-score" data-counting={!count.done}>
+            <span className="visually-hidden">
+              {result.score} / {result.total}
+            </span>
+            <span aria-hidden="true">
+              {count.score} <span>/ {result.total}</span>
+            </span>
+          </h1>
+          <p className="num">
+            <span className="visually-hidden">
+              {result.percentage}% · {result.score} respuestas correctas · Nota{" "}
+              {grade}/10
+            </span>
+            <span aria-hidden="true">
+              {count.percentage}% · {result.score} respuestas correctas · Nota{" "}
+              {count.grade}/10
+            </span>
+          </p>
+        </div>
+        <div>
+          <h2>
+            {result.percentage === 100
+              ? "Todo encaja."
+              : result.percentage >= 60
+                ? "Las ideas van tomando forma."
+                : "Ya sabes por dónde seguir."}
+          </h2>
+          <p>
+            Cada intento te ayuda a ver lo que entiendes y lo que merece otra
+            mirada.
+          </p>
+        </div>
+      </div>
+      <div className="result-stats">
+        {[
+          [result.score, "Correctas"],
+          [result.total - result.score, "Por revisar"],
+          [`${result.percentage}%`, "Aciertos"],
+        ].map(([value, label], i) => (
+          <div
+            key={label}
+            className="rise"
+            style={{ animationDelay: staggerDelay(i) }}
+          >
+            <strong className="num">{value}</strong>
+            <span>{label}</span>
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
