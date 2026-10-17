@@ -21,6 +21,7 @@ export function Composer({
   variant = "dock",
   placeholder,
   modes,
+  sending = false,
 }: {
   value: string;
   onChange: (s: string) => void;
@@ -38,17 +39,20 @@ export function Composer({
   placeholder?: string;
   /** Selector de modo de la IA (Rápido, Normal, Pensar más). */
   modes?: ReactNode;
+  /** Inicio: the message is on its way and the box is fading out. */
+  sending?: boolean;
 }) {
   const textarea = useRef<HTMLTextAreaElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const online = useOnline();
   const compact = useMediaQuery("(max-width: 639.98px)");
+  // The box grows with the text. Browsers with `field-sizing: content` do it
+  // in CSS; the rest get the height set here, without any transition.
   useEffect(() => {
     const el = textarea.current;
-    if (el) {
-      el.style.height = "auto";
-      el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
-    }
+    if (!el || CSS.supports?.("field-sizing", "content")) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
   }, [value, variant]);
   const blocked =
     unavailable || !online || attachments.some((a) => a.status !== "ready");
@@ -90,7 +94,7 @@ export function Composer({
       type="button"
       className={`send-button press${busy ? " stop-button" : ""}`}
       aria-label={busy ? "Detener respuesta" : "Enviar mensaje"}
-      onClick={busy ? onStop : onSend}
+      onClick={sending ? undefined : busy ? onStop : onSend}
       disabled={
         !busy && ((!value.trim() && attachments.length === 0) || blocked)
       }
@@ -115,18 +119,19 @@ export function Composer({
       }
       aria-label="Mensaje para Dream"
       rows={1}
+      readOnly={sending}
       enterKeyHint="send"
       onKeyDown={(e) => {
         if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
           e.preventDefault();
-          if (!busy && !blocked) onSend();
+          if (!busy && !blocked && !sending) onSend();
         }
       }}
     />
   );
   return (
     <div
-      className={`composer composer-${variant}${busy ? " is-streaming" : ""}`}
+      className={`composer composer-${variant}${busy ? " is-streaming" : ""}${sending ? " is-sending" : ""}`}
       onDragOver={(e) => {
         e.preventDefault();
       }}

@@ -1,43 +1,46 @@
 "use client";
-import Link from "next/link";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useDream } from "@/components/providers";
+import { PencilIcon, QuizIcon, UploadIcon } from "@/components/icons";
 import { callDream } from "@/lib/dream-api";
+import { accountIdentity } from "@/lib/account";
 import type { DreamExam, ExamIndex } from "@/lib/exam-plans";
 import {
-  MAIN_SHORTCUTS,
-  MODE_SHORTCUTS,
-  editableExamPath,
-  greeting,
-  lastStudied,
-  todayFocus,
+  greetingFor,
+  homeContext,
+  homeTopic,
+  suggestionPrompt,
   upcomingExam,
-  type ChatShortcut,
-  type TodayFocus,
-} from "@/lib/chat-shortcuts";
+  type HomeContext,
+} from "@/lib/home-context";
 
-interface StudyContext {
-  focus: TodayFocus | null;
-  last: string | null;
-  editPath: string | null;
-}
+type ContextState =
+  | { status: "loading" }
+  | { status: "none" }
+  | { status: "ready"; context: HomeContext };
 
 /**
- * Reads the nearest exam plan (two light reads, no AI) for the greeting,
- * "Repasa mi último test o lección" and "La fecha de mi examen ha cambiado".
- * Any failure keeps the neutral greeting.
+ * Nearest exam → «Hoy toca … · N días para tu examen». Two light reads
+ * (`exams`, then `exam_get` only if the plan has units), no AI. It never
+ * blocks the page: any failure or missing data simply hides the line.
  */
-function useStudyContext() {
-  const [context, setContext] = useState<StudyContext | null>(null);
+function useHomeContext(): ContextState {
+  const [state, setState] = useState<ContextState>({ status: "loading" });
   useEffect(() => {
     const controller = new AbortController();
     (async () => {
+      const now = new Date();
       const index = await callDream<{ exams?: ExamIndex[] }>(
         "exams",
         {},
         controller.signal,
       );
-      const next = upcomingExam(Array.isArray(index?.exams) ? index.exams : []);
+      const next = upcomingExam(
+        Array.isArray(index?.exams) ? index.exams : [],
+        now,
+      );
       if (!next) return null;
+      if (!next.units?.length) return homeContext({ ...next, units: [] }, now);
       const exam = (
         await callDream<{ exam?: DreamExam }>(
           "exam_get",
@@ -45,101 +48,130 @@ function useStudyContext() {
           controller.signal,
         )
       )?.exam;
-      return {
-        focus: exam ? todayFocus(exam) : null,
-        last: exam ? lastStudied(exam) : null,
-        editPath: editableExamPath(next),
-      };
+      return homeContext(exam ?? { ...next, units: [] }, now);
     })()
-      .then((value) => {
-        if (!controller.signal.aborted && value) setContext(value);
+      .then((context) => {
+        if (!controller.signal.aborted)
+          setState(context ? { status: "ready", context } : { status: "none" });
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!controller.signal.aborted) setState({ status: "none" });
+      });
     return () => controller.abort();
   }, []);
-  return context;
+  return state;
+}
+
+function ContextLine({ context }: { context: HomeContext }) {
+  const days =
+    context.days === 0 ? null : (
+      <>
+        <span className="num">{context.days}</span>{" "}
+        {context.days === 1 ? "día" : "días"}
+      </>
+    );
+  if (context.days === 0)
+    return (
+      <>
+        Hoy es tu examen
+        {context.subject && (
+          <>
+            {" "}
+            de <strong>{context.subject}</strong>
+          </>
+        )}
+        .
+      </>
+    );
+  if (context.unit)
+    return (
+      <>
+        Hoy toca <strong>{context.unit}</strong> · {days} para tu examen.
+      </>
+    );
+  return (
+    <>
+      {days} para tu examen
+      {context.subject && (
+        <>
+          {" "}
+          de <strong>{context.subject}</strong>
+        </>
+      )}
+      .
+    </>
+  );
 }
 
 /** Empty state of /chat (design: "Inicio"). The composer is passed in. */
 export function ChatHome({
   composer,
-  onShortcut,
+  onPrompt,
   onAttach,
-  disabled = false,
+  leaving = false,
   children,
 }: {
   composer: ReactNode;
-  /** Sends the shortcut; `detail` names what it refers to, if known. */
-  onShortcut: (shortcut: ChatShortcut, detail?: string) => void;
+  /** Puts the text in the box with the cursor at the end. Never sends. */
+  onPrompt: (prompt: string) => void;
   onAttach: () => void;
-  disabled?: boolean;
+  /** The first message was just sent: the hero fades out towards the chat. */
+  leaving?: boolean;
   children?: ReactNode;
 }) {
-  const context = useStudyContext();
-  const [open, setOpen] = useState(false);
-  const more = useRef<HTMLButtonElement>(null);
-  const modesId = useId();
-  const chip = (s: ChatShortcut, detail?: string) => (
-    <button
-      key={`${s.id}-${s.label}`}
-      type="button"
-      className="chip press"
-      disabled={disabled}
-      onClick={() => onShortcut(s, detail)}
-    >
-      {s.label}
-    </button>
-  );
+  const { session, profile } = useDream();
+  const { name } = accountIdentity(session?.user, profile);
+  const [now] = useState(() => new Date());
+  const state = useHomeContext();
+  const topic = homeTopic(state.status === "ready" ? state.context : null);
+  const chips = [
+    { label: "Subir apuntes", icon: <UploadIcon />, run: onAttach },
+    {
+      label: "Practicar ejercicios",
+      icon: <PencilIcon />,
+      run: () => onPrompt(suggestionPrompt("practice", topic)),
+    },
+    {
+      label: "Hacer un test",
+      icon: <QuizIcon />,
+      run: () => onPrompt(suggestionPrompt("test", topic)),
+    },
+  ];
   return (
-    <div className="home">
+    <div className={`home${leaving ? " is-leaving" : ""}`}>
       <div className="home-inner">
-        <h1 className="display rise">{greeting(context?.focus ?? null)}</h1>
+        <header className="home-head">
+          <p className="home-hello rise">
+            <span className="home-greeting">{greetingFor(now, name)}.</span>{" "}
+            <span className="home-context" aria-live="polite">
+              {state.status === "loading" ? (
+                <span className="home-context-skeleton" aria-hidden="true">
+                  <span />
+                </span>
+              ) : state.status === "ready" ? (
+                <span className="home-context-text">
+                  <ContextLine context={state.context} />
+                </span>
+              ) : null}
+            </span>
+          </p>
+          <h1 className="display rise">¿Qué quieres entender hoy?</h1>
+        </header>
         <div className="rise rise-1">{composer}</div>
-        <div className="chat-shortcuts rise rise-2">
-          <div className="chips" role="group" aria-label="Atajos">
-            <button type="button" className="chip press" onClick={onAttach}>
-              Subir apuntes
-            </button>
-            {MAIN_SHORTCUTS.map((s) =>
-              s.id === "exam_date" && context?.editPath ? (
-                <Link key={s.id} className="chip press" href={context.editPath}>
-                  {s.label}
-                </Link>
-              ) : (
-                chip(s, s.id === "review_last" ? (context?.last ?? "") : "")
-              ),
-            )}
+        <div className="chips home-chips" role="group" aria-label="Sugerencias">
+          {chips.map((chip, i) => (
             <button
-              ref={more}
+              key={chip.label}
               type="button"
-              className="chip chip-more press"
-              aria-label="Más modos de estudio"
-              aria-expanded={open}
-              aria-controls={modesId}
-              onClick={() => setOpen((v) => !v)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") setOpen(false);
-              }}
+              className="chip home-chip press"
+              style={{ "--i": i } as CSSProperties}
+              onClick={chip.run}
+              disabled={leaving}
             >
-              Más
-              <span className="chip-chevron" aria-hidden="true" />
+              <span className="chip-icon">{chip.icon}</span>
+              {chip.label}
             </button>
-          </div>
-          <div
-            id={modesId}
-            className="chips chat-modes"
-            role="group"
-            aria-label="Modos de estudio"
-            hidden={!open}
-            onKeyDown={(e) => {
-              if (e.key === "Escape") {
-                setOpen(false);
-                more.current?.focus();
-              }
-            }}
-          >
-            {MODE_SHORTCUTS.map((s) => chip(s))}
-          </div>
+          ))}
         </div>
         {children}
       </div>

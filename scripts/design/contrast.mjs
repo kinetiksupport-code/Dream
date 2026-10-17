@@ -78,6 +78,8 @@ export const PAIRS = [
   ["warning", "warning-surface", 4.5, "Aviso"],
   ["accent", "primary", 3, "Lima sobre azul (números grandes)"],
   ["focus", "bg", 3, "Anillo de foco"],
+  ["text", "home-halo", 4.5, "Titular sobre el halo de Inicio"],
+  ["text-secondary", "home-halo", 4.5, "Saludo sobre el halo de Inicio"],
 ];
 
 /** @param {{ light: Record<string, string>, dark: Record<string, string> }} tokens */
