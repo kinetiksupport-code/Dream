@@ -41,7 +41,9 @@
   --state-press: rgba(8, 11, 20, 0.08);
   --focus: #155bff;
   --scrim: rgba(8, 11, 20, 0.32);
-  --translucent: rgba(255, 255, 255, 0.88);
+  /* Bars over content. Claude Design uses .88; .90 keeps tab labels at AA
+     even with dark text right under the bar (4.68:1, see docs/diseno/navegacion). */
+  --translucent: rgba(255, 255, 255, 0.9);
   /* Elevation */
   --shadow-composer: 0 1px 2px rgba(8, 11, 20, 0.04),
     0 8px 24px rgba(8, 11, 20, 0.05);
@@ -58,6 +60,8 @@
   --sidebar: 264px;
   --rail: 76px;
   --tabbar: 88px;
+  /* Space the fixed tab bar takes at the bottom (its height + safe area). */
+  --tabbar-space: max(var(--tabbar), calc(60px + var(--safe-bottom)));
   --reading: 720px;
   /* Type */
   --font-stack: -apple-system, "SF Pro Text", "SF Pro Display",
@@ -84,6 +88,8 @@
   --viewport-height: 100dvh;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
 }
 
 /* Dark — layered surfaces (apple-design dark-mode.md: base and elevated):
@@ -566,6 +572,7 @@ svg.lucide {
   overflow: hidden;
 }
 .sidebar {
+  position: relative; /* containing block for .nav-indicator */
   flex: 0 0 var(--sidebar);
   display: flex;
   flex-direction: column;
@@ -592,6 +599,7 @@ svg.lucide {
   flex: 1;
 }
 .nav-link {
+  position: relative; /* paints above .nav-indicator */
   display: flex;
   align-items: center;
   gap: 12px;
@@ -606,6 +614,11 @@ svg.lucide {
   background: var(--nav-active);
   color: var(--primary-ink-tint);
   font-weight: 600;
+}
+/* Once the sliding pill is placed it carries the active background. */
+[data-indicator="on"] > .sidebar-links > [aria-current="page"],
+[data-indicator="on"] > [aria-current="page"] {
+  background: transparent;
 }
 .workspace {
   flex: 1;
@@ -726,12 +739,18 @@ svg.lucide {
     color: var(--primary-ink);
     font-weight: 600;
   }
-  .workspace-main {
-    padding-bottom: max(var(--tabbar), calc(60px + var(--safe-bottom)));
+  /* Room for the tab bar at the end of the scroll. A spacer, not padding on
+     .workspace-main: .route-view shrinks to the scroller (chat needs that),
+     so page content overflows it and the scroller's padding never ends up
+     below that content (Ajustes ended under the bar). */
+  .route-view::after {
+    content: "";
+    flex: none;
+    height: var(--tabbar-space);
   }
-  .is-focus .workspace-main,
-  :root[data-keyboard="open"] .workspace-main {
-    padding-bottom: 0;
+  .is-focus .route-view::after,
+  :root[data-keyboard="open"] .route-view::after {
+    display: none;
   }
   :root[data-keyboard="open"] .tabbar {
     display: none;
@@ -750,6 +769,89 @@ svg.lucide {
   .topbar .back-button,
   .topbar-spacer {
     visibility: visible;
+  }
+}
+
+/* === Navegación === ----------------------------------------------------
+   Sliding active pill, item states and phone landscape. Claude Design
+   (Main.dc.html): items 44 px, radius 12, active rgba(21,91,255,.10) with
+   blue text. emil-design-eng: on-screen movement uses --ease-in-out, 200 ms,
+   transform only; hover only with a fine pointer; no motion for keyboard
+   navigation (handled in components/nav-indicator.tsx).
+   ------------------------------------------------------------------------ */
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: var(--radius-nav);
+  background: var(--nav-active);
+  pointer-events: none;
+  transition:
+    transform var(--dur-base) var(--ease-in-out),
+    opacity var(--dur-fast) ease;
+}
+.nav-indicator[data-state="hidden"] {
+  opacity: 0;
+}
+.sidebar {
+  padding-left: calc(16px + var(--safe-left));
+  flex-basis: calc(var(--sidebar) + var(--safe-left));
+}
+/* Pressed: the item scales to .97 (.press) and its icon sinks 1 px. */
+.nav-link svg,
+.tab svg {
+  transition: transform var(--dur-fast) var(--ease);
+}
+.nav-link:active svg,
+.tab:active svg {
+  transform: translateY(1px);
+}
+.nav-link:active:not([aria-current="page"]) {
+  background: var(--state-press);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover:not([aria-current="page"]) {
+    color: var(--text);
+  }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .sidebar {
+    flex-basis: calc(var(--rail) + var(--safe-left));
+    padding-left: calc(12px + var(--safe-left));
+  }
+}
+/* Phone in landscape (844×390): the rail must fit without scrolling, so
+   tighten the spacing and drop the logo (it repeats Inicio). */
+@media (min-width: 640px) and (max-width: 1023.98px) and (max-height: 480px) {
+  .sidebar {
+    gap: 8px;
+    padding-top: calc(8px + var(--safe-top));
+    padding-bottom: calc(8px + var(--safe-bottom));
+  }
+  .sidebar .brand {
+    display: none;
+  }
+}
+@media (max-width: 639.98px) {
+  .tabbar {
+    padding-left: max(12px, var(--safe-left));
+    padding-right: max(12px, var(--safe-right));
+  }
+  .tab {
+    position: relative; /* paints above .nav-indicator */
+  }
+  .tab[aria-current="page"] {
+    /* Darker blue on the pill: 11 px labels need 4.5:1 (contrast.mjs). */
+    color: var(--primary-ink-tint);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The global rule already drops the transform transition (no slide);
+     also drop the icon shift. */
+  .nav-link:active svg,
+  .tab:active svg {
+    transform: none;
   }
 }
 
@@ -1172,10 +1274,36 @@ svg.lucide {
 }
 .group-link > svg:last-child {
   color: var(--text-secondary);
+  transition: transform var(--dur-fast) var(--ease);
+}
+/* Más: Claude Design (MovilMas) presses full-width rows to .98, not .97,
+   so a wide row does not visibly pull away from the group's edges. */
+.group-link.press:active {
+  transform: scale(0.98);
+  background: var(--state-press);
+}
+/* The group clips its corners (overflow: hidden), so the ring goes inside. */
+.group-link:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius-card);
 }
 @media (hover: hover) and (pointer: fine) {
   .group-link:hover {
     background: var(--surface-hover);
+  }
+  /* The chevron nudges 2 px toward where the row leads. */
+  .group-link:hover > svg:last-child {
+    transform: translateX(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .group-link.press:active {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+  .group-link:hover > svg:last-child {
+    transform: none;
   }
 }
 .switch {
@@ -2192,7 +2320,7 @@ fieldset:disabled .test-option {
 }
 @media (max-width: 639.98px) {
   .toast-position {
-    bottom: calc(max(var(--tabbar), calc(60px + var(--safe-bottom))) + 12px);
+    bottom: calc(var(--tabbar-space) + 12px);
   }
 }
 .toast {
