@@ -279,7 +279,7 @@ test("hoja inferior: resumen, minutos, «Empezar» y «Hacer un test de este tem
   await page.goto(`/exams/${eid}/ruta`);
   await steps(page).nth(8).getByRole("button").click();
   await page.getByRole("button", { name: "Ir igualmente" }).click();
-  await expect(page.getByRole("link", { name: "Ir al simulacro" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Ir al «Simulacro de examen»" })).toHaveAttribute(
     "href",
     `/exams/${eid}#simulacro`,
   );

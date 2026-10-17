@@ -237,7 +237,7 @@ export const TYPE_LABELS: Record<RouteNodeType, string> = {
 };
 function nodeTitle(type: RouteNodeType, unit: ExamUnit | null) {
   if (type === "study") return unit?.title ?? "Estudiar un tema";
-  if (type === "mock") return "Simulacro del examen";
+  if (type === "mock") return "Simulacro de examen";
   if (type === "practice")
     return unit ? `Test de «${unit.topic}»` : "Test de lo visto";
   return unit ? `Repaso de «${unit.topic}»` : "Repaso de tus errores";

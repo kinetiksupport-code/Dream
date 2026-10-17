@@ -654,7 +654,7 @@ export function ExamPath({ id }: { id: string }) {
             <div className={styles.sheetActions}>
               {open.type === "mock" ? (
                 <Link className="primary press" href={`/exams/${id}#simulacro`}>
-                  Ir al simulacro <ArrowRight size={18} aria-hidden="true" />
+                  Ir al «Simulacro de examen» <ArrowRight size={18} aria-hidden="true" />
                 </Link>
               ) : open.type === "study" && open.unit ? (
                 <Link
