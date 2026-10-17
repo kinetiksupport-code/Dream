@@ -102,7 +102,18 @@ const messages = [
   },
 ];
 
-export async function mock(page: Page, opts: { pendingChat?: boolean } = {}) {
+/** Profile of a first sign-in once dream-api sends the consent fields. */
+export const CONSENT_PENDING = { ai_consent_at: null, age_band: null };
+
+export async function mock(
+  page: Page,
+  opts: { pendingChat?: boolean; profile?: Record<string, unknown> } = {},
+) {
+  let profile: Record<string, unknown> = {
+    email: "alex@example.test",
+    display_name: "Alex",
+    ...opts.profile,
+  };
   await page.addInitScript(() => {
     localStorage.setItem("dream-storage-notice-v1", "1");
     localStorage.setItem(
@@ -127,11 +138,15 @@ export async function mock(page: Page, opts: { pendingChat?: boolean } = {}) {
   await page.route("**/functions/v1/dream-api", async (route) => {
     const b = route.request().postDataJSON();
     if (b.action === "chat" && opts.pendingChat) return; // never answers: waiting state
+    if (b.action === "consent")
+      // Contract designed in docs/CONSENTIMIENTO.md (not deployed yet).
+      profile = {
+        ...profile,
+        ai_consent_at: new Date().toISOString(),
+        age_band: "14_17",
+      };
     const data: Record<string, unknown> = {
-      profile: {
-        profile: { email: "alex@example.test", display_name: "Alex" },
-        service_ready: true,
-      },
+      profile: { profile, service_ready: true },
       conversations: { items: conversations },
       messages: { items: messages, next_offset: null },
       exams: { exams: [exam] },
@@ -173,9 +188,45 @@ export type Screen = {
   ready?: (page: Page) => Promise<void>;
   pendingChat?: boolean;
   signedOut?: boolean;
+  profile?: Record<string, unknown>;
+};
+const birth = (years: number) => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years, d.getMonth(), d.getDate() - 30);
+  return d.toISOString().slice(0, 10);
 };
 export const SCREENS: Screen[] = [
   { name: "login", path: "/login", signedOut: true },
+  { name: "login-error", path: "/login?error=cancelled", signedOut: true },
+  { name: "login-registro", path: "/chat", profile: CONSENT_PENDING },
+  {
+    name: "login-registro-mayor",
+    path: "/chat",
+    profile: CONSENT_PENDING,
+    ready: async (p) => {
+      await p.getByLabel("Fecha de nacimiento").fill(birth(16));
+      await p.getByRole("checkbox", { name: /proveedores de IA/ }).check();
+    },
+  },
+  {
+    name: "login-registro-menor",
+    path: "/chat",
+    profile: CONSENT_PENDING,
+    ready: async (p) => {
+      await p.getByLabel("Fecha de nacimiento").fill(birth(12));
+      await p.getByRole("checkbox", { name: /tutor legal/ }).waitFor();
+    },
+  },
+  {
+    name: "login-registro-error",
+    path: "/chat",
+    profile: CONSENT_PENDING,
+    ready: async (p) => {
+      await p.getByLabel("Fecha de nacimiento").fill(birth(12));
+      await p.getByRole("button", { name: "Empezar" }).click();
+      await p.waitForTimeout(250);
+    },
+  },
   { name: "inicio", path: "/chat" },
   {
     name: "chat",
