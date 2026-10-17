@@ -9,8 +9,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Copy, Check } from "lucide-react";
-// KaTeX styles travel with this lazily loaded chunk, not the initial bundle.
-import "katex/dist/katex.min.css";
+// KaTeX styles are imported by ./markdown (see there), not by this chunk.
 import katex from "katex";
 
 // Warm KaTeX (its first render builds internal tables) and its fonts while the
