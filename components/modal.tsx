@@ -18,6 +18,7 @@ export function Modal({
   onClose,
   variant = "sheet",
   leaving = false,
+  className,
 }: {
   children: ReactNode;
   labelledBy: string;
@@ -30,6 +31,8 @@ export function Modal({
   variant?: "sheet" | "alert";
   /** True while the caller plays the exit fade before unmounting. */
   leaving?: boolean;
+  /** Extra class on the dialog (e.g. "bottom-sheet" from BottomSheet). */
+  className?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
   const closeRef = useRef(onClose);
@@ -97,7 +100,7 @@ export function Modal({
     >
       <section
         ref={ref}
-        className={`modal${variant === "alert" ? " modal-alert" : ""}`}
+        className={`modal${variant === "alert" ? " modal-alert" : ""}${className ? ` ${className}` : ""}`}
         role={variant === "alert" ? "alertdialog" : "dialog"}
         aria-modal="true"
         aria-labelledby={labelledBy}
