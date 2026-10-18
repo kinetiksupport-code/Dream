@@ -1,3 +1,4 @@
+import { MATERIAL_GUARD, wrapStudentMaterial } from './file-guard.mjs';
 // ============================================================
 // DREAM — SYSTEM PROMPT ÚNICO (proporcionado por el usuario, verbatim).
 // No se reescribe, no se resume, no se elimina la regla de deberes,
@@ -689,11 +690,11 @@ export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes bus
  * Mensajes de sistema del chat. Es el MISMO camino para los tres modos y para
  * el respaldo: solo cambia el prompt base y cuánto contexto entra.
  * @param {string} modeId
- * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentChars?: number|null}} [parts]
+ * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null}} [parts]
  */
 export function chatSystemMessages(modeId, {
   fallback = false, search = false, academicMemory = [], skillPrompt = '',
-  examContext = '', attachmentContext = '', attachmentChars = null, shortcut = null,
+  examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null,
 } = {}) {
   const messages = [
     { role: 'system', content: systemPromptFor(modeId, { fallback }) },
@@ -703,9 +704,13 @@ export function chatSystemMessages(modeId, {
   messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut) });
   if (skillPrompt) messages.push({ role: 'system', content: skillPrompt });
   if (examContext) messages.push({ role: 'system', content: examContext });
-  if (attachmentContext) {
-    const text = attachmentChars ? attachmentContext.slice(0, attachmentChars) : attachmentContext;
-    messages.push({ role: 'system', content: `Contexto de archivos adjuntos por el usuario:\n\n${text}` });
+  // El material del alumno va siempre delimitado como datos y con la
+  // instrucción de no obedecer órdenes que aparezcan dentro (apartado 7.8).
+  const files = attachmentFiles.length ? attachmentFiles
+    : attachmentContext ? [{ file_name: 'adjuntos', extracted_text: attachmentContext }] : [];
+  if (files.length) {
+    const material = wrapStudentMaterial(files, attachmentChars ?? undefined);
+    messages.push({ role: 'system', content: `Contexto de archivos adjuntos por el usuario:\n${MATERIAL_GUARD}\n\n${material}` });
   }
   return messages;
 }

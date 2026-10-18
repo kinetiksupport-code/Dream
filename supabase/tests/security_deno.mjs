@@ -15,6 +15,7 @@ Deno.test(
       ["notes.xlsx", "xl/worksheets/sheet1.xml"],
     ]) {
       const zip = new JSZip();
+      zip.file("[Content_Types].xml", '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>');
       zip.file(path, "<document><p>Concepto verificado</p></document>");
       const base64 = await zip.generateAsync({
         type: "base64",
@@ -30,6 +31,7 @@ Deno.test(
       assertEquals(text.includes("Concepto verificado"), true);
     }
     const bomb = new JSZip();
+    bomb.file("[Content_Types].xml", "<Types/>");
     bomb.file("word/document.xml", "x".repeat(5 * 1024 * 1024));
     const bombBase64 = await bomb.generateAsync({
       type: "base64",
