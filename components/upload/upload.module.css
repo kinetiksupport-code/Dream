@@ -1,0 +1,287 @@
+/* Subida desde el móvil (/subir/[token]) y panel QR del ordenador.
+   Tokens de app/globals.css; movimiento solo con transform, opacity y el
+   trazo del tick (stroke-dashoffset en @keyframes). */
+
+.page {
+  min-height: var(--viewport-height, 100dvh);
+  max-width: 480px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: calc(32px + var(--safe-top)) calc(16px + var(--safe-right))
+    calc(24px + var(--safe-bottom)) calc(16px + var(--safe-left));
+  background: var(--bg);
+  color: var(--text);
+}
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.title {
+  font-size: var(--text-title);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  outline: none;
+}
+.lead {
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+  line-height: 1.45;
+  max-width: 34ch;
+}
+.wide {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* «Conectado»: el orbe con un tick que aparece una sola vez. */
+.badge {
+  position: relative;
+  display: inline-grid;
+}
+.badgeTick {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  width: 24px;
+  height: 24px;
+  animation: pop var(--dur-rise) var(--ease) 120ms both;
+}
+.badgeTick circle,
+.tick circle {
+  fill: var(--success);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+.badgeTick path,
+.tick path {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 16;
+  stroke-dashoffset: 0;
+  animation: draw var(--dur-rise) var(--ease) 80ms both;
+}
+.badgeTick path {
+  animation-delay: 220ms;
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+}
+.big {
+  min-height: 56px;
+  width: 100%;
+  font-size: var(--text-body);
+  border-radius: var(--radius-card);
+}
+
+.count {
+  min-height: 1.4em;
+  text-align: center;
+  font-size: var(--text-secondary-size);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 12px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  animation: rowIn var(--dur-rise) var(--ease) both;
+}
+.rowIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+.row[data-status="error"] .rowIcon {
+  color: var(--danger);
+}
+.tick {
+  width: 24px;
+  height: 24px;
+  animation: pop var(--dur-rise) var(--ease) both;
+}
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.rowText strong {
+  font-weight: 600;
+  font-size: var(--text-secondary-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowText small {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+.row[data-status="error"] .rowText small {
+  color: var(--danger);
+}
+
+.private {
+  margin-top: auto;
+  padding-top: 8px;
+  text-align: center;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+
+/* Panel QR del ordenador (components/exams/qr-panel.tsx). */
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  text-align: center;
+}
+.panelTitle {
+  font-size: var(--text-body);
+  font-weight: 600;
+  line-height: 1.35;
+}
+.qrFrame {
+  display: grid;
+  place-items: center;
+  width: 216px;
+  height: 216px;
+  padding: 8px;
+  border-radius: var(--radius-card);
+  /* El QR va siempre sobre blanco con módulos negros (contraste máximo) */
+  background: #ffffff;
+}
+.qrFrame svg {
+  width: 200px;
+  height: 200px;
+  animation: fadeIn var(--dur-base) var(--ease) both;
+}
+.qrFrame[data-stale="true"] svg {
+  opacity: 0.12;
+}
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  font-size: var(--text-secondary-size);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.status[data-connected="true"] {
+  color: var(--success);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.status:not([data-connected="true"]) .dot {
+  animation: breathe var(--dur-pulse) var(--ease-pulse) infinite;
+}
+.hint {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+  max-width: 30ch;
+}
+
+@keyframes rowIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes draw {
+  from {
+    stroke-dashoffset: 16;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .tick,
+  .badgeTick,
+  .qrFrame svg {
+    animation-name: fadeIn;
+  }
+  .badgeTick path,
+  .tick path {
+    animation: none;
+  }
+  .status:not([data-connected="true"]) .dot {
+    animation: none;
+  }
+}
