@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: '24'
       - run: npx --yes deno@2.9.6 check --config supabase/functions/dream-api/deno.json supabase/functions/dream-api/index.ts
-      - run: npx --yes deno@2.9.6 test --config supabase/functions/dream-api/deno.json --allow-read --allow-env --allow-net=127.0.0.1 supabase/tests/exam_route_deno.mjs supabase/tests/exam_wizard_deno.mjs supabase/tests/security_deno.mjs supabase/tests/uploads_deno.mjs
+      - run: npx --yes deno@2.9.6 test --config supabase/functions/dream-api/deno.json --allow-read --allow-env --allow-net=127.0.0.1 supabase/tests/*_deno.mjs
       - name: Deploy
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
