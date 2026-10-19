@@ -112,6 +112,7 @@ export const MessageView = memo(function MessageView({
         parsed.widgets.map((w) => (
           <Link
             className="quiz-widget press"
+            data-mode={w.mode === "exam" ? "exam" : "practice"}
             href={`/tests/${w.testId}`}
             key={w.testId}
           >
