@@ -128,6 +128,22 @@ Skills releídas. Detalle en `docs/diseno/estilo-ajustes/README.md`. Pantalla so
   - `accessibility.md › Convey information with more than color alone`: el color del icono acompaña a la etiqueta; la pegatina de la inicial es decorativa (`aria-hidden`).
   - `branding.md`: la identidad va en el titular y en un toque de color; los controles son los de siempre.
 - **`libraries-dev`:** nada que añadir. No hay esperas largas y no se instalan paquetes.
+## Login y registro con el estilo nuevo (19/10/2026, PR 9 del encargo de estilo)
+
+Skills releídas. Detalle en `docs/diseno/estilo-login/README.md`. El login es pantalla clave (azul saturado); el registro sigue sobrio porque tiene texto legal.
+
+- **`emil-design-eng`:**
+  - *Stagger*: mascota, titular y enlaces con 40 ms de separación. El botón de Google no se anima y se puede usar desde el primer fotograma.
+  - *Never animate from scale(0)*: la pegatina entra desde 0,9 (`.pop-in`).
+  - *Buttons must feel responsive*: el botón de Google sigue igual (0,97) y la cara del botón 3D «Empezar» baja 3 px.
+  - Animación con `backwards`, no con `both`, para no pisar la escala de `.press`.
+  - *prefers-reduced-motion*: solo fundidos; el Orb no respira.
+- **`apple-design`:**
+  - `onboarding.md`: una bienvenida breve y con personalidad, sin pasos de más.
+  - `accessibility.md › Convey information with more than color alone`: sobre azul, los enlaces van subrayados.
+  - `color.md`: texto blanco sobre azul (7,55:1 en claro y 9,20:1 en oscuro) y amarillo solo con tinta oscura.
+  - `branding.md`: la identidad (azul, mascota y titular) va en la pantalla de entrada. El botón de Google y el formulario son los de siempre.
+- **`libraries-dev`:** la espera de «Abriendo Google…» ya tiene su anillo, y sin `border-beam` porque dura poco. No se instalan paquetes.
 
 ## Criterio sobre «solo transform y opacity»
 
@@ -168,6 +184,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Estilo nuevo · Apuntes (PR 7) | `docs/diseno/estilo-apuntes/antes/*` | `docs/diseno/estilo-apuntes/despues/*` | — (pruebas en `notes.spec.ts` › «estilo») | design/estilo-apuntes |
 | Progreso con el estilo nuevo (PR 7) | `docs/diseno/estilo-progreso/antes/*` | `docs/diseno/estilo-progreso/despues/*` | `estilo-progreso.webm` | este PR |
 | Ajustes con el estilo nuevo (PR 8) | `docs/diseno/estilo-ajustes/antes/*` | `docs/diseno/estilo-ajustes/despues/*` | `estilo-ajustes.webm` | este PR |
+| Login y registro con el estilo nuevo (PR 9) | `docs/diseno/estilo-login/antes/*` | `docs/diseno/estilo-login/despues/*` | `estilo-login-{escritorio,movil}{,-registro}.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 

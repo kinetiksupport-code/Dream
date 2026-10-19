@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDream } from "@/components/providers";
 import { Orb } from "@/components/orb";
+import { Sticker } from "@/components/sticker";
 import { AlertIcon, ClockIcon } from "@/components/icons";
 import { getSupabase, assertGoogleAvailable } from "@/lib/supabase";
 import { errorMessage } from "@/lib/dream-api";
@@ -61,14 +62,24 @@ export default function Login() {
   const message = error || bootError;
   return (
     <main className={s.login}>
-      <section className={s.brandPanel} aria-label="Dream">
+      <section
+        className={`${s.brandPanel} pop tone-blue pop-grid`}
+        aria-label="Dream"
+      >
         <Link href="/" className={`press ${s.brand}`}>
           <Orb size={32} />
           Dream
         </Link>
+        {/* The mascot: the Orb on a round yellow sticker (decorative). */}
+        <div className={s.mascot} aria-hidden="true">
+          <Sticker shape="round" tone="yellow" size={184} tilt={-6} animate>
+            <Orb size={112} breathing />
+          </Sticker>
+        </div>
         <div className={s.pitch}>
-          <p className={`display ${s.pitchTitle}`}>
-            Entiende lo que estudias.
+          <p className={`hero-title ${s.pitchTitle}`}>
+            Entiende lo que <span className="marker marker-draw">estudias</span>
+            .
           </p>
           <p>
             Sube tus apuntes, haz preguntas y prepárate para los exámenes a tu
@@ -83,10 +94,12 @@ export default function Login() {
             href="/"
             aria-label="Dream, inicio"
           >
-            <Orb size={56} />
+            <Sticker shape="round" tone="yellow" size={96} tilt={-6}>
+              <Orb size={60} breathing />
+            </Sticker>
           </Link>
           <div className={s.heading}>
-            <h1>Entrar en Dream</h1>
+            <h1 className="hero-title">Entrar en Dream</h1>
             <p>
               Entra con tu cuenta de Google. Si es tu primera vez, se crea tu
               cuenta gratis.
