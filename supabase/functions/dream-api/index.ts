@@ -14,7 +14,7 @@ import { selectEducationalSkills, educationalSkillPrompt } from './educational-s
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
-import { AI_FLAGS, CLOUDFLARE_FALLBACK, DEFAULT_MODE, availableModes, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
+import { CLOUDFLARE_FALLBACK, DEFAULT_MODE, aiContextFor, availableModes, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
 import { createWindowLimiter, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
 import { createAttemptTracker, shouldFallback, streamWithFallback } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
@@ -42,7 +42,7 @@ const MAX_BODY_CHARS = 12_000_000;
 // Errores de proveedores de IA con la misma forma (code, status, retryAfter).
 const isProviderError = (error: unknown): error is GroqProviderError | CloudflareProviderError =>
   error instanceof GroqProviderError || error instanceof CloudflareProviderError;
-const aiContext = () => ({ flags: AI_FLAGS, cloudflareConfigured: cloudflareProvider.configured() });
+const aiContext = () => aiContextFor(cloudflareProvider);
 function safeFailure(error: unknown): Response {
   if (error instanceof AdmissionError || isProviderError(error) || error instanceof TavilyError) {
     const status = error.status === 429 ? 429 : error instanceof AdmissionError ? error.status : 503;

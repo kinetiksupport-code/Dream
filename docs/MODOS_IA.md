@@ -4,7 +4,7 @@ Fecha: 17/10/2026. Rama `feat/modos-ia`. **Nada está desplegado ni aplicado.**
 
 ## 1. Qué ve el alumno
 
-- En el chat, un selector con **«Rápido»** y **«Normal»** (por defecto). **«Pensar más»** está oculto hasta que Carlos dé el OK. No aparece ningún nombre de modelo.
+- En el chat, un selector con **«Rápido»** y **«Normal»** (por defecto). **«Pensar más»** aparece solo si el servidor tiene los secretos de Cloudflare (ver §6). No aparece ningún nombre de modelo.
 - Si un modo pasa del 80 %, el chat muestra un aviso discreto («Has usado el 85 % del modo Normal. Se reinicia en 2 h 10 min.»). No bloquea nada.
 - Al 100 %: «Has usado todo el modo Normal por ahora. Vuelve a estar disponible a las 18:40», con un botón «Cambiar a Rápido» si otro modo tiene uso. El texto vuelve a la caja y no entra en la cola.
 - En **Ajustes › Límite de uso**, una barra por modo («Normal: 63 % usado», `role="progressbar"`) y «Se reinicia en 2 h 10 min». Nunca se muestran tokens.
@@ -18,14 +18,15 @@ Todo se configura en **un solo archivo**: [`supabase/functions/dream-api/models.
 
 | Modo | Proveedor | Modelo | Salida máx. (larga*) | Historial |
 |---|---|---|---|---|
-| Rápido | Groq | `llama-3.1-8b-instant` | 500 (900) | 8 mensajes, ≈3.000 caracteres |
+| Rápido | Groq | `llama-3.1-8b-instant`**** | 500 (900) | 8 mensajes, ≈3.000 caracteres |
 | Normal | Groq | `qwen/qwen3.8-27b`** | 1.200 (2.048) | 14 mensajes, ≈7.000 caracteres |
 | Pensar más | Cloudflare Workers AI | `@cf/mistralai/mistral-small-3.1-24b-instruct`*** | 1.500 (2.048) | 6 mensajes, ≈4.000 caracteres |
 | Respaldo (Rápido/Normal) | Cloudflare Workers AI | el mismo que Pensar más | 700 | 4 mensajes, ≈2.500 caracteres |
 
 \* La salida larga solo se usa si el alumno pide apuntes, un resumen o algo para imprimir (misma regla que `answerTokenBudget`).
-\*\* Si Groq retira Qwen 3.8 (está en Preview), cambiar `GROQ_NORMAL_MODEL` a `llama-3.3-70b-versatile` en `models.mjs`. El secreto `GROQ_MODEL`, si existe, sigue mandando sobre el modelo de Normal, tests y exámenes, como antes.
-\*\*\* Identificador **por confirmar** en el catálogo de Workers AI (constante `CLOUDFLARE_MODEL` con TODO).
+\*\* Si Groq retira Qwen 3.8 (está en Preview), cambiar `GROQ_NORMAL_MODEL` a `openai/gpt-oss-120b` en `models.mjs` (Groq retiró `llama-3.3-70b-versatile` el 16/08/2026 en los planes gratis y Developer). El secreto `GROQ_MODEL`, si existe, sigue mandando sobre el modelo de Normal, tests y exámenes, como antes.
+\*\*\* Identificador **comprobado el 19/10/2026** en el [catálogo de Workers AI](https://developers.cloudflare.com/workers-ai/models/mistral-small-3.1-24b-instruct/); no está en la [lista de retirados del 08/05/2026](https://developers.cloudflare.com/changelog/post/2026-05-08-planned-model-deprecations/). Precio: 0,351 $ / 0,555 $ por millón de tokens de entrada / salida (31.876 / 50.488 neuronas). Cupo gratis: 10.000 neuronas al día, reinicio a las 00:00 UTC ([precios](https://developers.cloudflare.com/workers-ai/platform/pricing/)).
+\*\*\*\* ⚠️ **Groq retiró `llama-3.1-8b-instant` el 16/08/2026** en los planes gratis y Developer ([deprecations](https://console.groq.com/docs/deprecations)); ahora es solo Enterprise. Con claves gratis, Rápido falla. Groq recomienda `openai/gpt-oss-20b` (0,075 $ / 0,30 $, modelo de razonamiento). **Pendiente de decisión de Carlos**: cambiar `GROQ_FAST_MODEL` y probarlo con una clave real (el razonamiento gasta parte de los 500 tokens de salida). Precios comprobados en `20261019143700_verified_model_prices.sql`.
 
 Tests, exámenes y corrección siguen usando el modelo de Normal y **no cuentan** en las ventanas: siguen con los límites diarios de `dream_private.limits`. Así una corrección no se bloquea a mitad de un examen.
 
@@ -63,8 +64,8 @@ Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 t
   - Pensar más: 540 + 250 + 450 + ≈1.150 de historial + hasta 1.500 de salida.
 - **Rápido (8B):** 200.000 / 30.000 ≈ 6–7 ventanas completas al día para todos. Con 8.000 tokens/min caben unos 4 mensajes por minuto.
 - **Normal (Qwen):** 200.000 / 40.000 = 5 ventanas completas al día para todos. 8.000 tokens/min ≈ 1 mensaje por minuto: ahí entra la cola de la Parte A.
-- **Pensar más (Cloudflare, ≈10.000 neuronas/día, sin confirmar):**
-  - Uso de memoria, también sin confirmar: unas 31.900 neuronas por millón de tokens de entrada y 50.500 por millón de salida. Un mensaje de 2.500 + 1.000 tokens gasta unas 130 neuronas, así que caben unos 75 mensajes al día en total.
+- **Pensar más (Cloudflare, 10.000 neuronas/día, comprobado el 19/10/2026):**
+  - Comprobado el 19/10/2026: 31.876 neuronas por millón de tokens de entrada y 50.488 por millón de salida. Un mensaje de 2.500 + 1.000 tokens gasta unas 130 neuronas, así que caben unos 75 mensajes al día en total.
   - Reservo la mitad para el respaldo: unos 38 mensajes de Pensar más. Con 12.000 por ventana (≈450 neuronas) salen unas 11 ventanas completas al día.
 
 **Conclusión honesta:** con el plan gratis, estos presupuestos reparten de forma justa, pero no crean capacidad. Bastan 5 alumnos que agoten Normal para gastar el día de Groq. Los topes diarios de `dream_private.limits` siguen activos (propuesta en `CAPACIDAD_IA.md` §4.1) y mandan si se alcanzan antes.
@@ -124,7 +125,7 @@ La he probado en un PostgreSQL 16 local de usar y tirar, aplicando antes las mig
 
 No forma parte de `npm run test:security-db`.
 
-## 6. Interruptores (APAGADOS)
+## 6. Interruptores (ENCENDIDOS desde el 19/10/2026)
 
 En `models.mjs`, `AI_FLAGS`:
 
@@ -135,6 +136,14 @@ En `models.mjs`, `AI_FLAGS`:
 
 Están en el código y no en un secreto, para que activarlos pase por revisión y despliegue.
 
+Encendidos no bastan: sin `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` válidos (`aiContextFor` en `models.mjs`):
+
+- `ai_usage` no incluye `think` en `modes`, así que la web no muestra «Pensar más». Si el navegador lo tenía guardado, vuelve a Normal (`pickMode`).
+- `chat` con `mode: "think"` responde 400 `mode_unavailable` («Ese modo no está disponible ahora. Elige otro.»). La web lo muestra, devuelve el texto a la caja y vuelve a pedir `ai_usage`, que ya no ofrece el modo.
+- El respaldo de Rápido y Normal sigue apagado sin avisar; Groq funciona como antes.
+
+Ni el respaldo ni las cuatro claves saltan los límites de Groq por organización: un 429 enfría todas las claves y guarda la pausa (`provider_state`), y el respaldo es otro proveedor con su propia admisión diaria.
+
 ## 7. Acción nueva de `dream-api`
 
 `ai_usage` es de solo lectura y no consume IA. Devuelve `{ window, modes: [{ id, label, percent, blocked, resets_at }], default_mode }`. `chat` acepta `mode` (`fast` | `normal` | `think`); sin `mode`, usa Normal. Un modo apagado o desconocido devuelve 400 `mode_unavailable`.
@@ -144,7 +153,7 @@ Están en el código y no en un secreto, para que activarlos pase por revisión 
 1. **Presupuestos** de la §3 (30.000 / 40.000 / 12.000 tokens por 5 h).
 2. **Migración** `20261017090000_ai_modes_windows.sql`: revisar, hacer copia de seguridad y aplicarla en staging antes que en producción.
 3. **Despliegue** de `dream-api`, después de la migración.
-4. **Secretos** `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` en Supabase. El token solo necesita el permiso de Workers AI.
-5. **Confirmar** el identificador del modelo de Cloudflare, su precio y el **cupo real** de neuronas al día. Confirmar también los precios de Groq de la migración y los cupos de Llama 3.1 8B en `console.groq.com/settings/limits`; pueden ser distintos de los de Qwen.
-6. **Encender** `thinkMode` y `cloudflareFallback` (cambio de código).
-7. **Textos legales** actualizados (privacidad, términos y cookies), sobre todo la frase de que no sabemos en qué región ejecuta Cloudflare y que puede haber transferencia fuera de la UE.
+4. **Secretos** `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` en Supabase. Token de cuenta limitado a esa cuenta con los permisos «Workers AI - Read» y «Workers AI - Edit», los que pide la [guía de la API REST](https://developers.cloudflare.com/workers-ai/get-started/rest-api/); ningún otro.
+5. ~~Confirmar el identificador y los precios~~: comprobado el 19/10/2026 (§2 y `20261019143700_verified_model_prices.sql`, sin aplicar). **Queda:** decidir el sustituto de `llama-3.1-8b-instant` en Rápido (§2, nota \*\*\*\*) y mirar los cupos reales en `console.groq.com/settings/limits`.
+6. ~~Encender `thinkMode` y `cloudflareFallback`~~: encendidos en la rama `feat/cloudflare` (§6).
+7. **Textos legales** actualizados en `feat/cloudflare` (privacidad, términos y cookies): **revisar** las frases nuevas antes de publicar.

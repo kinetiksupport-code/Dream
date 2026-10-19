@@ -1,6 +1,6 @@
 export const cookies = String.raw`# Almacenamiento en tu dispositivo y cookies
 
-*Última actualización: 17 de octubre de 2026 (versión provisional).*
+*Última actualización: 19 de octubre de 2026 (versión provisional).*
 
 Dream guarda pequeños datos en tu navegador. Los necesarios para que funcione no requieren consentimiento; los de estadísticas solo se activan si tú lo aceptas en Ajustes.
 
@@ -15,7 +15,7 @@ Dream guarda pequeños datos en tu navegador. Los necesarios para que funcione n
 | Identificador anónimo de PostHog (almacenamiento local) | Estadísticas anónimas de uso | Analítico | **Sí**, desactivado por defecto |
 | Informes de errores de Sentry | Detectar fallos | Diagnóstico | **Sí**, desactivado por defecto |
 
-Dream no usa cookies de publicidad ni de seguimiento entre webs. Los archivos que subes se mantienen solo en memoria mientras los preparas y no se guardan en tu dispositivo.
+Dream no usa cookies de publicidad ni de seguimiento entre webs. Los archivos que subes se mantienen solo en memoria mientras los preparas y no se guardan en tu dispositivo. Los proveedores de IA (Groq y Cloudflare) y de búsqueda (Tavily) solo reciben datos desde nuestro servidor: no ponen cookies ni guardan nada en tu navegador.
 
 Puedes borrar estos datos desde los ajustes de tu navegador, y cambiar tu elección de estadísticas y errores en cualquier momento en **Ajustes > Datos de uso**.
 

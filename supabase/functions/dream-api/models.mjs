@@ -4,15 +4,17 @@
 // Explicación de las cifras: docs/MODOS_IA.md.
 import { answerTokenBudget } from './capacity.mjs';
 
-// Interruptores. APAGADOS hasta que Carlos dé el OK (docs/MODOS_IA.md §6).
+// Interruptores (docs/MODOS_IA.md §6). ENCENDIDOS desde el 19/10/2026.
 // Se cambian aquí, en el código, para que activarlos pase por revisión y
-// despliegue; no dependen de un secreto que alguien pueda poner sin revisar.
+// despliegue. Encendidos no bastan: sin los secretos CLOUDFLAREAI_API_KEY y
+// CLOUDFLARE_ACCOUNT_ID (válidos), «Pensar más» no se ofrece y el respaldo
+// sigue apagado en silencio (modeAvailable, fallbackAvailable).
 /** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean}>} */
 export const AI_FLAGS = Object.freeze({
   // «Pensar más» visible y usable (necesita también los secretos de Cloudflare).
-  thinkMode: false,
+  thinkMode: true,
   // Respaldo con Cloudflare Workers AI cuando fallan todas las claves de Groq.
-  cloudflareFallback: false,
+  cloudflareFallback: true,
 });
 
 // Ventana de uso por alumno: empieza con el primer mensaje enviado cuando no
@@ -20,12 +22,18 @@ export const AI_FLAGS = Object.freeze({
 export const WINDOW_HOURS = 5;
 export const WINDOW_MS = WINDOW_HOURS * 3600_000;
 
-// TODO(Carlos): confirmar este identificador en el catálogo de Workers AI
-// (developers.cloudflare.com/workers-ai/models) antes de activar los flags.
+// Comprobado el 19/10/2026 en developers.cloudflare.com/workers-ai/models/
+// mistral-small-3.1-24b-instruct/ (no está en la lista de retirados del
+// 08/05/2026). Precio en supabase/migrations/20261019143700_verified_model_prices.sql.
 export const CLOUDFLARE_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
 // Groq: si retira «qwen/qwen3.8-27b» (está en Preview), cambiar Normal a
-// «llama-3.3-70b-versatile» AQUÍ y añadir su precio en dream_private.model_prices.
+// «openai/gpt-oss-120b» AQUÍ (Groq retiró «llama-3.3-70b-versatile» el
+// 16/08/2026 en los planes gratis y Developer). Su precio ya está en
+// dream_private.model_prices.
+// ⚠️ «llama-3.1-8b-instant» (Rápido) también está retirado desde el
+// 16/08/2026 salvo con contrato Enterprise. Groq recomienda
+// «openai/gpt-oss-20b». Pendiente de decisión de Carlos: docs/MODOS_IA.md §2.
 export const GROQ_NORMAL_MODEL = 'qwen/qwen3.8-27b';
 export const GROQ_FAST_MODEL = 'llama-3.1-8b-instant';
 
@@ -96,6 +104,14 @@ export function modeAvailable(id, { flags = AI_FLAGS, cloudflareConfigured = fal
   if (mode.flag && !flags[mode.flag]) return false;
   if (mode.provider === 'cloudflare' && !cloudflareConfigured) return false;
   return true;
+}
+
+// Contexto con el que dream-api decide qué modos ofrece: flags del código +
+// si el proveedor de Cloudflare tiene secretos válidos. Lo usan `ai_usage`
+// (lo que ve la web) y `chat` (lo que acepta), así nunca discrepan.
+/** @param {{configured: () => boolean}} cloudflare */
+export function aiContextFor(cloudflare, flags = AI_FLAGS) {
+  return { flags, cloudflareConfigured: Boolean(cloudflare?.configured()) };
 }
 
 export function availableModes(ctx = {}) {

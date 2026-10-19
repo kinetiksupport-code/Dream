@@ -8,6 +8,7 @@ import {
   DEFAULT_MODE,
   MODES,
   WINDOW_MS,
+  aiContextFor,
   availableModes,
   fallbackAvailable,
   modeAvailable,
@@ -40,6 +41,7 @@ import {
   createGroqProviderManager,
 } from "../supabase/functions/dream-api/groq.mjs";
 import { AdmissionError } from "../supabase/functions/dream-api/admission.mjs";
+import { alternativeMode, parseUsage, pickMode } from "../lib/ai-modes";
 import {
   COMMON_RULES,
   DREAM_SYSTEM_PROMPT,
@@ -52,7 +54,6 @@ type Chunk = { choices: { delta: { content?: string } }[] };
 const logger = { ...console, log: () => {} };
 const T0 = Date.parse("2026-10-16T10:00:00Z");
 const HOUR = 3600_000;
-const ON = { thinkMode: true, cloudflareFallback: true };
 const cfEnv = (name: string) =>
   (
     ({
@@ -87,19 +88,31 @@ async function collect(stream: AsyncIterable<Chunk>) {
 }
 
 // ---------------------------------------------------------------- Modos
-test("the student sees modes, Normal by default, and «Pensar más» stays hidden while its flag is off", () => {
+const OFF = { thinkMode: false, cloudflareFallback: false };
+const cfOn = () => createCloudflareProvider({ getEnv: cfEnv, logger });
+const cfOff = () => createCloudflareProvider({ getEnv: () => undefined, logger });
+
+test("flags are on in the code: «Pensar más» and the fallback only need the Cloudflare secrets", () => {
   assert.equal(DEFAULT_MODE, "normal");
-  assert.equal(AI_FLAGS.thinkMode, false);
-  assert.equal(AI_FLAGS.cloudflareFallback, false);
+  assert.equal(AI_FLAGS.thinkMode, true);
+  assert.equal(AI_FLAGS.cloudflareFallback, true);
+  assert.deepEqual(aiContextFor(cfOn()), { flags: AI_FLAGS, cloudflareConfigured: true });
+  assert.deepEqual(aiContextFor(cfOff()), { flags: AI_FLAGS, cloudflareConfigured: false });
   assert.deepEqual(
-    availableModes({ cloudflareConfigured: true }).map((m) => m.id),
-    ["fast", "normal"],
+    availableModes(aiContextFor(cfOn())).map((m) => m.id),
+    ["fast", "normal", "think"],
   );
   assert.equal(resolveMode(undefined)?.id, "normal");
   assert.equal(resolveMode("fast")?.id, "fast");
-  assert.equal(resolveMode("think", { cloudflareConfigured: true }), null);
-  assert.equal(resolveMode("turbo"), null);
-  for (const m of availableModes({ flags: ON, cloudflareConfigured: true }))
+  assert.equal(resolveMode("think", aiContextFor(cfOn()))?.id, "think");
+  assert.equal(resolveMode("turbo", aiContextFor(cfOn())), null);
+  // A flag switched off in the code still hides «Pensar más», even with secrets.
+  assert.deepEqual(
+    availableModes({ flags: OFF, cloudflareConfigured: true }).map((m) => m.id),
+    ["fast", "normal"],
+  );
+  assert.equal(resolveMode("think", { flags: OFF, cloudflareConfigured: true }), null);
+  for (const m of availableModes(aiContextFor(cfOn())))
     assert.doesNotMatch(m.label, /llama|qwen|mistral|groq|cloudflare/i);
 });
 
@@ -120,7 +133,7 @@ test("each mode maps to one provider and model in the single config", () => {
 });
 
 test("without Cloudflare secrets the fallback and «Pensar más» switch off silently", () => {
-  const off = createCloudflareProvider({ getEnv: () => undefined, logger });
+  const off = cfOff();
   assert.equal(off.configured(), false);
   const bad = createCloudflareProvider({
     getEnv: (n: string) =>
@@ -128,23 +141,55 @@ test("without Cloudflare secrets the fallback and «Pensar más» switch off sil
     logger,
   });
   assert.equal(bad.configured(), false);
-  const ctx = { flags: ON, cloudflareConfigured: off.configured() };
-  assert.equal(modeAvailable("think", ctx), false);
-  assert.equal(fallbackAvailable(MODES.normal, ctx), false);
+  const onlyKey = createCloudflareProvider({
+    getEnv: (n: string) => (n === "CLOUDFLAREAI_API_KEY" ? cfEnv(n) : undefined),
+    logger,
+  });
+  assert.equal(onlyKey.configured(), false);
+  for (const provider of [off, bad, onlyKey]) {
+    const ctx = aiContextFor(provider);
+    assert.equal(modeAvailable("think", ctx), false);
+    assert.equal(resolveMode("think", ctx), null); // chat answers 400 mode_unavailable
+    assert.equal(fallbackAvailable(MODES.fast, ctx), false);
+    assert.equal(fallbackAvailable(MODES.normal, ctx), false);
+    // Rápido and Normal keep working exactly as before.
+    assert.equal(resolveMode("fast", ctx)?.provider, "groq");
+    assert.equal(resolveMode(undefined, ctx)?.id, "normal");
+  }
+  assert.equal(fallbackAvailable(MODES.normal, aiContextFor(cfOn())), true);
+  assert.equal(fallbackAvailable(MODES.fast, aiContextFor(cfOn())), true);
+  // Flag off in the code: no fallback even with secrets.
   assert.equal(
-    fallbackAvailable(MODES.normal, { flags: ON, cloudflareConfigured: true }),
-    true,
-  );
-  // Flags off (default): no fallback even with secrets.
-  assert.equal(
-    fallbackAvailable(MODES.normal, { cloudflareConfigured: true }),
+    fallbackAvailable(MODES.normal, { flags: OFF, cloudflareConfigured: true }),
     false,
   );
   // «Pensar más» never falls back.
-  assert.equal(
-    fallbackAvailable(MODES.think, { flags: ON, cloudflareConfigured: true }),
-    false,
-  );
+  assert.equal(fallbackAvailable(MODES.think, aiContextFor(cfOn())), false);
+});
+
+test("ai_usage → web: the browser learns about «Pensar más» only from the modes the server lists", () => {
+  // Same steps as dream-api `ai_usage` (availableModes(aiContextFor(cloudflareProvider)))
+  // followed by the web's parser (lib/ai-modes.ts).
+  const served = (provider: ReturnType<typeof createCloudflareProvider>) => ({
+    ...usageSummary({}, { now: T0, modes: availableModes(aiContextFor(provider)) }),
+    default_mode: DEFAULT_MODE,
+  });
+  const withSecrets = parseUsage(JSON.parse(JSON.stringify(served(cfOn()))));
+  assert.deepEqual(withSecrets.modes.map((m) => m.id), ["fast", "normal", "think"]);
+  assert.equal(withSecrets.modes.find((m) => m.id === "think")?.label, "Pensar más");
+  assert.equal(pickMode(withSecrets, "think"), "think");
+
+  const without = parseUsage(JSON.parse(JSON.stringify(served(cfOff()))));
+  assert.deepEqual(without.modes.map((m) => m.id), ["fast", "normal"]);
+  // A device that remembered «Pensar más» goes back to Normal, never sends «think».
+  assert.equal(pickMode(without, "think"), "normal");
+  assert.equal(alternativeMode(without, "normal")?.id, "fast");
+  // The payload never names a provider, a model or a secret.
+  for (const body of [served(cfOn()), served(cfOff())])
+    assert.doesNotMatch(
+      JSON.stringify(body),
+      /llama|qwen|mistral|groq|cloudflare|@cf|api_key|account/i,
+    );
 });
 
 // ------------------------------------------------------- Ventana de 5 h
