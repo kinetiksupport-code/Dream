@@ -1,7 +1,11 @@
 /* === Login ===
    Two panels on desktop (brand on --surface, form on --bg), one centred
    column on phones. No Claude Design board exists for this screen: the
-   tokens, type scale and states come from the cimientos (globals.css). */
+   tokens, type scale and states come from the cimientos (globals.css).
+   Estilo nuevo (PROMPT_EXAMEN_ESTILO.md §2, §6): login is a key screen, so
+   it gets the saturated blue (.pop.tone-blue.pop-grid on the brand panel;
+   on phones the whole screen), the Orb as mascot on a yellow sticker and
+   huge italic headlines (.hero-title). The Google button is untouched. */
 .login {
   display: flex;
   min-height: 100dvh;
@@ -14,7 +18,7 @@
   flex-direction: column;
   justify-content: space-between;
   padding: calc(32px + var(--safe-top)) clamp(32px, 5vw, 80px) 64px;
-  background: var(--surface);
+  /* Fill and ink come from .pop.tone-blue.pop-grid (white on blue, 7.55:1). */
 }
 .brand {
   display: flex;
@@ -27,6 +31,12 @@
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: inherit;
+}
+/* The mascot sits in the middle of the blue panel. */
+.mascot {
+  align-self: center;
+  line-height: 0;
 }
 .pitch {
   display: flex;
@@ -38,7 +48,10 @@
   margin: 0;
 }
 .pitch p:not(.pitchTitle) {
-  color: var(--text-secondary);
+  color: inherit;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.5;
 }
 .formPanel {
   flex: 1 1 50%;
@@ -65,11 +78,9 @@
   flex-direction: column;
   gap: 8px;
 }
+/* .hero-title, a size down: the pitch is the big one on desktop. */
 .heading h1 {
-  font-size: var(--text-title);
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  font-size: clamp(2.25rem, 1.9rem + 1.2vw, 2.75rem);
 }
 .heading p {
   color: var(--text-secondary);
@@ -193,10 +204,44 @@
   border-radius: var(--radius-nav);
 }
 
+/* Entry: mascot, heading, legal and back link rise 40 ms apart. The Google
+   button and the messages (.rise) are left out so nothing delays the main
+   action and .press keeps working (backwards fill, never `both`). */
+.form > :not(:global(.rise)):not(.googleButton) {
+  animation: riseIn var(--dur-rise) var(--ease) backwards;
+}
+.form > .heading {
+  animation-delay: var(--stagger);
+}
+.form > .legal,
+.form > .back {
+  animation-delay: calc(var(--stagger) * 2);
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* The ring stops turning and breathes instead: still says «working». */
   .spinner {
     animation: breathe 1.2s ease-in-out infinite;
+  }
+  .form > :not(:global(.rise)):not(.googleButton) {
+    animation-name: fadeIn;
+    animation-duration: var(--dur-fast);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .brandPanel .brand:hover {
+    background-color: rgba(255, 255, 255, 0.14);
   }
 }
 @media (max-width: 1023.98px) {
@@ -205,6 +250,34 @@
   }
   .mobileBrand {
     display: block;
+  }
+  /* Phones: the whole screen is the blue pop surface (same tokens as
+     .pop.tone-blue.pop-grid). Text takes the blue's AA ink; the Google
+     button, notice and error keep their own light surfaces. */
+  .login {
+    background-color: var(--pop-blue);
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    background-position: -1px -1px;
+    color: var(--on-pop-blue);
+    --focus: var(--on-pop-blue);
+  }
+  .heading p,
+  .legal,
+  .legal a,
+  .back {
+    color: var(--on-pop-blue);
+  }
+  .back {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+@media (max-width: 1023.98px) and (hover: hover) and (pointer: fine) {
+  .back:hover {
+    background-color: rgba(255, 255, 255, 0.14);
   }
 }
 /* Landscape phones: drop the mark and tighten so the button is in view. */

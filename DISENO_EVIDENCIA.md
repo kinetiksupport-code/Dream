@@ -80,6 +80,23 @@ Skills releídas. Detalle en `docs/diseno/asistente/README.md`.
   - `privacy.md`: la cámara solo se abre al pulsar «Hacer foto», y la línea «No subas datos de otras personas».
 - **`libraries-dev`:** esperas de más de 2 s (leer apuntes, IA, crear la ruta) → orbe de marca con `orb-pulsing`, en vez de `thinking-orbs`, que no se instala sin OK. Sin `border-beam`: un solo foco por pantalla.
 
+## Login y registro con el estilo nuevo (19/10/2026, PR 9 del encargo de estilo)
+
+Skills releídas. Detalle en `docs/diseno/estilo-login/README.md`. El login es pantalla clave (azul saturado); el registro sigue sobrio porque tiene texto legal.
+
+- **`emil-design-eng`:**
+  - *Stagger*: mascota, titular y enlaces con 40 ms de separación. El botón de Google no se anima y se puede usar desde el primer fotograma.
+  - *Never animate from scale(0)*: la pegatina entra desde 0,9 (`.pop-in`).
+  - *Buttons must feel responsive*: el botón de Google sigue igual (0,97) y la cara del botón 3D «Empezar» baja 3 px.
+  - Animación con `backwards`, no con `both`, para no pisar la escala de `.press`.
+  - *prefers-reduced-motion*: solo fundidos; el Orb no respira.
+- **`apple-design`:**
+  - `onboarding.md`: una bienvenida breve y con personalidad, sin pasos de más.
+  - `accessibility.md › Convey information with more than color alone`: sobre azul, los enlaces van subrayados.
+  - `color.md`: texto blanco sobre azul (7,55:1 en claro y 9,20:1 en oscuro) y amarillo solo con tinta oscura.
+  - `branding.md`: la identidad (azul, mascota y titular) va en la pantalla de entrada. El botón de Google y el formulario son los de siempre.
+- **`libraries-dev`:** la espera de «Abriendo Google…» ya tiene su anillo, y sin `border-beam` porque dura poco. No se instalan paquetes.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -113,6 +130,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Login y registro con el estilo nuevo (PR 9) | `docs/diseno/estilo-login/antes/*` | `docs/diseno/estilo-login/despues/*` | `estilo-login-{escritorio,movil}{,-registro}.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
