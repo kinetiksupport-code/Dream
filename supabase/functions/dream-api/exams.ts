@@ -83,6 +83,13 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  if(linked)return {unit:linked};await db.from('dream_conversations').delete().eq('id',c.id).eq('owner_id',owner);
  return {unit:checked(await db.from('dream_exam_units').select('*').eq('id',unit.id).eq('owner_id',owner).single())};}
  return {unit};}
+ if(action==='exam_delete'){
+ // Borra el examen (unidades, materiales y simulacros van en cascada) y su
+ // conversación de subida, que guarda el texto de los apuntes. Las
+ // conversaciones de estudio de cada unidad se quedan en el Historial.
+ checked(await db.from('dream_exams').delete().eq('id',exam.id).eq('owner_id',owner));
+ if(exam.conversation_id)await db.from('dream_conversations').delete().eq('id',exam.conversation_id).eq('owner_id',owner);
+ return {ok:true};}
  if(action==='exam_complete'){checked(await db.from('dream_exams').update({status:'completed'}).eq('id',exam.id).eq('owner_id',owner));return {exam:await detail(db,owner,exam.id)};}
  if(action==='exam_session_create'){
  const sessionId=id(b.session_id);const prior=checked(await db.from('dream_exam_sessions').select('*').eq('id',sessionId).eq('exam_id',exam.id).eq('owner_id',owner).maybeSingle());

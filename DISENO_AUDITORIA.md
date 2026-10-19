@@ -198,3 +198,10 @@ La auditoría de `app/globals.css` y `components/shell.tsx` está en `docs/disen
 - Los tokens oscuros están duplicados en dos bloques. Ahora una prueba comprueba que coinciden.
 - Al volver con Atrás no se restauraba el scroll de `.workspace-main`. Ya está resuelto.
 - El anillo de foco azul no se ve sobre los fondos saturados. Ahora usa el color del texto de cada fondo.
+
+### Exámenes, historial (19/10/2026, PR 2)
+
+- Resuelto: los exámenes con la fecha pasada salían primeros en «Próximos». Ahora van en «Anteriores».
+- Resuelto: no se podía borrar ni marcar como hecho desde la lista. Ahora hay una hoja con las dos acciones y Deshacer.
+- Resuelto: el estado era una frase gris; ahora es una pegatina con color y texto.
+- Pendiente de Carlos: desplegar `exam_delete` (ver `docs/diseno/examenes-historial/README.md`).

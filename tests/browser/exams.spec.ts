@@ -297,7 +297,7 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
     page.getByRole("heading", { name: "Exámenes", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Añadir examen", exact: true })
+    .getByRole("link", { name: "Crear examen", exact: true })
     .first()
     .click();
   await page.getByLabel("Nombre del examen").fill("Álgebra · primer trimestre");
