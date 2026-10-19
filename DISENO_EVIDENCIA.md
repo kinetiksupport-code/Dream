@@ -157,6 +157,7 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `accessibility.md`: el hover amarillo del chip da 16,15:1 en claro y 7,79:1 en oscuro, y el icono de archivo 4,93:1 y 5,71:1.
   - `branding.md`: un solo elemento de marca (la pegatina).
 - **libraries-dev:** sin efectos nuevos. Las esperas siguen con el orbe.
+
 ### Estilo nuevo · Tareas (PR 7, `design/estilo-tareas`)
 
 - **Qué es:** una lista de trabajo, con estilo sobrio y toques de color. El CSS está en la sección `=== Estilo nuevo · Tareas ===` de `components/tasks-view.module.css`. El detalle está en `docs/diseno/estilo-tareas/README.md`.
@@ -170,6 +171,7 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `branding.md`: una pegatina por pantalla.
   - `accessibility.md`: 44 px y foco visible en la píldora «Resolver con Dream».
 - **libraries-dev:** sin efectos. No hay esperas largas.
+
 ### Estilo nuevo · Apuntes (PR 7, `design/estilo-apuntes`)
 
 - **Qué es:** una pantalla de lectura, con superficies sobrias y toques de color. El CSS está en la sección `=== Estilo nuevo · Apuntes ===` de `components/notes-view.module.css`. El detalle está en `docs/diseno/estilo-apuntes/README.md`.
