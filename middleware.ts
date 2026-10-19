@@ -17,9 +17,37 @@ const PUBLIC_ROUTES = new Set([
   "/auth/callback",
   "/api/auth/verify-maintenance",
 ]);
-const STATIC_ASSET = /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|mjs|png|svg|txt|ttf|webmanifest|webp|woff2?)$/i;
+const STATIC_ASSET =
+  /\.(?:avif|css|eot|gif|ico|jpe?g|js|json|map|mjs|png|svg|txt|ttf|webmanifest|webp|woff2?)$/i;
+
+// The QR upload page (/subir#<token>) carries a secret in the fragment: never
+// cached, never sent as a Referer, never indexed. Applied to every response of
+// /subir and /subir/*, including the redirects. A token in the path
+// (/subir/<anything>) is never used: it is dropped with a redirect to /subir,
+// which shows the generic "Este código ya no vale".
+const PRIVATE_UPLOAD_HEADERS: Record<string, string> = {
+  "Cache-Control": "no-store, max-age=0",
+  "Referrer-Policy": "no-referrer",
+  "X-Robots-Tag": "noindex, nofollow",
+};
+const isPrivateUpload = (pathname: string) =>
+  pathname === "/subir" || pathname.startsWith("/subir/");
 
 export async function middleware(request: NextRequest) {
+  const response = await route(request);
+  if (isPrivateUpload(request.nextUrl.pathname))
+    for (const [key, value] of Object.entries(PRIVATE_UPLOAD_HEADERS))
+      response.headers.set(key, value);
+  return response;
+}
+
+async function route(request: NextRequest): Promise<NextResponse> {
+  if (request.nextUrl.pathname.startsWith("/subir/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/subir";
+    url.search = "";
+    return NextResponse.redirect(url, 307);
+  }
   // Production only: send edudream.vercel.app and other secondary hosts to
   // www.edudream.es so a Google sign-in starts and ends on the same origin.
   const requested = new URL(request.nextUrl.href);
@@ -45,7 +73,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_ROUTES.has(pathname) ||
     pathname.startsWith("/_next/") ||
     pathname === "/sw.js" ||
-    ((!pathname.startsWith("/api/")) &&
+    (!pathname.startsWith("/api/") &&
       (request.method === "GET" || request.method === "HEAD") &&
       STATIC_ASSET.test(pathname))
   ) {

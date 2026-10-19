@@ -4,6 +4,10 @@ import { AdmissionError, consumingActions, createAdmission, readBoundedBody } fr
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
 import { chatShortcut, type ChatShortcut } from './validation.ts';
+import {
+  DESKTOP_UPLOAD_ACTIONS, MOBILE_UPLOAD_ACTIONS, QR_CHANNEL_HEADER, UploadSessionError,
+  desktopUploadAction, mobileUploadAction,
+} from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { chatSystemMessages } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
@@ -21,7 +25,7 @@ import {
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-dream-request-id',
+  'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-dream-request-id, x-dream-channel',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Expose-Headers': 'Retry-After',
   'Vary': 'Origin'
@@ -47,6 +51,69 @@ function safeFailure(error: unknown): Response {
     return json({ error: message, code, retry_after: error.retryAfter || 0 }, status, error.retryAfter ? {'Retry-After':String(error.retryAfter)} : {});
   }
   return json({error:'No se pudo completar la operación. Tus datos guardados se conservan.'},503);
+}
+function uploadFailure(error: unknown): Response {
+  if (error instanceof UploadSessionError) return json({ error: error.message, code: error.code, retry_after: error.retryAfter }, error.status, error.retryAfter ? {'Retry-After':String(error.retryAfter)} : {});
+  return safeFailure(error);
+}
+const serviceClient = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
+
+// Móvil del QR: sin sesión de usuario, solo el token del cuerpo. Únicamente
+// upload_qr_connect y upload_qr_file. Cada archivo recorre la ruta normal
+// (exam_upload_start → attachment_upload → exam_material_add) como el dueño del
+// examen, con su admisión. El token nunca se registra.
+async function handleQr(req: Request): Promise<Response> {
+  let body: any;
+  try {
+    const raw = await readBoundedBody(req, MAX_BODY_CHARS);
+    if (raw.length > MAX_BODY_CHARS) return json({ error: 'El archivo es demasiado grande.' }, 413);
+    body = JSON.parse(raw);
+  } catch (error) {
+    if (error instanceof AdmissionError) return safeFailure(error);
+    return json({ error: 'Solicitud no válida.' }, 400);
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body) || !MOBILE_UPLOAD_ACTIONS.has(String(body.action))) return json({ error: 'Acción no válida.' }, 400);
+  const admin = serviceClient();
+  const owners = new Map<string, {user:User;profile:Record<string,unknown>;admission:ReturnType<typeof createAdmission>}>();
+  const admitted: ReturnType<typeof createAdmission>[] = [];
+  const ownerContext = async (owner: string) => {
+    const known = owners.get(owner); if (known) return known;
+    const found = await admin.auth.admin.getUserById(owner);
+    if (found.error || !found.data.user) throw new UploadSessionError(404, 'upload_link_invalid', 'Este código ya no vale. Escanea uno nuevo desde tu ordenador.');
+    const profile = await admin.from('dream_profiles').select('*').eq('id', owner).maybeSingle();
+    if (profile.error || !profile.data) throw new UploadSessionError(503, 'upload_unavailable', 'No se pudo conectar ahora. Inténtalo de nuevo.');
+    const context = { user: found.data.user, profile: profile.data, admission: createAdmission(admin, owner, crypto.randomUUID()) };
+    owners.set(owner, context); return context;
+  };
+  try {
+    const result = await mobileUploadAction({
+      db: { rpc: (name, args) => admin.rpc(name, args) },
+      headers: req.headers,
+      dispatch: async (owner, payload) => {
+        const context = await ownerContext(owner);
+        // Misma admisión que attachment_upload desde el ordenador.
+        if (consumingActions.has(String(payload.action)) && !admitted.includes(context.admission)) {
+          await context.admission.admit(String(payload.action)); admitted.push(context.admission);
+        }
+        const response = await handle(new Request(req.url, {
+          method: 'POST', headers: { 'Authorization': 'Bearer qr-internal', 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload), signal: req.signal,
+        }), true, context.admission, { user: context.user, admin, profile: context.profile });
+        const data = await response.json().catch(() => ({}));
+        return { status: response.status, data: data && typeof data === 'object' ? data : {} };
+      },
+      discardAttachment: async (owner, attachmentId) => {
+        await admin.from('dream_attachments').delete().eq('id', attachmentId).eq('owner_id', owner);
+      },
+      log: (event) => console.log(JSON.stringify(event)),
+    }, body);
+    return json(result);
+  } catch (error) {
+    if (!(error instanceof UploadSessionError)) captureEdgeFailure('upload_qr', error instanceof AdmissionError ? error.code : 'edge_failure');
+    return uploadFailure(error);
+  } finally {
+    for (const admission of admitted) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'})));
+  }
 }
 
 async function groqJson(system: string, user: string, operation: string, signal?: AbortSignal, admission?: ReturnType<typeof createAdmission>) {
@@ -82,6 +149,7 @@ function objectiveAnswerIsCorrect(type: string, answer: unknown, expected: unkno
 async function handle(req: Request, examInternal = false, inherited?: ReturnType<typeof createAdmission>, verified?: {user:User;admin:SupabaseClient;profile:Record<string,unknown>}): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
   if (req.method !== 'POST') return json({ error: 'Método no permitido.' }, 405);
+  if (!verified && !examInternal && req.headers.get(QR_CHANNEL_HEADER) === 'qr') return handleQr(req);
 
   const bearer = req.headers.get('Authorization') || '';
   if (!bearer.startsWith('Bearer ')) return json({ error: 'Inicia sesión para continuar.' }, 401);
@@ -145,6 +213,11 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     display_name: profile.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
     academic_level: profile.academic_level ?? null
   };
+
+  if (DESKTOP_UPLOAD_ACTIONS.has(String(body.action))) {
+    try { return json(await desktopUploadAction({ rpc: (name, args) => admin.rpc(name, args) }, user.id, body)); }
+    catch (error) { return uploadFailure(error); }
+  }
 
   if (body.action === 'exams' || String(body.action).startsWith('exam_')) {
     try {
