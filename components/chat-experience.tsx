@@ -43,6 +43,7 @@ import { parseDreamContent } from "@/lib/widgets";
 import { validateFile, toBase64 } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
+import estilo from "./chat-estilo.module.css";
 import type {
   Conversation,
   Message,
@@ -874,7 +875,7 @@ export function ChatExperience({
     !busy && lastQuestion ? () => void send(lastQuestion, [], true) : undefined;
   return (
     <section
-      className={`chat-view ${messages.length ? "has-messages" : "is-empty"}`}
+      className={`chat-view ${estilo.estilo} ${messages.length ? "has-messages" : "is-empty"}`}
     >
       <div
         className="chat-scroll"
@@ -940,7 +941,9 @@ export function ChatExperience({
           study && (
             <div className="study-conversation-empty">
               <DreamActivity state="idle" label="Dream" />
-              <h2>Una idea cada vez.</h2>
+              <h2>
+                Una <span className="marker">idea</span> cada vez.
+              </h2>
               <p>
                 Pregunta lo que necesites. Dream tiene tus temas y materiales
                 como referencia.

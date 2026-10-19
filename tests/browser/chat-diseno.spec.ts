@@ -615,3 +615,118 @@ test("fluency: streaming 2.5 s with CPU ×4 has no long frames", async ({
   expect(long.length).toBeLessThanOrEqual(8);
   expect(Math.max(0, ...long)).toBeLessThan(120);
 });
+
+test("estilo: sticker on the test card, pills, press, focus ring and staggered actions", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await page.goto(`/chat?c=${cid}`);
+  await expect(page.locator(".message")).toHaveCount(4);
+  // History never animates (no entry on the actions row).
+  expect(
+    await page.evaluate(
+      () =>
+        document
+          .getAnimations()
+          .filter((a) =>
+            (
+              (a.effect as KeyframeEffect | null)?.target as Element | null
+            )?.closest?.(".message-actions"),
+          ).length,
+    ),
+  ).toBe(0);
+  // The test card's icon is a round yellow sticker with dark ink; the label
+  // («Práctica») says the same thing, so colour is never alone.
+  const card = page.locator(".quiz-widget");
+  await expect(card).toHaveAttribute("data-mode", "practice");
+  const icon = card.locator(".quiz-icon");
+  await expect(icon).toHaveCSS("background-color", "rgb(255, 194, 26)");
+  await expect(icon).toHaveCSS("color", "rgb(8, 11, 20)");
+  await expect(icon).toHaveCSS("border-radius", "50%");
+  await expect(card).toContainText("Práctica");
+  // Pills, a visible focus ring and the 0.97 press on the step chip.
+  const chip = page
+    .locator(".message-assistant")
+    .last()
+    .getByRole("button", { name: "Explícamelo por pasos" });
+  await expect(chip).toHaveCSS("border-radius", "999px");
+  await chip.focus();
+  await expect(chip).toHaveCSS("outline-style", "solid");
+  await chip.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(250);
+  expect(
+    await chip.evaluate(
+      (el) => new DOMMatrix(getComputedStyle(el).transform).a,
+    ),
+  ).toBeCloseTo(0.97, 2);
+  await page.mouse.move(0, 0);
+  await page.mouse.up();
+  // A new answer's actions arrive 40 ms apart.
+  const box = page.getByRole("textbox", { name: "Mensaje para Dream" });
+  await box.fill("¿Y si el término es negativo?");
+  await box.press("Enter");
+  await streamReady(page);
+  await emit(page, { type: "delta", text: "Prueba con un ejemplo." });
+  await emit(page, { type: "complete" });
+  await close(page);
+  const actions = page
+    .locator(".message-assistant")
+    .last()
+    .locator(".message-actions");
+  await expect(actions).toBeVisible({ timeout: 10000 });
+  const timing = await actions.evaluate((row) =>
+    [...row.children]
+      .filter((el) => el.matches("button"))
+      .map((el) => {
+        const s = getComputedStyle(el);
+        return { name: s.animationName, delay: s.animationDelay };
+      }),
+  );
+  expect(timing.map((t) => t.delay)).toEqual(["0s", "0.04s", "0.08s"]);
+  expect(timing.every((t) => /action-in/.test(t.name))).toBe(true);
+});
+
+test("estilo: reduced motion keeps only fades for the new chat touches", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/chat?c=${cid}`);
+  await expect(page.locator(".message")).toHaveCount(4);
+  const box = page.getByRole("textbox", { name: "Mensaje para Dream" });
+  await box.fill("Otra pregunta");
+  await box.press("Enter");
+  await streamReady(page);
+  await emit(page, { type: "delta", text: "Vamos a verlo." });
+  await emit(page, { type: "complete" });
+  await close(page);
+  const actions = page
+    .locator(".message-assistant")
+    .last()
+    .locator(".message-actions");
+  await expect(actions).toBeVisible({ timeout: 10000 });
+  const names = await actions.evaluate((row) =>
+    [...row.children]
+      .filter((el) => el.matches("button"))
+      .map((el) => getComputedStyle(el).animationName),
+  );
+  expect(names.length).toBeGreaterThan(0);
+  expect(names.every((n) => /fade-only/.test(n))).toBe(true);
+  // The press does not scale with reduced motion.
+  const chip = page
+    .locator(".message-assistant")
+    .last()
+    .getByRole("button", { name: "Explícamelo por pasos" });
+  await chip.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(200);
+  expect(await chip.evaluate((el) => getComputedStyle(el).transform)).toBe(
+    "none",
+  );
+  await page.mouse.move(0, 0);
+  await page.mouse.up();
+});
