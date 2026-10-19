@@ -1,6 +1,10 @@
 /* === Bienvenida y consentimiento (Parte D) ===
    One centred column, like the login. Native inputs underneath every custom
-   look, so keyboard, screen readers and autofill keep working. */
+   look, so keyboard, screen readers and autofill keep working.
+   Estilo nuevo (PROMPT_EXAMEN_ESTILO.md §2, §6): a sober form (it holds the
+   consent text, so it reads on --bg), with the Orb on a yellow sticker, a
+   huge italic headline (.hero-title) and the 3D «Empezar» (.button-3d). The
+   consent texts, boxes and links are unchanged. */
 .welcome {
   min-height: var(--viewport-height, 100dvh);
   display: flex;
@@ -22,10 +26,44 @@
   flex-direction: column;
   gap: 8px;
 }
+/* .hero-title, a size down: a form, not a poster. */
 .heading h1 {
-  font-size: var(--text-title);
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-size: clamp(2.25rem, 1.9rem + 1.2vw, 2.75rem);
+}
+.mascot {
+  align-self: flex-start;
+  line-height: 0;
+}
+/* Entry: mascot, heading and the form rise 40 ms apart (backwards fill so
+   .press and the 3D button keep their own transforms once in). */
+.card > * {
+  animation: riseIn var(--dur-rise) var(--ease) backwards;
+}
+.card > :nth-child(2) {
+  animation-delay: var(--stagger);
+}
+.card > :nth-child(3) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+.card > :nth-child(n + 4) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card > * {
+    animation-name: fadeIn;
+    animation-duration: var(--dur-fast);
+  }
 }
 .heading p,
 .hint {
@@ -225,7 +263,6 @@
 }
 .submit {
   width: 100%;
-  min-height: 52px;
   font-size: var(--text-body);
 }
 .submit[aria-busy="true"] {
@@ -237,7 +274,7 @@
   color: var(--text-secondary);
 }
 @media (hover: hover) and (pointer: fine) {
-  .submit:hover:not([aria-busy="true"]) {
+  .submit:hover:not([aria-busy="true"]) :global(.button-3d-face) {
     background-color: var(--primary-hover);
   }
   .exit:hover {

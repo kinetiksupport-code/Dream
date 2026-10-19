@@ -2,6 +2,7 @@
 import { useId, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Orb } from "./orb";
+import { Sticker } from "./sticker";
 import { AlertIcon, CheckIcon } from "./icons";
 import { useDream } from "./providers";
 import { errorMessage, saveConsent } from "@/lib/dream-api";
@@ -130,9 +131,14 @@ export function WelcomeConsent() {
   return (
     <main className={s.welcome}>
       <form ref={form} className={s.card} onSubmit={submit} noValidate>
-        <Orb size={48} />
+        {/* The mascot on its yellow sticker (decorative). */}
+        <span className={s.mascot} aria-hidden="true">
+          <Sticker shape="round" tone="yellow" size={88} tilt={-6}>
+            <Orb size={54} breathing />
+          </Sticker>
+        </span>
         <div className={s.heading}>
-          <h1>Antes de empezar</h1>
+          <h1 className="hero-title">Antes de empezar</h1>
           <p>Dos pasos y ya puedes estudiar con Dream.</p>
         </div>
 
@@ -198,11 +204,13 @@ export function WelcomeConsent() {
 
         <button
           type="submit"
-          className={`press primary ${s.submit}`}
+          className={`button-3d ${s.submit}`}
           aria-busy={busy}
           aria-disabled={busy || undefined}
         >
-          {busy ? "Guardando…" : "Empezar"}
+          <span className="button-3d-face">
+            {busy ? "Guardando…" : "Empezar"}
+          </span>
         </button>
         <button
           type="button"
