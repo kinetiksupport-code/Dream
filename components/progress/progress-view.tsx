@@ -4,12 +4,14 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
 } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Lock } from "lucide-react";
 import { errorMessage } from "@/lib/dream-api";
+import { AnimatedNumber } from "@/components/animated-number";
 import {
   countdownLabel,
   examDateLabel,
@@ -38,6 +40,26 @@ type Load<T> =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "ready"; data: T };
+
+/**
+ * A count or percentage that rolls up from 0 once when it appears, and rolls
+ * again if it changes (AnimatedNumber: transform and opacity, 200 ms; a fade
+ * with reduced motion). Screen readers read the final text once.
+ */
+function CountUp({
+  value,
+  format,
+}: {
+  value: number;
+  format: (value: number) => string;
+}) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(value));
+    return () => cancelAnimationFrame(id);
+  }, [value]);
+  return <AnimatedNumber value={shown} format={format} />;
+}
 
 const TABS = [
   { id: "preparacion", label: "Preparación" },
@@ -134,7 +156,9 @@ export function ProgressView() {
     <div className={`page page-wide ${styles.page}`}>
       <header className="page-header">
         <div className={styles.heading}>
-          <h1 className="title">Progreso</h1>
+          <h1 className={`hero-title ${styles.title}`}>
+            <span className="marker marker-draw">Progreso</span>
+          </h1>
           <p className="page-intro">
             Calculado con lo que ya has hecho en Dream: unidades completadas y
             tests corregidos.
@@ -266,12 +290,15 @@ function ExamProgressView({
           Resumen de {exam.title}
         </h2>
         <ReadinessRing value={progress.readiness} target={progress.target} />
-        <dl className={styles.kpis}>
+        <dl className={`${styles.kpis} stagger`}>
           <div className={styles.kpi}>
             <dt>Temas en el objetivo</dt>
             <dd>
               <strong>
-                {progress.topicsAtTarget} de {progress.topicsInPlan}
+                <CountUp
+                  value={progress.topicsAtTarget}
+                  format={(n) => `${n} de ${progress.topicsInPlan}`}
+                />
               </strong>
               <span>con un {pct(progress.target)} o más</span>
             </dd>
@@ -279,7 +306,13 @@ function ExamProgressView({
           <div className={styles.kpi}>
             <dt>Para el examen</dt>
             <dd>
-              <strong>{daysLabel(progress.daysLeft)}</strong>
+              <strong>
+                {progress.daysLeft !== null && progress.daysLeft > 0 ? (
+                  <CountUp value={progress.daysLeft} format={daysLabel} />
+                ) : (
+                  daysLabel(progress.daysLeft)
+                )}
+              </strong>
               <span>
                 {progress.daysLeft === null
                   ? "Añade la fecha a tu examen"
@@ -290,7 +323,9 @@ function ExamProgressView({
           <div className={styles.kpi}>
             <dt>Actividades hechas</dt>
             <dd>
-              <strong>{progress.activities}</strong>
+              <strong>
+                <CountUp value={progress.activities} format={String} />
+              </strong>
               <span>unidades y tests</span>
             </dd>
           </div>
@@ -353,6 +388,13 @@ function Tabs({
         aria-label="Vistas de progreso"
         onKeyDown={onKeyDown}
       >
+        <span
+          className={styles.tabIndicator}
+          aria-hidden="true"
+          style={{
+            transform: `translateX(calc(${TABS.findIndex((t) => t.id === tab)} * (100% + 4px)))`,
+          }}
+        />
         {TABS.map((t, i) => (
           <button
             key={t.id}
@@ -404,14 +446,15 @@ function ReadinessRing({ value, target }: { value: number; target: number }) {
     >
       <svg viewBox="0 0 128 128" aria-hidden="true" focusable="false">
         <circle className={styles.ringTrack} cx="64" cy="64" r={r} />
-        <circle
-          className={`${styles.ringValue} ${reached ? styles.reached : ""}`}
-          cx="64"
-          cy="64"
-          r={r}
-          strokeDasharray={`${(value / 100) * c} ${c}`}
-          transform="rotate(-90 64 64)"
-        />
+        <g transform="rotate(-90 64 64)">
+          <circle
+            className={`${styles.ringValue} ${reached ? styles.reached : ""}`}
+            cx="64"
+            cy="64"
+            r={r}
+            strokeDasharray={`${(value / 100) * c} ${c}`}
+          />
+        </g>
         <line
           className={styles.ringTarget}
           x1={64 + (r - 7) * Math.cos(angle)}
@@ -421,7 +464,9 @@ function ReadinessRing({ value, target }: { value: number; target: number }) {
         />
       </svg>
       <div className={styles.ringLabel}>
-        <strong>{pct(value)}</strong>
+        <strong>
+          <CountUp value={value} format={pct} />
+        </strong>
         <span>Objetivo {pct(target)}</span>
       </div>
     </div>
@@ -449,7 +494,7 @@ function Bar({
       aria-valuemax={100}
       aria-valuetext={pct(value)}
     >
-      <i style={{ width: `${value}%` }} />
+      <i style={{ transform: `scaleX(${value / 100})` }} />
       {target !== undefined && (
         <b style={{ left: `${target}%` }} aria-hidden="true" />
       )}
@@ -467,7 +512,7 @@ function PreparationPanel({
   examId: string;
 }) {
   return (
-    <div className={styles.stack}>
+    <div className={`${styles.stack} stagger`}>
       <ForecastCard forecast={progress.forecast} target={progress.target} />
       <GapsCard progress={progress} examId={examId} />
       <TopicList progress={progress} />
@@ -548,7 +593,9 @@ function ForecastBody({
   return (
     <>
       <p className={styles.forecastValue}>
-        <strong>{pct(forecast.projected)}</strong>
+        <strong>
+          <CountUp value={forecast.projected} format={pct} />
+        </strong>
         <span>
           {forecast.daysLeft === 0
             ? "es tu preparación hoy, día del examen"
@@ -792,26 +839,37 @@ function TestsPanel({
     );
   const summary = t.results.map((r) => pct(r.percentage)).join(", ");
   return (
-    <div className={styles.stack}>
+    <div className={`${styles.stack} stagger`}>
       <dl className={styles.stats}>
         <div>
           <dt>Media</dt>
-          <dd>{pct(t.average ?? 0)}</dd>
+          <dd>
+            <CountUp value={t.average ?? 0} format={pct} />
+          </dd>
         </div>
         <div>
           <dt>Mejor</dt>
-          <dd>{pct(t.best ?? 0)}</dd>
+          <dd>
+            <CountUp value={t.best ?? 0} format={pct} />
+          </dd>
         </div>
         <div>
           <dt>Último</dt>
-          <dd>{pct(t.last ?? 0)}</dd>
+          <dd>
+            <CountUp value={t.last ?? 0} format={pct} />
+          </dd>
         </div>
         <div>
           <dt>Cambio</dt>
           <dd>
-            {t.change === null
-              ? "—"
-              : `${t.change > 0 ? "+" : ""}${t.change} puntos`}
+            {t.change === null ? (
+              "—"
+            ) : (
+              <CountUp
+                value={t.change}
+                format={(n) => `${n > 0 ? "+" : ""}${n} puntos`}
+              />
+            )}
           </dd>
         </div>
       </dl>
@@ -826,11 +884,16 @@ function TestsPanel({
             className={styles.targetLine}
             style={{ bottom: `${progress.target}%` }}
           />
-          {t.results.map((r) => (
+          {t.results.map((r, i) => (
             <span
               key={r.sessionId}
               className={r.percentage >= progress.target ? styles.reached : ""}
-              style={{ height: `${Math.max(2, r.percentage)}%` }}
+              style={
+                {
+                  height: `${Math.max(2, r.percentage)}%`,
+                  "--i": Math.min(i, 7),
+                } as CSSProperties
+              }
             />
           ))}
         </div>
@@ -843,7 +906,7 @@ function TestsPanel({
         <ul className={styles.resultList}>
           {[...t.results].reverse().map((r) => (
             <li key={r.sessionId}>
-              <Link href={sessionPath(examId, r.sessionId)}>
+              <Link className="press" href={sessionPath(examId, r.sessionId)}>
                 <span>
                   <strong>{KIND_LABEL[r.kind]}</strong>
                   <small>
@@ -879,11 +942,16 @@ function RhythmPanel({
     progress.daysLeft >= 0 &&
     rhythm.daysToFinish > progress.daysLeft;
   return (
-    <div className={styles.stack}>
+    <div className={`${styles.stack} stagger`}>
       <dl className={styles.stats}>
         <div>
           <dt>Tu ritmo reciente</dt>
-          <dd>{decimal.format(rhythm.unitsPerDay)} unidades al día</dd>
+          <dd>
+            <CountUp
+              value={rhythm.unitsPerDay}
+              format={(n) => `${decimal.format(n)} unidades al día`}
+            />
+          </dd>
         </div>
         <div>
           <dt>Para acabar a tiempo</dt>
@@ -895,11 +963,15 @@ function RhythmPanel({
         </div>
         <div>
           <dt>Unidades pendientes</dt>
-          <dd>{rhythm.pendingUnits}</dd>
+          <dd>
+            <CountUp value={rhythm.pendingUnits} format={String} />
+          </dd>
         </div>
         <div>
           <dt>Tiempo diario</dt>
-          <dd>{rhythm.dailyMinutes} min</dd>
+          <dd>
+            <CountUp value={rhythm.dailyMinutes} format={(n) => `${n} min`} />
+          </dd>
         </div>
       </dl>
       <p className={styles.muted}>
@@ -915,15 +987,18 @@ function RhythmPanel({
       <section className={styles.card} aria-labelledby="weeks-title">
         <h2 id="weeks-title">Lo que has hecho cada semana</h2>
         <ol className={styles.weekBars}>
-          {history.map((w) => {
+          {history.map((w, i) => {
             const total = w.unitsCompleted + w.tests;
             return (
-              <li key={w.start}>
+              <li
+                key={w.start}
+                style={{ "--i": Math.min(i, 7) } as CSSProperties}
+              >
                 <span className={styles.weekName}>
                   {weekLabel(w.start, now)}
                 </span>
                 <span className={styles.weekTrack} aria-hidden="true">
-                  <i style={{ width: `${(total / max) * 100}%` }} />
+                  <i style={{ transform: `scaleX(${total / max})` }} />
                 </span>
                 <span className={styles.weekCount}>
                   {w.unitsCompleted}{" "}
