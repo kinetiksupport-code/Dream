@@ -180,10 +180,13 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  if(exam.status!=='ready')throw new ExamError('Tu plan aún no está listo.',409);
  const today=routeToday();
  // Máximo una regeneración por examen y día (reclamo atómico).
+ const previousDay=exam.route_regenerated_on??null;
  const claim=checked(await db.from('dream_exams').update({route_regenerated_on:today}).eq('id',exam.id).eq('owner_id',owner).or(`route_regenerated_on.is.null,route_regenerated_on.lt.${today}`).select('id').maybeSingle());
  if(!claim)throw new ExamError('Ya has ajustado tu ruta hoy. Podrás rehacerla mañana.',429);
  const trigger=['manual','minutes','date','result'].includes(String(b.trigger))?String(b.trigger):'manual';
- await regenerateRoute(db,owner,exam.id,ai,signal,trigger,today);
+ // Si la regeneración falla (base de datos), se devuelve el día: el alumno puede reintentar.
+ try{await regenerateRoute(db,owner,exam.id,ai,signal,trigger,today);}
+ catch(error){await db.from('dream_exams').update({route_regenerated_on:previousDay}).eq('id',exam.id).eq('owner_id',owner).eq('route_regenerated_on',today);throw error;}
  return {exam:await detail(db,owner,exam.id)};}
  throw new ExamError('Operación de examen no disponible.');
 }
@@ -193,6 +196,9 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
 // Requiere la migración 20261016120000_exam_ai_route.sql aplicada antes de encender el flag.
 function routeEnabled(){return Deno.env.get('DREAM_AI_ROUTE_ENABLED')==='true';}
 function routeToday(){return todayIn(Deno.env.get('DREAM_ROUTE_TIMEZONE')||'Europe/Madrid');}
+/** Tiempo máximo de la ruta con IA (ambos intentos). Pasado, ruta automática: exam_prepare no se alarga. */
+export const ROUTE_TIME_BUDGET_MS=45000;
+function routeSignal(signal:AbortSignal){return AbortSignal.any([signal,AbortSignal.timeout(ROUTE_TIME_BUDGET_MS)]);}
 type RouteUnitRow={id:string;position:number;status:'pending'|'in_progress'|'completed';estimated_minutes:number;topic:string;title:string};
 type RouteSessionRow={mode:'practice'|'exam';status:string;unit_id?:string|null;percentage?:number|null};
 type StoredNode=ReturnType<typeof fallbackRoute>['nodes'][number];
@@ -206,7 +212,7 @@ function resultsByTopic(units:RouteUnitRow[],sessions:RouteSessionRow[]){
  * Ruta con IA en modo Normal (modelo por defecto de groqJson, temperatura 0.25, JSON
  * estricto): valida, reintenta una vez y, si falla, ruta determinista 'auto'.
  */
-function planWithAi(exam:{title:string;subject:string;exam_date:string;daily_minutes:number;difficulties:string;goal:string},units:RouteUnitRow[],sessions:RouteSessionRow[],ai:JsonAI,signal:AbortSignal,today:string){
+function planWithAi(exam:{title:string;subject:string;exam_date:string;daily_minutes:number;difficulties:string;goal:string;target_grade?:number|string|null},units:RouteUnitRow[],sessions:RouteSessionRow[],ai:JsonAI,signal:AbortSignal,today:string){
  // PARTE G (presupuesto): cada intento pasa por admission.beforeAttempt, que ya reserva
  // tokens/coste del usuario y globales. Cuando exista el presupuesto de la Parte G,
  // descontarlo aquí, antes de cada intento: await budget.charge(owner,'exam_route',estimate).
@@ -221,7 +227,7 @@ async function routeInputs(db:SupabaseClient,owner:string,examId:string){
 async function storeInitialRoute(db:SupabaseClient,owner:string,examId:string,ai:JsonAI,signal:AbortSignal){
  const {exam,units,sessions}=await routeInputs(db,owner,examId);
  if(exam.route)return;
- const today=routeToday();const plan=await planWithAi(exam,units,sessions,ai,signal,today);
+ const today=routeToday();const plan=await planWithAi(exam,units,sessions,ai,routeSignal(signal),today);
  checked(await db.from('dream_exams').update({route:{version:1,nodes:plan.nodes},route_source:plan.source,route_updated_at:new Date().toISOString()}).eq('id',examId).eq('owner_id',owner).is('route',null));
 }
 /** Conserva los nodos completados y solo reordena lo pendiente. */
@@ -229,7 +235,7 @@ async function regenerateRoute(db:SupabaseClient,owner:string,examId:string,ai:J
  const {exam,units,sessions}=await routeInputs(db,owner,examId);
  const previous:StoredNode[]=Array.isArray(exam.route?.nodes)?exam.route.nodes:fallbackRoute({units,sessions,examDate:exam.exam_date,dailyMinutes:exam.daily_minutes,today}).nodes;
  const done=routeProgress(previous,units,sessions);
- const plan=await planWithAi(exam,units,sessions,ai,signal,today);
+ const plan=await planWithAi(exam,units,sessions,ai,routeSignal(signal),today);
  const nodes=mergeRoute(previous,done,plan.nodes);
  checked(await db.from('dream_exams').update({route:{version:1,nodes,changes:diffRoutes(previous,nodes),trigger},route_source:plan.source,route_updated_at:new Date().toISOString()}).eq('id',examId).eq('owner_id',owner));
 }

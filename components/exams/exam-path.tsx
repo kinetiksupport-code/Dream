@@ -277,7 +277,9 @@ export function ExamPath({ id }: { id: string }) {
   // Un test con un resultado muy distinto a lo esperado pide ajustar la ruta (máx. 1 al día en servidor).
   useEffect(() => {
     if (!exam || !today || !online) return;
-    if (!exam.route_source || exam.route_regenerated_on === today) return;
+    // El servidor solo rehace la ruta de un plan listo (no de uno terminado).
+    if (exam.status !== "ready" || !exam.route_source) return;
+    if (exam.route_regenerated_on === today) return;
     const updated = exam.route_updated_at ? Date.parse(exam.route_updated_at) : 0;
     const fresh = exam.sessions.filter(
       (s) =>
@@ -421,7 +423,9 @@ export function ExamPath({ id }: { id: string }) {
     !!exam.route_regenerated_on &&
     dayDiff(exam.route_regenerated_on, today) <= 2;
   const canRegenerate =
-    !!exam.route_source && exam.route_regenerated_on !== today;
+    exam.status === "ready" &&
+    !!exam.route_source &&
+    exam.route_regenerated_on !== today;
   const titles = new Map(exam.units.map((u) => [u.id, u.title]));
 
   async function share() {

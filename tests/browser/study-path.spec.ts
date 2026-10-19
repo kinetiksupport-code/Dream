@@ -400,6 +400,103 @@ test("ruta guardada por la IA: «Tu ruta se ha ajustado», ver cambios y «Rehac
   ]);
 });
 
+// Ruta con el flag encendido: la IA falló y el servidor guardó la automática.
+const savedAuto: DreamExam = {
+  ...base,
+  route_source: "auto",
+  route_updated_at: "2026-10-16T08:00:00Z",
+  route_regenerated_on: null,
+  route: {
+    version: 1,
+    nodes: [
+      { id: "study-1", type: "study", unit_id: uid(0), planned_date: null, minutes: 20, reason: "Aprende este tema paso a paso." },
+      { id: "study-2", type: "study", unit_id: uid(1), planned_date: null, minutes: 20, reason: "Aprende este tema paso a paso." },
+      { id: "study-3", type: "study", unit_id: uid(2), planned_date: "2026-10-16", minutes: 20, reason: "Aprende este tema paso a paso." },
+      { id: "mock-4", type: "mock", planned_date: "2026-10-29", minutes: 20, reason: "Ensaya el examen completo con tiempo." },
+    ],
+  },
+};
+
+test("ruta automática guardada por el servidor: se pinta tal cual y se puede rehacer", async ({
+  page,
+}) => {
+  const calls = await fixture(page, {
+    exam: savedAuto,
+    handlers: {
+      exam_route_regenerate: () => ({ exam: { ...savedAuto, route_regenerated_on: "2026-10-16" } }),
+    },
+  });
+  await page.goto(`/exams/${eid}/ruta`);
+  await expect(page.getByText("Ruta automática")).toBeVisible();
+  await expect(steps(page)).toHaveCount(4);
+  await expect(page.getByText("Tu ruta se ha ajustado")).toHaveCount(0);
+  await page.getByRole("button", { name: "Rehacer mi ruta" }).click();
+  await expect(page.getByRole("button", { name: /Rehacer|Rehaciendo/ })).toHaveCount(0);
+  expect(calls.filter((c) => c.action === "exam_route_regenerate")).toHaveLength(1);
+});
+
+test("examen anterior a la ruta con IA (route nulo): ruta automática sin «Rehacer mi ruta»", async ({
+  page,
+}) => {
+  const legacy: DreamExam = {
+    ...base,
+    route: null,
+    route_source: null,
+    route_updated_at: null,
+    route_regenerated_on: null,
+    sessions: [{ ...base.sessions[0], submitted_at: "2026-10-16T09:00:00Z", percentage: 20 }],
+  };
+  const calls = await fixture(page, { exam: legacy });
+  await page.goto(`/exams/${eid}/ruta`);
+  await expect(page.getByText("Ruta automática")).toBeVisible();
+  await expect(steps(page).first()).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.getByRole("button", { name: "Rehacer mi ruta" })).toHaveCount(0);
+  expect(calls.filter((c) => c.action === "exam_route_regenerate")).toHaveLength(0);
+});
+
+test("un test muy distinto a lo esperado ajusta la ruta una vez (trigger «result»)", async ({
+  page,
+}) => {
+  const fresh: DreamExam = {
+    ...savedAuto,
+    sessions: [{ ...base.sessions[0], submitted_at: "2026-10-16T09:00:00Z", percentage: 20 }],
+  };
+  const calls = await fixture(page, {
+    exam: fresh,
+    handlers: {
+      exam_route_regenerate: () => ({
+        exam: { ...fresh, route_updated_at: "2026-10-16T10:00:00Z", route_regenerated_on: "2026-10-16" },
+      }),
+    },
+  });
+  await page.goto(`/exams/${eid}/ruta`);
+  await expect(page.getByText("Ruta automática")).toBeVisible();
+  await expect
+    .poll(() => calls.filter((c) => c.action === "exam_route_regenerate"))
+    .toEqual([expect.objectContaining({ exam_id: eid, trigger: "result" })]);
+  // Ya ajustada hoy: el botón desaparece y no se repite la llamada.
+  await expect(page.getByRole("button", { name: /Rehacer|Rehaciendo/ })).toHaveCount(0);
+  await page.waitForTimeout(300);
+  expect(calls.filter((c) => c.action === "exam_route_regenerate")).toHaveLength(1);
+});
+
+test("examen terminado: no ofrece «Rehacer mi ruta» ni la ajusta sola", async ({
+  page,
+}) => {
+  const done: DreamExam = {
+    ...savedAuto,
+    status: "completed",
+    sessions: [{ ...base.sessions[0], submitted_at: "2026-10-16T09:00:00Z", percentage: 95 }],
+  };
+  const calls = await fixture(page, { exam: done });
+  await page.goto(`/exams/${eid}/ruta`);
+  await expect(page.getByText("Ruta automática")).toBeVisible();
+  await page.waitForTimeout(300);
+  await expect(page.getByRole("button", { name: "Rehacer mi ruta" })).toHaveCount(0);
+  expect(calls.filter((c) => c.action === "exam_route_regenerate")).toHaveLength(0);
+});
+
 test("«Compartir» usa navigator.share con un texto sin datos personales", async ({
   page,
 }) => {

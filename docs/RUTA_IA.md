@@ -1,8 +1,9 @@
 # Ruta de estudio con IA (Parte B.3)
 
-Estado: **código y migración escritos, sin desplegar ni aplicar**. Todo va detrás de
-`DREAM_AI_ROUTE_ENABLED` (apagado por defecto). Hasta el OK de Carlos, producción no cambia:
-el cliente ya funciona con el calendario automático calculado en el navegador.
+Estado (19-10-2026): **migración `exam_ai_route` aplicada en producción**; dream-api con la
+ruta se despliega desde `release/2026-10-19`. Todo va detrás de `DREAM_AI_ROUTE_ENABLED`
+(apagado por defecto). Con el flag apagado, el cliente usa el calendario automático
+calculado en el navegador.
 
 ## Qué hace
 
@@ -11,10 +12,12 @@ el cliente ya funciona con el calendario automático calculado en el navegador.
    `{type: study|practice|review|mock, unit_id?, planned_date, minutes, reason}`.
 2. El servidor valida la respuesta (`validateAiRoute` en `route-plan.mjs`). Si falla, reintenta
    una vez; si vuelve a fallar (o la admisión corta), guarda la ruta determinista marcada `auto`.
-   Un fallo de la ruta nunca rompe el plan ya guardado.
+   Un fallo de la ruta nunca rompe el plan ya guardado. La ruta tiene **45 s** como máximo
+   (`ROUTE_TIME_BUDGET_MS`, los dos intentos juntos); pasado ese tiempo, ruta automática.
 3. `exam_route_regenerate` rehace la ruta: conserva los nodos completados y solo reordena lo
    pendiente. Máximo **una por examen y día** (reclamo atómico sobre `route_regenerated_on`,
-   fecha en `Europe/Madrid`). Guarda qué cambió para «Tu ruta se ha ajustado · Ver qué cambió».
+   fecha en `Europe/Madrid`). Si la regeneración falla por la base de datos, se devuelve el
+   día para poder reintentar. Solo con el plan `ready`. Guarda qué cambió para «Tu ruta se ha ajustado · Ver qué cambió».
 
 Disparadores de la regeneración (todos desde el cliente, todos sujetos al límite diario):
 
@@ -25,13 +28,16 @@ Disparadores de la regeneración (todos desde el cliente, todos sujetos al lími
 | Test con resultado muy distinto (< 40 % o > 90 %) posterior a la ruta | al abrir la ruta | `result` |
 | Cambio de fecha | hoy la fecha no se puede cambiar tras `ready` (`exam_update` solo en borrador); queda aceptado `date` para cuando se permita | `date` |
 
-El cliente solo muestra «Rehacer mi ruta» y llama a la regeneración si el examen trae
-`route_source` (es decir, si la migración está aplicada y el servidor tiene la ruta).
+El cliente solo muestra «Rehacer mi ruta» y llama a la regeneración si el examen está
+`ready` y trae `route_source` (es decir, si el servidor ya guardó una ruta). Los exámenes
+creados antes de encender el flag (`route` nulo) siguen con la ruta automática del
+navegador y sin botón.
 
 ## Datos enviados a la IA
 
 Solo `routeContext()`: título y asignatura del examen, hoy, `exam_date`, `daily_minutes`,
-`difficulties` (≤ 1500), `goal` (≤ 500), unidades pendientes (`unit_id`, tema, minutos, estado)
+`difficulties` (≤ 1500), `goal` (≤ 500), `target_grade` (nota objetivo del asistente, 0–10
+o `null`; el prompt la usa para dosificar el esfuerzo), unidades pendientes (`unit_id`, tema, minutos, estado)
 y aciertos medios por tema. **Nunca** nombre, correo, perfil, conversaciones ni materiales.
 Hay una prueba que lo comprueba (`tests/route-plan.test.ts`).
 
@@ -93,11 +99,22 @@ usuario y global. El punto para descontar el presupuesto de la Parte G está mar
 `exam_route_regenerate` se añadió a `consumingActions` (admisión antes de ejecutar).
 `exam_prepare` ya era consumidora: la ruta se genera dentro de esa misma admisión.
 
+## Asistente de examen (PR #35) y la ruta
+
+- El borrador del asistente nace sin nombre, asignatura ni fecha; `exam_prepare` los exige
+  antes de llamar a la IA, así que la ruta siempre tiene `exam_date`.
+- `daily_minutes` vale 45 por defecto: es el tope diario que valida la ruta.
+- `target_grade` llega al contexto como número (y además como frase en `goal`).
+- `exam_route_regenerate` está en `consumingActions` y en la lista de `dream_admit` desde
+  la migración `20261018170000_exam_wizard.sql` (necesaria antes de encender el flag).
+- Pruebas: `supabase/tests/exam_route_deno.mjs` (dream-api de punta a punta con el flag),
+  `tests/route-plan.test.ts` y `tests/browser/study-path.spec.ts`.
+
 ## Pendiente del OK de Carlos
 
-1. Aplicar la migración `20261016120000_exam_ai_route.sql` (antes de encender el flag).
-2. Desplegar `dream-api` con este código (también trae `unit_id` y `percentage` por test en
-   `exam_get`, que alimentan el anillo de dominio; es independiente del flag).
+1. ~~Aplicar la migración `20261016120000_exam_ai_route.sql`~~ (aplicada). Comprobar que
+   `20261018170000_exam_wizard.sql` también lo está.
+2. Desplegar `dream-api` con este código.
 3. Encender `DREAM_AI_ROUTE_ENABLED=true` (opcional `DREAM_ROUTE_TIMEZONE`, por defecto
    `Europe/Madrid`).
 4. Decidir si la generación inicial debe ir en segundo plano: ahora alarga la respuesta de
