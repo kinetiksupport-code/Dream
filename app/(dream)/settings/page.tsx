@@ -8,11 +8,13 @@ import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
 import { UsageLimits } from "@/components/usage-limits";
 import { useDream } from "@/components/providers";
+import { Sticker } from "@/components/sticker";
 import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import { accountIdentity } from "@/lib/account";
 import { useOnline } from "@/lib/use-online";
 import { applyEasyReading, crossFade, readEasyReading } from "@/lib/reading";
+import styles from "./settings.module.css";
 
 const CONTACT =
   "mailto:hellodream@edudream.es?subject=Eliminar%20mi%20cuenta%20de%20Dream";
@@ -162,25 +164,35 @@ export default function Settings() {
   const accountBlocked = !online;
 
   return (
-    <div className="page page-settings">
-      <h1 className="title">Ajustes</h1>
+    <div className={`page page-settings ${styles.page}`}>
+      <h1 className={`hero-title ${styles.title}`}>
+        <span className="marker marker-draw">Ajustes</span>
+      </h1>
 
       <section className="group" aria-labelledby="profile-title">
         <h2 className="section-title" id="profile-title">
           Perfil
         </h2>
-        <dl className="group-list">
-          <div className="group-row">
-            <dt>Nombre</dt>
-            <dd className="value">
-              {identity.name || "Sin nombre en tu cuenta"}
-            </dd>
-          </div>
-          <div className="group-row">
-            <dt>Correo</dt>
-            <dd className="value">{identity.email}</dd>
-          </div>
-        </dl>
+        <div className={styles.profile}>
+          {/* Decorative: the name and email are right next to it. */}
+          <span aria-hidden="true">
+            <Sticker shape="round" tone="yellow" className={styles.avatar}>
+              {(identity.name || identity.email || "·").trim().charAt(0)}
+            </Sticker>
+          </span>
+          <dl className="group-list">
+            <div className="group-row">
+              <dt>Nombre</dt>
+              <dd className="value">
+                {identity.name || "Sin nombre en tu cuenta"}
+              </dd>
+            </div>
+            <div className="group-row">
+              <dt>Correo</dt>
+              <dd className="value">{identity.email}</dd>
+            </div>
+          </dl>
+        </div>
         <p className="page-intro">
           Tu nombre y tu correo vienen de tu cuenta de Google.
         </p>
@@ -209,7 +221,7 @@ export default function Settings() {
           {THEMES.map((t) => (
             <button
               type="button"
-              className="press"
+              className={`press ${styles.themeOption} ${styles[t.value]}`}
               aria-pressed={theme === t.value}
               key={t.value}
               onClick={() => chooseTheme(t.value)}

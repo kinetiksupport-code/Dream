@@ -1,0 +1,107 @@
+/* === Ajustes · estilo nuevo === (PROMPT_EXAMEN_ESTILO.md §2, §6)
+   A sober screen with touches of colour: the huge italic headline with the
+   hand-drawn marker, a round yellow sticker with the account's initial and
+   the chosen theme's icon in its pop tone. Sections rise one after another
+   (--stagger, max 8). Transform and opacity only; reduced motion fades.
+   The rest of Ajustes (theme pill, switch, dialogs, toast) stays in
+   app/globals.css › «=== Ajustes ===». */
+.title {
+  margin: 0;
+  /* Room for the marker stroke under the word. */
+  padding-bottom: 0.12em;
+}
+
+/* Entry: headline and sections rise 8 px, 40 ms apart, never blocking. */
+.page > h1,
+.page > section {
+  animation: riseIn var(--dur-rise) var(--ease) backwards;
+}
+.page > :nth-child(2) {
+  animation-delay: calc(var(--stagger) * 1);
+}
+.page > :nth-child(3) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+.page > :nth-child(4) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+.page > :nth-child(5) {
+  animation-delay: calc(var(--stagger) * 4);
+}
+.page > :nth-child(6) {
+  animation-delay: calc(var(--stagger) * 5);
+}
+.page > :nth-child(7) {
+  animation-delay: calc(var(--stagger) * 6);
+}
+.page > :nth-child(n + 8) {
+  animation-delay: calc(var(--stagger) * 7);
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* Profile: the sticker sits beside the name and email list. */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.profile > dl {
+  flex: 1;
+  min-width: 0;
+}
+.avatar {
+  --sticker-size: 64px;
+  font-size: 1.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+/* Theme: the chosen option's icon takes its tone (decorative: the label
+   says it). Colour fades only. */
+.themeOption svg {
+  transition: color var(--dur-base) ease;
+}
+.themeOption[aria-pressed="true"].light svg {
+  color: var(--pop-orange);
+}
+.themeOption[aria-pressed="true"].dark svg {
+  color: var(--pop-purple);
+}
+.themeOption[aria-pressed="true"].system svg {
+  color: var(--pop-blue);
+}
+/* On the dark pill the deep tones are too dim: every chosen icon is the
+   dark-mode yellow (--pop-yellow #e8a90c). */
+:global(:root[data-theme="dark"]) .themeOption[aria-pressed="true"].light svg,
+:global(:root[data-theme="dark"]) .themeOption[aria-pressed="true"].dark svg,
+:global(:root[data-theme="dark"]) .themeOption[aria-pressed="true"].system svg {
+  color: var(--pop-yellow);
+}
+
+@media (max-width: 479.98px) {
+  .profile {
+    gap: 12px;
+  }
+  .avatar {
+    --sticker-size: 52px;
+    font-size: 1.375rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page > h1,
+  .page > section {
+    animation-name: fadeIn;
+    animation-duration: var(--dur-fast);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
