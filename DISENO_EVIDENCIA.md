@@ -80,6 +80,21 @@ Skills releídas. Detalle en `docs/diseno/asistente/README.md`.
   - `privacy.md`: la cámara solo se abre al pulsar «Hacer foto», y la línea «No subas datos de otras personas».
 - **`libraries-dev`:** esperas de más de 2 s (leer apuntes, IA, crear la ruta) → orbe de marca con `orb-pulsing`, en vez de `thinking-orbs`, que no se instala sin OK. Sin `border-beam`: un solo foco por pantalla.
 
+## Ajustes con el estilo nuevo (19/10/2026, PR 8 del encargo de estilo)
+
+Skills releídas. Detalle en `docs/diseno/estilo-ajustes/README.md`. Pantalla sobria, sin fondo saturado.
+
+- **`emil-design-eng`:**
+  - *Stagger 30–80 ms*: el titular y las secciones entran con `--stagger` (40 ms, máximo 8). Solo `transform` y `opacity`.
+  - *Should this animate at all?*: Ajustes se abre de vez en cuando, así que una entrada corta vale. Los cambios frecuentes (interruptor y tema) siguen siendo inmediatos.
+  - *Is it a hover/color change? → ease*: el icono del tema elegido solo funde su color.
+  - *prefers-reduced-motion*: las secciones solo funden.
+- **`apple-design`:**
+  - `settings.md`: los ajustes siguen agrupados y sobrios, sin adornos que distraigan.
+  - `accessibility.md › Convey information with more than color alone`: el color del icono acompaña a la etiqueta; la pegatina de la inicial es decorativa (`aria-hidden`).
+  - `branding.md`: la identidad va en el titular y en un toque de color; los controles son los de siempre.
+- **`libraries-dev`:** nada que añadir. No hay esperas largas y no se instalan paquetes.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -113,6 +128,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Ajustes con el estilo nuevo (PR 8) | `docs/diseno/estilo-ajustes/antes/*` | `docs/diseno/estilo-ajustes/despues/*` | `estilo-ajustes.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
