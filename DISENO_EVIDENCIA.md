@@ -132,6 +132,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
 | Objetos 3D reales en escritorio (PR 6) | `docs/diseno/objetos-3d/antes/*` | `docs/diseno/objetos-3d/despues/*` | `objetos-3d.webm` | PR 6 |
 | Estilo nuevo · Chat (PR 7) | `docs/diseno/estilo-chat/antes/*` | `docs/diseno/estilo-chat/despues/*` | — (pruebas en `chat-diseno.spec.ts` › «estilo») | design/estilo-chat |
+| Estilo nuevo · Tareas (PR 7) | `docs/diseno/estilo-tareas/antes/*` | `docs/diseno/estilo-tareas/despues/*` | — (pruebas en `tareas.spec.ts` › «estilo») | design/estilo-tareas |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
@@ -155,3 +156,16 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `accessibility.md`: el hover amarillo del chip da 16,15:1 en claro y 7,79:1 en oscuro, y el icono de archivo 4,93:1 y 5,71:1.
   - `branding.md`: un solo elemento de marca (la pegatina).
 - **libraries-dev:** sin efectos nuevos. Las esperas siguen con el orbe.
+### Estilo nuevo · Tareas (PR 7, `design/estilo-tareas`)
+
+- **Qué es:** una lista de trabajo, con estilo sobrio y toques de color. El CSS está en la sección `=== Estilo nuevo · Tareas ===` de `components/tasks-view.module.css`. El detalle está en `docs/diseno/estilo-tareas/README.md`.
+- **emil-design-eng:**
+  - Las filas pendientes entran con `.stagger` (40 ms, 8 como máximo).
+  - El tick de la casilla usa el muelle suave (250 ms, desde 0,9).
+  - La pegatina entra con `pop-in`.
+  - Pulsación 0,97 y hover solo con puntero fino. Reducido: solo fundido.
+- **apple-design:**
+  - `color.md`: pegatina amarilla con un lápiz (decorativa, tinta 12,15:1 y 9,47:1) y pegatina lima en «Lo tienes todo al día» (15,62:1 y 12,86:1).
+  - `branding.md`: una pegatina por pantalla.
+  - `accessibility.md`: 44 px y foco visible en la píldora «Resolver con Dream».
+- **libraries-dev:** sin efectos. No hay esperas largas.
