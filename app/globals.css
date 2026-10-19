@@ -4391,6 +4391,28 @@ fieldset:disabled .test-option {
     transform: translateY(-6%) rotate(-3deg);
   }
 }
+/* Modelo 3D real de escritorio (PR 6, components/subject-object-live.tsx):
+   el lienzo va encima del icono, con el mismo tamaño fijo. Mientras carga
+   es invisible; con el primer fotograma se cruzan con un fundido. */
+.subject-object[data-3d] {
+  position: relative;
+}
+.subject-object-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease);
+  pointer-events: none;
+}
+.subject-object[data-3d="ready"] .subject-object-canvas {
+  opacity: 1;
+}
+.subject-object[data-3d="ready"] img {
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease);
+}
 :root[data-page-transition]::view-transition-group(exam-object) {
   animation-duration: var(--dur-page);
   animation-timing-function: var(--ease);
