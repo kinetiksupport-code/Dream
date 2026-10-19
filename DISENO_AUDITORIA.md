@@ -205,3 +205,11 @@ La auditoría de `app/globals.css` y `components/shell.tsx` está en `docs/disen
 - Resuelto: no se podía borrar ni marcar como hecho desde la lista. Ahora hay una hoja con las dos acciones y Deshacer.
 - Resuelto: el estado era una frase gris; ahora es una pegatina con color y texto.
 - Pendiente de Carlos: desplegar `exam_delete` (ver `docs/diseno/examenes-historial/README.md`).
+
+### Asistente de crear examen (19/10/2026, PR 3)
+
+- Resuelto: el formulario largo (nombre, asignatura, temas, dificultades, minutos) pasa a ser un asistente de una pregunta por pantalla; la IA pone nombre, asignatura y temas.
+- Resuelto: `/exams/new` es pantalla completa, sin menú ni barra.
+- Resuelto: la fecha usaba `input type=date` nativo; ahora es un calendario propio accesible.
+- Encontrado y arreglado en la migración: `exam_route_regenerate` no estaba admitida por `dream_admit`.
+- Pendiente: recortar y enderezar fotos; modelos 3D (PR 6).

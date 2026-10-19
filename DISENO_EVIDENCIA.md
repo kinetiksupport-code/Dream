@@ -58,6 +58,28 @@ Skills releídas. Detalle en `docs/diseno/examenes-historial/README.md`.
   - Áreas táctiles de 44 px comprobadas a 360, 390 y 1280 px.
 - **`libraries-dev`:** nada que añadir: cargar la lista dura menos de 2 s, así que ni orbes ni haces de luz. No instalo paquetes.
 
+## Asistente de crear examen (19/10/2026, PR 3 del encargo de exámenes)
+
+Skills releídas. Detalle en `docs/diseno/asistente/README.md`.
+
+- **`emil-design-eng`:**
+  - *Only animate transform and opacity*: pasos (`page-enter-*`), barra de progreso (`scaleX`), ruedecita (escala y opacidad por fila, escritas en el propio elemento: *CSS variables are inheritable*), tick (máscara con `scaleX`), chispas y fondos (capas con opacidad).
+  - *Springs for playful bits*: `--ease-spring` solo en el asentado de la ruedecita, el objeto que entra y las etiquetas (`.pop-in`).
+  - *Buttons must feel responsive*: botón 3D y `.press` en todo lo pulsable; días del calendario a 0,94.
+  - *Never animate keyboard-initiated actions* en exceso: con teclado la ruedecita salta con `scrollTo` suave, y es instantáneo con movimiento reducido.
+  - *Stagger*: bienvenida (orbe, titular, frase) con `--stagger` 40 ms.
+  - *Asymmetric enter/exit*: los pasos entran en 240 ms y la hoja sale con su gesto.
+  - *Perceived performance*: «Estoy leyendo tus apuntes…» dura al menos 1,4 s para que no parpadee, nunca más que la llamada real.
+- **`apple-design`:**
+  - `pickers.md`: calendario propio con días completos en la etiqueta y teclado, y la ruedecita como `slider` con `aria-valuetext`.
+  - `sheets.md › For complex or prolonged user flows, consider alternatives to sheets` (pantalla completa para tareas de varios pasos): por eso el asistente es una ruta a pantalla completa y no una hoja. `onboarding.md › design a brief, enjoyable experience`: una pregunta por pantalla con el progreso visible.
+  - `sheets.md › Display only one sheet at a time` y `› Provide an alternative to the Done button`: una sola hoja cada vez y siempre con salida («Seguir con mi examen», «Cancelar»), además del gesto y de Escape.
+  - `generative-ai.md › Keep people in control` (lo que pone la IA se puede corregir: nombre, temas y asignatura) y `› Ensure a great experience even when generative features aren’t available` (nombre y asignatura a mano si la IA falla o se agota).
+  - `feedback.md › Consider integrating status feedback into your interface`: estados en la fila (subiendo, procesando, listo), sin alertas.
+  - `accessibility.md`: foco al título del paso, región viva «Paso N de 5», 44 px, color y texto siempre juntos, contraste AA sobre azul, amarillo y naranja.
+  - `privacy.md`: la cámara solo se abre al pulsar «Hacer foto», y la línea «No subas datos de otras personas».
+- **`libraries-dev`:** esperas de más de 2 s (leer apuntes, IA, crear la ruta) → orbe de marca con `orb-pulsing`, en vez de `thinking-orbs`, que no se instala sin OK. Sin `border-beam`: un solo foco por pantalla.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -88,7 +110,8 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes | `antes/examenes-*`, `antes/examen-*` | `docs/diseno/examenes/*` | `examenes.webm` | #26 |
 | Login y registro (Parte D) | `antes/login-*` | `docs/diseno/login/*` | `login.webm` | #30 |
 | Estilo nuevo y transiciones entre páginas (PR 1 del encargo de exámenes) | `docs/diseno/estilo/antes/*` | `docs/diseno/estilo/despues/*` | `transiciones-escritorio.webm`, `transiciones-movil.webm` (y `transiciones-antes-*`), `estilo-primitivas.webm` | #33 |
-| Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | este PR |
+| Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
+| Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.

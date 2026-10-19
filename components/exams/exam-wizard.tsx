@@ -1,667 +1,592 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// Asistente de crear examen a pantalla completa (PROMPT_EXAMEN_ESTILO.md §5).
+// Una pregunta por pantalla: bienvenida → apuntes (y aviso de pocos
+// apuntes) → fecha → nota con la ruedecita → la IA pone nombre, asignatura y
+// temas → «Tu examen está listo». El Shell no pinta menú en /exams/new
+// (lib/navigation.ts › isFocusRoute). El paso va en la URL (?id=…&paso=…):
+// Atrás del navegador vuelve al paso anterior y recargar retoma donde iba;
+// el borrador guarda además el paso (wizard_step) para abrirlo desde el
+// historial. Los pasos entran con page-enter-* (globals.css › Asistente).
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, ArrowRight, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, CloudOff, RotateCcw } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
+import { getExam, updateExam, type DreamExam } from "@/lib/exam-plans";
 import {
-  daysUntil,
-  examDateLabel,
-  getExam,
-  MAX_EXAM_MATERIALS,
-  updateExam,
-  type DreamExam,
-  type ExamFields,
-} from "@/lib/exam-plans";
-import { fileAccept, validateFile, toBase64 } from "@/lib/attachments";
-import { AttachmentItem } from "../attachment";
-import type { Attachment } from "@/lib/types";
-import { ErrorNotice, Materials } from "./exam-ui";
-import {
-  ExamDetailSkeleton,
-  ExamPage,
-  FailedState,
-  PreparingState,
-  examStyles as s,
-} from "./exam-page";
-type FieldKey = "title" | "subject" | "exam_date" | "topics";
-type FieldErrors = Partial<Record<FieldKey, string>>;
-/** Errors say what is missing and how to fix it (apple writing.md). */
-export function validateExam(
-  fields: Pick<ExamFields, "title" | "subject" | "exam_date">,
-  topics?: string,
-): FieldErrors {
-  const e: FieldErrors = {};
-  if (!fields.title.trim())
-    e.title = "Escribe un nombre, por ejemplo «Álgebra · primer trimestre».";
-  if (!fields.subject.trim())
-    e.subject = "Elige una asignatura de la lista o escríbela.";
-  const days = fields.exam_date ? daysUntil(fields.exam_date) : null;
-  if (!fields.exam_date) e.exam_date = "Elige el día del examen.";
-  else if (days === null)
-    e.exam_date = "Usa una fecha válida (día, mes y año).";
-  else if (days < 0) e.exam_date = "Elige hoy o un día futuro.";
-  if (topics !== undefined && !topics.trim())
-    e.topics = "Añade al menos un tema, uno por línea.";
-  return e;
+  GRADE,
+  WIZARD_STEPS,
+  dateError,
+  formatGrade,
+  gradeWarmth,
+  isWizardStep,
+  resumeStep,
+  shouldWarnFewNotes,
+  stepDirection,
+  stepIndex,
+  type NotesAnalysis,
+  type WizardStep,
+} from "@/lib/exam-wizard";
+import { useMediaQuery } from "@/lib/use-media-query";
+import { useOnline } from "@/lib/use-online";
+import { AnimatedNumber } from "../animated-number";
+import { BottomSheet } from "../bottom-sheet";
+import { Orb } from "../orb";
+import { DatePicker } from "./wizard/date-picker";
+import { GradeWheel } from "./wizard/grade-wheel";
+import { StepIdentify, useIdentity } from "./wizard/step-identify";
+import { StepReady, startHref } from "./wizard/step-ready";
+import { StepUpload } from "./wizard/step-upload";
+import { useUploads } from "./wizard/use-uploads";
+import s from "./wizard/wizard.module.css";
+
+const DESKTOP = "(min-width: 900px) and (pointer: fine)";
+const ANALYSIS_MIN_MS = 1400;
+const PHRASES = [
+  "Busco los temas que entran…",
+  "Miro cuánto material hay…",
+  "Ordeno las ideas principales…",
+];
+type Tone = "blue" | "warm" | "yellow";
+
+function Continue({
+  children = "Continuar",
+  onClick,
+  disabled,
+  busy,
+  tone = "yellow",
+}: {
+  children?: ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  tone?: "yellow" | "blue";
+}) {
+  return (
+    <button
+      type="button"
+      className={`button-3d tone-${tone} press`}
+      onClick={onClick}
+      disabled={disabled || busy}
+      aria-busy={busy || undefined}
+    >
+      <span className="button-3d-face">
+        {busy ? <Orb size={22} pulsing /> : null}
+        {children}
+        {!busy && <ArrowRight size={20} strokeWidth={2.5} aria-hidden="true" />}
+      </span>
+    </button>
+  );
 }
-function FieldError({ id, children }: { id: string; children?: ReactNode }) {
-  return children ? (
-    <p className={s.fieldError} id={id}>
-      <AlertCircle size={16} aria-hidden="true" />
+
+function StepTitle({ children }: { children: ReactNode }) {
+  return (
+    <h1 className={`hero-title ${s.stepTitle}`} tabIndex={-1} data-step-title>
       {children}
-    </p>
-  ) : null;
+    </h1>
+  );
 }
-function Spinner() {
-  return <span className={s.spinner} aria-hidden="true" />;
-}
-const initial: ExamFields = {
-  title: "",
-  subject: "",
-  exam_date: "",
-  topics: [],
-  difficulties: "",
-  goal: "",
-  daily_minutes: 20,
-};
+
 export function ExamWizard() {
   const router = useRouter();
   const params = useSearchParams();
-  const [fields, setFields] = useState<ExamFields>(initial);
+  const idParam = params.get("id");
+  const pasoParam = params.get("paso");
+  const desktop = useMediaQuery(DESKTOP);
+  const online = useOnline();
   const [exam, setExam] = useState<DreamExam | null>(null);
-  const [topics, setTopics] = useState("");
-  const [step, setStep] = useState(0);
+  const [loading, setLoading] = useState(!!idParam);
+  const [loadError, setLoadError] = useState("");
+  const [reload, setReload] = useState(0);
+  const [done, setDone] = useState<DreamExam | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(!!params.get("id"));
-  const [files, setFiles] = useState<Attachment[]>([]);
-  const [invalid, setInvalid] = useState<FieldErrors>({});
-  const [failed, setFailed] = useState(false);
-  const examId = useRef(params.get("id") || crypto.randomUUID());
+  const [analysing, setAnalysing] = useState(false);
+  const [phrase, setPhrase] = useState(0);
+  const [fewSheet, setFewSheet] = useState(false);
+  const [exitSheet, setExitSheet] = useState(false);
+  const [date, setDate] = useState("");
+  const [dateTouched, setDateTouched] = useState(false);
+  const [grade, setGrade] = useState<number>(GRADE.initial);
+  // «Continúa con tu examen de…» only on the first screen of a resumed draft.
+  const [resumed, setResumed] = useState(!!idParam);
   const lock = useRef(false);
-  const input = useRef<HTMLInputElement>(null);
-  const creation = useRef<Promise<DreamExam> | null>(null);
-  const loadedId = useRef<string | null>(null);
-  const liveFiles = useRef<Attachment[]>([]);
-  const mounted = useRef(true);
+  const uploads = useUploads(exam, setExam);
+
+  // Load (or reload) the draft named in the URL.
   useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      for (const file of liveFiles.current)
-        if (file.preview) URL.revokeObjectURL(file.preview);
-    };
-  }, []);
-  useEffect(() => {
-    const id = params.get("id");
-    if (!id || loadedId.current === id) return;
-    const c = new AbortController();
-    getExam(id, c.signal)
-      .then((e) => {
-        if (c.signal.aborted) return;
-        loadedId.current = e.id;
-        setExam(e);
-        setFields(e);
-        setTopics(e.topics.join("\n"));
-        if (e.status === "ready" || e.status === "completed")
-          router.replace(`/exams/${id}`);
-      })
-      .catch((e) => {
-        if (!c.signal.aborted) setError(errorMessage(e));
-      })
-      .finally(() => {
-        if (!c.signal.aborted) setLoading(false);
-      });
-    return () => c.abort();
-  }, [params, router]);
-  function change<K extends keyof ExamFields>(key: K, value: ExamFields[K]) {
-    setFields((f) => ({ ...f, [key]: value }));
-    if (key in invalid) setInvalid((e) => ({ ...e, [key]: undefined }));
-  }
-  /** Validates the current step; focuses the first field with an error. */
-  function check() {
-    const errors = validateExam(fields, step === 1 ? topics : undefined);
-    if (step === 0) delete errors.topics;
-    else if (step === 1) {
-      delete errors.title;
-      delete errors.subject;
-      delete errors.exam_date;
-    }
-    setInvalid(errors);
-    const first = (Object.keys(errors) as FieldKey[])[0];
-    if (first) document.getElementById(`exam-${first}`)?.focus();
-    return !first;
-  }
-  const values = () => ({
-    ...fields,
-    topics: topics
-      .split(/\n|;/)
-      .map((t) => t.trim())
-      .filter(Boolean),
-  });
-  async function save() {
-    if (creation.current) return creation.current;
-    const pending = updateExam(
-      exam ? "exam_update" : "exam_create",
-      examId.current,
-      values(),
-    )
-      .then((e) => {
-        loadedId.current = e.id;
-        if (mounted.current) setExam(e);
-        if (!params.get("id"))
-          router.replace(`/exams/new?id=${e.id}`, { scroll: false });
-        return e;
-      })
-      .finally(() => {
-        creation.current = null;
-      });
-    creation.current = pending;
-    return pending;
-  }
-  async function next() {
-    if (lock.current || !check()) return;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      await save();
-      setStep((s) => Math.min(2, s + 1));
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      lock.current = false;
-      setBusy(false);
-    }
-  }
-  function setFile(localId: string, patch: Partial<Attachment>) {
-    liveFiles.current = liveFiles.current.map((a) =>
-      a.localId === localId ? { ...a, ...patch } : a,
-    );
-    if (mounted.current) setFiles(liveFiles.current);
-  }
-  async function upload(file: Attachment) {
-    try {
-      validateFile(file.file);
-      setFile(file.localId, { status: "uploading", error: undefined });
-      const saved = exam || (await save());
-      const { conversation_id } = await callDream<{ conversation_id: string }>(
-        "exam_upload_start",
-        { exam_id: saved.id },
-      );
-      const content_base64 = await toBase64(file.file);
-      setFile(file.localId, { status: "processing" });
-      const { attachment } = await callDream<{ attachment: { id: string } }>(
-        "attachment_upload",
-        {
-          conversation_id,
-          file_name: file.file.name,
-          mime_type: file.file.type,
-          content_base64,
-        },
-      );
-      const updated = await updateExam("exam_material_add", saved.id, {
-        attachment_id: attachment.id,
-      });
-      if (mounted.current) setExam(updated);
-      setFile(file.localId, { id: attachment.id, status: "ready" });
-    } catch (e) {
-      setFile(file.localId, { status: "error", error: errorMessage(e) });
-    }
-  }
-  async function attach(list: File[]) {
-    if (busy) return;
-    setError("");
-    if (
-      (exam?.materials.length || 0) +
-        liveFiles.current.filter((f) => !f.id).length +
-        list.length >
-      MAX_EXAM_MATERIALS
-    ) {
-      setError(
-        `Puedes adjuntar hasta ${MAX_EXAM_MATERIALS} archivos en este plan.`,
-      );
+    if (!idParam) {
+      setLoading(false);
       return;
     }
-    const added = list.map((file) => ({
-      localId: crypto.randomUUID(),
-      file,
-      status: "uploading" as const,
-      preview: file.type.startsWith("image/")
-        ? URL.createObjectURL(file)
-        : undefined,
-    }));
-    liveFiles.current = [...liveFiles.current, ...added];
-    setFiles(liveFiles.current);
-    for (const item of added) await upload(item);
-  }
-  async function removeFile(file: Attachment) {
-    try {
-      if (file.id && exam)
-        setExam(
-          await updateExam("exam_material_remove", exam.id, {
-            attachment_id: file.id,
-          }),
-        );
-      if (file.preview) URL.revokeObjectURL(file.preview);
-      liveFiles.current = liveFiles.current.filter(
-        (a) => a.localId !== file.localId,
-      );
-      setFiles(liveFiles.current);
-    } catch (e) {
-      setError(errorMessage(e));
+    if (exam?.id === idParam || done) return;
+    const abort = new AbortController();
+    setLoading(true);
+    setLoadError("");
+    getExam(idParam, abort.signal)
+      .then((e) => {
+        if (abort.signal.aborted) return;
+        // A plan that exists (or is being made) opens its page, as before.
+        if (e.status === "ready" || e.status === "completed" || e.status === "preparing") {
+          router.replace(`/exams/${e.id}`);
+          return;
+        }
+        setExam(e);
+        setDate(e.exam_date || "");
+        if (typeof e.target_grade === "number") setGrade(e.target_grade);
+        setLoading(false);
+      })
+      .catch((e) => {
+        if (abort.signal.aborted) return;
+        setLoadError(errorMessage(e));
+        setLoading(false);
+      });
+    return () => abort.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on id or retry
+  }, [idParam, reload]);
+
+  const step: WizardStep = done
+    ? "listo"
+    : !idParam
+      ? "inicio"
+      : exam
+        ? resumeStep(exam, isWizardStep(pasoParam) ? pasoParam : null)
+        : "apuntes";
+  const [view, setView] = useState({ step, enter: "fade" as "forward" | "back" | "fade" });
+  if (view.step !== step) setView({ step, enter: stepDirection(view.step, step) ?? "fade" });
+
+  // Focus goes to the new step's title (and the live region reads «Paso N»).
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
     }
-  }
-  async function generate() {
+    setError("");
+    setResumed(false);
+    document.querySelector<HTMLElement>("[data-step-title]")?.focus({ preventScroll: true });
+    document.querySelector(".workspace-main")?.scrollTo({ top: 0 });
+  }, [step]);
+
+  // The phrase under «Estoy leyendo tus apuntes…» changes softly.
+  useEffect(() => {
+    if (!analysing) return;
+    setPhrase(0);
+    const id = window.setInterval(() => setPhrase((n) => (n + 1) % PHRASES.length), 1400);
+    return () => window.clearInterval(id);
+  }, [analysing]);
+
+  const go = useCallback(
+    (next: WizardStep, id = exam?.id) => {
+      if (id) router.push(`/exams/new?id=${id}&paso=${next}`, { scroll: false });
+    },
+    [exam?.id, router],
+  );
+
+  /** One async action at a time (double clicks do nothing). */
+  async function run(action: () => Promise<void>) {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
     setError("");
-    setFailed(false);
-    setStep(3);
     try {
-      const saved = await save();
-      setExam(await updateExam("exam_prepare", saved.id));
-      router.replace(`/exams/${saved.id}`);
+      await action();
     } catch (e) {
       setError(errorMessage(e));
-      setFailed(true);
     } finally {
       lock.current = false;
       setBusy(false);
     }
   }
-  const pending = files.some((f) => f.status !== "ready");
-  const storedMaterials =
-    exam?.materials.filter((m) => !files.some((f) => f.id === m.id)) || [];
-  if (loading) return <ExamDetailSkeleton />;
-  const names = ["Datos", "Temas y apuntes", "Revisar"];
-  const days = fields.exam_date ? daysUntil(fields.exam_date) : null;
-  const describe = (key: FieldKey, help?: string) =>
-    [invalid[key] ? `exam-${key}-error` : "", help ?? ""].join(" ").trim() ||
-    undefined;
-  return (
-    <ExamPage
-      title={params.get("id") ? "Preparar examen" : "Añadir examen"}
-      subtitle={
-        step === 3 ? (
-          fields.title
-        ) : (
-          <>
-            Paso <span className="num">{step + 1}</span> de{" "}
-            <span className="num">3</span> · {names[step]}
-          </>
-        )
+  const save = async (payload: Record<string, unknown>) => {
+    const updated = await updateExam("exam_draft_update", exam!.id, payload);
+    setExam(updated);
+    return updated;
+  };
+
+  const start = () =>
+    run(async () => {
+      const id = crypto.randomUUID();
+      const created = await updateExam("exam_create", id, { wizard: true });
+      setExam(created);
+      router.replace(`/exams/new?id=${created.id}&paso=apuntes`, { scroll: false });
+    });
+
+  const toDate = (ack = false) =>
+    run(async () => {
+      await save({ wizard_step: "date", ...(ack ? { few_notes_ack: true } : {}) });
+      setFewSheet(false);
+      go("fecha");
+    });
+
+  const analyse = () =>
+    run(async () => {
+      setAnalysing(true);
+      try {
+        const begin = Date.now();
+        const { analysis } = await callDream<{ analysis: NotesAnalysis }>("exam_analyze", {
+          exam_id: exam!.id,
+        });
+        await new Promise((ok) => setTimeout(ok, Math.max(0, ANALYSIS_MIN_MS - (Date.now() - begin))));
+        if (shouldWarnFewNotes(analysis, !!exam!.few_notes_ack)) {
+          setFewSheet(true);
+          return;
+        }
+        await save({ wizard_step: "date" });
+        go("fecha");
+      } finally {
+        setAnalysing(false);
       }
-      back={{ href: "/exams", label: "Exámenes" }}
+    });
+
+  const toGrade = () => {
+    const problem = dateError(date);
+    setDateTouched(true);
+    if (problem) return;
+    void run(async () => {
+      await save({ exam_date: date, wizard_step: "grade" });
+      go("nota");
+    });
+  };
+  const toIdentify = () =>
+    run(async () => {
+      await save({ target_grade: grade, wizard_step: "identify" });
+      go("examen");
+    });
+
+  function exit() {
+    if (!exam) return router.push("/exams");
+    const empty = !exam.materials.length && !uploads.rows.length;
+    if (empty && step === "apuntes") {
+      // Nothing to keep: the empty draft goes away quietly.
+      void callDream("exam_delete", { exam_id: exam.id }).catch(() => {});
+      return router.push("/exams");
+    }
+    setExitSheet(true);
+  }
+
+  const tone: Tone = step === "nota" ? "warm" : step === "listo" ? "yellow" : "blue";
+  const index = stepIndex(step);
+  const total = WIZARD_STEPS.length;
+  const progress = step === "listo" ? 1 : index / total;
+  const stepLabel = step === "listo" ? "Listo" : WIZARD_STEPS[index]?.label;
+
+  let content: ReactNode;
+  let footer: ReactNode = null;
+  if (loading)
+    content = (
+      <div className={s.analysing} aria-busy="true">
+        <Orb size={80} pulsing />
+        <p className={s.lead} role="status">
+          Abriendo tu examen…
+        </p>
+      </div>
+    );
+  else if (loadError)
+    content = (
+      <div className={s.analysing}>
+        <Orb size={80} reaction="error" />
+        <h1 className={`hero-title ${s.stepTitle}`}>No he podido abrir tu examen</h1>
+        <p className={s.lead} role="alert">
+          {loadError}
+        </p>
+        <button type="button" className="secondary press" onClick={() => setReload((n) => n + 1)}>
+          <RotateCcw size={18} aria-hidden="true" /> Reintentar
+        </button>
+      </div>
+    );
+  else if (step === "inicio") {
+    content = (
+      <div className={`${s.welcome} stagger`}>
+        <span className={s.welcomeOrb}>
+          <Orb size={120} breathing />
+        </span>
+        <StepTitle>
+          Vamos a preparar tu <span className="marker marker-draw">examen</span>
+        </StepTitle>
+        <p className={s.lead}>Sube tus apuntes y yo hago el resto.</p>
+      </div>
+    );
+    footer = (
+      <Continue onClick={() => void start()} busy={busy} disabled={!online}>
+        Empezar
+      </Continue>
+    );
+  } else if (step === "apuntes" && exam) {
+    content = analysing ? (
+      <div className={s.analysing}>
+        <Orb size={96} pulsing />
+        <p className={s.lead} role="status">
+          Estoy leyendo tus apuntes…
+        </p>
+        <p className={s.phrase} key={phrase} aria-hidden="true">
+          {PHRASES[phrase]}
+        </p>
+      </div>
+    ) : (
+      <>
+        <StepTitle>
+          Primero, sube tus <span className="marker">apuntes</span>
+        </StepTitle>
+        <StepUpload examId={exam.id} desktop={desktop} uploads={uploads} disabled={!online} />
+      </>
+    );
+    footer = !analysing && (
+      <>
+        {uploads.busy && (
+          <p className={s.footerNote} role="status">
+            Espera a que terminen de subir tus apuntes.
+          </p>
+        )}
+        <Continue
+          onClick={() => void analyse()}
+          busy={busy}
+          disabled={!online || uploads.busy || uploads.ready === 0}
+        />
+        {uploads.ready === 0 && !uploads.busy && (
+          <p className={s.footerNote}>Sube al menos un archivo para seguir.</p>
+        )}
+      </>
+    );
+  } else if (step === "fecha" && exam) {
+    const problem = dateTouched ? dateError(date) : null;
+    content = (
+      <>
+        <StepTitle>
+          ¿Cuándo es tu <span className="marker">examen</span>?
+        </StepTitle>
+        <DatePicker
+          value={date}
+          onChange={(d) => {
+            setDate(d);
+            setDateTouched(false);
+          }}
+        />
+        {problem && (
+          <p className={s.fieldError} role="alert">
+            {problem}
+          </p>
+        )}
+      </>
+    );
+    footer = <Continue onClick={toGrade} busy={busy} disabled={!online} />;
+  } else if (step === "nota" && exam) {
+    content = (
+      <>
+        <StepTitle>
+          ¿Qué <span className="marker">nota</span> quieres sacar?
+        </StepTitle>
+        <div className={s.gradeLayout}>
+          <p className={s.gradeBig} aria-hidden="true">
+            <AnimatedNumber value={grade} format={formatGrade} label={`${formatGrade(grade)} sobre 10`} />
+            <small>/ 10</small>
+          </p>
+          <GradeWheel value={grade} onChange={setGrade} labelledBy="grade-label" />
+        </div>
+        <p id="grade-label" className="visually-hidden">
+          Nota que quieres sacar, de 0 a 10
+        </p>
+      </>
+    );
+    footer = <Continue onClick={() => void toIdentify()} busy={busy} disabled={!online} tone="blue" />;
+  } else if (step === "examen" && exam) {
+    content = <IdentifyStage exam={exam} setExam={setExam} online={online} onDone={setDone} />;
+  } else if (step === "listo" && done) {
+    content = (
+      <>
+        <StepTitle>
+          Tu examen está <span className="marker marker-draw">listo</span>
+        </StepTitle>
+        <StepReady exam={done} />
+      </>
+    );
+    footer = (
+      <Continue tone="blue" onClick={() => router.push(startHref(done))}>
+        Empezar
+      </Continue>
+    );
+  }
+
+  return (
+    <div
+      className={s.frame}
+      data-tone={tone}
+      style={{ "--warmth": gradeWarmth(grade) } as CSSProperties}
     >
-      {step < 3 && (
-        <ol className={s.stepper} aria-label="Pasos para añadir el examen">
-          {names.map((name, i) => (
-            <li
-              key={name}
-              aria-current={i === step ? "step" : undefined}
-              data-done={i < step || undefined}
-            >
-              {name}
-            </li>
-          ))}
-        </ol>
-      )}
-      {step === 0 && (
-        <form
-          className={s.form}
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            void next();
-          }}
+      <div className={s.bg} aria-hidden="true">
+        <span className={s.bgBlue} />
+        <span className={s.bgGrid} />
+        <span className={s.bgWarm} />
+        <span className={s.bgWarmHot} />
+        <span className={s.bgYellow} />
+      </div>
+      <div className={s.top}>
+        {step === "listo" ? (
+          <span />
+        ) : (
+          <button
+            type="button"
+            className={`${s.backButton} press`}
+            aria-label="Salir del asistente"
+            onClick={exit}
+          >
+            <ArrowLeft size={22} aria-hidden="true" />
+          </button>
+        )}
+        <span
+          className={s.progress}
+          role="progressbar"
+          aria-label="Progreso del examen"
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-valuenow={Math.min(total, index)}
         >
-          <h2>¿Qué vas a preparar?</h2>
-          <div className={s.field}>
-            <label htmlFor="exam-title">Nombre del examen</label>
-            <input
-              id="exam-title"
-              value={fields.title}
-              onChange={(e) => change("title", e.target.value)}
-              maxLength={160}
-              required
-              aria-invalid={!!invalid.title || undefined}
-              aria-describedby={describe("title")}
-              placeholder="Por ejemplo, Álgebra · primer trimestre"
-            />
-            <FieldError id="exam-title-error">{invalid.title}</FieldError>
-          </div>
-          <div className={s.pair}>
-            <div className={s.field}>
-              <label htmlFor="exam-subject">Asignatura</label>
-              <input
-                id="exam-subject"
-                list="exam-subjects"
-                value={fields.subject}
-                onChange={(e) => change("subject", e.target.value)}
-                maxLength={80}
-                required
-                aria-invalid={!!invalid.subject || undefined}
-                aria-describedby={describe("subject")}
-                placeholder="Elige o escribe una"
-              />
-              <datalist id="exam-subjects">
-                {[
-                  "Matemáticas",
-                  "Biología",
-                  "Física y Química",
-                  "Lengua y Literatura",
-                  "Inglés",
-                  "Historia",
-                  "Programación",
-                  "Filosofía",
-                  "Economía",
-                ].map((x) => (
-                  <option key={x} value={x} />
-                ))}
-              </datalist>
-              <FieldError id="exam-subject-error">{invalid.subject}</FieldError>
-            </div>
-            <div className={s.field}>
-              <label htmlFor="exam-exam_date">Fecha del examen</label>
-              <input
-                id="exam-exam_date"
-                type="date"
-                className="num"
-                value={fields.exam_date}
-                onChange={(e) => change("exam_date", e.target.value)}
-                required
-                aria-invalid={!!invalid.exam_date || undefined}
-                aria-describedby={describe("exam_date", "exam-date-help")}
-              />
-              <FieldError id="exam-exam_date-error">
-                {invalid.exam_date}
-              </FieldError>
-              {!invalid.exam_date && days !== null && days >= 0 && (
-                <p className={s.help} id="exam-date-help" aria-live="polite">
-                  {days === 0 ? (
-                    "Es hoy."
-                  ) : days === 1 ? (
-                    "Es mañana."
-                  ) : (
-                    <>
-                      Quedan <span className="num">{days}</span> días.
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className={s.field}>
-            <label htmlFor="exam-goal">
-              ¿Qué te gustaría conseguir?{" "}
-              <span className={s.optional}>(opcional)</span>
-            </label>
-            <input
-              id="exam-goal"
-              value={fields.goal}
-              onChange={(e) => change("goal", e.target.value)}
-              maxLength={1000}
-              placeholder="Entender las ideas y llegar con confianza"
-            />
-          </div>
-          <div className={s.field}>
-            <label htmlFor="exam-daily">Tu rato de estudio al día</label>
-            <select
-              id="exam-daily"
-              value={fields.daily_minutes}
-              onChange={(e) => change("daily_minutes", Number(e.target.value))}
-            >
-              {[5, 10, 15, 20, 30, 45, 60, 90, 120].map((v) => (
-                <option value={v} key={v}>
-                  {v} minutos
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={s.formActions}>
-            <button
-              type="button"
-              className="secondary press"
-              disabled={busy}
-              onClick={() => router.push("/exams")}
-            >
-              Cancelar
-            </button>
-            <button
-              className="primary press"
-              disabled={busy}
-              aria-busy={busy || undefined}
-            >
-              {busy ? (
-                <>
-                  <Spinner /> Guardando…
-                </>
-              ) : (
-                <>
-                  Siguiente: materiales{" "}
-                  <ArrowRight size={18} aria-hidden="true" />
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      )}
-      {step === 1 && (
-        <form
-          className={s.form}
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            void next();
-          }}
-        >
-          <h2>¿Qué entra en el examen?</h2>
-          <div className={s.field}>
-            <label htmlFor="exam-topics">Temas</label>
-            <textarea
-              id="exam-topics"
-              aria-describedby={describe("topics", "exam-topics-help")}
-              aria-invalid={!!invalid.topics || undefined}
-              value={topics}
-              onChange={(e) => {
-                setTopics(e.target.value);
-                if (invalid.topics)
-                  setInvalid((x) => ({ ...x, topics: undefined }));
-              }}
-              placeholder={"Ecuaciones\nFactorización"}
-              maxLength={5000}
-            />
-            <FieldError id="exam-topics-error">{invalid.topics}</FieldError>
-            <p className={s.help} id="exam-topics-help">
-              Uno por línea, hasta 30. También puedes separarlos con punto y
-              coma.
-            </p>
-          </div>
-          <div className={s.field}>
-            <label htmlFor="exam-difficulties">
-              ¿Qué te cuesta más? <span className={s.optional}>(opcional)</span>
-            </label>
-            <textarea
-              id="exam-difficulties"
-              value={fields.difficulties}
-              onChange={(e) => change("difficulties", e.target.value)}
-              maxLength={4000}
-              placeholder="Cuéntale a Dream dónde te atascas"
-            />
-          </div>
-          <div className={s.field}>
-            <span className={s.fieldLabel}>
-              Tus apuntes <span className={s.optional}>(opcional)</span>
+          <i style={{ transform: `scaleX(${Math.max(0.04, progress)})` }} />
+        </span>
+        <span className={s.count} aria-hidden="true">
+          {step === "listo" ? "¡Hecho!" : `${index + 1} de ${total}`}
+        </span>
+      </div>
+      <p className="visually-hidden" aria-live="polite">
+        {loading || loadError
+          ? ""
+          : step === "listo"
+            ? "Tu examen está listo"
+            : `Paso ${index + 1} de ${total}: ${stepLabel}`}
+      </p>
+      <div className="wizard-step" key={loading ? "loading" : step} data-enter={view.enter}>
+        <div className={`${s.body} ${step === "apuntes" && desktop ? s.bodyWide : ""}`}>
+          {resumed && exam && !loading && (
+            <span className={s.resume}>
+              Continúa con tu examen{exam.subject.trim() ? ` de ${exam.subject}` : ""}
             </span>
-            <input
-              ref={input}
-              type="file"
-              accept={fileAccept}
-              multiple
-              className="visually-hidden"
-              tabIndex={-1}
-              aria-label="Adjuntar materiales del examen"
-              onChange={(e) => {
-                void attach(Array.from(e.target.files || []));
-                e.target.value = "";
-              }}
-            />
-            <button
-              type="button"
-              className={`${s.dropzone} press`}
-              disabled={busy}
-              onClick={() => input.current?.click()}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                void attach(Array.from(e.dataTransfer.files));
-              }}
-            >
-              <Upload size={24} aria-hidden="true" />
-              <span>Añade tus apuntes</span>
-              <small>
-                PDF, Word, imágenes, PowerPoint o Excel. Hasta{" "}
-                <span className="num">4</span> archivos de{" "}
-                <span className="num">8</span> MB.
-              </small>
-            </button>
-          </div>
-          {storedMaterials.map((m) => (
-            <div key={m.id}>
-              <Materials materials={[m]} />
-              <button
-                type="button"
-                className="text-button danger press"
-                disabled={busy}
-                onClick={() =>
-                  void updateExam("exam_material_remove", examId.current, {
-                    attachment_id: m.id,
-                  })
-                    .then(setExam)
-                    .catch((e) => setError(errorMessage(e)))
-                }
-              >
-                Quitar {m.file_name}
-              </button>
-            </div>
-          ))}
-          {files.map((f) => (
-            <AttachmentItem
-              key={f.localId}
-              attachment={f}
-              busy={
-                busy || f.status === "uploading" || f.status === "processing"
-              }
-              onRemove={() => void removeFile(f)}
-              onRetry={() => void upload(f)}
-            />
-          ))}
-          {pending && (
-            <p className={s.help} role="status">
-              Espera a que terminen de subir tus apuntes.
+          )}
+          {!online && (
+            <p className={s.offline} role="status">
+              <CloudOff size={18} aria-hidden="true" />
+              Sin conexión. Lo que ya has hecho está guardado; sigue cuando vuelva.
             </p>
           )}
-          <div className={s.formActions}>
-            <button
-              type="button"
-              className="secondary press"
-              disabled={busy}
-              onClick={() => setStep(0)}
-            >
-              <ArrowLeft size={18} aria-hidden="true" /> Volver
-            </button>
-            <button
-              className="primary press"
-              disabled={busy || pending}
-              aria-busy={busy || undefined}
-            >
-              {busy ? (
-                <>
-                  <Spinner /> Guardando…
-                </>
-              ) : (
-                <>
-                  Revisar mi examen <ArrowRight size={18} aria-hidden="true" />
-                </>
-              )}
-            </button>
+          {content}
+          {error && step !== "examen" && (
+            <p className={s.fieldError} role="alert">
+              {error}
+            </p>
+          )}
+        </div>
+        {footer && <div className={s.footer}>{footer}</div>}
+      </div>
+
+      {fewSheet && (
+        <BottomSheet labelledBy="few-title" describedBy="few-text" onClose={() => setFewSheet(false)}>
+          <div className={s.sheetOrb}>
+            <Orb size={56} breathing />
           </div>
-        </form>
-      )}
-      {step === 2 && (
-        <section className={s.form} aria-labelledby="exam-review">
-          <h2 id="exam-review">{fields.title}</h2>
-          <dl className={s.summary}>
-            <div>
-              <dt>Asignatura</dt>
-              <dd>{fields.subject}</dd>
-            </div>
-            <div>
-              <dt>Fecha</dt>
-              <dd>{examDateLabel(fields.exam_date)}</dd>
-            </div>
-            <div>
-              <dt>Temas</dt>
-              <dd className={s.chips}>
-                {values().topics.map((t, i) => (
-                  <span className={s.chip} key={i}>
-                    {t}
-                  </span>
-                ))}
-              </dd>
-            </div>
-            {fields.difficulties && (
-              <div>
-                <dt>Por reforzar</dt>
-                <dd>{fields.difficulties}</dd>
-              </div>
-            )}
-            <div>
-              <dt>Apuntes</dt>
-              <dd>
-                <Materials materials={exam?.materials || []} />
-              </dd>
-            </div>
-          </dl>
-          <p className={s.help}>
-            Dream dividirá tus temas en unidades cortas, con una conversación
-            para entender cada una. No resuelve el examen por ti.
+          <h2 id="few-title">Veo que son pocos apuntes</h2>
+          <p id="few-text">
+            ¿Tienes alguno más? Con más material puedo prepararte mejor el examen.
           </p>
-          <div className={s.formActions}>
+          <div className="modal-actions">
             <button
               type="button"
               className="secondary press"
+              onClick={() => void toDate(true)}
               disabled={busy}
-              onClick={() => setStep(0)}
             >
-              Editar datos
+              Continuar con estos
             </button>
             <button
+              type="button"
               className="primary press"
-              disabled={busy || pending}
-              aria-busy={busy || undefined}
-              onClick={() => void generate()}
+              onClick={() => setFewSheet(false)}
+              autoFocus
             >
-              Generar plan de estudio{" "}
-              <ArrowRight size={18} aria-hidden="true" />
+              Subir más archivos
             </button>
           </div>
-        </section>
+        </BottomSheet>
       )}
-      {step === 3 &&
-        (failed ? (
-          <FailedState
-            cause={error}
-            onRetry={() => void generate()}
-            retrying={busy}
-            editHref={`/exams/new?id=${examId.current}`}
-          />
-        ) : (
-          <PreparingState topics={values().topics} />
-        ))}
-      {!(step === 3 && failed) && <ErrorNotice error={error} />}
-    </ExamPage>
+      {exitSheet && (
+        <BottomSheet labelledBy="exit-title" describedBy="exit-text" onClose={() => setExitSheet(false)}>
+          <h2 id="exit-title">¿Salir?</h2>
+          <p id="exit-text">Tu examen se guarda como borrador. Puedes seguir desde Exámenes.</p>
+          <div className="modal-actions">
+            <button type="button" className="secondary press" onClick={() => router.push("/exams")}>
+              Salir
+            </button>
+            <button
+              type="button"
+              className="primary press"
+              onClick={() => setExitSheet(false)}
+              autoFocus
+            >
+              Seguir con mi examen
+            </button>
+          </div>
+        </BottomSheet>
+      )}
+    </div>
+  );
+}
+
+/** Paso 5 with its own footer: «Crear mi ruta» saves and runs exam_prepare. */
+function IdentifyStage({
+  exam,
+  setExam,
+  online,
+  onDone,
+}: {
+  exam: DreamExam;
+  setExam: (e: DreamExam) => void;
+  online: boolean;
+  onDone: (e: DreamExam) => void;
+}) {
+  const state = useIdentity(exam, setExam);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
+  const lock = useRef(false);
+  const { identity, phase } = state;
+  async function create() {
+    if (lock.current) return;
+    const title = identity.title.replace(/\s+/g, " ").trim();
+    if (title.length < 3) return setError("Escribe un nombre para tu examen (3 letras o más).");
+    if (!identity.subject.trim()) return setError("Elige la asignatura.");
+    lock.current = true;
+    setCreating(true);
+    setError("");
+    try {
+      await updateExam("exam_draft_update", exam.id, {
+        title,
+        subject: identity.subject,
+        topics: identity.topics,
+      });
+      const ready = await updateExam("exam_prepare", exam.id);
+      setExam(ready);
+      onDone(ready);
+    } catch (e) {
+      setError(`${errorMessage(e)} Tus apuntes y datos siguen guardados.`);
+    } finally {
+      lock.current = false;
+      setCreating(false);
+    }
+  }
+  return (
+    <>
+      <StepTitle>
+        Tu <span className="marker">examen</span>
+      </StepTitle>
+      <StepIdentify state={state} error={error} />
+      {phase !== "loading" && (
+        <div className={s.footer}>
+          {creating && (
+            <p className={s.footerNote} role="status">
+              Estoy creando tu ruta. Puede tardar un poco…
+            </p>
+          )}
+          <Continue onClick={() => void create()} busy={creating} disabled={!online}>
+            Crear mi ruta
+          </Continue>
+        </div>
+      )}
+    </>
   );
 }

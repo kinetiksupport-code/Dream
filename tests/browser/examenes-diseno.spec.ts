@@ -121,10 +121,12 @@ const STATES: { name: string; path: string; opts?: Opts; ready?: (p: Page) => Pr
   { name: "plan", path: `/exams/${eid}/plan` },
   { name: "nuevo", path: "/exams/new" },
   {
-    name: "nuevo-errores",
+    name: "nuevo-apuntes",
     path: "/exams/new",
-    ready: (p) =>
-      p.getByRole("button", { name: /Siguiente: materiales/ }).click(),
+    ready: async (p) => {
+      await p.getByRole("button", { name: "Empezar" }).click();
+      await p.getByRole("heading", { name: "Primero, sube tus apuntes" }).waitFor();
+    },
   },
   {
     name: "preparando",
@@ -260,41 +262,26 @@ test.describe("examenes microinteracciones", () => {
     expect((await cta.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   });
 
-  test("new exam: visible labels, errors with cause beside the field, focus moves there", async ({ page }) => {
-    await open(page, "nuevo");
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    const title = page.getByLabel("Nombre del examen");
-    await expect(title).toBeFocused();
-    await expect(title).toHaveAttribute("aria-invalid", "true");
-    await expect(title).toHaveAccessibleDescription(/Escribe un nombre/);
-    await expect(page.getByLabel("Asignatura")).toHaveAccessibleDescription(/Elige una asignatura/);
-    await expect(page.getByLabel("Fecha del examen")).toHaveAccessibleDescription(/Elige el día/);
-    await title.fill("Álgebra");
-    await expect(title).not.toHaveAttribute("aria-invalid", "true");
-    await page.getByLabel("Fecha del examen").fill("2020-01-10");
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    await expect(page.getByLabel("Fecha del examen")).toHaveAccessibleDescription(
-      "Elige hoy o un día futuro.",
-    );
+  test("new exam (wizard): date error in words, announced, focus on the step title", async ({ page }) => {
+    await setup(page, { exam: { status: "draft", exam_date: "", units: [] } });
+    await page.goto(`/exams/new?id=${eid}&paso=fecha`);
+    const heading = page.getByRole("heading", { name: /¿Cuándo es tu examen ?\?/ });
+    await expect(heading).toBeVisible();
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Elige el día de tu examen." })).toBeVisible();
+    // Past days can't be chosen.
+    await expect(page.locator("[data-day]:disabled").first()).toBeAttached();
   });
 
-  test("new exam: loading button has aria-busy and is disabled", async ({ page }) => {
+  test("new exam (wizard): Empezar has aria-busy and is disabled while creating", async ({ page }) => {
     await setup(page, { delay: { exam_create: 1500 } });
     await page.goto("/exams/new");
-    await page.getByLabel("Nombre del examen").fill("Álgebra");
-    await page.getByLabel("Asignatura").fill("Matemáticas");
-    await page.getByLabel("Fecha del examen").fill(inDays(10));
-    await expect(page.getByText("Quedan 10 días.")).toBeVisible();
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    const busy = page.getByRole("button", { name: /Guardando/ });
+    await page.getByRole("button", { name: "Empezar" }).click();
+    const busy = page.getByRole("button", { name: "Empezar" });
     await expect(busy).toHaveAttribute("aria-busy", "true");
     await expect(busy).toBeDisabled();
-    await expect(page.getByLabel("Temas", { exact: true })).toBeVisible();
-    // Step 2 requires topics, with the cause beside the field
-    await page.getByRole("button", { name: /Revisar mi examen/ }).click();
-    await expect(page.getByLabel("Temas", { exact: true })).toHaveAccessibleDescription(
-      /Añade al menos un tema/,
-    );
+    await expect(page.getByRole("heading", { name: "Primero, sube tus apuntes" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Primero, sube tus apuntes" })).toBeFocused();
   });
 
   test("touch targets: 44 px on list, detail and form", async ({ page }) => {
@@ -451,13 +438,7 @@ test.describe("examenes grabacion", () => {
     await setup(page, { delay: { exam_create: 1200 } });
     await page.goto("/exams/new");
     await page.waitForTimeout(500);
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    await page.waitForTimeout(1200);
-    await page.getByLabel("Nombre del examen").fill("Álgebra · primer trimestre");
-    await page.getByLabel("Asignatura").fill("Matemáticas");
-    await page.getByLabel("Fecha del examen").fill(inDays(12));
-    await page.waitForTimeout(500);
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
+    await page.getByRole("button", { name: "Empezar" }).click();
     await page.waitForTimeout(1600);
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await setup(page, {
