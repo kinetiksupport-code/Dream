@@ -80,6 +80,25 @@ Skills releídas. Detalle en `docs/diseno/asistente/README.md`.
   - `privacy.md`: la cámara solo se abre al pulsar «Hacer foto», y la línea «No subas datos de otras personas».
 - **`libraries-dev`:** esperas de más de 2 s (leer apuntes, IA, crear la ruta) → orbe de marca con `orb-pulsing`, en vez de `thinking-orbs`, que no se instala sin OK. Sin `border-beam`: un solo foco por pantalla.
 
+## Progreso con el estilo nuevo (19/10/2026, PR 7 del encargo de estilo)
+
+Skills releídas. Detalle en `docs/diseno/estilo-progreso/README.md`. Pantalla sobria con toques de color, sin fondo saturado.
+
+- **`emil-design-eng`:**
+  - *Only animate transform and opacity*: las barras se rellenan con `scaleX`, las columnas con `scaleY` y el anillo entra girando con fundido. No se anima `width`, `height` ni `stroke-dasharray`.
+  - *Buttons must feel responsive*: `.press` en las pestañas y en las filas de resultados.
+  - *Stagger 30–80 ms*: cifras clave, tarjetas, columnas y semanas con `--stagger` (40 ms, máximo 8).
+  - *Spatial consistency*: la píldora de la pestaña elegida se desliza (200 ms).
+  - *Touch device hover states*: el hover solo se aplica con puntero fino.
+  - *prefers-reduced-motion*: todo funde, nada se mueve (prueba en `progreso-estilo.spec.ts`).
+- **`apple-design`:**
+  - `progress-indicators.md`: las barras se rellenan desde el lado inicial y siguen siendo determinadas, con `aria-valuenow`.
+  - `segmented-controls.md`: el estado de la selección se ve claro.
+  - `accessibility.md › Convey information with more than color alone`: las franjas de color son decorativas y el dato va en texto.
+  - `motion.md › Make motion optional`: cada número animado tiene su texto para el lector de pantalla.
+  - `color.md`: amarillo con tinta oscura (12,15:1 en claro y 9,47:1 en oscuro).
+- **`libraries-dev`:** nada que añadir. Los datos llegan en menos de 2 s, así que ni orbes ni haces de luz. No se instalan paquetes.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -113,6 +132,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Progreso con el estilo nuevo (PR 7) | `docs/diseno/estilo-progreso/antes/*` | `docs/diseno/estilo-progreso/despues/*` | `estilo-progreso.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 

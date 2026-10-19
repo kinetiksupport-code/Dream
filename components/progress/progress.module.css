@@ -1,6 +1,17 @@
-/* Progreso. Tokens from app/globals.css (light and dark). */
+/* Progreso. Tokens from app/globals.css (light and dark).
+   Estilo nuevo (PROMPT_EXAMEN_ESTILO.md §2, §6): a sober data screen with
+   touches of colour. Huge italic headline (.hero-title) with the hand-drawn
+   marker, KPI tiles with a pop stripe, yellow chips for frequent errors.
+   Motion: transform and opacity only, 160–250 ms, ease-out to enter; bars
+   fill with scaleX/scaleY, numbers roll (AnimatedNumber), cards stagger
+   (.stagger, max 8). Reduced motion keeps fades only. */
 .page {
   gap: 32px;
+}
+.title {
+  margin: 0;
+  /* Room for the marker stroke under the word. */
+  padding-bottom: 0.12em;
 }
 .heading {
   display: flex;
@@ -53,6 +64,20 @@
 .ringValue {
   stroke: var(--primary);
   stroke-linecap: round;
+  /* Sweeps into place once (rotation + fade, no stroke animation). */
+  transform-box: view-box;
+  transform-origin: 64px 64px;
+  animation: ringIn var(--dur-spring) var(--ease) backwards;
+}
+@keyframes ringIn {
+  from {
+    opacity: 0;
+    transform: rotate(-60deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .ringValue.reached {
   stroke: var(--success);
@@ -74,10 +99,10 @@
 .ringLabel strong {
   font-size: 2.25rem;
   line-height: 1;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.03em;
 }
-.ringLabel span {
+.ringLabel > span {
   margin-top: 6px;
   font-size: var(--text-small);
   color: var(--text-secondary);
@@ -96,6 +121,14 @@
   border-radius: var(--radius-card);
   background: var(--bg);
   min-width: 0;
+  /* Touch of colour: a pop stripe on top (decorative, no text on it). */
+  box-shadow: inset 0 4px 0 var(--kpi-tone, var(--pop-yellow));
+}
+.kpi:nth-child(2) {
+  --kpi-tone: var(--pop-orange);
+}
+.kpi:nth-child(3) {
+  --kpi-tone: var(--pop-blue);
 }
 .kpi dt {
   font-size: var(--text-small);
@@ -111,10 +144,10 @@
 .kpi strong {
   font-size: 1.5rem;
   line-height: 1.2;
-  font-weight: 700;
+  font-weight: 800;
   letter-spacing: -0.02em;
 }
-.kpi span {
+.kpi dd > span {
   font-size: var(--text-small);
   color: var(--text-secondary);
 }
@@ -126,6 +159,7 @@
   gap: 24px;
 }
 .tabs {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
@@ -134,6 +168,8 @@
   background: var(--surface);
 }
 .tabs button {
+  position: relative;
+  z-index: 1;
   min-height: var(--touch);
   border-radius: var(--radius-nav);
   font-size: var(--text-secondary-size);
@@ -141,13 +177,37 @@
   color: var(--text-secondary);
 }
 .tabs button[aria-selected="true"] {
-  background: var(--bg);
   color: var(--text);
   font-weight: 600;
-  box-shadow: 0 1px 2px rgba(8, 11, 20, 0.08);
 }
-:global(:root[data-theme="dark"]) .tabs button[aria-selected="true"] {
+/* The selected pill slides under the tabs (transform only, 200 ms). */
+.tabIndicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 16px) / 3);
+  border-radius: var(--radius-nav);
+  background: var(--bg);
+  box-shadow: 0 1px 2px rgba(8, 11, 20, 0.08);
+  transition: transform var(--dur-base) var(--ease);
+  pointer-events: none;
+}
+:global(:root[data-theme="dark"]) .tabIndicator {
   background: var(--surface-hover);
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme])) .tabIndicator {
+    background: var(--surface-hover);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .tabs button[aria-selected="false"]:hover {
+    color: var(--text);
+  }
+  .howto summary:hover {
+    color: var(--text);
+  }
 }
 .panel:focus-visible {
   outline: 2px solid var(--focus);
@@ -190,9 +250,20 @@
 }
 .bar i {
   display: block;
+  width: 100%;
   height: 100%;
   border-radius: 4px;
   background: var(--primary);
+  /* Fills with transform: grows from the left when it appears and moves
+     smoothly when the value changes (scaleX set inline). */
+  transform-origin: left center;
+  transition: transform var(--dur-rise) var(--ease-in-out);
+  animation: fillX var(--dur-rise) var(--ease) backwards;
+}
+@keyframes fillX {
+  from {
+    transform: scaleX(0);
+  }
 }
 .bar b {
   position: absolute;
@@ -220,7 +291,7 @@
   font-weight: 700;
   letter-spacing: -0.03em;
 }
-.forecastValue span {
+.forecastValue > span {
   color: var(--text-secondary);
   font-size: var(--text-secondary-size);
 }
@@ -276,13 +347,14 @@
   gap: 8px;
   min-height: 36px;
   padding: 4px 14px;
-  border-radius: var(--radius-chip);
-  background: var(--bg);
+  border-radius: var(--radius-pill);
+  /* Yellow pop chip with dark ink (on-pop-yellow, 12.15:1 / 9.47:1). */
+  background: var(--pop-yellow);
+  color: var(--on-pop-yellow);
   font-size: var(--text-small);
-  font-weight: 500;
+  font-weight: 600;
 }
 .errorList span {
-  color: var(--text-secondary);
   font-weight: 400;
 }
 
@@ -485,6 +557,15 @@
   max-width: 48px;
   border-radius: 6px 6px 0 0;
   background: var(--primary);
+  /* Columns grow from the axis, one after another (--stagger, max 8). */
+  transform-origin: bottom center;
+  animation: fillY var(--dur-rise) var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+@keyframes fillY {
+  from {
+    transform: scaleY(0);
+  }
 }
 .columnsChart > span.reached {
   background: var(--success);
@@ -577,9 +658,13 @@
 }
 .weekTrack i {
   display: block;
+  width: 100%;
   height: 100%;
   background: var(--primary);
   border-radius: 5px;
+  transform-origin: left center;
+  animation: fillX var(--dur-rise) var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
 }
 .weekCount,
 .weekTopics {
@@ -645,7 +730,20 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .ringValue,
-  .bar i {
+  .bar i,
+  .tabIndicator {
     transition: none;
+  }
+  /* No movement: the ring, bars and columns just fade in. */
+  .ringValue,
+  .bar i,
+  .columnsChart > span,
+  .weekTrack i {
+    animation: fadeIn var(--dur-fast) ease-out both;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
 }
