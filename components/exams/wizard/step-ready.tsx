@@ -5,7 +5,7 @@
 import type { CSSProperties } from "react";
 import { examTitle, type DreamExam } from "@/lib/exam-plans";
 import { Orb } from "../../orb";
-import { SubjectObject } from "../../subject-object";
+import { LiveSubjectObject } from "../../subject-object-live";
 import s from "./wizard.module.css";
 
 const SPARKS = [
@@ -46,7 +46,7 @@ export function StepReady({ exam }: { exam: DreamExam }) {
           />
         ))}
         <Orb size={72} reaction="success" reactionKey="ready" breathing />
-        <SubjectObject subject={exam.subject} size={112} className={s.objectIn} />
+        <LiveSubjectObject subject={exam.subject} size={112} className={s.objectIn} />
       </div>
       <p className={s.lead}>{examTitle(exam)}</p>
       {first.length > 0 && (
