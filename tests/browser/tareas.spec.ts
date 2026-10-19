@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { eid, LONG, open, sample } from "./tareas-fixture";
+import { eid, LONG, open, sample, unit } from "./tareas-fixture";
 // Tareas: long titles on phones, row states (hover, press, focus), loading
 // skeleton, empty state and «Tarea hecha · Deshacer» (docs/diseno/tareas).
 test.use({ serviceWorkers: "block" });
@@ -217,4 +217,64 @@ test("a failed save brings the task back with «Reintentar»", async ({
   await expect(box).toBeChecked();
   await expect(alert).toHaveCount(0);
   expect(calls.filter((c) => c.action === "exam_unit_complete").length).toBe(1);
+});
+
+test("estilo: pencil sticker, staggered list, spring tick and pills", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await open(page, sample);
+  await page.getByRole("heading", { name: "Pendientes" }).waitFor();
+  // One decorative sticker: yellow, dark ink, hidden from AT.
+  const panel = page.getByRole("region", { name: "Resolver un ejercicio" });
+  const sticker = panel.locator('[aria-hidden="true"]').first();
+  await expect(sticker).toBeVisible();
+  await expect(sticker).toHaveCSS("background-color", "rgb(255, 194, 26)");
+  await expect(sticker).toHaveCSS("color", "rgb(8, 11, 20)");
+  // Pending rows rise one after another, 40 ms apart.
+  const delays = await page
+    .getByRole("list")
+    .first()
+    .evaluate((ul) =>
+      [...ul.children].map((li) => {
+        const s = getComputedStyle(li);
+        return `${s.animationName} ${s.animationDelay}`;
+      }),
+    );
+  expect(delays).toEqual(["rise 0s", "rise 0.04s", "rise 0.08s"]);
+  // The action is a pill with a visible focus ring.
+  const action = page.getByRole("link", {
+    name: "Resolver con Dream: Factorización",
+  });
+  await expect(action).toHaveCSS("border-radius", "999px");
+  await action.focus();
+  await expect(action).toHaveCSS("outline-style", "solid");
+  // The tick lands with the soft spring (250 ms on transform).
+  const tick = await page
+    .getByRole("checkbox", { name: /Factorización/ })
+    .evaluate((el) => {
+      const s = getComputedStyle(el.nextElementSibling as Element);
+      return `${s.transitionProperty} ${s.transitionDuration}`;
+    });
+  expect(tick).toBe("opacity, transform 0.16s, 0.25s");
+});
+
+test("estilo: phone hides the sticker; reduced motion only fades", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page, [unit(0, "Factorización", "completed")]);
+  await page.getByRole("heading", { name: "Pendientes" }).waitFor();
+  const panel = page.getByRole("region", { name: "Resolver un ejercicio" });
+  await expect(panel.locator('[aria-hidden="true"]').first()).toBeHidden();
+  // Everything done: the lime sticker next to «Lo tienes todo al día.».
+  const allDone = page.getByText("Lo tienes todo al día.");
+  await expect(allDone).toBeVisible();
+  const icon = allDone.locator('[aria-hidden="true"]').first();
+  await expect(icon).toHaveCSS("background-color", "rgb(200, 245, 96)");
+  expect(await icon.evaluate((el) => getComputedStyle(el).animationName)).toBe(
+    "fade",
+  );
 });

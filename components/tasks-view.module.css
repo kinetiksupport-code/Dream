@@ -347,3 +347,80 @@ label.main:active {
     animation: none;
   }
 }
+
+/* === Estilo nuevo · Tareas === (PROMPT_EXAMEN_ESTILO.md §2.3, §6, PR 7)
+   A working list, so the screen stays sober: no pop background, no huge
+   type. The style shows in one sticker, rounder shapes, a 3D photo button,
+   a springier tick and the pending list rising in (40 ms apart, max 8 via
+   the global .stagger). Transform and opacity only; reduced motion fades. */
+.solve {
+  position: relative;
+  border-radius: var(--radius-hero);
+}
+/* The pencil sticker: yellow with dark ink, white ring, soft shadow. */
+.sticker {
+  --sticker-tilt: 8deg;
+  position: absolute;
+  top: -14px;
+  right: 24px;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid var(--sticker-ring);
+  background: var(--pop-yellow);
+  color: var(--on-pop-yellow);
+  box-shadow: var(--shadow-sticker);
+  transform: rotate(var(--sticker-tilt));
+}
+.solveText {
+  padding-right: 72px;
+}
+/* «Hacer foto»: the screen's one action, with a glossy edge and a base. */
+.solve :global(.button-row) > :global(.primary),
+.empty :global(.primary) {
+  box-shadow:
+    var(--gloss),
+    0 3px 0 color-mix(in srgb, var(--primary) 62%, #000);
+}
+.check,
+.doneBox {
+  border-radius: 8px;
+}
+/* The tick lands with the soft spring (from 0.9, never from 0). */
+.tick {
+  transition:
+    opacity var(--dur-press) var(--ease),
+    transform var(--dur-spring) var(--ease-spring);
+}
+.action {
+  border-radius: var(--radius-pill);
+}
+/* «Lo tienes todo al día»: a small lime sticker (brand lime = progress). */
+.allDoneIcon {
+  --sticker-tilt: -6deg;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--sticker-ring);
+  background: var(--pop-lime);
+  box-shadow: var(--shadow-sticker);
+  transform: rotate(var(--sticker-tilt));
+}
+.allDone .allDoneIcon svg {
+  color: var(--on-pop-lime);
+}
+@media (max-width: 639.98px) {
+  /* The phone shows only the buttons: no panel, so no sticker. */
+  .sticker {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tick {
+    transition: opacity var(--dur-press) var(--ease);
+  }
+}
