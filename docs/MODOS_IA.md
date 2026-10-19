@@ -18,7 +18,7 @@ Todo se configura en **un solo archivo**: [`supabase/functions/dream-api/models.
 
 | Modo | Proveedor | Modelo | Salida máx. (larga*) | Historial |
 |---|---|---|---|---|
-| Rápido | Groq | `llama-3.1-8b-instant`**** | 500 (900) | 8 mensajes, ≈3.000 caracteres |
+| Rápido | Groq | `openai/gpt-oss-20b`**** | 900 (1.400) | 8 mensajes, ≈3.000 caracteres |
 | Normal | Groq | `qwen/qwen3.8-27b`** | 1.200 (2.048) | 14 mensajes, ≈7.000 caracteres |
 | Pensar más | Cloudflare Workers AI | `@cf/mistralai/mistral-small-3.1-24b-instruct`*** | 1.500 (2.048) | 6 mensajes, ≈4.000 caracteres |
 | Respaldo (Rápido/Normal) | Cloudflare Workers AI | el mismo que Pensar más | 700 | 4 mensajes, ≈2.500 caracteres |
@@ -26,7 +26,18 @@ Todo se configura en **un solo archivo**: [`supabase/functions/dream-api/models.
 \* La salida larga solo se usa si el alumno pide apuntes, un resumen o algo para imprimir (misma regla que `answerTokenBudget`).
 \*\* Si Groq retira Qwen 3.8 (está en Preview), cambiar `GROQ_NORMAL_MODEL` a `openai/gpt-oss-120b` en `models.mjs` (Groq retiró `llama-3.3-70b-versatile` el 16/08/2026 en los planes gratis y Developer). El secreto `GROQ_MODEL`, si existe, sigue mandando sobre el modelo de Normal, tests y exámenes, como antes.
 \*\*\* Identificador **comprobado el 19/10/2026** en el [catálogo de Workers AI](https://developers.cloudflare.com/workers-ai/models/mistral-small-3.1-24b-instruct/); no está en la [lista de retirados del 08/05/2026](https://developers.cloudflare.com/changelog/post/2026-05-08-planned-model-deprecations/). Precio: 0,351 $ / 0,555 $ por millón de tokens de entrada / salida (31.876 / 50.488 neuronas). Cupo gratis: 10.000 neuronas al día, reinicio a las 00:00 UTC ([precios](https://developers.cloudflare.com/workers-ai/platform/pricing/)).
-\*\*\*\* ⚠️ **Groq retiró `llama-3.1-8b-instant` el 16/08/2026** en los planes gratis y Developer ([deprecations](https://console.groq.com/docs/deprecations)); ahora es solo Enterprise. Con claves gratis, Rápido falla. Groq recomienda `openai/gpt-oss-20b` (0,075 $ / 0,30 $, modelo de razonamiento). **Pendiente de decisión de Carlos**: cambiar `GROQ_FAST_MODEL` y probarlo con una clave real (el razonamiento gasta parte de los 500 tokens de salida). Precios comprobados en `20261019143700_verified_model_prices.sql`.
+\*\*\*\* **Desde el 19/10/2026, decisión de Carlos.** Groq retiró `llama-3.1-8b-instant` el 16/08/2026 en los planes gratis y Developer ([deprecations](https://console.groq.com/docs/deprecations)) y recomienda `openai/gpt-oss-20b` (0,075 $ / 0,30 $ por millón, ya en `20261019143700_verified_model_prices.sql`). Es un modelo de razonamiento:
+  - Se envía `reasoning_effort: "low"` e `include_reasoning: false` ([razonamiento en Groq](https://console.groq.com/docs/reasoning)). gpt-oss no admite `reasoning_format`.
+  - Salida de 500 (900) a **900 (1.400)**: Groq no documenta si el razonamiento cuenta en el máximo de salida, así que se deja margen. La respuesta visible sigue corta porque el prompt pide ≤120 palabras.
+  - En la ventana de 5 h se carga el uso real (`prompt_tokens + completion_tokens`) que devuelve Groq, razonamiento incluido si lo cuenta ahí (Groq no lo documenta). La estimación previa usa el nuevo máximo de salida.
+  - **Sin probar con una clave real** (no la hay en el entorno de desarrollo). Primer mensaje en staging antes de producción.
+
+**Razonamiento oculto (todos los modos).** `reasoningParams` (en `models.mjs`) decide según el modelo real que se envía, porque el secreto `GROQ_MODEL` puede cambiar el de Normal:
+- gpt-oss: `include_reasoning: false`, y el `reasoning_effort` del modo si tiene.
+- Qwen 3.8: `reasoning_format: "hidden"`, porque por defecto es `raw`, con `<think>` dentro del texto.
+- Cloudflare y otros modelos: nada.
+
+Además, `withoutReasoning` (en `ai-router.mjs`) quita los campos `reasoning` y `reasoning_content` y el texto entre `<think>` y `</think>` antes de enviar o guardar, también si las etiquetas llegan partidas. Si el razonamiento no se cierra, no se muestra nada. Normal sigue en `qwen/qwen3.8-27b`: sigue en la lista de Groq (Preview) y es el sucesor de `qwen3.6-27b`. El plan B es `openai/gpt-oss-120b` (0,15 $ / 0,60 $), solo documentado aquí.
 
 Tests, exámenes y corrección siguen usando el modelo de Normal y **no cuentan** en las ventanas: siguen con los límites diarios de `dream_private.limits`. Así una corrección no se bloquea a mitad de un examen.
 
@@ -59,10 +70,10 @@ Están en `models.mjs` (`budgetTokens`) y se cuentan en tokens de **entrada + sa
 Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 tokens/día por organización y modelo**. Las cuatro claves son de cuatro organizaciones, pero solo son respaldo de una caída: un 429 enfría todas y nunca se prueba otra organización para saltarse el límite. Así que la capacidad real es **200.000 tokens/día por modelo**.
 
 - **Mensaje típico** (≈3,6 caracteres por token, medido en el código):
-  - Rápido: 410 de instrucciones + 250 de política + ≈450 de memoria y habilidades + ≈850 de historial + salida corta.
+  - Rápido: 410 de instrucciones + 250 de política + ≈450 de memoria y habilidades + ≈850 de historial + salida corta (más el razonamiento de gpt-oss, `low`). ⚠️ El presupuesto de 30.000 se calculó con Llama 8B: revisar con el uso real de las primeras semanas.
   - Normal: el cálculo de `docs/CAPACIDAD_IA.md` (≈6.500).
   - Pensar más: 540 + 250 + 450 + ≈1.150 de historial + hasta 1.500 de salida.
-- **Rápido (8B):** 200.000 / 30.000 ≈ 6–7 ventanas completas al día para todos. Con 8.000 tokens/min caben unos 4 mensajes por minuto.
+- **Rápido (gpt-oss-20b; cálculo hecho con Llama 8B):** 200.000 / 30.000 ≈ 6–7 ventanas completas al día para todos. Con 8.000 tokens/min caben unos 4 mensajes por minuto. Los cupos de gpt-oss-20b que publica Groq para el plan Developer son 30 peticiones/min, 1.000/día, 8.000 tokens/min y 200.000 tokens/día ([límites](https://console.groq.com/docs/rate-limits)).
 - **Normal (Qwen):** 200.000 / 40.000 = 5 ventanas completas al día para todos. 8.000 tokens/min ≈ 1 mensaje por minuto: ahí entra la cola de la Parte A.
 - **Pensar más (Cloudflare, 10.000 neuronas/día, comprobado el 19/10/2026):**
   - Comprobado el 19/10/2026: 31.876 neuronas por millón de tokens de entrada y 50.488 por millón de salida. Un mensaje de 2.500 + 1.000 tokens gasta unas 130 neuronas, así que caben unos 75 mensajes al día en total.
@@ -154,6 +165,6 @@ Ni el respaldo ni las cuatro claves saltan los límites de Groq por organizació
 2. **Migración** `20261017090000_ai_modes_windows.sql`: revisar, hacer copia de seguridad y aplicarla en staging antes que en producción.
 3. **Despliegue** de `dream-api`, después de la migración.
 4. **Secretos** `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` en Supabase. Token de cuenta limitado a esa cuenta con los permisos «Workers AI - Read» y «Workers AI - Edit», los que pide la [guía de la API REST](https://developers.cloudflare.com/workers-ai/get-started/rest-api/); ningún otro.
-5. ~~Confirmar el identificador y los precios~~: comprobado el 19/10/2026 (§2 y `20261019143700_verified_model_prices.sql`, sin aplicar). **Queda:** decidir el sustituto de `llama-3.1-8b-instant` en Rápido (§2, nota \*\*\*\*) y mirar los cupos reales en `console.groq.com/settings/limits`.
+5. ~~Confirmar el identificador y los precios~~: comprobado el 19/10/2026 (§2 y `20261019143700_verified_model_prices.sql`, sin aplicar). Rápido pasa a `openai/gpt-oss-20b` (decisión de Carlos, 19/10/2026). **Queda:** probar Rápido con una clave real en staging y mirar los cupos reales en `console.groq.com/settings/limits`.
 6. ~~Encender `thinkMode` y `cloudflareFallback`~~: encendidos en la rama `feat/cloudflare` (§6).
-7. **Textos legales** actualizados en `feat/cloudflare` (privacidad, términos y cookies): **revisar** las frases nuevas antes de publicar.
+7. ~~Textos legales~~: actualizados en `feat/cloudflare` (privacidad, términos y cookies) y aprobados por Carlos el 19/10/2026.

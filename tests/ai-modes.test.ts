@@ -13,6 +13,7 @@ import {
   fallbackAvailable,
   modeAvailable,
   outputTokensFor,
+  reasoningParams,
   resolveMode,
 } from "../supabase/functions/dream-api/models.mjs";
 import {
@@ -27,8 +28,10 @@ import {
 } from "../supabase/functions/dream-api/usage-window.mjs";
 import {
   createAttemptTracker,
+  createReasoningFilter,
   shouldFallback,
   streamWithFallback,
+  withoutReasoning,
 } from "../supabase/functions/dream-api/ai-router.mjs";
 import {
   CloudflareProviderError,
@@ -90,14 +93,21 @@ async function collect(stream: AsyncIterable<Chunk>) {
 // ---------------------------------------------------------------- Modos
 const OFF = { thinkMode: false, cloudflareFallback: false };
 const cfOn = () => createCloudflareProvider({ getEnv: cfEnv, logger });
-const cfOff = () => createCloudflareProvider({ getEnv: () => undefined, logger });
+const cfOff = () =>
+  createCloudflareProvider({ getEnv: () => undefined, logger });
 
 test("flags are on in the code: «Pensar más» and the fallback only need the Cloudflare secrets", () => {
   assert.equal(DEFAULT_MODE, "normal");
   assert.equal(AI_FLAGS.thinkMode, true);
   assert.equal(AI_FLAGS.cloudflareFallback, true);
-  assert.deepEqual(aiContextFor(cfOn()), { flags: AI_FLAGS, cloudflareConfigured: true });
-  assert.deepEqual(aiContextFor(cfOff()), { flags: AI_FLAGS, cloudflareConfigured: false });
+  assert.deepEqual(aiContextFor(cfOn()), {
+    flags: AI_FLAGS,
+    cloudflareConfigured: true,
+  });
+  assert.deepEqual(aiContextFor(cfOff()), {
+    flags: AI_FLAGS,
+    cloudflareConfigured: false,
+  });
   assert.deepEqual(
     availableModes(aiContextFor(cfOn())).map((m) => m.id),
     ["fast", "normal", "think"],
@@ -111,21 +121,30 @@ test("flags are on in the code: «Pensar más» and the fallback only need the C
     availableModes({ flags: OFF, cloudflareConfigured: true }).map((m) => m.id),
     ["fast", "normal"],
   );
-  assert.equal(resolveMode("think", { flags: OFF, cloudflareConfigured: true }), null);
+  assert.equal(
+    resolveMode("think", { flags: OFF, cloudflareConfigured: true }),
+    null,
+  );
   for (const m of availableModes(aiContextFor(cfOn())))
-    assert.doesNotMatch(m.label, /llama|qwen|mistral|groq|cloudflare/i);
+    assert.doesNotMatch(
+      m.label,
+      /llama|qwen|mistral|gpt|oss|openai|groq|cloudflare/i,
+    );
 });
 
 test("each mode maps to one provider and model in the single config", () => {
   assert.equal(MODES.fast.provider, "groq");
-  assert.equal(MODES.fast.model, "llama-3.1-8b-instant");
+  assert.equal(MODES.fast.model, "openai/gpt-oss-20b");
+  assert.equal(MODES.fast.reasoningEffort, "low");
   assert.equal(MODES.normal.provider, "groq");
   assert.equal(MODES.normal.model, "qwen/qwen3.8-27b");
   assert.equal(MODES.think.provider, "cloudflare");
   assert.equal(MODES.think.model, CLOUDFLARE_MODEL);
   for (const m of Object.values(MODES)) assert.ok(m.budgetTokens > 0);
   assert.ok(MODES.fast.maxOutputTokens < MODES.normal.maxOutputTokens);
-  assert.equal(outputTokensFor(MODES.fast, "¿Qué es un átomo?"), 500);
+  // Margen para el razonamiento de gpt-oss (antes 500/900 con Llama 8B).
+  assert.equal(outputTokensFor(MODES.fast, "¿Qué es un átomo?"), 900);
+  assert.equal(outputTokensFor(MODES.fast, "Hazme un resumen del tema"), 1400);
   assert.equal(
     outputTokensFor(MODES.normal, "Hazme un resumen del tema"),
     2048,
@@ -142,7 +161,8 @@ test("without Cloudflare secrets the fallback and «Pensar más» switch off sil
   });
   assert.equal(bad.configured(), false);
   const onlyKey = createCloudflareProvider({
-    getEnv: (n: string) => (n === "CLOUDFLAREAI_API_KEY" ? cfEnv(n) : undefined),
+    getEnv: (n: string) =>
+      n === "CLOUDFLAREAI_API_KEY" ? cfEnv(n) : undefined,
     logger,
   });
   assert.equal(onlyKey.configured(), false);
@@ -171,16 +191,28 @@ test("ai_usage → web: the browser learns about «Pensar más» only from the m
   // Same steps as dream-api `ai_usage` (availableModes(aiContextFor(cloudflareProvider)))
   // followed by the web's parser (lib/ai-modes.ts).
   const served = (provider: ReturnType<typeof createCloudflareProvider>) => ({
-    ...usageSummary({}, { now: T0, modes: availableModes(aiContextFor(provider)) }),
+    ...usageSummary(
+      {},
+      { now: T0, modes: availableModes(aiContextFor(provider)) },
+    ),
     default_mode: DEFAULT_MODE,
   });
   const withSecrets = parseUsage(JSON.parse(JSON.stringify(served(cfOn()))));
-  assert.deepEqual(withSecrets.modes.map((m) => m.id), ["fast", "normal", "think"]);
-  assert.equal(withSecrets.modes.find((m) => m.id === "think")?.label, "Pensar más");
+  assert.deepEqual(
+    withSecrets.modes.map((m) => m.id),
+    ["fast", "normal", "think"],
+  );
+  assert.equal(
+    withSecrets.modes.find((m) => m.id === "think")?.label,
+    "Pensar más",
+  );
   assert.equal(pickMode(withSecrets, "think"), "think");
 
   const without = parseUsage(JSON.parse(JSON.stringify(served(cfOff()))));
-  assert.deepEqual(without.modes.map((m) => m.id), ["fast", "normal"]);
+  assert.deepEqual(
+    without.modes.map((m) => m.id),
+    ["fast", "normal"],
+  );
   // A device that remembered «Pensar más» goes back to Normal, never sends «think».
   assert.equal(pickMode(without, "think"), "normal");
   assert.equal(alternativeMode(without, "normal")?.id, "fast");
@@ -188,8 +220,118 @@ test("ai_usage → web: the browser learns about «Pensar más» only from the m
   for (const body of [served(cfOn()), served(cfOff())])
     assert.doesNotMatch(
       JSON.stringify(body),
-      /llama|qwen|mistral|groq|cloudflare|@cf|api_key|account/i,
+      /llama|qwen|mistral|gpt|oss|openai|groq|cloudflare|@cf|api_key|account/i,
     );
+});
+
+// ------------------------------------------------- Razonamiento oculto
+test("reasoning parameters follow the real Groq model, never the mode name", () => {
+  // Rápido on gpt-oss-20b: low effort and no reasoning in the reply.
+  assert.deepEqual(reasoningParams(MODES.fast.model, MODES.fast), {
+    reasoning_effort: "low",
+    include_reasoning: false,
+  });
+  // Normal on Qwen 3.8: only the final answer (the default format is raw <think>).
+  assert.deepEqual(reasoningParams(MODES.normal.model, MODES.normal), {
+    reasoning_format: "hidden",
+  });
+  // GROQ_MODEL may swap Normal to gpt-oss-120b: no reasoning_format (unsupported
+  // there) and Groq's default effort.
+  assert.deepEqual(reasoningParams("openai/gpt-oss-120b", MODES.normal), {
+    include_reasoning: false,
+  });
+  // Other models and Cloudflare get nothing extra.
+  assert.deepEqual(
+    reasoningParams("llama-3.3-70b-versatile", MODES.normal),
+    {},
+  );
+  assert.deepEqual(reasoningParams(CLOUDFLARE_MODEL, MODES.think), {});
+  // gpt-oss never gets reasoning_format together with include_reasoning.
+  for (const model of ["openai/gpt-oss-20b", "openai/gpt-oss-120b"])
+    assert.equal(
+      "reasoning_format" in reasoningParams(model, MODES.fast),
+      false,
+    );
+});
+
+test("reasoning text is stripped even when <think> tags arrive split across chunks", () => {
+  const run = (parts: string[]) => {
+    const f = createReasoningFilter();
+    return parts.map((p) => f.push(p)).join("") + f.flush();
+  };
+  assert.equal(run(["Hola, ", "¿qué ", "sabes?"]), "Hola, ¿qué sabes?");
+  assert.equal(
+    run(["<think>calculo 2+2</think>\n\nPiensa en ", "la suma."]),
+    "Piensa en la suma.",
+  );
+  assert.equal(
+    run(["<thi", "nk>secreto</th", "ink>", "\n", "Pista: mira el signo."]),
+    "Pista: mira el signo.",
+  );
+  assert.equal(run(["a < b y ", "x <", "= 3"]), "a < b y x <= 3");
+  // Unclosed reasoning (cut by the output limit): nothing of it is shown.
+  assert.equal(run(["<think>la solución es 42", " porque..."]), "");
+  assert.equal(run(["Antes <think>oculto</think> después"]), "Antes después");
+});
+
+test("withoutReasoning drops reasoning fields and tags before the student or the database see them", async () => {
+  async function* provider() {
+    yield {
+      choices: [
+        { delta: { reasoning: "El alumno quiere la solución: x = 4" } },
+      ],
+    };
+    yield { choices: [{ delta: { reasoning_content: "x = 4" } }] };
+    yield { choices: [{ delta: { content: "<think>x = 4</think>" } }] };
+    yield { choices: [{ delta: { content: "\n¿Qué pasa si " } }] };
+    yield { choices: [{ delta: { content: "despejas x?" } }] };
+    yield {
+      choices: [{ delta: {} }],
+      usage: { prompt_tokens: 50, completion_tokens: 120 },
+    };
+  }
+  const chunks: {
+    choices: { delta: Record<string, unknown> }[];
+    usage?: unknown;
+  }[] = [];
+  for await (const c of withoutReasoning(provider())) chunks.push(c);
+  const text = chunks.map((c) => c.choices[0].delta.content ?? "").join("");
+  assert.equal(text, "¿Qué pasa si despejas x?");
+  assert.doesNotMatch(JSON.stringify(chunks), /x = 4|reasoning|think/);
+  // Usage (which includes the reasoning tokens) still reaches the 5-hour window.
+  assert.deepEqual(chunks.at(-1)?.usage, {
+    prompt_tokens: 50,
+    completion_tokens: 120,
+  });
+  assert.equal(actualTokens(chunks.at(-1)?.usage), 170);
+});
+
+test("the router does not count reasoning-only chunks as visible output", async () => {
+  let fellBack = false;
+  async function* onlyThinking(): AsyncGenerator<Chunk> {
+    yield { choices: [{ delta: { content: "<think>hmm" } }] };
+    throw new GroqProviderError("provider_unavailable", {
+      status: 503,
+      retryable: true,
+    });
+  }
+  const text = await collect(
+    streamWithFallback({
+      primary: () => withoutReasoning(onlyThinking()),
+      fallback: () => {
+        fellBack = true;
+        return withoutReasoning(
+          createCloudflareProvider({
+            getEnv: cfEnv,
+            logger,
+            fetchImpl: async () => sse("Una pista."),
+          }).stream({ body: { model: CLOUDFLARE_MODEL, messages: [] } }),
+        );
+      },
+    }),
+  );
+  assert.equal(fellBack, true);
+  assert.equal(text, "Una pista.");
 });
 
 // ------------------------------------------------------- Ventana de 5 h

@@ -136,7 +136,9 @@ test("«Pensar más» appears only when the server offers it", async ({
 test("without Cloudflare the server leaves «Pensar más» out and a remembered choice goes back to Normal", async ({
   page,
 }) => {
-  await page.addInitScript(() => localStorage.setItem("dream-ai-mode", "think"));
+  await page.addInitScript(() =>
+    localStorage.setItem("dream-ai-mode", "think"),
+  );
   const chats = await signedIn(page, [fresh]);
   await page.goto("/chat");
   const picker = page.getByRole("group", { name: "Modo de respuesta" });

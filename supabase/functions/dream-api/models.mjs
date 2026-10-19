@@ -27,15 +27,14 @@ export const WINDOW_MS = WINDOW_HOURS * 3600_000;
 // 08/05/2026). Precio en supabase/migrations/20261019143700_verified_model_prices.sql.
 export const CLOUDFLARE_MODEL = '@cf/mistralai/mistral-small-3.1-24b-instruct';
 
-// Groq: si retira «qwen/qwen3.8-27b» (está en Preview), cambiar Normal a
-// «openai/gpt-oss-120b» AQUÍ (Groq retiró «llama-3.3-70b-versatile» el
-// 16/08/2026 en los planes gratis y Developer). Su precio ya está en
-// dream_private.model_prices.
-// ⚠️ «llama-3.1-8b-instant» (Rápido) también está retirado desde el
-// 16/08/2026 salvo con contrato Enterprise. Groq recomienda
-// «openai/gpt-oss-20b». Pendiente de decisión de Carlos: docs/MODOS_IA.md §2.
+// Groq, comprobado el 19/10/2026 (docs/MODOS_IA.md §2):
+// - Normal: «qwen/qwen3.8-27b» (Preview). Si Groq lo retira, cambiar a
+//   «openai/gpt-oss-120b» AQUÍ; su precio ya está en dream_private.model_prices.
+// - Rápido: «openai/gpt-oss-20b», el sustituto que Groq recomienda para
+//   «llama-3.1-8b-instant» (retirado el 16/08/2026 en Free/Developer).
+//   Es un modelo de razonamiento: ver reasoningParams.
 export const GROQ_NORMAL_MODEL = 'qwen/qwen3.8-27b';
-export const GROQ_FAST_MODEL = 'llama-3.1-8b-instant';
+export const GROQ_FAST_MODEL = 'openai/gpt-oss-20b';
 
 export const MODE_IDS = Object.freeze(['fast', 'normal', 'think']);
 export const DEFAULT_MODE = 'normal';
@@ -48,8 +47,12 @@ export const MODES = Object.freeze({
     label: 'Rápido',
     provider: 'groq',
     model: GROQ_FAST_MODEL,
-    maxOutputTokens: 500,
-    longOutputTokens: 900,
+    // gpt-oss razona antes de escribir y Groq no documenta si esos tokens
+    // entran en el máximo de salida: se deja margen (antes 500/900 con Llama
+    // 8B). La respuesta visible sigue corta por el prompt (≤120 palabras).
+    maxOutputTokens: 900,
+    longOutputTokens: 1400,
+    reasoningEffort: 'low',
     temperature: 0.4,
     tools: true,
     history: Object.freeze({ maxMessages: 8, recentFull: 2, recentChars: 1500, olderChars: 200, totalChars: 3000 }),
@@ -64,6 +67,7 @@ export const MODES = Object.freeze({
     model: GROQ_NORMAL_MODEL,
     maxOutputTokens: 1200,
     longOutputTokens: 2048,
+    reasoningEffort: null, // Qwen 3.8: esfuerzo por defecto (ver reasoningParams)
     temperature: 0.5,
     tools: true,
     history: Object.freeze({ maxMessages: 14, recentFull: 4, recentChars: 3000, olderChars: 300, totalChars: 7000 }),
@@ -78,6 +82,7 @@ export const MODES = Object.freeze({
     model: CLOUDFLARE_MODEL,
     maxOutputTokens: 1500,
     longOutputTokens: 2048,
+    reasoningEffort: null, // Cloudflare: sin parámetros de razonamiento
     temperature: 0.3,
     tools: false,
     history: Object.freeze({ maxMessages: 6, recentFull: 2, recentChars: 2000, olderChars: 200, totalChars: 4000 }),
@@ -112,6 +117,26 @@ export function modeAvailable(id, { flags = AI_FLAGS, cloudflareConfigured = fal
 /** @param {{configured: () => boolean}} cloudflare */
 export function aiContextFor(cloudflare, flags = AI_FLAGS) {
   return { flags, cloudflareConfigured: Boolean(cloudflare?.configured()) };
+}
+
+// Parámetros de razonamiento según el modelo REAL que se envía a Groq (el
+// secreto GROQ_MODEL puede cambiar el de Normal). Así el razonamiento nunca
+// llega al texto de la respuesta (console.groq.com/docs/reasoning):
+// - gpt-oss: `reasoning_effort` (low/medium/high) e `include_reasoning: false`.
+//   No admite `reasoning_format`.
+// - Qwen 3.8: `reasoning_format: 'hidden'` (solo la respuesta final). Sin él,
+//   el formato por defecto es `raw`, con <think> dentro del texto.
+// Otros modelos: nada. Cloudflare no recibe estos parámetros.
+// Además, ai-router.mjs (withoutReasoning) quita cualquier razonamiento que
+// llegue igualmente, antes de enviarlo o guardarlo.
+/** @param {string} model @param {{reasoningEffort?: string | null}} [mode] */
+export function reasoningParams(model, mode = {}) {
+  if (typeof model !== 'string') return {};
+  if (/^openai\/gpt-oss-/.test(model)) {
+    return { ...(mode.reasoningEffort ? { reasoning_effort: mode.reasoningEffort } : {}), include_reasoning: false };
+  }
+  if (/^qwen\/qwen3\.8-/.test(model)) return { reasoning_format: 'hidden' };
+  return {};
 }
 
 export function availableModes(ctx = {}) {
