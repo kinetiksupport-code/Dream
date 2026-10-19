@@ -4407,3 +4407,23 @@ fieldset:disabled .test-option {
     animation: none;
   }
 }
+
+/* === Tick dibujado === (components/drawn-tick.tsx, §5.3) ------------------ */
+.drawn-tick-reveal {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: tick-reveal var(--dur-rise) var(--ease) both;
+}
+@keyframes tick-reveal {
+  from {
+    transform: scaleX(0.02);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawn-tick-reveal {
+    animation: none;
+  }
+}

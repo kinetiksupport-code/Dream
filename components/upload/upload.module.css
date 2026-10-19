@@ -1,6 +1,6 @@
 /* Subida desde el móvil (/subir/[token]) y panel QR del ordenador.
    Tokens de app/globals.css; movimiento solo con transform, opacity y el
-   trazo del tick (stroke-dashoffset en @keyframes). */
+   trazo del tick (components/drawn-tick.tsx: máscara con scaleX). */
 
 .page {
   min-height: var(--viewport-height, 100dvh);
@@ -74,12 +74,6 @@
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 16;
-  stroke-dashoffset: 0;
-  animation: draw var(--dur-rise) var(--ease) 80ms both;
-}
-.badgeTick path {
-  animation-delay: 220ms;
 }
 
 .actions {
@@ -242,14 +236,6 @@
     opacity: 1;
   }
 }
-@keyframes draw {
-  from {
-    stroke-dashoffset: 16;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
 @keyframes pop {
   from {
     opacity: 0;
@@ -276,10 +262,6 @@
   .badgeTick,
   .qrFrame svg {
     animation-name: fadeIn;
-  }
-  .badgeTick path,
-  .tick path {
-    animation: none;
   }
   .status:not([data-connected="true"]) .dot {
     animation: none;

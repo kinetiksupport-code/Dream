@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DrawnTick } from "../drawn-tick";
 import { Orb } from "@/components/orb";
 import { AlertIcon, CameraIcon, UploadIcon } from "@/components/icons";
 import { fileAccept } from "@/lib/attachments";
@@ -190,10 +191,7 @@ export function MobileUpload() {
       <header className={styles.header}>
         <span className={styles.badge} aria-hidden="true">
           <Orb size={48} />
-          <svg className={styles.badgeTick} viewBox="0 0 24 24">
-            <circle cx="12" cy="12" r="11" />
-            <path d="m7 12.5 3.5 3.5L17 9" />
-          </svg>
+          <DrawnTick className={styles.badgeTick} delay={220} />
         </span>
         <h1 ref={title} tabIndex={-1} className={`${styles.title} rise`}>
           Conectado con tu ordenador
@@ -266,10 +264,7 @@ export function MobileUpload() {
                 {item.status === "processing" || item.status === "queued" ? (
                   <Orb size={24} pulsing={item.status === "processing"} />
                 ) : item.status === "done" ? (
-                  <svg className={styles.tick} viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="11" />
-                    <path d="m7 12.5 3.5 3.5L17 9" />
-                  </svg>
+                  <DrawnTick className={styles.tick} />
                 ) : (
                   <AlertIcon />
                 )}
