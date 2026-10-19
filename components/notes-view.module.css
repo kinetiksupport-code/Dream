@@ -458,3 +458,68 @@
     transform: none;
   }
 }
+
+/* === Estilo nuevo · Apuntes === (PROMPT_EXAMEN_ESTILO.md §2.3, §6, PR 7)
+   Notes are read for a long time: calm card surfaces, no pop background,
+   no huge type. The style shows in colour (a lime «Listo» pill), rounder
+   shapes, a 3D upload button, a drop zone that leans in while dragging
+   and a sticker ring on the empty state's badge. Transform and opacity
+   only, 120–250 ms; hover only with a fine pointer; reduced motion fades. */
+.card,
+.skeleton,
+.cardLink::after {
+  border-radius: var(--radius-panel);
+}
+/* Status as a pill: colour, icon and text together (never colour alone). */
+.status[data-tone="success"],
+.status[data-tone="neutral"] {
+  align-self: flex-start;
+  align-items: center;
+  padding: 4px 12px 4px 8px;
+  border-radius: var(--radius-pill);
+}
+.status[data-tone="success"] {
+  background: var(--pop-lime); /* brand lime = progress, ink 15.62:1 */
+  color: var(--on-pop-lime);
+}
+.status[data-tone="neutral"] {
+  background: var(--bg);
+}
+.status[data-tone="success"] svg,
+.status[data-tone="neutral"] svg {
+  margin-top: 0;
+}
+.action,
+.skActions > span {
+  border-radius: var(--radius-pill);
+}
+/* «Subir apuntes»: the page's one action, with a glossy edge and a base. */
+.upload {
+  box-shadow:
+    var(--gloss),
+    0 3px 0 color-mix(in srgb, var(--primary) 62%, #000);
+}
+/* Drop zone: rounder, and it leans in a little while files hover over it. */
+.zone {
+  border-radius: var(--radius-panel);
+  transition:
+    background-color var(--dur-base) ease,
+    border-color var(--dur-base) ease,
+    transform var(--dur-base) var(--ease);
+}
+.zone[data-state="dragging"] {
+  transform: scale(1.01);
+}
+/* Empty state: a rounder panel and the upload badge as a sticker. */
+.empty {
+  border-radius: var(--radius-hero);
+}
+.ilBadge {
+  stroke: var(--sticker-ring);
+  stroke-width: 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone[data-state="dragging"] {
+    transform: none;
+  }
+}

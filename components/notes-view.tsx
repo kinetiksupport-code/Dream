@@ -33,7 +33,11 @@ function NotesLayout({
         <h1 className="title">Apuntes</h1>
         {/* Empty: the empty state carries the only «Subir apuntes». */}
         {!isEmpty && (
-          <button type="button" className="primary press" onClick={upload.pick}>
+          <button
+            type="button"
+            className={`primary press ${s.upload}`}
+            onClick={upload.pick}
+          >
             Subir apuntes
           </button>
         )}
@@ -68,7 +72,9 @@ function NotesLayout({
         ) : (
           <div className={s.empty}>
             <EmptyIllustration />
-            <h2>Aún no tienes apuntes</h2>
+            <h2>
+              Aún no tienes <span className="marker">apuntes</span>
+            </h2>
             <p>
               Sube un PDF o una foto. Dream te ayuda a resumirlos y a preparar
               tests.
@@ -76,7 +82,7 @@ function NotesLayout({
             <p className={s.emptyHint}>También puedes arrastrarlos aquí.</p>
             <button
               type="button"
-              className="primary press"
+              className={`primary press ${s.upload}`}
               onClick={upload.pick}
             >
               Subir apuntes
