@@ -12,6 +12,7 @@ import { KNOWN_SUBJECTS } from "@/lib/subject-objects";
 import { BottomSheet } from "../../bottom-sheet";
 import { Orb } from "../../orb";
 import { SubjectObject } from "../../subject-object";
+import { LiveSubjectObject } from "../../subject-object-live";
 import s from "./wizard.module.css";
 
 export interface Identity {
@@ -125,7 +126,7 @@ export function StepIdentify({
       <div className={s.subjectRow}>
         <h2 className="hero-title">{subject || "¿De qué asignatura es?"}</h2>
         {subject && (
-          <SubjectObject subject={subject} size={112} className={s.objectIn} key={subject} />
+          <LiveSubjectObject subject={subject} size={112} className={s.objectIn} key={subject} />
         )}
       </div>
       <button type="button" className={`${s.linkButton} press`} onClick={() => setSheet(true)}>

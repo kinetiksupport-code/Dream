@@ -80,6 +80,23 @@ Skills releídas. Detalle en `docs/diseno/asistente/README.md`.
   - `privacy.md`: la cámara solo se abre al pulsar «Hacer foto», y la línea «No subas datos de otras personas».
 - **`libraries-dev`:** esperas de más de 2 s (leer apuntes, IA, crear la ruta) → orbe de marca con `orb-pulsing`, en vez de `thinking-orbs`, que no se instala sin OK. Sin `border-beam`: un solo foco por pantalla.
 
+## Objetos 3D reales en escritorio (19/10/2026, PR 6 del encargo de exámenes)
+
+Skills releídas. Detalle, tamaños y capturas en `docs/diseno/objetos-3d/README.md`.
+
+- **`emil-design-eng`:**
+  - *Should this animate at all?* El objeto sale en momentos raros (identificar el examen, «listo»): se permite el detalle; en el historial, que se ve a diario, sigue el icono quieto.
+  - *Spring-based mouse interactions* («tying visual changes directly to mouse position feels artificial»): la inclinación hacia el puntero no se copia tal cual; se acerca con amortiguación exponencial en cada fotograma (`components/subject-3d/scene.ts`), acotada a 0,35 rad.
+  - *Handle edge cases invisibly* («pause … when the tab is hidden»): el bucle se para con la pestaña oculta y con el objeto fuera de pantalla.
+  - *Only animate transform and opacity*: el cruce icono → lienzo es un fundido de opacidad de 200 ms (`--dur-base`, `--ease`); el giro va dentro del lienzo.
+  - *prefers-reduced-motion*: con movimiento reducido no se carga el 3D; queda el icono quieto.
+- **`apple-design`:**
+  - `motion.md › Best practices`: «Add motion purposefully, supporting the experience without overshadowing it» → giro lento (una vuelta en ~22 s), inclinación suave, un solo objeto por pantalla. «Make motion optional» → el objeto es decorativo (`aria-hidden`), el nombre de la asignatura ya está escrito.
+  - `accessibility.md` («When this setting is active, ensure your app … responds by reducing automatic and repetitive animations»): con Reducir movimiento el objeto no gira ni flota.
+  - `design-principles.md › Delight` («Don’t mistake delight for decoration»): fuera de escritorio capaz, nada de 3D; el modelo nunca retrasa ni tapa la acción principal y no cambia el layout (tamaño fijo, icono hasta que hay fotograma).
+  - `dark-mode.md`: colores de los tokens `--pop-*` leídos en el navegador; capturas en claro y oscuro.
+- **`libraries-dev`:** ninguna librería encaja («No clear match … Do not force an effect»). Además, «Don't stack effects»: el objeto ya es el foco de la pantalla, así que nada de `metal-fx` ni `border-beam` alrededor. No se instala nada más.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -113,6 +130,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Objetos 3D reales en escritorio (PR 6) | `docs/diseno/objetos-3d/antes/*` | `docs/diseno/objetos-3d/despues/*` | `objetos-3d.webm` | PR 6 |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 

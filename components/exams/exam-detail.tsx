@@ -14,7 +14,7 @@ import {
   type ExamSession,
 } from "@/lib/exam-plans";
 import { ErrorNotice, Materials, useExam } from "./exam-ui";
-import { SubjectObject } from "../subject-object";
+import { LiveSubjectObject } from "../subject-object-live";
 import {
   DaysChip,
   ExamDetailSkeleton,
@@ -185,7 +185,7 @@ export function ExamDetail({
   // Objeto de la asignatura junto al título: el mismo que en la tarjeta del
   // historial, que viaja hasta aquí con la transición de página.
   const object = plan ? undefined : (
-    <SubjectObject
+    <LiveSubjectObject
       subject={exam.subject}
       size={OBJECT_SIZE_DETAIL}
       style={{ viewTransitionName: OBJECT_TRANSITION }}
