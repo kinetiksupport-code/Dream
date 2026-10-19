@@ -11,6 +11,7 @@ import {
   planRouteWithRetry,
   routeContext,
   routeProgress,
+  targetGrade,
   validateAiRoute,
   ROUTE_SYSTEM_PROMPT,
   type RouteNode,
@@ -286,6 +287,19 @@ test("el contexto de la IA solo lleva datos del examen y del progreso", () => {
   assert.deepEqual(Object.keys(parsed.units[0]), ["unit_id", "topic", "minutes", "status"]);
   assert.match(ROUTE_SYSTEM_PROMPT, /daily_minutes/);
   assert.match(ROUTE_SYSTEM_PROMPT, /simulacro|mock/);
+});
+
+test("la nota objetivo del asistente llega a la IA como número y nada más", () => {
+  const exam = { title: "Álgebra", subject: "Matemáticas", exam_date: "2026-10-30", daily_minutes: 45, difficulties: "", goal: "Sacar un 7,5 sobre 10." };
+  const ctx = (target_grade: unknown) =>
+    JSON.parse(routeContext({ ...exam, target_grade } as Parameters<typeof routeContext>[0], [unit(0)], [], TODAY)).exam;
+  assert.equal(ctx(7.5).target_grade, 7.5);
+  assert.equal(ctx("8.0").target_grade, 8);
+  for (const bad of [null, undefined, "", 11, -1, 7.3, "siete", Number.NaN]) assert.equal(ctx(bad).target_grade, null);
+  assert.equal(targetGrade(10), 10);
+  assert.deepEqual(Object.keys(ctx(7.5)), ["title", "subject", "today", "exam_date", "daily_minutes", "difficulties", "goal", "target_grade"]);
+  assert.match(ROUTE_SYSTEM_PROMPT, /target_grade/);
+  assert.match(ROUTE_SYSTEM_PROMPT, /Nunca incluyas soluciones/);
 });
 
 // ------------------------------------------------------------ Vista del camino
