@@ -131,6 +131,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
 | Objetos 3D reales en escritorio (PR 6) | `docs/diseno/objetos-3d/antes/*` | `docs/diseno/objetos-3d/despues/*` | `objetos-3d.webm` | PR 6 |
+| Estilo nuevo · Chat (PR 7) | `docs/diseno/estilo-chat/antes/*` | `docs/diseno/estilo-chat/despues/*` | — (pruebas en `chat-diseno.spec.ts` › «estilo») | design/estilo-chat |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
@@ -141,3 +142,16 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
 - **libraries-dev:** espera de más de 2 s (procesar un archivo) → la regla pide un indicador de «pensando»; se usa el orbe de marca con `orb-pulsing` en vez de `thinking-orbs` (no se instala nada sin OK). Sin `border-beam`: la pantalla ya tiene un solo foco y no se apilan efectos.
 - Panel QR del ordenador (`components/exams/qr-panel.tsx`): aún sin capturas; no está montado en ninguna pantalla hasta que el asistente nuevo lo integre. `docs/diseno/subir/qr-ejemplo.svg` es un QR de ejemplo generado con `lib/qr.ts` para escanearlo con un móvil real.
 
+
+### Estilo nuevo · Chat (PR 7, `design/estilo-chat`)
+
+- **Qué es:** la pantalla de estudio largo, con estilo sobrio. Sin fondo saturado ni titular gigante. El CSS está en `components/chat-estilo.module.css` y tiene alcance `.chat-view`. El detalle y la tabla Antes | Después | Por qué están en `docs/diseno/estilo-chat/README.md`.
+- **emil-design-eng:**
+  - La tarjeta del test entra desde `scale(0.96)` con el muelle suave, 250 ms y `backwards`.
+  - Las acciones de una respuesta nueva entran escalonadas, 40 ms (3 como máximo). El historial no se anima.
+  - Hover solo con puntero fino. Pulsación 0,97. Reducido: solo fundido.
+- **apple-design:**
+  - `color.md`: pegatina amarilla = práctica y naranja = examen, siempre con la etiqueta de texto y tinta oscura (12,15:1 y 5,79:1).
+  - `accessibility.md`: el hover amarillo del chip da 16,15:1 en claro y 7,79:1 en oscuro, y el icono de archivo 4,93:1 y 5,71:1.
+  - `branding.md`: un solo elemento de marca (la pegatina).
+- **libraries-dev:** sin efectos nuevos. Las esperas siguen con el orbe.
