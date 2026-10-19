@@ -2,6 +2,12 @@ import { validateOfficeArchive, assertBase64 } from './archive.mjs';
 import JSZip from 'npm:jszip@3.10.1';
 import { getResolvedPDFJS } from 'npm:unpdf@1.8.1';
 import { groqProvider } from './groq.mjs';
+import {
+  UploadError, assertCoherent, decodeUtf8Text, sanitizeExtractedText, assertImageDimensions,
+  stripImageMetadata, inspectPdfBytes, hasActiveAnnotation, inspectOfficeNames,
+  inspectContentTypes, inspectRelationships,
+} from './file-guard.mjs';
+export { UploadError } from './file-guard.mjs';
 
 export const TEXT_EXTENSIONS = new Set([
   'txt', 'md', 'markdown', 'json', 'csv', 'tsv',
@@ -20,6 +26,18 @@ export const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_EXTRACTED_CHARS = 24000;
 export const MAX_ATTACHMENT_CONTEXT_CHARS = 32000;
+/** Tiempo máximo para leer un PDF; después se cancela y se libera. */
+export const PDF_TIMEOUT_MS = 8000;
+// Código: las etiquetas forman parte del contenido y no se quitan.
+const CODE_EXTENSIONS = new Set(['json', 'csv', 'tsv', 'js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'py', 'rb', 'php', 'java', 'kt', 'go', 'rs', 'c', 'cpp', 'h', 'cs', 'css', 'scss', 'yml', 'yaml', 'sql', 'sh', 'env']);
+
+export function familyOf(ext) {
+  if (TEXT_EXTENSIONS.has(ext)) return 'text';
+  if (IMAGE_EXTENSIONS.has(ext)) return 'image';
+  if (OFFICE_EXTENSIONS.has(ext)) return 'office';
+  if (ext === 'pdf') return 'pdf';
+  return '';
+}
 
 export function extensionOf(fileName) {
   const match = /\.([a-zA-Z0-9]+)$/.exec(fileName || '');
@@ -63,21 +81,32 @@ function decodeXml(value) {
     .replace(/<[^<>]*>/g, '')
     .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"').replace(/&apos;/g, "'")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#(\d{1,7});|&#x([0-9a-fA-F]{1,6});/g, (_, d, h) => { const n = d ? Number(d) : parseInt(h, 16); return n > 0 && n <= 0x10ffff && (n < 0xd800 || n > 0xdfff) ? String.fromCodePoint(n) : ''; })
     .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 
 async function boundedZipText(entry, budget) {
   return new Promise((resolve,reject)=>{
     const stream=entry.internalStream('uint8array');const decoder=new TextDecoder();let bytes=0,text='';
-    stream.on('data',chunk=>{bytes+=chunk.length;budget.bytes+=chunk.length;if(bytes>4*1024*1024 || budget.bytes>16*1024*1024){stream.pause();reject(new Error('archive_limits'));return;}text+=decoder.decode(chunk,{stream:true});});
-    stream.on('error',reject);stream.on('end',()=>resolve(text+decoder.decode()));stream.resume();
+    stream.on('data',chunk=>{bytes+=chunk.length;budget.bytes+=chunk.length;if(bytes>4*1024*1024 || budget.bytes>16*1024*1024){stream.pause();reject(new UploadError('archive_unsafe'));return;}text+=decoder.decode(chunk,{stream:true});});
+    stream.on('error',()=>reject(new UploadError('archive_unsafe')));stream.on('end',()=>resolve(text+decoder.decode()));stream.resume();
   });
 }
 
 async function extractOffice(bytes, ext) {
-  validateOfficeArchive(bytes);
-  const zip = await JSZip.loadAsync(bytes);
+  let names;
+  try { names = validateOfficeArchive(bytes).names; }
+  catch (error) { throw new UploadError(error?.message === 'encrypted_archive' ? 'encrypted' : 'archive_unsafe'); }
+  inspectOfficeNames(names, ext);
+  let zip;
+  try { zip = await JSZip.loadAsync(bytes); } catch { throw new UploadError('archive_unsafe'); }
+  const budget = {bytes:0};
+  // Tipos declarados y relaciones (pequeños, con el mismo presupuesto).
+  inspectContentTypes(await boundedZipText(zip.file('[Content_Types].xml'), budget));
+  for (const path of names.filter((n) => /(^|\/)_rels\/[^/]*\.rels$/i.test(n)).slice(0, 400)) {
+    const entry = zip.file(path);
+    if (entry) inspectRelationships(await boundedZipText(entry, budget));
+  }
   let paths = [];
   if (ext === 'docx') paths = ['word/document.xml'];
   if (ext === 'pptx') paths = Object.keys(zip.files).filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p)).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -86,7 +115,6 @@ async function extractOffice(bytes, ext) {
     'xl/sharedStrings.xml',
   ];
   const chunks = [];
-  const budget = {bytes:0};
   for (const path of paths.slice(0, 80)) {
     const entry = zip.file(path);
     if (!entry) continue;
@@ -95,31 +123,49 @@ async function extractOffice(bytes, ext) {
     if (chunks.join('\n').length >= MAX_EXTRACTED_CHARS) break;
   }
   const text = chunks.join('\n\n');
-  if (!text.trim()) throw new Error('empty_document');
+  if (!text.trim()) throw new UploadError('empty_content');
   return text;
 }
 
-async function extractPdf(bytes) {
+async function extractPdf(bytes, timeoutMs = PDF_TIMEOUT_MS) {
+  inspectPdfBytes(bytes);
   const {getDocument} = await getResolvedPDFJS();
-  const task = getDocument({data:bytes,maxImageSize:16_777_216,isEvalSupported:false,useSystemFonts:true,disableFontFace:true});
+  // Copia: pdf.js puede transferir el búfer. Sin eval ni XFA: solo se lee texto.
+  const task = getDocument({data:bytes.slice(),maxImageSize:16_777_216,isEvalSupported:false,enableXfa:false,useSystemFonts:true,disableFontFace:true});
+  // Doble control: temporizador (si el bucle de eventos queda libre) y plazo
+  // comprobado entre páginas (pdf.js sin worker puede encadenar microtareas).
+  const deadline=Date.now()+timeoutMs;
+  const checkDeadline=()=>{if(Date.now()>deadline)throw new UploadError('pdf_timeout');};
   let timer;let disposing;
   const dispose=()=>disposing??=task.destroy();
-  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{void dispose().catch(()=>{});reject(new Error('pdf_timeout'));},20000);});
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>{void dispose().catch(()=>{});reject(new UploadError('pdf_timeout'));},timeoutMs);});
+  timeout.catch(()=>{});
   try {
     const pdf=await Promise.race([task.promise,timeout]);
-    if(pdf.numPages>80)throw new Error('too_many_pages');
+    if(pdf.numPages>80)throw new UploadError('pdf_pages');
+    checkDeadline();
     const extract=async()=>{
+      const [js,files]=await Promise.all([pdf.getJSActions(),pdf.getAttachments()]);
+      if((js&&Object.keys(js).length)||(files&&Object.keys(files).length))throw new UploadError('pdf_active');
       let text='';
-      for(let n=1;n<=pdf.numPages&&text.length<MAX_EXTRACTED_CHARS;n++){
+      for(let n=1;n<=pdf.numPages;n++){
+        checkDeadline();
         const page=await pdf.getPage(n);
-        try{const content=await page.getTextContent();for(const item of content.items){if('str' in item)text+=item.str+' ';if(text.length>=MAX_EXTRACTED_CHARS)break;}text+='\n';}
+        try{
+          if(hasActiveAnnotation(await page.getAnnotations()))throw new UploadError('pdf_active');
+          if(text.length<MAX_EXTRACTED_CHARS){const content=await page.getTextContent();for(const item of content.items){if('str' in item)text+=item.str+' ';if(text.length>=MAX_EXTRACTED_CHARS)break;}text+='\n';}
+        }
         finally{page.cleanup();}
       }
-      if(!text.trim())throw new Error('empty_pdf');
+      if(!text.trim())throw new UploadError('pdf_empty');
       return `PDF · ${pdf.numPages} páginas\n${text}`;
     };
     return await Promise.race([extract(),timeout]);
-  }finally{clearTimeout(timer);await dispose();}
+  }catch(error){
+    if(error instanceof UploadError)throw error;
+    if(error?.name==='PasswordException')throw new UploadError('encrypted');
+    throw new UploadError('unreadable');
+  }finally{clearTimeout(timer);await dispose().catch(()=>{});}
 }
 
 async function analyzeImage(base64, mimeType, signal, admission) {
@@ -143,22 +189,37 @@ async function analyzeImage(base64, mimeType, signal, admission) {
   return `Análisis visual y OCR\n${text.trim()}`;
 }
 
-export async function extractAttachment({ fileName, mimeType, base64, signal, admission }) {
+/**
+ * Valida y extrae el texto de un archivo subido. Todo ocurre en memoria: el
+ * archivo nunca se guarda, ejecuta ni sirve; solo se conserva el texto
+ * saneado. Las imágenes viajan a la IA sin metadatos (EXIF, GPS…).
+ * `vision` y `pdfTimeoutMs` solo se sustituyen en las pruebas.
+ */
+export async function extractAttachment({ fileName, mimeType, base64, signal, admission, vision = analyzeImage, pdfTimeoutMs = PDF_TIMEOUT_MS }) {
   const ext = extensionOf(fileName);
-  assertBase64(base64);
+  const family = familyOf(ext);
+  if (!family) throw new UploadError('unsupported');
+  let bytes;
+  try { bytes = decodeBase64ToBytes(base64); } catch { throw new UploadError('invalid_data'); }
+  if (!bytes.length) throw new UploadError('empty');
+  if (bytes.length > maxBytesFor(fileName)) throw new UploadError('too_large');
+  const { kind, mime } = assertCoherent({ ext, family, mime: mimeType, bytes });
   let text;
-  if (TEXT_EXTENSIONS.has(ext)) text = decodeBase64ToText(base64);
-  else if (IMAGE_EXTENSIONS.has(ext)) text = await analyzeImage(base64, mimeType || `image/${ext === 'jpg' ? 'jpeg' : ext}`, signal, admission);
-  else {
-    const bytes = decodeBase64ToBytes(base64);
-    if (ext === 'pdf') text = await extractPdf(bytes);
-    else if (OFFICE_EXTENSIONS.has(ext)) text = await extractOffice(bytes, ext);
-    else throw new Error('unsupported');
-  }
-  const normalized = String(text || '').replace(/\u0000/g, '').trim();
-  if (!normalized) throw new Error('empty');
-  return normalized.length > MAX_EXTRACTED_CHARS
-    ? normalized.slice(0, MAX_EXTRACTED_CHARS) + '\n[… contenido truncado …]'
-    : normalized;
+  if (family === 'text') text = decodeUtf8Text(bytes);
+  else if (family === 'image') {
+    assertImageDimensions(bytes, kind);
+    const clean = stripImageMetadata(bytes, kind);
+    bytes = undefined;
+    text = await vision(bytesToBase64(clean), mime, signal, admission);
+  } else if (family === 'pdf') text = await extractPdf(bytes, pdfTimeoutMs);
+  else text = await extractOffice(bytes, ext);
+  const normalized = sanitizeExtractedText(text, { keepMarkup: CODE_EXTENSIONS.has(ext), maxChars: MAX_EXTRACTED_CHARS });
+  if (!normalized) throw new UploadError('empty_content');
+  return normalized;
 }
 
+export function bytesToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(binary);
+}
