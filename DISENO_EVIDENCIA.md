@@ -96,6 +96,24 @@ Skills releídas. Detalle, tamaños y capturas en `docs/diseno/objetos-3d/README
   - `design-principles.md › Delight` («Don’t mistake delight for decoration»): fuera de escritorio capaz, nada de 3D; el modelo nunca retrasa ni tapa la acción principal y no cambia el layout (tamaño fijo, icono hasta que hay fotograma).
   - `dark-mode.md`: colores de los tokens `--pop-*` leídos en el navegador; capturas en claro y oscuro.
 - **`libraries-dev`:** ninguna librería encaja («No clear match … Do not force an effect»). Además, «Don't stack effects»: el objeto ya es el foco de la pantalla, así que nada de `metal-fx` ni `border-beam` alrededor. No se instala nada más.
+## Progreso con el estilo nuevo (19/10/2026, PR 7 del encargo de estilo)
+
+Skills releídas. Detalle en `docs/diseno/estilo-progreso/README.md`. Pantalla sobria con toques de color, sin fondo saturado.
+
+- **`emil-design-eng`:**
+  - *Only animate transform and opacity*: las barras se rellenan con `scaleX`, las columnas con `scaleY` y el anillo entra girando con fundido. No se anima `width`, `height` ni `stroke-dasharray`.
+  - *Buttons must feel responsive*: `.press` en las pestañas y en las filas de resultados.
+  - *Stagger 30–80 ms*: cifras clave, tarjetas, columnas y semanas con `--stagger` (40 ms, máximo 8).
+  - *Spatial consistency*: la píldora de la pestaña elegida se desliza (200 ms).
+  - *Touch device hover states*: el hover solo se aplica con puntero fino.
+  - *prefers-reduced-motion*: todo funde, nada se mueve (prueba en `progreso-estilo.spec.ts`).
+- **`apple-design`:**
+  - `progress-indicators.md`: las barras se rellenan desde el lado inicial y siguen siendo determinadas, con `aria-valuenow`.
+  - `segmented-controls.md`: el estado de la selección se ve claro.
+  - `accessibility.md › Convey information with more than color alone`: las franjas de color son decorativas y el dato va en texto.
+  - `motion.md › Make motion optional`: cada número animado tiene su texto para el lector de pantalla.
+  - `color.md`: amarillo con tinta oscura (12,15:1 en claro y 9,47:1 en oscuro).
+- **`libraries-dev`:** nada que añadir. Los datos llegan en menos de 2 s, así que ni orbes ni haces de luz. No se instalan paquetes.
 
 ## Criterio sobre «solo transform y opacity»
 
@@ -134,6 +152,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Estilo nuevo · Chat (PR 7) | `docs/diseno/estilo-chat/antes/*` | `docs/diseno/estilo-chat/despues/*` | — (pruebas en `chat-diseno.spec.ts` › «estilo») | design/estilo-chat |
 | Estilo nuevo · Tareas (PR 7) | `docs/diseno/estilo-tareas/antes/*` | `docs/diseno/estilo-tareas/despues/*` | — (pruebas en `tareas.spec.ts` › «estilo») | design/estilo-tareas |
 | Estilo nuevo · Apuntes (PR 7) | `docs/diseno/estilo-apuntes/antes/*` | `docs/diseno/estilo-apuntes/despues/*` | — (pruebas en `notes.spec.ts` › «estilo») | design/estilo-apuntes |
+| Progreso con el estilo nuevo (PR 7) | `docs/diseno/estilo-progreso/antes/*` | `docs/diseno/estilo-progreso/despues/*` | `estilo-progreso.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
