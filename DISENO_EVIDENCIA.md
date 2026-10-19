@@ -37,6 +37,27 @@ Skills releídas el 17/10/2026. Detalle completo en `docs/diseno/estilo/README.m
   - El orbe de pensamiento sigue siendo el `orb-pulsing` propio. No instalo `thinking-orbs` ni ningún otro paquete.
   - Las transiciones de página no llevan efectos: son esperas de menos de 2 s, y la regla es «nada si dura menos de 2 s».
 
+## Pantalla Exámenes: historial (19/10/2026, PR 2 del encargo de exámenes)
+
+Skills releídas. Detalle en `docs/diseno/examenes-historial/README.md`.
+
+- **`emil-design-eng`:**
+  - *Buttons must feel responsive*: tarjeta, «⋯» y «Crear examen» escalan a 0,97 al pulsar (120 ms); la cara del botón 3D baja.
+  - *Should this animate at all?*: el objeto de la tarjeta no flota (pantalla que se ve a menudo); solo flotan los dos de la cabecera.
+  - *Stagger 30–80 ms*: las tarjetas entran con `--stagger` (40 ms, máximo 8).
+  - *Hover solo con puntero fino*: la tarjeta sube 2 px y gana sombra (opacidad de un pseudo-elemento, sin animar `box-shadow`).
+  - *Asymmetric enter/exit* y *Sonner principles*: el aviso de Deshacer pausa su cuenta atrás con puntero, foco o pestaña oculta.
+  - *prefers-reduced-motion*: sin desplazamientos, sin flotar ni viajar el objeto; las tarjetas solo funden.
+- **`apple-design`:**
+  - `accessibility.md › Convey information with more than color alone`: pegatinas de estado con texto; cuenta atrás con palabras e icono.
+  - `action-sheets.md`: las acciones de la tarjeta van en una hoja; «Borrar examen» en rojo, con «Cancelar» en la confirmación (`alerts.md › include a Cancel button`).
+  - `alerts.md › Avoid displaying alerts for common, undoable actions`: la confirmación va dentro de la hoja (no es una alerta más) y además hay Deshacer.
+  - `writing.md › Provide clear next steps on any blank screens`: vacío con el orbe y «Crear examen».
+  - `loading.md › Show something as soon as possible`: esqueleto con la forma real.
+  - `progress-indicators.md`: barra determinada de unidades con su texto.
+  - Áreas táctiles de 44 px comprobadas a 360, 390 y 1280 px.
+- **`libraries-dev`:** nada que añadir: cargar la lista dura menos de 2 s, así que ni orbes ni haces de luz. No instalo paquetes.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
@@ -66,6 +87,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Apuntes | `antes/apuntes-*` | `docs/diseno/apuntes/*` | `apuntes.webm` | #27 |
 | Exámenes | `antes/examenes-*`, `antes/examen-*` | `docs/diseno/examenes/*` | `examenes.webm` | #26 |
 | Login y registro (Parte D) | `antes/login-*` | `docs/diseno/login/*` | `login.webm` | #30 |
-| Estilo nuevo y transiciones entre páginas (PR 1 del encargo de exámenes) | `docs/diseno/estilo/antes/*` | `docs/diseno/estilo/despues/*` | `transiciones-escritorio.webm`, `transiciones-movil.webm` (y `transiciones-antes-*`), `estilo-primitivas.webm` | este PR |
+| Estilo nuevo y transiciones entre páginas (PR 1 del encargo de exámenes) | `docs/diseno/estilo/antes/*` | `docs/diseno/estilo/despues/*` | `transiciones-escritorio.webm`, `transiciones-movil.webm` (y `transiciones-antes-*`), `estilo-primitivas.webm` | #33 |
+| Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | este PR |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.

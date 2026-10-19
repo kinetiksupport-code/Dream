@@ -138,6 +138,7 @@
   --dur-number: 200ms; /* digit roll (AnimatedNumber) */
   --dur-spring: 250ms; /* small bounce: wheel, 3D objects, Orb success */
   --dur-breathe: 4.8s; /* Orb at rest (loop) */
+  --dur-float: 3.6s; /* subject objects floating (loop) */
   /* Soft spring with ~6 % overshoot, as a linear() curve (no JS). Only for
      the wheel snap, objects and the Orb's success hop. */
   --ease-spring: linear(
@@ -4357,5 +4358,52 @@ fieldset:disabled .test-option {
   .route-view[data-enter="back"],
   .route-view[data-enter="lateral"] {
     animation: fade var(--dur-page-reduced) ease-out both;
+  }
+}
+
+/* ==========================================================================
+   === Objeto de la asignatura === (§5.8, PR 2) components/subject-object.tsx
+   Icono 3D estático con tamaño fijo; flota despacio (transform, en bucle).
+   Con movimiento reducido no se mueve. Al abrir una tarjeta del historial,
+   el objeto viaja hasta el detalle (View Transition «exam-object»).
+   ========================================================================== */
+.subject-object {
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+}
+.subject-object img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px rgba(8, 11, 20, 0.18));
+  user-select: none;
+}
+.subject-object-float img {
+  animation: object-float var(--dur-float) var(--ease-in-out) infinite;
+}
+@keyframes object-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6%) rotate(-3deg);
+  }
+}
+:root[data-page-transition]::view-transition-group(exam-object) {
+  animation-duration: var(--dur-page);
+  animation-timing-function: var(--ease);
+}
+:root[data-page-transition]::view-transition-old(exam-object),
+:root[data-page-transition]::view-transition-new(exam-object) {
+  mix-blend-mode: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+  .subject-object-float img {
+    animation: none;
+  }
+  :root[data-page-transition]::view-transition-group(exam-object) {
+    animation: none;
   }
 }

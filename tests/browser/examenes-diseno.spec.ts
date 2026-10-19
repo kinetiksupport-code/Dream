@@ -178,13 +178,11 @@ test.describe("examenes capturas", () => {
 test.describe("examenes microinteracciones", () => {
   test.skip(!!OUT, "screenshots only");
 
-  test("card: rest, hover lift + arrow, press .97, keyboard focus", async ({ page }) => {
+  test("card: rest, hover lift, press .97, keyboard focus", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await open(page, "lista");
     const card = page.getByRole("link", { name: /Álgebra · primer trimestre/ });
     const t = () => card.evaluate((el) => getComputedStyle(el).transform);
-    const arrow = () =>
-      card.evaluate((el) => getComputedStyle(el.querySelector("svg:last-child")!).transform);
     const lift = () =>
       card.evaluate((el) => getComputedStyle(el, "::after").opacity);
     await page.waitForTimeout(500); // entrance finished
@@ -193,7 +191,6 @@ test.describe("examenes microinteracciones", () => {
     await card.hover();
     await page.waitForTimeout(350);
     expect(await t()).toBe("matrix(1, 0, 0, 1, 0, -2)");
-    expect(await arrow()).toBe("matrix(1, 0, 0, 1, 4, 0)");
     expect(await lift()).toBe("1");
     await page.mouse.down();
     await page.waitForTimeout(250);
@@ -210,7 +207,7 @@ test.describe("examenes microinteracciones", () => {
     expect(outline).toBe("solid 2");
   });
 
-  test("reduced motion: no lift, no arrow shift, no press scale", async ({ page }) => {
+  test("reduced motion: no lift, no press scale, cards only fade", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1280, height: 900 });
     await open(page, "lista");
@@ -220,29 +217,28 @@ test.describe("examenes microinteracciones", () => {
     await page.waitForTimeout(250);
     const t = await card.evaluate((el) => ({
       card: getComputedStyle(el).transform,
-      arrow: getComputedStyle(el.querySelector("svg:last-child")!).transform,
-      anim: getComputedStyle(el).animationName,
+      anim: getComputedStyle(el.closest("article")!).animationName,
+      float: getComputedStyle(el.querySelector(".subject-object img")!).animationName,
     }));
     await page.mouse.up();
-    expect(t).toEqual({ card: "none", arrow: "none", anim: expect.stringMatching(/cardFade/) });
+    expect(t).toEqual({ card: "none", anim: expect.stringMatching(/cardFade/), float: "none" });
   });
 
-  test("days to the exam: number in .num, icon and words, warning when ≤ 3 days", async ({ page }) => {
+  test("countdown in words, status sticker with words and dates in order", async ({ page }) => {
     await open(page, "lista");
-    const normal = page.getByRole("link", { name: /Álgebra/ }).locator("span[class*=days]");
-    await expect(normal).toContainText("12 días");
-    await expect(normal.locator(".num")).toHaveText("12");
-    await expect(normal.locator("svg")).toHaveCount(1);
-    const soon = page.getByRole("link", { name: /Comentario de texto/ }).locator("span[class*=days]");
-    await expect(soon).toHaveAttribute("data-soon", "true");
-    await expect(soon).toContainText("2 días");
-    await expect(soon.locator("svg")).toHaveCount(1);
+    const algebra = page.getByRole("link", { name: /Álgebra/ });
+    await expect(algebra).toContainText("Faltan 12 días");
+    await expect(algebra.locator(".sticker")).toHaveText("Listo");
+    const soon = page.getByRole("link", { name: /Comentario de texto/ });
+    await expect(soon.locator("[data-soon]")).toContainText("Faltan 2 días");
     // Ordered by date: the nearest exam first
-    await expect(page.locator("a[class*=examCard]").first()).toContainText("Comentario de texto");
+    await expect(page.locator("article").first()).toContainText("Comentario de texto");
     // A preparing exam says so in words
-    await expect(page.getByRole("link", { name: /Célula y tejidos/ })).toContainText(
-      "Dream está preparando el plan",
+    await expect(page.getByRole("link", { name: /Célula y tejidos/ }).locator(".sticker")).toHaveText(
+      "Preparando",
     );
+    // Units completed as a progress bar with words
+    await expect(algebra.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "1 de 4 unidades");
   });
 
   test("skeleton has the list's shape and is announced", async ({ page }) => {
@@ -251,14 +247,15 @@ test.describe("examenes microinteracciones", () => {
     const sk = page.locator("[aria-busy=true]");
     await expect(sk).toBeVisible();
     await expect(sk.getByRole("status")).toHaveText("Cargando tus exámenes");
-    expect(await sk.locator("[class*=boneCard]").count()).toBe(2);
+    expect(await sk.locator("[class*=boneCard]").count()).toBe(3);
   });
 
-  test("empty state: inline SVG and a clear button", async ({ page }) => {
+  test("empty state: the Orb, the sentence and one clear «Crear examen»", async ({ page }) => {
     await open(page, "lista-vacia");
-    await expect(page.getByRole("heading", { name: "Aún no tienes exámenes" })).toBeVisible();
-    await expect(page.locator("section svg[aria-hidden=true]").first()).toBeVisible();
-    const cta = page.getByRole("link", { name: "Preparar un examen" });
+    await expect(page.getByRole("heading", { name: "Aún no tienes ningún examen" })).toBeVisible();
+    await expect(page.locator("section svg.orb")).toBeVisible();
+    const cta = page.getByRole("link", { name: "Crear examen" });
+    await expect(cta).toHaveCount(1);
     await expect(cta).toHaveAttribute("href", "/exams/new");
     expect((await cta.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   });
@@ -315,7 +312,7 @@ test.describe("examenes microinteracciones", () => {
             const r = el.getBoundingClientRect();
             const after = getComputedStyle(el, "::after");
             const extra = after.content !== "none" ? 8 : 0;
-            return r.height + extra < 44 && !el.closest("[class*=examCard]");
+            return r.height + extra < 44 && !el.closest("article");
           })
           .map((el) => `${el.tagName} «${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}» ${Math.round(el.getBoundingClientRect().height)}`),
       );
@@ -405,7 +402,7 @@ test.describe("examenes microinteracciones", () => {
       };
       requestAnimationFrame(tick);
     });
-    const cards = page.locator("a[class*=examCard]");
+    const cards = page.locator("a[class*=hLink]");
     for (let r = 0; r < 3; r++)
       for (let i = 0; i < (await cards.count()); i++) {
         await cards.nth(i).hover();
@@ -433,7 +430,7 @@ test.describe("examenes grabacion", () => {
     });
     const page = await ctx.newPage();
     await open(page, "lista");
-    const cards = page.locator("a[class*=examCard]");
+    const cards = page.locator("a[class*=hLink]");
     for (let i = 0; i < 3; i++) {
       await cards.nth(i).hover();
       await page.waitForTimeout(700);

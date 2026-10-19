@@ -65,80 +65,13 @@
   line-height: 1.5;
 }
 
-/* Segmented control: Próximos / Completados */
-.segmented {
-  display: inline-flex;
-  align-self: flex-start;
-  padding: 4px;
-  gap: 4px;
-  border-radius: var(--radius-chip);
-  background: var(--surface);
-}
-.segmented button {
-  min-height: 36px;
-  padding: 0 16px;
-  border-radius: 18px;
-  font-size: var(--text-secondary-size);
-  font-weight: 500;
-  color: var(--text-secondary);
-  /* 36 px visual, 44 px hit area */
-  position: relative;
-}
-.segmented button::after {
-  content: "";
-  position: absolute;
-  inset: -4px 0;
-}
-.segmented [aria-selected="true"] {
-  background: var(--bg);
-  color: var(--text);
-  font-weight: 600;
-  box-shadow: 0 1px 2px rgba(8, 11, 20, 0.08);
-}
-
 /* List of exam cards */
 .list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-.examCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 24px;
-  border-radius: var(--radius-panel);
-  background: var(--card);
-  color: var(--text);
-  transition: transform var(--dur-base) var(--ease);
-  /* backwards: the entrance never holds transform, so hover/press win */
-  animation: cardIn var(--dur-rise) var(--ease) backwards;
-  animation-delay: calc(var(--i, 0) * var(--stagger));
-}
-/* Elevation lives on a pseudo-element so only its opacity animates. */
-.examCard::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  box-shadow: var(--shadow-popover);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--dur-base) var(--ease);
-}
-.examCard:active {
-  transform: scale(0.97);
-  transition-duration: var(--dur-press);
-}
 @media (hover: hover) and (pointer: fine) {
-  .examCard:hover:not(:active) {
-    transform: translateY(-2px);
-  }
-  .examCard:hover::after {
-    opacity: 1;
-  }
-  .examCard:hover .arrow,
   .planRow:hover .arrow {
     transform: translateX(4px);
   }
@@ -149,7 +82,6 @@
     background-color: var(--state-hover);
   }
 }
-.examCard:focus-visible .arrow,
 .planRow:focus-visible .arrow {
   transform: translateX(4px);
 }
@@ -167,18 +99,6 @@
   from {
     opacity: 0;
   }
-}
-.cardTop {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
-.cardHeading {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
 }
 .subject {
   font-size: var(--text-small);
@@ -221,15 +141,6 @@
   background: var(--primary);
   transform-origin: left center;
   transition: transform var(--dur-base) var(--ease);
-}
-.cardCta {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 24px;
-  color: var(--primary-ink);
-  font-size: var(--text-secondary-size);
-  font-weight: 600;
 }
 .arrow {
   flex: none;
@@ -594,16 +505,6 @@
   width: 180px;
   height: 36px;
 }
-.boneButton {
-  width: 148px;
-  height: 44px;
-  border-radius: 22px;
-}
-.boneTabs {
-  width: 240px;
-  height: 44px;
-  border-radius: 22px;
-}
 .boneCard {
   display: flex;
   flex-direction: column;
@@ -861,7 +762,6 @@
     width: 100%;
   }
   .hero,
-  .examCard,
   .form,
   .stateCard,
   .empty {
@@ -926,15 +826,379 @@
   }
 }
 
+/* === Historial (PR 2: PROMPT_EXAMEN_ESTILO.md §4) ========================
+   Cabecera azul saturada (.pop tone-blue pop-grid) con titular enorme y
+   «Crear examen» en botón 3D amarillo; tarjetas con el objeto de la
+   asignatura, pegatina de estado (color + texto), cuenta atrás y barra de
+   unidades. Movimiento: transform y opacity, 120–250 ms. */
+.listHero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 36px 40px;
+  border-radius: var(--radius-hero);
+  overflow: hidden;
+  isolation: isolate;
+}
+.heroBack {
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+  min-height: var(--touch);
+  margin: -12px 0 0 -10px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  font-weight: 600;
+}
+.listHeroText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+.listHeroText h1 {
+  margin: 0;
+}
+.listHeroText p {
+  max-width: 40ch;
+  margin: 0 0 8px;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+.heroObjects {
+  position: relative;
+  width: 176px;
+  height: 160px;
+}
+.heroObjectA {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+.heroObjectB {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+}
+.heroObjectB :global(img) {
+  animation-delay: -1.4s;
+}
+.titleWithObject {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.boneBack {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+.hSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.hSection > h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hSection > h2 :global(.num) {
+  display: inline-grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+.hList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hCard {
+  position: relative;
+  animation: cardIn var(--dur-rise) var(--ease) backwards;
+  animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+.hLink {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 20px 64px 20px 20px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  color: var(--text);
+  transition: transform var(--dur-base) var(--ease);
+}
+.hLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: var(--shadow-popover);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--dur-base) var(--ease);
+}
+.hLink:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-press);
+}
+.hObject {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--surface);
+}
+.hBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.hSubject {
+  font-size: var(--text-small);
+  font-weight: 700;
+  color: var(--primary-ink);
+}
+.hTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.hMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 4px;
+}
+.hSticker {
+  min-height: 28px;
+  padding: 2px 12px;
+  border-width: 2px;
+  font-size: 0.8125rem;
+}
+.hWhen {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--text);
+}
+.hWhen[data-soon] {
+  color: var(--warning);
+}
+.hDate {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.hProgress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+.hProgress .track {
+  flex: 1;
+}
+.hUnits {
+  flex: none;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+.hMore {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  transition:
+    transform var(--dur-press) var(--ease),
+    background-color var(--dur-press) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .hLink:hover:not(:active) {
+    transform: translateY(-2px);
+  }
+  .hLink:hover::after {
+    opacity: 1;
+  }
+  .hMore:hover {
+    background-color: var(--state-hover);
+  }
+  .heroBack:hover {
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+}
+.emptyPop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px 24px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  animation: cardIn var(--dur-rise) var(--ease) both;
+}
+.emptyPop h2 {
+  margin: 8px 0 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.emptyPop p {
+  max-width: 38ch;
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.boneHero {
+  min-height: 236px;
+  background: var(--surface);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+.boneCard:has(.boneObject) {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+}
+.boneObject {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+}
+.boneLines {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
+}
+.sheetText {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.sheetActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sheetAction {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  text-align: left;
+}
+.sheetDanger {
+  color: var(--danger);
+}
+@media (max-width: 639.98px) {
+  .listHero {
+    padding: 20px 20px 24px;
+    border-radius: 28px;
+  }
+  .heroBack {
+    margin: -4px 0 0 -10px;
+  }
+  .heroObjects {
+    position: absolute;
+    top: 12px;
+    right: 8px;
+    transform: scale(0.52);
+    transform-origin: top right;
+  }
+  .listHeroText {
+    padding-top: 28px;
+  }
+  .listHeroText p {
+    max-width: 24ch;
+  }
+  .listHeroText :global(.button-3d) {
+    align-self: stretch;
+  }
+  .hLink {
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 52px 16px 16px;
+    border-radius: 20px;
+  }
+  .hObject {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+  }
+  .hObject > :global(.subject-object) {
+    width: 44px !important;
+    height: 44px !important;
+  }
+  .hMore {
+    top: 6px;
+    right: 4px;
+  }
+  .hTitle {
+    font-size: 1.125rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hLink:active {
+    transform: none;
+  }
+  .boneHero {
+    animation: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+  .hLink:hover:not(:active) {
+    transform: none;
+  }
+}
+
 /* Reduced motion: no displacement, fades only (emil › prefers-reduced-motion) */
 @media (prefers-reduced-motion: reduce) {
-  .examCard,
-  .empty {
+  .empty,
+  .hCard {
     animation-name: cardFade;
   }
-  .examCard:active,
   .planRow:active,
-  .examCard:focus-visible .arrow,
   .planRow:focus-visible .arrow {
     transform: none;
   }
@@ -947,8 +1211,6 @@
   }
 }
 @media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
-  .examCard:hover:not(:active),
-  .examCard:hover .arrow,
   .planRow:hover .arrow {
     transform: none;
   }

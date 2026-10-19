@@ -18,6 +18,7 @@ export type DreamAction =
   | "exam_unit_start"
   | "exam_unit_complete"
   | "exam_complete"
+  | "exam_delete"
   | "exam_session_create"
   | "exam_session_get"
   | "exam_session_save"

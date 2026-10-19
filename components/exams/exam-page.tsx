@@ -7,21 +7,16 @@ import Link from "next/link";
 import {
   AlarmClock,
   AlertCircle,
-  ArrowRight,
   CalendarDays,
   Check,
   ChevronLeft,
   ChevronRight,
-  CircleDashed,
-  FileText,
   RotateCcw,
 } from "lucide-react";
 import { Orb } from "../orb";
+import { SubjectObject } from "../subject-object";
 import {
   daysUntil,
-  examDateLabel,
-  preparation,
-  type ExamIndex,
   type ExamUnit,
 } from "@/lib/exam-plans";
 import s from "./examenes.module.css";
@@ -32,10 +27,13 @@ export function ExamPage({
   subtitle,
   back,
   action,
+  object,
   children,
   wide = false,
 }: {
   title: string;
+  /** Objeto de la asignatura junto al título (viaja desde la tarjeta). */
+  object?: ReactNode;
   subtitle?: ReactNode;
   back?: { href: string; label: string; phoneOnly?: boolean };
   action?: ReactNode;
@@ -55,7 +53,14 @@ export function ExamPage({
           </Link>
         )}
         <div className={s.titleRow}>
-          <h1>{title}</h1>
+          {object ? (
+            <div className={s.titleWithObject}>
+              {object}
+              <h1>{title}</h1>
+            </div>
+          ) : (
+            <h1>{title}</h1>
+          )}
           {action}
         </div>
         {subtitle && <p className={s.subtitle}>{subtitle}</p>}
@@ -98,137 +103,46 @@ export function DaysChip({ date }: { date: string }) {
   );
 }
 
-function statusLine(exam: ExamIndex) {
-  const p = preparation(exam);
-  switch (exam.status) {
-    case "draft":
-      return { icon: <FileText size={16} />, text: "Borrador guardado" };
-    case "preparing":
-      return {
-        icon: <CircleDashed size={16} />,
-        text: "Dream está preparando el plan",
-      };
-    case "failed":
-      return {
-        icon: <AlertCircle size={16} />,
-        text: "El plan no se pudo preparar",
-        danger: true,
-      };
-    case "completed":
-      return { icon: <Check size={16} />, text: "Examen completado" };
-    default:
-      return {
-        icon: null,
-        text: (
-          <>
-            <span className="num">{p.percentage} %</span> del plan ·{" "}
-            <span className="num">{p.completed}</span> de{" "}
-            <span className="num">{p.total}</span> unidades
-          </>
-        ),
-        progress: p.percentage,
-      };
-  }
+/**
+ * Examen recién abierto desde el historial (solo en memoria, nunca en
+ * almacenamiento): el esqueleto del detalle pinta ya su objeto en el mismo
+ * sitio, para que la View Transition lo lleve de la tarjeta al título.
+ */
+let opened: { id: string; subject: string } | null = null;
+export function rememberOpenedExam(id: string, subject: string) {
+  opened = { id, subject };
 }
-
-export function ExamCard({ exam, index }: { exam: ExamIndex; index: number }) {
-  const href = ["draft", "failed"].includes(exam.status)
-    ? exam.status === "failed"
-      ? `/exams/${exam.id}`
-      : `/exams/new?id=${exam.id}`
-    : `/exams/${exam.id}`;
-  const line = statusLine(exam);
-  const topics = exam.topics.length;
-  return (
-    <Link
-      href={href}
-      className={s.examCard}
-      style={{ "--i": Math.min(index, 6) } as React.CSSProperties}
-    >
-      <div className={s.cardTop}>
-        <div className={s.cardHeading}>
-          <span className={s.subject}>{exam.subject}</span>
-          <h2 className={s.cardTitle}>{exam.title}</h2>
-        </div>
-        <DaysChip date={exam.exam_date} />
-      </div>
-      <span className={s.meta}>
-        {examDateLabel(exam.exam_date)} · <span className="num">{topics}</span>{" "}
-        {topics === 1 ? "tema" : "temas"}
-        {exam.materials.length > 0 && (
-          <>
-            {" "}
-            · <span className="num">{exam.materials.length}</span>{" "}
-            {exam.materials.length === 1 ? "material" : "materiales"}
-          </>
-        )}
-      </span>
-      <span className={s.status} data-danger={line.danger || undefined}>
-        {line.icon}
-        <span>{line.text}</span>
-      </span>
-      {line.progress !== undefined && (
-        <span
-          className={s.track}
-          role="progressbar"
-          aria-label={`Preparación de ${exam.title}`}
-          aria-valuenow={line.progress}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <i style={{ transform: `scaleX(${line.progress / 100})` }} />
-        </span>
-      )}
-      <span className={s.cardCta}>
-        {exam.status === "draft"
-          ? "Seguir preparando"
-          : exam.status === "failed"
-            ? "Ver qué pasó"
-            : "Ver examen"}
-        <ArrowRight className={s.arrow} size={18} aria-hidden="true" />
-      </span>
-    </Link>
-  );
+export function openedExamSubject(id?: string) {
+  return id && opened?.id === id ? opened.subject : null;
 }
-
-/** Same shape as the list: header, segmented control and two cards. */
-export function ExamListSkeleton() {
-  return (
-    <div className={s.page} aria-busy="true">
-      <span className="visually-hidden" role="status">
-        Cargando tus exámenes
-      </span>
-      <div className={s.header} aria-hidden="true">
-        <div className={s.titleRow}>
-          <span className={`${s.bone} ${s.boneTitle}`} />
-          <span className={`${s.bone} ${s.boneButton}`} />
-        </div>
-      </div>
-      <div className={s.list} aria-hidden="true">
-        <span className={`${s.bone} ${s.boneTabs}`} />
-        {[0, 1].map((i) => (
-          <div className={s.boneCard} key={i}>
-            <span className={`${s.bone} ${s.boneLine}`} style={{ width: "28%" }} />
-            <span className={`${s.bone} ${s.boneLine}`} style={{ width: "62%", height: 22 }} />
-            <span className={`${s.bone} ${s.boneLine}`} style={{ width: "44%" }} />
-            <span className={`${s.bone} ${s.boneLine}`} style={{ width: "100%", height: 6 }} />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+/** Nombre compartido del objeto entre la tarjeta y el detalle. */
+export const OBJECT_TRANSITION = "exam-object";
+export const OBJECT_SIZE_DETAIL = 56;
 
 /** Detail/plan skeleton: hero block and three plan rows. */
-export function ExamDetailSkeleton() {
+export function ExamDetailSkeleton({ examId }: { examId?: string } = {}) {
+  const subject = openedExamSubject(examId);
   return (
     <div className={s.page} aria-busy="true">
       <span className="visually-hidden" role="status">
         Cargando el examen
       </span>
       <div className={s.header} aria-hidden="true">
-        <span className={`${s.bone} ${s.boneLine}`} style={{ width: 96 }} />
-        <span className={`${s.bone} ${s.boneTitle}`} />
+        <span className={s.boneBack}>
+          <span className={`${s.bone} ${s.boneLine}`} style={{ width: 96 }} />
+        </span>
+        <div className={s.titleRow}>
+          <div className={s.titleWithObject}>
+            {subject !== null && (
+              <SubjectObject
+                subject={subject}
+                size={OBJECT_SIZE_DETAIL}
+                style={{ viewTransitionName: OBJECT_TRANSITION }}
+              />
+            )}
+            <span className={`${s.bone} ${s.boneTitle}`} />
+          </div>
+        </div>
       </div>
       <div className={s.list} aria-hidden="true">
         <div className={s.boneCard} style={{ height: 196 }} />
@@ -260,43 +174,6 @@ export function LoadError({
         </button>
       </section>
     </div>
-  );
-}
-
-export function EmptyExams({ completed = false }: { completed?: boolean }) {
-  return (
-    <section className={s.empty}>
-      <svg
-        className={s.illustration}
-        width="160"
-        height="120"
-        viewBox="0 0 160 120"
-        fill="none"
-        aria-hidden="true"
-      >
-        <rect x="28" y="22" width="104" height="86" rx="16" fill="var(--surface)" stroke="var(--border)" strokeWidth="2" />
-        <path d="M28 46h104" stroke="var(--border)" strokeWidth="2" />
-        <path d="M56 14v16M104 14v16" stroke="var(--text-secondary)" strokeWidth="4" strokeLinecap="round" />
-        <rect x="44" y="58" width="16" height="12" rx="4" fill="var(--border)" />
-        <rect x="72" y="58" width="16" height="12" rx="4" fill="var(--border)" />
-        <rect x="100" y="58" width="16" height="12" rx="4" fill="var(--primary)" />
-        <rect x="44" y="80" width="16" height="12" rx="4" fill="var(--border)" />
-        <rect x="72" y="80" width="16" height="12" rx="4" fill="var(--border)" />
-        <circle cx="128" cy="96" r="18" fill="var(--accent)" />
-        <path d="m120 96 6 6 10-12" stroke="var(--on-accent)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <h2>{completed ? "Aún no has completado ningún examen" : "Aún no tienes exámenes"}</h2>
-      <p>
-        {completed
-          ? "Cuando marques un examen como completado, aparecerá aquí."
-          : "Añade la fecha y los temas. Dream te prepara un plan por unidades."}
-      </p>
-      {!completed && (
-        <Link className="primary press" href="/exams/new">
-          Preparar un examen
-        </Link>
-      )}
-    </section>
   );
 }
 
