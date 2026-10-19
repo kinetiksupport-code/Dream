@@ -1,6 +1,8 @@
 import { callDream, type DreamAction } from "./dream-api";
 import type { AnswerValue, TestResult } from "./types";
 import type { StoredRoute } from "../supabase/functions/dream-api/route-plan.mjs";
+/** Materials per exam; the server enforces it in dream_exam_link_material. */
+export const MAX_EXAM_MATERIALS = 20;
 export interface ExamUnit {
   id: string;
   position: number;
@@ -67,6 +69,12 @@ export interface DreamExam extends ExamFields {
   route_source?: "ai" | "auto" | null;
   route_updated_at?: string | null;
   route_regenerated_on?: string | null;
+  /** Asistente (migración 20261018170000): nota objetivo 0–10 en saltos de 0,5. */
+  target_grade?: number | null;
+  /** Paso del asistente en el que va el borrador. */
+  wizard_step?: "upload" | "date" | "grade" | "identify" | null;
+  /** Ya contestó «Continuar con estos» al aviso de pocos apuntes. */
+  few_notes_ack?: boolean;
 }
 export interface ExamIndex extends ExamFields {
   id: string;

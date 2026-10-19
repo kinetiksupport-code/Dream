@@ -1,4 +1,7 @@
 // Validate the central directory before any decompression. Reject ZIP64, encryption and ambiguous offsets.
+// Límites: 1000 entradas, 4 MB por entrada, proporción máxima 100:1 por entrada
+// (salvo entradas pequeñas) y 16 MB descomprimidos en total.
+export const MAX_ARCHIVE_ENTRIES = 1000;
 export function validateOfficeArchive(bytes) {
   const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let e = -1;
@@ -16,7 +19,7 @@ export function validateOfficeArchive(bytes) {
     size = v.getUint32(e + 12, true),
     start = v.getUint32(e + 16, true);
   if (
-    count > 2048 ||
+    count > MAX_ARCHIVE_ENTRIES ||
     count === 65535 ||
     v.getUint16(e + 8, true) !== count ||
     start + size !== e
@@ -25,6 +28,7 @@ export function validateOfficeArchive(bytes) {
   let p = start,
     total = 0;
   const names = new Set();
+  const list = [];
   for (let i = 0; i < count; i++) {
     if (p + 46 > e || v.getUint32(p, true) !== 0x02014b50)
       throw new Error("invalid_archive");
@@ -35,6 +39,7 @@ export function validateOfficeArchive(bytes) {
       comment = v.getUint16(p + 32, true),
       offset = v.getUint32(p + 42, true);
     const next = p + 46 + length + extra + comment;
+    if (v.getUint16(p + 8, true) & 0x41) throw new Error("encrypted_archive");
     if (
       next > e ||
       offset + 30 > start ||
@@ -67,16 +72,19 @@ export function validateOfficeArchive(bytes) {
       names.has(name) ||
       name.includes("..") ||
       name.includes("\\") ||
-      name.startsWith("/")
+      name.startsWith("/") ||
+      /^[A-Za-z]:/.test(name) ||
+      /[\u0000-\u001f]/.test(name)
     )
       throw new Error("invalid_archive");
     names.add(name);
+    list.push(name);
     total += expanded;
     if (total > 16 * 1024 * 1024) throw new Error("archive_limits");
     p = next;
   }
   if (p !== e) throw new Error("invalid_archive");
-  return { entries: count, expandedBytes: total };
+  return { entries: count, expandedBytes: total, names: list };
 }
 export function assertBase64(value) {
   if (

@@ -4407,3 +4407,47 @@ fieldset:disabled .test-option {
     animation: none;
   }
 }
+
+/* === Tick dibujado === (components/drawn-tick.tsx, §5.3) ------------------ */
+.drawn-tick-reveal {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: tick-reveal var(--dur-rise) var(--ease) both;
+}
+@keyframes tick-reveal {
+  from {
+    transform: scaleX(0.02);
+  }
+  to {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawn-tick-reveal {
+    animation: none;
+  }
+}
+
+/* === Asistente: pasos === (§5.1, PR 3) components/exams/exam-wizard.tsx
+   Cada paso entra con las mismas animaciones que las páginas (page-enter-*):
+   adelante desde la derecha, atrás desde la izquierda. Reducido: fundido. */
+.wizard-step {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.wizard-step[data-enter="forward"] {
+  animation: page-enter-forward var(--dur-page) var(--ease) both;
+}
+.wizard-step[data-enter="back"] {
+  animation: page-enter-back var(--dur-page) var(--ease) both;
+}
+.wizard-step[data-enter="fade"] {
+  animation: fade var(--dur-page-reduced) ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wizard-step[data-enter="forward"],
+  .wizard-step[data-enter="back"] {
+    animation: fade var(--dur-page-reduced) ease-out both;
+  }
+}

@@ -19,6 +19,7 @@ export const consumingActions = new Set([
   "exam_session_create",
   "exam_session_submit",
   "exam_route_regenerate",
+  "exam_identify",
 ]);
 export const DEFAULT_GROQ_MODEL = GROQ_NORMAL_MODEL;
 // Proveedores de IA que se cuentan en tokens (mismo formato de petición).
