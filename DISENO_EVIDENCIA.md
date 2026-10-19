@@ -133,6 +133,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Objetos 3D reales en escritorio (PR 6) | `docs/diseno/objetos-3d/antes/*` | `docs/diseno/objetos-3d/despues/*` | `objetos-3d.webm` | PR 6 |
 | Estilo nuevo · Chat (PR 7) | `docs/diseno/estilo-chat/antes/*` | `docs/diseno/estilo-chat/despues/*` | — (pruebas en `chat-diseno.spec.ts` › «estilo») | design/estilo-chat |
 | Estilo nuevo · Tareas (PR 7) | `docs/diseno/estilo-tareas/antes/*` | `docs/diseno/estilo-tareas/despues/*` | — (pruebas en `tareas.spec.ts` › «estilo») | design/estilo-tareas |
+| Estilo nuevo · Apuntes (PR 7) | `docs/diseno/estilo-apuntes/antes/*` | `docs/diseno/estilo-apuntes/despues/*` | — (pruebas en `notes.spec.ts` › «estilo») | design/estilo-apuntes |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
@@ -169,3 +170,15 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `branding.md`: una pegatina por pantalla.
   - `accessibility.md`: 44 px y foco visible en la píldora «Resolver con Dream».
 - **libraries-dev:** sin efectos. No hay esperas largas.
+### Estilo nuevo · Apuntes (PR 7, `design/estilo-apuntes`)
+
+- **Qué es:** una pantalla de lectura, con superficies sobrias y toques de color. El CSS está en la sección `=== Estilo nuevo · Apuntes ===` de `components/notes-view.module.css`. El detalle está en `docs/diseno/estilo-apuntes/README.md`.
+- **emil-design-eng:**
+  - La zona de arrastre crece a `scale(1.01)` con archivos encima (200 ms y ease-out; con movimiento reducido, quieta).
+  - «Subir apuntes» tiene relieve y pulsa a 0,97.
+  - Se mantiene la entrada escalonada de las tarjetas (7 como máximo) y el hover solo con puntero fino.
+- **apple-design:**
+  - `color.md`: píldora lima para «Listo» (15,62:1 y 12,86:1) y píldora neutra para «Procesando» (5,81:1 y 7,45:1), siempre con icono y texto.
+  - `branding.md`: un borde de pegatina en la ilustración vacía.
+  - `accessibility.md`: foco visible en las píldoras.
+- **libraries-dev:** sin efectos. El punto de enganche de `thinking-orbs` en «Procesando» sigue pendiente del OK.

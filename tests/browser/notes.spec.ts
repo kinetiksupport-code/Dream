@@ -398,3 +398,60 @@ test("recording: Apuntes microinteractions", async ({ browser }) => {
   await page.waitForTimeout(1800);
   await context.close();
 });
+
+test("estilo: lime «Listo» pill, pills, 3D upload button and the drop zone leans in", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await open(page);
+  // «Listo»: colour, icon and text together, dark ink on lime.
+  const ready = card(page).getByText("Listo");
+  await expect(ready).toHaveCSS("background-color", "rgb(200, 245, 96)");
+  await expect(ready).toHaveCSS("color", "rgb(8, 11, 20)");
+  await expect(ready).toHaveCSS("border-radius", "999px");
+  await expect(ready.locator("svg")).toBeVisible();
+  // Card actions are pills with a visible focus ring and press at .97.
+  const summarize = card(page).getByRole("link", { name: "Resumir" });
+  await expect(summarize).toHaveCSS("border-radius", "999px");
+  await summarize.focus();
+  await expect(summarize).toHaveCSS("outline-style", "solid");
+  // «Subir apuntes» has its 3D base (a second shadow under the gloss).
+  const upload = page.getByRole("button", { name: "Subir apuntes" });
+  expect(await upload.evaluate((el) => getComputedStyle(el).boxShadow)).toMatch(
+    /inset.*\) 0px 3px 0px 0px$/,
+  );
+  await upload.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(250);
+  expect(
+    await upload.evaluate(
+      (el) => new DOMMatrix(getComputedStyle(el).transform).a,
+    ),
+  ).toBeCloseTo(0.97, 2);
+  await page.mouse.move(5, 5);
+  await page.mouse.up();
+  // Dragging files: the zone scales to 1.01 (transform only).
+  await dragFiles(page, "dragenter", ["Tema 5.pdf"]);
+  const zone = page.getByTestId("notes-upload");
+  await expect(zone).toHaveAttribute("data-state", "dragging");
+  await expect
+    .poll(() =>
+      zone.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a),
+    )
+    .toBeCloseTo(1.01, 3);
+  await dragFiles(page, "dragleave", ["Tema 5.pdf"]);
+});
+
+test("estilo: reduced motion keeps the drop zone still", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await open(page);
+  await dragFiles(page, "dragenter", ["Tema 5.pdf"]);
+  const zone = page.getByTestId("notes-upload");
+  await expect(zone).toHaveAttribute("data-state", "dragging");
+  expect(await zone.evaluate((el) => getComputedStyle(el).transform)).toBe(
+    "none",
+  );
+  await dragFiles(page, "dragleave", ["Tema 5.pdf"]);
+});
