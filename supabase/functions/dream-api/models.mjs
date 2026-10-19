@@ -1,5 +1,5 @@
 // Modos de la IA de Dream: ÚNICO sitio donde se elige proveedor, modelo,
-// límites de salida, historial y presupuesto de cada modo. El alumno solo ve
+// límites de salida, historial, el límite conjunto y lo que gasta cada modo. El alumno solo ve
 // «Rápido», «Normal» y «Pensar más»; nunca los nombres de los modelos.
 // Explicación de las cifras: docs/MODOS_IA.md.
 import { answerTokenBudget } from './capacity.mjs';
@@ -39,8 +39,19 @@ export const GROQ_FAST_MODEL = 'openai/gpt-oss-20b';
 export const MODE_IDS = Object.freeze(['fast', 'normal', 'think']);
 export const DEFAULT_MODE = 'normal';
 
-// budgetTokens: tokens (entrada + salida) por alumno, modo y ventana de 5 h.
-// ⚠️ PENDIENTES DE OK DE CARLOS. Cálculo en docs/MODOS_IA.md §3.
+// ---------------------------------------------------------------------------
+// LÍMITE CONJUNTO (decisión de Carlos, 19/10/2026; docs/MODOS_IA.md §3).
+// «El límite es uno conjunto y los modelos más altos consumen más.»
+// - Un solo presupuesto por alumno y ventana de 5 h, compartido por todos los
+//   modos, contado en tokens «equivalentes a Normal» (entrada + salida).
+// - Cada petición carga ceil(tokens reales × peso del modo); el ajuste final
+//   (settle) usa el mismo peso.
+// - El respaldo de Cloudflare (kind 'fallback') NO cuenta, como antes.
+// Para cambiar el límite o lo que gasta cada modo, toca SOLO estas dos líneas.
+export const SHARED_WINDOW_BUDGET = 40_000;
+export const MODE_WEIGHTS = Object.freeze({ fast: 0.5, normal: 1, think: 2 });
+// ---------------------------------------------------------------------------
+
 export const MODES = Object.freeze({
   fast: Object.freeze({
     id: 'fast',
@@ -57,7 +68,7 @@ export const MODES = Object.freeze({
     tools: true,
     history: Object.freeze({ maxMessages: 8, recentFull: 2, recentChars: 1500, olderChars: 200, totalChars: 3000 }),
     attachmentChars: 12_000,
-    budgetTokens: 30_000, // PENDIENTE DE OK
+    weight: MODE_WEIGHTS.fast,
     flag: null,
   }),
   normal: Object.freeze({
@@ -72,7 +83,7 @@ export const MODES = Object.freeze({
     tools: true,
     history: Object.freeze({ maxMessages: 14, recentFull: 4, recentChars: 3000, olderChars: 300, totalChars: 7000 }),
     attachmentChars: null, // el máximo general de adjuntos
-    budgetTokens: 40_000, // PENDIENTE DE OK
+    weight: MODE_WEIGHTS.normal,
     flag: null,
   }),
   think: Object.freeze({
@@ -87,13 +98,13 @@ export const MODES = Object.freeze({
     tools: false,
     history: Object.freeze({ maxMessages: 6, recentFull: 2, recentChars: 2000, olderChars: 200, totalChars: 4000 }),
     attachmentChars: 8_000,
-    budgetTokens: 12_000, // PENDIENTE DE OK
+    weight: MODE_WEIGHTS.think,
     flag: 'thinkMode',
   }),
 });
 
 // Respaldo con Cloudflare para Rápido y Normal: contexto corto y salida corta.
-// Su uso se registra aparte y NO cuenta en el presupuesto del modo.
+// Su uso se registra aparte y NO cuenta en el límite conjunto.
 export const CLOUDFLARE_FALLBACK = Object.freeze({
   provider: 'cloudflare',
   model: CLOUDFLARE_MODEL,
@@ -159,4 +170,23 @@ export function fallbackAvailable(mode, { flags = AI_FLAGS, cloudflareConfigured
 // un resumen o algo para imprimir (misma regla que answerTokenBudget).
 export function outputTokensFor(mode, prompt) {
   return answerTokenBudget(prompt, { short: mode.maxOutputTokens, long: mode.longOutputTokens ?? mode.maxOutputTokens });
+}
+
+// Lo que gasta un modo frente a Normal, en palabras para el alumno (nunca
+// cifras ni tokens). Se calcula del peso, así cambiar MODE_WEIGHTS basta.
+/** @param {number} weight @returns {{cost: 'less'|'same'|'more', relative_cost: string}} */
+export function relativeCost(weight) {
+  const w = Number(weight);
+  if (!(w > 0) || w === 1) return { cost: 'same', relative_cost: 'lo normal' };
+  const words = { 0.25: 'la cuarta parte', 0.5: 'la mitad', 2: 'el doble', 3: 'el triple', 4: 'el cuádruple' };
+  return w < 1
+    ? { cost: 'less', relative_cost: words[w] ?? 'menos' }
+    : { cost: 'more', relative_cost: words[w] ?? 'más' };
+}
+
+// Tokens que se cargan al límite conjunto por un uso real del modo.
+/** @param {{weight?: number}|undefined} mode @param {number} tokens */
+export function weightedTokens(mode, tokens) {
+  const weight = Number(mode?.weight) > 0 ? Number(mode.weight) : 1;
+  return Math.ceil(Math.max(0, Number(tokens) || 0) * weight);
 }

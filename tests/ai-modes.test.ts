@@ -7,6 +7,8 @@ import {
   CLOUDFLARE_MODEL,
   DEFAULT_MODE,
   MODES,
+  MODE_WEIGHTS,
+  SHARED_WINDOW_BUDGET,
   WINDOW_MS,
   aiContextFor,
   availableModes,
@@ -14,7 +16,9 @@ import {
   modeAvailable,
   outputTokensFor,
   reasoningParams,
+  relativeCost,
   resolveMode,
+  weightedTokens,
 } from "../supabase/functions/dream-api/models.mjs";
 import {
   WINDOW_LIMIT_CODE,
@@ -44,7 +48,12 @@ import {
   createGroqProviderManager,
 } from "../supabase/functions/dream-api/groq.mjs";
 import { AdmissionError } from "../supabase/functions/dream-api/admission.mjs";
-import { alternativeMode, parseUsage, pickMode } from "../lib/ai-modes";
+import {
+  alternativeMode,
+  costSentence,
+  parseUsage,
+  pickMode,
+} from "../lib/ai-modes";
 import {
   COMMON_RULES,
   DREAM_SYSTEM_PROMPT,
@@ -140,7 +149,8 @@ test("each mode maps to one provider and model in the single config", () => {
   assert.equal(MODES.normal.model, "qwen/qwen3.8-27b");
   assert.equal(MODES.think.provider, "cloudflare");
   assert.equal(MODES.think.model, CLOUDFLARE_MODEL);
-  for (const m of Object.values(MODES)) assert.ok(m.budgetTokens > 0);
+  for (const m of Object.values(MODES))
+    assert.equal(m.weight, MODE_WEIGHTS[m.id]);
   assert.ok(MODES.fast.maxOutputTokens < MODES.normal.maxOutputTokens);
   // Margen para el razonamiento de gpt-oss (antes 500/900 con Llama 8B).
   assert.equal(outputTokensFor(MODES.fast, "¿Qué es un átomo?"), 900);
@@ -354,6 +364,10 @@ test("5-hour window: opens with a start, expires after five hours, and no window
     { now: T0, modes: availableModes() },
   );
   assert.equal(empty.window, null);
+  assert.deepEqual(
+    [empty.percent, empty.blocked, empty.resets_at],
+    [0, false, null],
+  );
   assert.ok(
     empty.modes.every(
       (m) => m.percent === 0 && !m.blocked && m.resets_at === null,
@@ -367,7 +381,7 @@ test("5-hour window: opens with a start, expires after five hours, and no window
   assert.ok(expired.modes.every((m) => m.percent === 0 && !m.blocked));
 });
 
-test("percentages are whole numbers and only reach 100 when the mode is spent", () => {
+test("percentages are whole numbers and only reach 100 when the limit is spent", () => {
   assert.equal(percentUsed(0, 40000), 0);
   assert.equal(percentUsed(25200, 40000), 63);
   assert.equal(percentUsed(39999, 40000), 99);
@@ -377,31 +391,106 @@ test("percentages are whole numbers and only reach 100 when the mode is spent", 
   assert.equal(modeBlocked(40000, 40000), true);
 });
 
-test("a spent mode is blocked until the window ends; the others keep going and fallback use is not counted", () => {
+test("ONE shared limit: Carlos's defaults live in one place and each mode spends it at its own rate", () => {
+  assert.equal(SHARED_WINDOW_BUDGET, 40_000);
+  assert.deepEqual({ ...MODE_WEIGHTS }, { fast: 0.5, normal: 1, think: 2 });
+  assert.equal(weightedTokens(MODES.fast, 1001), 501);
+  assert.equal(weightedTokens(MODES.normal, 1001), 1001);
+  assert.equal(weightedTokens(MODES.think, 1001), 2002);
+  assert.equal(weightedTokens(MODES.think, -5), 0);
+  assert.deepEqual(relativeCost(0.5), {
+    cost: "less",
+    relative_cost: "la mitad",
+  });
+  assert.deepEqual(relativeCost(1), {
+    cost: "same",
+    relative_cost: "lo normal",
+  });
+  assert.deepEqual(relativeCost(2), {
+    cost: "more",
+    relative_cost: "el doble",
+  });
+  assert.deepEqual(relativeCost(0.7), { cost: "less", relative_cost: "menos" });
+  assert.deepEqual(relativeCost(1.5), { cost: "more", relative_cost: "más" });
+});
+
+test("the shared limit sums every mode; when spent, every mode waits; fallback use is not counted", () => {
   const row = {
     started_at: new Date(T0).toISOString(),
     ends_at: new Date(T0 + 5 * HOUR).toISOString(),
   };
-  const summary = usageSummary(
+  const modes = availableModes(aiContextFor(cfOn()));
+  // Rows are already weighted by the server (one row per mode).
+  const half = usageSummary(
     {
       window: row,
       usage: [
-        { mode: "normal", kind: "mode", tokens: MODES.normal.budgetTokens },
-        { mode: "fast", kind: "mode", tokens: MODES.fast.budgetTokens * 0.85 },
+        { mode: "normal", kind: "mode", tokens: 15_000 },
+        { mode: "fast", kind: "mode", tokens: 5_200 },
+        { mode: "think", kind: "mode", tokens: 5_000 },
         { mode: "fast", kind: "fallback", tokens: 10 ** 9 },
       ],
     },
-    { now: T0 + 2 * HOUR, modes: availableModes() },
+    { now: T0 + 2 * HOUR, modes },
   );
-  const normal = summary.modes.find((m) => m.id === "normal")!;
-  const fast = summary.modes.find((m) => m.id === "fast")!;
-  assert.equal(normal.percent, 100);
-  assert.equal(normal.blocked, true);
-  assert.equal(normal.resets_at, new Date(T0 + 5 * HOUR).toISOString());
-  assert.equal(fast.percent, 85);
-  assert.equal(fast.blocked, false);
-  assert.ok(!("tokens" in normal));
-  assert.equal(JSON.stringify(summary).includes(MODES.normal.model), false);
+  assert.equal(half.percent, 63);
+  assert.equal(half.blocked, false);
+  assert.equal(half.resets_at, new Date(T0 + 5 * HOUR).toISOString());
+  // Old web: every mode carries the shared values.
+  assert.ok(half.modes.every((m) => m.percent === 63 && !m.blocked));
+  assert.deepEqual(
+    half.modes.map((m) => [m.id, m.cost, m.relative_cost]),
+    [
+      ["fast", "less", "la mitad"],
+      ["normal", "same", "lo normal"],
+      ["think", "more", "el doble"],
+    ],
+  );
+  const spent = usageSummary(
+    {
+      window: row,
+      usage: [
+        { mode: "normal", kind: "mode", tokens: 30_000 },
+        { mode: "think", kind: "mode", tokens: 10_000 },
+      ],
+    },
+    { now: T0 + 2 * HOUR, modes },
+  );
+  assert.equal(spent.percent, 100);
+  assert.equal(spent.blocked, true);
+  assert.ok(spent.modes.every((m) => m.percent === 100 && m.blocked));
+  const web = parseUsage(JSON.parse(JSON.stringify(spent)));
+  assert.equal(web.blocked, true);
+  // No «Cambiar a Rápido»: every mode waits for the reset.
+  assert.equal(alternativeMode(web, "normal"), null);
+  // Never tokens or model names.
+  const text = JSON.stringify(spent);
+  assert.doesNotMatch(
+    text,
+    /token|30000|10000|llama|qwen|mistral|gpt|groq|cloudflare/i,
+  );
+  assert.equal(
+    costSentence(parseUsage(JSON.parse(JSON.stringify(half))).modes),
+    "Rápido gasta la mitad, Normal lo normal y Pensar más el doble.",
+  );
+});
+
+test("Rápido stretches the shared limit: ≈ twice the messages of Normal and four times «Pensar más»", () => {
+  const messages = (
+    mode: (typeof MODES)[keyof typeof MODES],
+    perMessage: number,
+  ) => {
+    let used = 0;
+    let n = 0;
+    while (used < SHARED_WINDOW_BUDGET) {
+      used += weightedTokens(mode, perMessage);
+      n += 1;
+    }
+    return n;
+  };
+  assert.equal(messages(MODES.fast, 4000), 20);
+  assert.equal(messages(MODES.normal, 4000), 10);
+  assert.equal(messages(MODES.think, 4000), 5);
 });
 
 test("window charges go through one atomic RPC and blocked modes surface as dream_mode_limit", async () => {
@@ -430,14 +519,39 @@ test("window charges go through one atomic RPC and blocked modes surface as drea
     tokens: 1234.2,
   });
   assert.equal(calls[0].name, "dream_ai_window_charge");
-  assert.equal(calls[0].args.p_tokens, 1235);
-  assert.equal(calls[0].args.p_budget, MODES.fast.budgetTokens);
+  // Rápido: ceil(1234.2 × 0.5) against the ONE shared budget.
+  assert.equal(calls[0].args.p_tokens, 618);
+  assert.equal(calls[0].args.p_budget, SHARED_WINDOW_BUDGET);
   await charge.settle(300);
   await charge.settle(999); // idempotent
-  assert.equal(
-    calls.filter((c) => c.name === "dream_ai_window_settle").length,
-    1,
-  );
+  const settles = calls.filter((c) => c.name === "dream_ai_window_settle");
+  assert.equal(settles.length, 1);
+  // The settle step uses the same weight.
+  assert.equal(settles[0].args.p_tokens, 150);
+  // «Pensar más» counts double, also when settling.
+  calls.length = 0;
+  const think = await limiter.charge({
+    mode: "think",
+    kind: "mode",
+    provider: "cloudflare",
+    tokens: 1000,
+  });
+  await think.settle(701);
+  assert.equal(calls[0].args.p_tokens, 2000);
+  assert.equal(calls[0].args.p_budget, SHARED_WINDOW_BUDGET);
+  assert.equal(calls[1].args.p_tokens, 1402);
+  // The fallback is recorded with its real tokens and never weighted.
+  calls.length = 0;
+  const fb = await limiter.charge({
+    mode: "fast",
+    kind: "fallback",
+    provider: "cloudflare",
+    tokens: 1000,
+  });
+  await fb.settle(400);
+  assert.equal(calls[0].args.p_kind, "fallback");
+  assert.equal(calls[0].args.p_tokens, 1000);
+  assert.equal(calls[1].args.p_tokens, 400);
   await assert.rejects(
     limiter.charge({
       mode: "normal",
@@ -715,7 +829,7 @@ const admission = {
   beforeAttempt: async () => ({ reconcile: async () => {} }),
 };
 
-test("mode use is charged to the mode; the Cloudflare fallback is recorded apart; failed attempts are refunded", async () => {
+test("mode use is charged to the shared limit; the Cloudflare fallback is recorded apart; failed attempts are refunded", async () => {
   const { charges, limiter } = fakeLimiter();
   const tracker = createAttemptTracker({
     admission,
@@ -749,7 +863,7 @@ test("mode use is charged to the mode; the Cloudflare fallback is recorded apart
   await tracker.finish({ answered: true });
 });
 
-test("«Pensar más» is charged to its own budget on Cloudflare; an unanswered turn costs nothing", async () => {
+test("«Pensar más» is charged to the shared limit as kind mode on Cloudflare; an unanswered turn costs nothing", async () => {
   const { charges, limiter } = fakeLimiter();
   const tracker = createAttemptTracker({
     admission,

@@ -1,16 +1,19 @@
-// Límite de uso por alumno en ventanas de 5 horas, contado en tokens
-// (entrada + salida) y con un presupuesto distinto por modo.
+// Límite de uso por alumno en ventanas de 5 horas: UN presupuesto conjunto
+// para todos los modos (SHARED_WINDOW_BUDGET), contado en tokens «equivalentes
+// a Normal». Cada modo lo gasta a su ritmo (MODE_WEIGHTS en models.mjs):
+// Rápido la mitad, Normal lo normal y Pensar más el doble.
 // - La ventana empieza con el primer mensaje que se envía al proveedor cuando
 //   no hay otra abierta, y dura WINDOW_HOURS.
-// - Sin ventana abierta, todos los modos están al 0 %.
-// - Un modo agotado queda bloqueado hasta el final de la ventana; los demás
-//   siguen mientras les quede presupuesto.
+// - Sin ventana abierta, el uso está al 0 %.
+// - Al agotar el presupuesto se bloquean TODOS los modos hasta el final de la
+//   ventana.
+// - Se guarda una fila por modo (para saber qué modo se usó), ya con el peso.
 // - El uso del respaldo (Cloudflare cuando falla Groq) se registra aparte y no
-//   cuenta en estos límites.
+//   cuenta en el límite.
 // La cuenta atómica vive en Postgres (dream_ai_window_charge); aquí solo hay
 // funciones puras y la llamada a las RPC.
 import { AdmissionError, checkedRPC } from './admission.mjs';
-import { MODES, WINDOW_MS, availableModes } from './models.mjs';
+import { MODES, SHARED_WINDOW_BUDGET, WINDOW_MS, availableModes, relativeCost, weightedTokens } from './models.mjs';
 
 export const WINDOW_LIMIT_CODE = 'dream_mode_limit';
 
@@ -22,7 +25,7 @@ export function windowState(row, now = Date.now()) {
   return now < ends ? { open: true, startedAt: started, endsAt: ends } : { open: false, startedAt: null, endsAt: null };
 }
 
-// Porcentaje entero. Solo llega a 100 cuando el modo está agotado de verdad.
+// Porcentaje entero. Solo llega a 100 cuando el límite está agotado de verdad.
 export function percentUsed(tokens, budget) {
   const used = Math.max(0, Number(tokens) || 0);
   if (!(budget > 0)) return 100;
@@ -32,29 +35,35 @@ export function percentUsed(tokens, budget) {
 
 export const modeBlocked = (tokens, budget) => Math.max(0, Number(tokens) || 0) >= budget;
 
-// Resumen para el cliente: solo porcentajes y la hora de reinicio, nunca
-// tokens ni nombres de modelo.
+// Resumen para el cliente: solo porcentajes, la hora de reinicio y cuánto
+// gasta cada modo en palabras; nunca tokens ni nombres de modelo.
+// - Arriba, el límite conjunto: { percent, blocked, resets_at }.
+// - `modes[]` se mantiene para la web antigua: cada modo lleva el mismo
+//   percent/blocked que el conjunto (al agotarse, se bloquean todos).
 /** @param {{window?: {started_at?: string, ends_at?: string}|null, usage?: Array<{mode: string, kind: string, tokens: number}>}} data */
-export function usageSummary(data, { now = Date.now(), modes = availableModes() } = {}) {
+export function usageSummary(data, { now = Date.now(), modes = availableModes(), budget = SHARED_WINDOW_BUDGET } = {}) {
   const state = windowState(data?.window, now);
-  const used = new Map();
+  let used = 0;
   if (state.open) for (const row of data?.usage || []) {
     if (row?.kind !== 'mode') continue;
-    used.set(row.mode, (used.get(row.mode) || 0) + (Number(row.tokens) || 0));
+    used += Math.max(0, Number(row.tokens) || 0);
   }
+  const percent = state.open ? percentUsed(used, budget) : 0;
+  const blocked = state.open && modeBlocked(used, budget);
+  const resets_at = state.open ? new Date(state.endsAt).toISOString() : null;
   return {
-    window: state.open ? { started_at: new Date(state.startedAt).toISOString(), ends_at: new Date(state.endsAt).toISOString() } : null,
-    modes: modes.map((mode) => {
-      const tokens = used.get(mode.id) || 0;
-      const blocked = state.open && modeBlocked(tokens, mode.budgetTokens);
-      return {
-        id: mode.id,
-        label: mode.label,
-        percent: state.open ? percentUsed(tokens, mode.budgetTokens) : 0,
-        blocked,
-        resets_at: state.open ? new Date(state.endsAt).toISOString() : null,
-      };
-    }),
+    window: state.open ? { started_at: new Date(state.startedAt).toISOString(), ends_at: resets_at } : null,
+    percent,
+    blocked,
+    resets_at,
+    modes: modes.map((mode) => ({
+      id: mode.id,
+      label: mode.label,
+      percent,
+      blocked,
+      resets_at,
+      ...relativeCost(mode.weight),
+    })),
   };
 }
 
@@ -80,18 +89,23 @@ export function createWindowLimiter(db, owner) {
     /** Lee la ventana y el uso del alumno (solo lectura). */
     read: () => checkedRPC(db, 'dream_ai_usage', { p_owner: owner }),
     /**
-     * Comprueba y carga tokens en una sola transacción. kind 'mode' bloquea
-     * si el modo está agotado; kind 'fallback' solo registra.
+     * Comprueba y carga tokens en una sola transacción. kind 'mode' carga
+     * tokens × peso del modo y bloquea si el límite conjunto está agotado
+     * (la suma de TODOS los modos de la ventana, en Postgres); kind
+     * 'fallback' solo registra los tokens reales, que no cuentan.
      * @param {{mode: string, kind: 'mode'|'fallback', provider: string, tokens: number}} input
      */
     charge: async ({ mode, kind, provider, tokens }) => {
       const config = MODES[mode];
       if (!config) throw new AdmissionError('invalid_mode', 400, 0);
+      // El mismo peso al cargar y al ajustar.
+      /** @param {number} t */
+      const toWindow = (t) => Math.min(400_000, kind === 'mode' ? weightedTokens(config, t) : Math.ceil(Math.max(0, Number(t) || 0)));
       const attempt = crypto.randomUUID();
       await checkedRPC(db, 'dream_ai_window_charge', {
         p_owner: owner, p_mode: mode, p_kind: kind, p_provider: provider,
-        p_tokens: Math.max(0, Math.min(400_000, Math.ceil(tokens))),
-        p_budget: config.budgetTokens, p_attempt: attempt,
+        p_tokens: toWindow(tokens),
+        p_budget: SHARED_WINDOW_BUDGET, p_attempt: attempt,
       });
       let settled = false;
       return {
@@ -102,7 +116,7 @@ export function createWindowLimiter(db, owner) {
           if (settled) return;
           settled = true;
           if (tokensUsed === null || tokensUsed === undefined) return;
-          await checkedRPC(db, 'dream_ai_window_settle', { p_owner: owner, p_attempt: attempt, p_tokens: Math.max(0, Math.ceil(tokensUsed)) });
+          await checkedRPC(db, 'dream_ai_window_settle', { p_owner: owner, p_attempt: attempt, p_tokens: toWindow(tokensUsed) });
         },
       };
     },

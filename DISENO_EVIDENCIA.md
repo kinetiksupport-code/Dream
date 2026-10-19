@@ -235,3 +235,13 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `branding.md`: un borde de pegatina en la ilustración vacía.
   - `accessibility.md`: foco visible en las píldoras.
 - **libraries-dev:** sin efectos. El punto de enganche de `thinking-orbs` en «Procesando» sigue pendiente del OK.
+
+### Límite conjunto de la IA (`feat/limite-conjunto`)
+
+- **Qué es:** un solo límite para todos los modos. Cambian los textos y Ajustes pasa de una barra por modo a **una sola barra**. Capturas en `docs/diseno/modos-ia/` (`limite-uso-*`, `aviso-80-*`, `limite-agotado-*`; móvil 390 px y escritorio 1280 px, claro y oscuro).
+- **Sin estilos ni movimiento nuevos:** se reutilizan `.usage-*`, `.mode-notice` y `.chat-limit`. La barra sigue animando solo `transform` (`--dur-rise`) y queda quieta con movimiento reducido.
+- **apple-design:**
+  - `accessibility.md`: la barra es `role="progressbar"` con `aria-valuetext` («Has usado el 63 % de tu IA.»).
+  - `generative-ai.md`: al 100 % se dice qué pasa y cuándo vuelve. No se ofrece «Cambiar a Rápido», porque no funcionaría.
+- **emil-design-eng:** ningún elemento nuevo que se mueva. La pista de coste va en el nombre accesible y el `title` del selector, sin añadir ruido visual.
+- **libraries-dev:** sin efectos.

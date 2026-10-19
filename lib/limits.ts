@@ -4,7 +4,7 @@
 export type LimitState =
   | { kind: "wait"; seconds: number; position?: number }
   | { kind: "daily"; resetAt: number; scope: "user" | "global" }
-  // One mode used up in the student's 5-hour window: switch mode or wait.
+  // The shared AI limit of the 5-hour window is used up: wait for the reset.
   | { kind: "mode"; resetAt: number };
 
 const WAIT_CODES = new Set([

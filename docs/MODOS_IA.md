@@ -1,13 +1,15 @@
 # Modos de la IA y límite por ventanas de 5 horas (Partes G y H)
 
 Fecha: 17/10/2026. Rama `feat/modos-ia`. **Nada está desplegado ni aplicado.**
+Actualizado el 19/10/2026 (rama `feat/limite-conjunto`): **un solo límite conjunto** para todos los modos (§3).
 
 ## 1. Qué ve el alumno
 
 - En el chat, un selector con **«Rápido»** y **«Normal»** (por defecto). **«Pensar más»** aparece solo si el servidor tiene los secretos de Cloudflare (ver §6). No aparece ningún nombre de modelo.
-- Si un modo pasa del 80 %, el chat muestra un aviso discreto («Has usado el 85 % del modo Normal. Se reinicia en 2 h 10 min.»). No bloquea nada.
-- Al 100 %: «Has usado todo el modo Normal por ahora. Vuelve a estar disponible a las 18:40», con un botón «Cambiar a Rápido» si otro modo tiene uso. El texto vuelve a la caja y no entra en la cola.
-- En **Ajustes › Límite de uso**, una barra por modo («Normal: 63 % usado», `role="progressbar"`) y «Se reinicia en 2 h 10 min». Nunca se muestran tokens.
+- Hay **un solo límite** para todos los modos. Rápido lo gasta más despacio y Pensar más, más deprisa. En el selector, la pista de cada modo lo dice («Respuestas cortas, gasta menos», «Más cuidadoso, gasta más»).
+- Si el límite pasa del 80 %, el chat muestra un aviso discreto («Has usado el 85 % de tu IA. Se reinicia en 2 h 10 min.»). No bloquea nada.
+- Al 100 %: «Has usado toda tu IA por ahora. Vuelve a estar disponible a las 18:40». Todos los modos esperan al reinicio, así que **ya no hay botón «Cambiar a Rápido»**. El texto vuelve a la caja y no entra en la cola.
+- En **Ajustes › Límite de uso**, una sola barra («Has usado el 63 % de tu IA.», `role="progressbar"`), «Se reinicia en 2 h 10 min.» y la línea «Rápido gasta la mitad, Normal lo normal y Pensar más el doble.». Nunca se muestran tokens ni modelos.
 - El navegador recuerda el modo elegido (`dream-ai-mode`, ya en la página de cookies).
 
 Capturas: [`docs/diseno/modos-ia/`](diseno/modos-ia/).
@@ -55,15 +57,43 @@ Tests, exámenes y corrección siguen usando el modelo de Normal y **no cuentan*
 
 Los tres modos y el respaldo pasan por el mismo constructor (`chatSystemMessages`): misma política de conversación y misma regla de no escribir respuestas de un test activo. No había un filtro de salida previo en el código; no he añadido uno.
 
-## 3. Presupuestos por modo (⚠️ PENDIENTES DE OK)
+## 3. Límite conjunto (decisión de Carlos, 19/10/2026)
 
-Están en `models.mjs` (`budgetTokens`) y se cuentan en tokens de **entrada + salida**, por alumno, modo y ventana de 5 h.
+> «El límite es uno conjunto y los modelos más altos consumen más; si coges Rápido el límite no se gasta tan rápido, si coges Pensar más se gasta más rápido.»
+
+Todo está en **dos líneas** de `models.mjs`:
+
+```js
+export const SHARED_WINDOW_BUDGET = 40_000;                          // por alumno y ventana de 5 h
+export const MODE_WEIGHTS = Object.freeze({ fast: 0.5, normal: 1, think: 2 });
+```
+
+- El límite se cuenta en tokens «equivalentes a Normal» (entrada + salida).
+- Cada petición carga `ceil(tokens reales × peso del modo)`. El ajuste final (`settle`) usa el mismo peso.
+- El respaldo de Cloudflare (`kind = 'fallback'`) **no cuenta**, como antes.
+- Al llegar al 100 % se bloquean **todos** los modos hasta el reinicio.
+- Se sigue guardando una fila por modo (`dream_private.ai_usage`), ya con el peso: sabemos qué modo se usó.
+- La frase «gasta la mitad / lo normal / el doble» sale del peso (`relativeCost`). Si se cambia un peso, el texto cambia solo («menos» o «más» si no es una fracción conocida).
+
+| Modo | Peso | Mensaje típico (real) | Cuesta del límite | Mensajes si solo usas ese modo |
+|---|---|---|---|---|
+| Rápido | 0,5 | ≈2.000 | ≈1.000 | ≈40 |
+| Normal | 1 | ≈6.500 | ≈6.500 | ≈6 |
+| Pensar más | 2 | ≈3.500 | ≈7.000 | ≈5–6 |
+
+Antes eran tres presupuestos separados (Rápido 30.000, Normal 40.000, Pensar más 12.000). Con el límite conjunto, un alumno que solo usa Normal tiene lo mismo que antes. Uno que solo usa Pensar más tiene hasta 20.000 tokens reales (antes 12.000). Uno que solo usa Rápido, hasta 80.000 (antes 30.000).
+
+**Los límites de Groq por organización no cambian y nunca se saltan.** Un 429 enfría todas las claves y guarda la pausa (`provider_state`). Los topes diarios de `dream_private.limits` siguen activos y mandan si se alcanzan antes. Si Rápido se usa mucho, el tope que se nota antes es el diario de Groq de gpt-oss-20b (200.000 tokens/día por organización), no la ventana.
+
+### Cifras anteriores (presupuesto por modo, ya no se usan)
+
+Se dejan para entender de dónde salen los 40.000 y el peso de Pensar más.
 
 | Modo | Presupuesto / 5 h | Mensaje típico | Mensajes aprox. |
 |---|---|---|---|
-| Rápido | **30.000** | ≈2.000 | ≈15 |
-| Normal | **40.000** | ≈6.500 | ≈6 |
-| Pensar más | **12.000** | ≈3.500 | ≈3 |
+| Rápido | 30.000 | ≈2.000 | ≈15 |
+| Normal | 40.000 | ≈6.500 | ≈6 |
+| Pensar más | 12.000 | ≈3.500 | ≈3 |
 
 ### Cómo he llegado a esas cifras
 
@@ -86,8 +116,8 @@ Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 t
 - Empieza con el **primer mensaje enviado al proveedor** cuando no hay otra abierta y dura 5 h. Sin ventana, todo está al 0 %.
 - Se comprueba **antes** de guardar el mensaje y de llamar al proveedor, y otra vez de forma atómica al enviar (`dream_ai_window_charge`, una fila por alumno con `FOR UPDATE`).
 - Al enviar se carga una estimación (caracteres ÷ 3,5 + máximo de salida). Al terminar se ajusta al uso real que devuelve el proveedor. Un intento que falla sin producir texto vuelve a 0.
-- Un modo se bloquea cuando lo usado llega al presupuesto. Puede pasarse un poco con el último mensaje: es más amable que cortar al 85 %. El porcentaje solo marca 100 cuando está agotado.
-- Convive con la cola de la Parte A: la cola cubre los picos por minuto (`dream_rpm`, `dream_queue`…); la ventana, el uso de cada alumno (`dream_mode_limit`, que nunca se pone en cola).
+- Todos los modos se bloquean cuando la suma de lo usado (con el peso) llega al límite conjunto. Puede pasarse un poco con el último mensaje: es más amable que cortar al 85 %. El porcentaje solo marca 100 cuando está agotado.
+- Convive con la cola de la Parte A: la cola cubre los picos por minuto (`dream_rpm`, `dream_queue`…); la ventana, el uso de cada alumno (`dream_mode_limit`, que nunca se pone en cola; el código se mantiene aunque ahora el límite sea conjunto).
 
 ## 4. Respaldo con Cloudflare (Parte H)
 
@@ -99,7 +129,7 @@ Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 t
   - Nunca se reintenta si ya llegó texto.
   - Si la respuesta usaba la búsqueda web, el respaldo recibe el resultado como contexto, sin herramientas.
 - **Contexto corto:** el respaldo envía 4 mensajes de historial y 6.000 caracteres de adjuntos como máximo.
-- **Uso aparte:** en `dream_private.ai_usage` con `kind = 'fallback'` y `provider = 'cloudflare'`. No cuenta en el presupuesto del modo. El intento fallido de Groq se devuelve a 0.
+- **Uso aparte:** en `dream_private.ai_usage` con `kind = 'fallback'` y `provider = 'cloudflare'`. No cuenta en el límite conjunto. El intento fallido de Groq se devuelve a 0.
 - Un 429 de Cloudflare pausa ese proveedor hasta las 00:00 UTC (reinicio del cupo diario), salvo que indique otra espera.
 
 ## 5. Base de datos: migración pendiente (NO aplicada)
@@ -136,6 +166,25 @@ La he probado en un PostgreSQL 16 local de usar y tirar, aplicando antes las mig
 
 No forma parte de `npm run test:security-db`.
 
+### Límite conjunto: [`20261019180000_ai_shared_window.sql`](../supabase/migrations/20261019180000_ai_shared_window.sql) (NO aplicada)
+
+- Solo redefine `dream_ai_window_charge`. Con `kind = 'mode'`, la comprobación suma los tokens de **todos** los modos de la ventana, no solo los de `p_mode`.
+- Misma firma y mismos permisos (solo `service_role`). `dream_ai_window_settle` y `dream_ai_usage` no cambian.
+- Se puede aplicar **antes o después** de desplegar el `dream-api` nuevo:
+  - Con el `dream-api` v27 (producción), que envía el presupuesto de cada modo y tokens sin peso, solo se vuelve **más estricto**: un modo se bloquea cuando la suma de todos llega a su presupuesto. Nunca deja pasar más que antes.
+  - En v27, `ai_usage` sigue mostrando un porcentaje por modo, que puede ir por debajo de lo que la base de datos ya bloquea. La web enseña el mensaje de límite al recibir `dream_mode_limit`, sin perder el texto.
+- Orden recomendado: migración → `dream-api` → web.
+- Probada en un PostgreSQL 16 local de usar y tirar (`/tmp/pgdream-limite`, como `nobody`), sobre las tablas de `20261017090000`:
+  - suma de todos los modos;
+  - bloqueo de todos los modos al agotarse;
+  - el respaldo no cuenta;
+  - el comportamiento de v27, que es más estricto;
+  - ajuste idempotente;
+  - ventana nueva al caducar;
+  - validación;
+  - permisos: solo `service_role`;
+  - aplicar dos veces no falla.
+
 ## 6. Interruptores (ENCENDIDOS desde el 19/10/2026)
 
 En `models.mjs`, `AI_FLAGS`:
@@ -157,11 +206,25 @@ Ni el respaldo ni las cuatro claves saltan los límites de Groq por organizació
 
 ## 7. Acción nueva de `dream-api`
 
-`ai_usage` es de solo lectura y no consume IA. Devuelve `{ window, modes: [{ id, label, percent, blocked, resets_at }], default_mode }`. `chat` acepta `mode` (`fast` | `normal` | `think`); sin `mode`, usa Normal. Un modo apagado o desconocido devuelve 400 `mode_unavailable`.
+`ai_usage` es de solo lectura y no consume IA. Devuelve:
+
+```
+{ window, percent, blocked, resets_at,            // el límite conjunto
+  modes: [{ id, label, percent, blocked, resets_at, cost, relative_cost }],
+  default_mode }
+```
+
+- `percent`, `blocked` y `resets_at` de arriba son el límite conjunto.
+- En `modes[]`, cada modo lleva **los mismos** `percent` y `blocked`: así la web antigua sigue funcionando y, al 100 %, todos sus modos salen agotados.
+- `cost` (`less` | `same` | `more`) y `relative_cost` («la mitad», «lo normal», «el doble») dicen cuánto gasta cada modo, sin cifras.
+- Una web nueva con un servidor antiguo (sin los campos de arriba) toma el modo más gastado. Si ese servidor deja otro modo libre, sigue ofreciendo «Cambiar a…».
+
+ `chat` acepta `mode` (`fast` | `normal` | `think`); sin `mode`, usa Normal. Un modo apagado o desconocido devuelve 400 `mode_unavailable`.
 
 ## 8. Qué necesita el OK de Carlos
 
-1. **Presupuestos** de la §3 (30.000 / 40.000 / 12.000 tokens por 5 h).
+1. ~~Presupuestos por modo~~: sustituidos por el **límite conjunto** (§3). Valores por defecto: 40.000 y pesos 0,5 / 1 / 2. Carlos puede cambiarlos en `models.mjs`.
+   - **Migración** `20261019180000_ai_shared_window.sql`: revisar y aplicar, mejor antes de desplegar el `dream-api` nuevo (funciona en cualquier orden, §5).
 2. **Migración** `20261017090000_ai_modes_windows.sql`: revisar, hacer copia de seguridad y aplicarla en staging antes que en producción.
 3. **Despliegue** de `dream-api`, después de la migración.
 4. **Secretos** `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` en Supabase. Token de cuenta limitado a esa cuenta con los permisos «Workers AI - Read» y «Workers AI - Edit», los que pide la [guía de la API REST](https://developers.cloudflare.com/workers-ai/get-started/rest-api/); ningún otro.

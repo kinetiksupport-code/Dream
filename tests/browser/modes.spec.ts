@@ -6,6 +6,8 @@ const MIN = 60_000;
 type Usage = {
   modes: { id: string; percent: number; blocked: boolean }[];
   endsInMs?: number;
+  // Old dream-api (v27): one limit per mode, nothing on top.
+  legacy?: boolean;
 };
 type ChatReply = { status: number; body: string; contentType?: string };
 
@@ -13,12 +15,30 @@ function usageBody(u: Usage) {
   const ends = u.endsInMs
     ? new Date(Date.now() + u.endsInMs).toISOString()
     : null;
+  const costs: Record<string, { cost: string; relative_cost: string }> = {
+    fast: { cost: "less", relative_cost: "la mitad" },
+    normal: { cost: "same", relative_cost: "lo normal" },
+    think: { cost: "more", relative_cost: "el doble" },
+  };
   return {
     window: ends
       ? { started_at: new Date(Date.now() - MIN).toISOString(), ends_at: ends }
       : null,
-    modes: u.modes.map((m) => ({ ...m, label: "x", resets_at: ends })),
+    modes: u.modes.map((m) => ({
+      ...m,
+      label: "x",
+      resets_at: ends,
+      ...(u.legacy ? {} : costs[m.id]),
+    })),
     default_mode: "normal",
+    // New dream-api: the ONE shared limit on top (every mode carries it too).
+    ...(u.legacy
+      ? {}
+      : {
+          percent: Math.max(...u.modes.map((m) => m.percent)),
+          blocked: u.modes.some((m) => m.blocked),
+          resets_at: ends,
+        }),
   };
 }
 
@@ -94,6 +114,18 @@ const fresh: Usage = {
     { id: "normal", percent: 0, blocked: false },
   ],
 };
+/** New server: every mode shows the shared values. */
+function shared(
+  percent: number,
+  endsInMs: number,
+  ids = ["fast", "normal"],
+): Usage {
+  const blocked = percent >= 100;
+  return {
+    modes: ids.map((id) => ({ id, percent, blocked })),
+    endsInMs,
+  };
+}
 
 test("the chat offers modes, never model names, Normal by default, and sends the chosen one", async ({
   page,
@@ -185,61 +217,75 @@ test("if «Pensar más» stops being available mid-session, the chat says so, ke
   await expect(page.getByRole("radio", { name: /Normal/ })).toBeChecked();
 });
 
-test("Ajustes shows one bar per mode with percentages and when it resets", async ({
+test("Ajustes shows ONE bar for the shared limit, when it resets and what each mode spends", async ({
   page,
 }) => {
   await signedIn(page, [
-    {
-      modes: [
-        { id: "fast", percent: 10, blocked: false },
-        { id: "normal", percent: 63, blocked: false },
-      ],
-      endsInMs: 2 * 60 * MIN + 9 * MIN + 30_000,
-    },
+    shared(63, 2 * 60 * MIN + 9 * MIN + 30_000, ["fast", "normal", "think"]),
   ]);
   await page.goto("/settings");
   const section = page.locator("section", {
     has: page.getByRole("heading", { name: "Límite de uso" }),
   });
-  await expect(section.getByText("Normal: 63 % usado")).toBeVisible();
-  const bar = section.getByRole("progressbar", { name: "Normal: 63 % usado" });
+  await expect(section.getByRole("progressbar")).toHaveCount(1);
+  const bar = section.getByRole("progressbar", {
+    name: "Has usado el 63 % de tu IA.",
+  });
   await expect(bar).toHaveAttribute("aria-valuenow", "63");
   await expect(bar).toHaveAttribute("aria-valuemin", "0");
   await expect(bar).toHaveAttribute("aria-valuemax", "100");
-  await expect(
-    section.getByRole("progressbar", { name: "Rápido: 10 % usado" }),
-  ).toHaveAttribute("aria-valuenow", "10");
+  await expect(section.getByText("Has usado el 63 % de tu IA.")).toBeVisible();
   await expect(section.getByText("Se reinicia en 2 h 10 min.")).toBeVisible();
-  await expect(section).not.toContainText(/token/i);
+  await expect(
+    section.getByText(
+      "Rápido gasta la mitad, Normal lo normal y Pensar más el doble.",
+    ),
+  ).toBeVisible();
+  await expect(section).not.toContainText(/token|\d{4,}/i);
+  await expect(section).not.toContainText(
+    /llama|qwen|mistral|groq|cloudflare/i,
+  );
 });
 
-test("without a window every mode is at 0 %", async ({ page }) => {
+test("without a window the shared limit is at 0 %", async ({ page }) => {
   await signedIn(page, [fresh]);
   await page.goto("/settings");
-  await expect(page.getByText("Normal: 0 % usado")).toBeVisible();
+  await expect(page.getByText("Has usado el 0 % de tu IA.")).toBeVisible();
   await expect(
     page.getByText("Aún no has empezado una ventana de uso."),
   ).toBeVisible();
+  await expect(
+    page.getByText("Rápido gasta la mitad y Normal lo normal."),
+  ).toBeVisible();
 });
 
-test("past 80 % the chat shows a discreet notice and still sends", async ({
+test("the mode picker hints which modes spend less or more, without numbers", async ({
   page,
 }) => {
-  const chats = await signedIn(page, [
-    {
-      modes: [
-        { id: "fast", percent: 0, blocked: false },
-        { id: "normal", percent: 85, blocked: false },
-      ],
-      endsInMs: 70 * MIN,
-    },
-  ]);
+  await signedIn(page, [shared(0, 0, ["fast", "normal", "think"])]);
+  await page.goto("/chat");
+  await expect(
+    page.getByRole("radio", { name: /Rápido.*gasta menos/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("radio", { name: /Pensar más.*gasta más/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("radio", { name: /Normal/ }),
+  ).not.toHaveAccessibleName(/gasta/);
+});
+
+test("past 80 % the chat speaks about the shared limit and still sends", async ({
+  page,
+}) => {
+  const chats = await signedIn(page, [shared(85, 70 * MIN)]);
   await page.goto("/chat");
   const notice = page
     .getByRole("status")
-    .filter({ hasText: "Has usado el 85 % del modo Normal" });
+    .filter({ hasText: "Has usado el 85 % de tu IA" });
   await expect(notice).toBeVisible();
   await expect(notice).toContainText("Se reinicia en 1 h 10 min");
+  await expect(notice).not.toContainText("modo");
   const box = page.locator(".composer textarea");
   await box.fill("Sigue");
   await box.press("Enter");
@@ -247,7 +293,43 @@ test("past 80 % the chat shows a discreet notice and still sends", async ({
   expect(chats).toHaveLength(1);
 });
 
-test("at 100 % the chat says when it resets and offers a mode with budget left", async ({
+test("at 100 % every mode waits for the reset: no «Cambiar a Rápido», nothing queued or lost", async ({
+  page,
+}) => {
+  const chats = await signedIn(
+    page,
+    [fresh, shared(100, 90 * MIN)],
+    [
+      {
+        status: 429,
+        body: JSON.stringify({
+          error: "límite",
+          code: "dream_mode_limit",
+          retry_after: 5400,
+        }),
+      },
+    ],
+  );
+  await page.goto("/chat");
+  const box = page.locator(".composer textarea");
+  await box.fill("Ayúdame con este ejercicio");
+  await box.press("Enter");
+  const banner = page.locator(".chat-limit");
+  await expect(banner).toContainText("Has usado toda tu IA por ahora.");
+  await expect(banner).toContainText("Vuelve a estar disponible a las");
+  await expect(banner.getByRole("button")).toHaveCount(0);
+  // Not queued and nothing lost.
+  await page.waitForTimeout(500);
+  expect(chats).toHaveLength(1);
+  await expect(box).toHaveValue("Ayúdame con este ejercicio");
+  // Every other mode is unavailable too until the reset.
+  await expect(page.getByRole("radio", { name: /Rápido/ })).toBeDisabled();
+  await expect(
+    page.getByRole("radio", { name: /Rápido/ }),
+  ).toHaveAccessibleName(/agotado hasta las/);
+});
+
+test("an old server with one limit per mode still offers a mode with budget left", async ({
   page,
 }) => {
   const spent: Usage = {
@@ -256,10 +338,11 @@ test("at 100 % the chat says when it resets and offers a mode with budget left",
       { id: "normal", percent: 100, blocked: true },
     ],
     endsInMs: 90 * MIN,
+    legacy: true,
   };
   const chats = await signedIn(
     page,
-    [fresh, spent],
+    [{ ...fresh, legacy: true }, spent],
     [
       {
         status: 429,
@@ -278,7 +361,6 @@ test("at 100 % the chat says when it resets and offers a mode with budget left",
   const banner = page.locator(".chat-limit");
   await expect(banner).toContainText("Has usado todo el modo Normal por ahora");
   await expect(banner).toContainText("Vuelve a estar disponible a las");
-  // Not queued and nothing lost.
   await page.waitForTimeout(500);
   expect(chats).toHaveLength(1);
   await expect(box).toHaveValue("Ayúdame con este ejercicio");
@@ -288,4 +370,43 @@ test("at 100 % the chat says when it resets and offers a mode with budget left",
   await box.press("Enter");
   await expect(page.getByText("Una pista para empezar.")).toBeVisible();
   expect(chats[1].mode).toBe("fast");
+});
+
+// Evidence for docs/diseno/modos-ia (only with CAPTURAS_DIR).
+const OUT = process.env.CAPTURAS_DIR;
+test.describe("capturas del límite conjunto", () => {
+  test.skip(!OUT, "Set CAPTURAS_DIR to take screenshots");
+  for (const scheme of ["light", "dark"] as const)
+    for (const vp of [
+      { name: "movil", width: 390, height: 844 },
+      { name: "escritorio", width: 1280, height: 860 },
+    ])
+      test(`límite conjunto ${vp.name} ${scheme}`, async ({ page }) => {
+        const tag = `${vp.name}-${scheme === "light" ? "claro" : "oscuro"}`;
+        const ids = ["fast", "normal", "think"];
+        await page.setViewportSize(vp);
+        await page.emulateMedia({ colorScheme: scheme });
+        await signedIn(page, [
+          shared(63, 2 * 60 * MIN + 9 * MIN + 30_000, ids),
+          shared(85, 70 * MIN, ids),
+          shared(100, 90 * MIN, ids),
+        ]);
+        await page.goto("/settings");
+        const section = page.locator("section", {
+          has: page.getByRole("heading", { name: "Límite de uso" }),
+        });
+        await section.getByText("Has usado el 63 % de tu IA.").waitFor();
+        // Centred, so the phone tab bar never covers the last lines.
+        await section.evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await page.waitForTimeout(400);
+        await section.screenshot({ path: `${OUT}/limite-uso-${tag}.png` });
+        await page.goto("/chat");
+        await page.getByText("Has usado el 85 % de tu IA").waitFor();
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `${OUT}/aviso-80-${tag}.png` });
+        await page.reload();
+        await page.getByText("Has usado toda tu IA por ahora.").waitFor();
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: `${OUT}/limite-agotado-${tag}.png` });
+      });
 });

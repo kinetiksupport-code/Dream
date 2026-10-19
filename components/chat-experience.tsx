@@ -118,7 +118,7 @@ export function ChatExperience({
     storeMode(next);
     setModeLimit(null);
   }, []);
-  // El servidor ha dicho que el modo está agotado (antes de que llegue el uso).
+  // El servidor ha dicho que el límite está agotado (antes de que llegue el uso).
   const [modeLimit, setModeLimit] = useState<{
     mode: AiModeId;
     resetAt: number;
@@ -652,7 +652,7 @@ export function ChatExperience({
         }
         const limit = limitOf(e);
         if (limit?.kind === "mode") {
-          // Mode used up: say when it comes back and offer another mode.
+          // Shared limit used up: say when it comes back (every mode waits).
           setModeLimit({ mode, resetAt: limit.resetAt });
           setState("idle");
         } else {
@@ -765,6 +765,8 @@ export function ChatExperience({
     />
   );
   const current = usage.modes.find((m) => m.id === mode);
+  // Límite conjunto: al agotarse esperan todos los modos. Con un servidor
+  // antiguo (límite por modo) puede quedar otro modo libre: se ofrece.
   const spentAt =
     current?.blocked && current.resets_at
       ? Date.parse(current.resets_at)
@@ -775,9 +777,11 @@ export function ChatExperience({
   const modeBanner = spentAt ? (
     <div className="chat-limit" role="alert">
       <p>
-        Has usado todo el modo {current?.label ?? "elegido"} por ahora. Vuelve a
-        estar disponible a las {clockTime(new Date(spentAt).toISOString())}.
-        {!alternative && " Los demás modos también están agotados."}
+        {alternative
+          ? `Has usado todo el modo ${current?.label ?? "elegido"} por ahora.`
+          : "Has usado toda tu IA por ahora."}{" "}
+        Vuelve a estar disponible a las{" "}
+        {clockTime(new Date(spentAt).toISOString())}.
       </p>
       {alternative && (
         <button
@@ -789,10 +793,10 @@ export function ChatExperience({
         </button>
       )}
     </div>
-  ) : current && current.percent >= WARN_PERCENT && current.resets_at ? (
+  ) : usage.percent >= WARN_PERCENT && usage.resets_at ? (
     <p className="mode-notice" role="status">
-      Has usado el {current.percent} % del modo {current.label}. Se reinicia en{" "}
-      {formatResetIn(Date.parse(current.resets_at) - Date.now())}.
+      Has usado el {usage.percent} % de tu IA. Se reinicia en{" "}
+      {formatResetIn(Date.parse(usage.resets_at) - Date.now())}.
     </p>
   ) : null;
   // Errors say what happened and offer the way out (apple-design

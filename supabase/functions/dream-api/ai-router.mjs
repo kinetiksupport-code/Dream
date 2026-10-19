@@ -51,7 +51,7 @@ export async function* streamWithFallback({ primary, fallback = null, canFallbac
 /**
  * Une la admisión existente (cupos diarios y coste) con la ventana de 5 h.
  * - Cada intento enviado a un proveedor reserva en la admisión y carga la
- *   ventana: en el presupuesto del modo si lo sirve el proveedor del modo, o
+ *   ventana: en el límite conjunto (con el peso del modo) si lo sirve el proveedor del modo, o
  *   aparte («fallback») si lo sirve el respaldo.
  * - Al terminar con éxito se ajusta al uso real; un intento que falla sin
  *   producir texto se devuelve a 0, así el alumno no paga las caídas.
@@ -83,7 +83,7 @@ export function createAttemptTracker({ admission, limiter, mode }) {
     };
   }
   return {
-    /** Reserva el primer intento ANTES de guardar el mensaje: si el modo está agotado, no se guarda nada. */
+    /** Reserva el primer intento ANTES de guardar el mensaje: si el límite conjunto está agotado, no se guarda nada. */
     reserveFirst: async (provider, body) => { reserved = { provider, attempt: await charge(provider, body) }; },
     beforeAttempt: async (provider, body) => {
       if (reserved && reserved.provider === provider) { const { attempt } = reserved; reserved = null; return attempt; }

@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {
   FALLBACK_USAGE,
   alternativeMode,
+  costSentence,
   formatResetIn,
+  modeHint,
   parseUsage,
   pickMode,
 } from "../lib/ai-modes";
@@ -44,6 +46,78 @@ test("usage from the server keeps only modes, percentages and reset time", () =>
     FALLBACK_USAGE.modes.map((m) => m.id),
     ["fast", "normal"],
   );
+});
+
+test("the shared limit comes on top; every mode waits when it is spent", () => {
+  const usage = parseUsage({
+    window: { started_at: new Date(NOON).toISOString(), ends_at: resets },
+    percent: 100,
+    blocked: true,
+    resets_at: resets,
+    modes: [
+      {
+        id: "fast",
+        percent: 100,
+        blocked: true,
+        resets_at: resets,
+        cost: "less",
+        relative_cost: "la mitad",
+      },
+      {
+        id: "normal",
+        percent: 100,
+        blocked: true,
+        resets_at: resets,
+        cost: "same",
+        relative_cost: "lo normal",
+      },
+      {
+        id: "think",
+        percent: 100,
+        blocked: true,
+        resets_at: resets,
+        cost: "more",
+        relative_cost: "el doble",
+      },
+    ],
+    default_mode: "normal",
+  });
+  assert.deepEqual(
+    [usage.percent, usage.blocked, usage.resets_at],
+    [100, true, resets],
+  );
+  assert.equal(alternativeMode(usage, "think"), null);
+  assert.equal(
+    costSentence(usage.modes),
+    "Rápido gasta la mitad, Normal lo normal y Pensar más el doble.",
+  );
+  assert.equal(modeHint(usage.modes[0]), "Respuestas cortas, gasta menos");
+  assert.equal(modeHint(usage.modes[1]), "Equilibrado");
+  assert.equal(modeHint(usage.modes[2]), "Más cuidadoso, gasta más");
+  // Without «Pensar más».
+  assert.equal(
+    costSentence(usage.modes.slice(0, 2)),
+    "Rápido gasta la mitad y Normal lo normal.",
+  );
+  // Odd cost words from the server are ignored (no numbers, no names).
+  const odd = parseUsage({
+    percent: 5,
+    modes: [{ id: "fast", percent: 5, relative_cost: "50 % gpt-oss" }],
+  });
+  assert.equal(odd.modes[0].relative_cost, "la mitad");
+  assert.equal(odd.percent, 5);
+});
+
+test("an old server (one limit per mode) still parses: the most used mode leads", () => {
+  const usage = parseUsage({
+    modes: [
+      { id: "fast", percent: 20, blocked: false, resets_at: resets },
+      { id: "normal", percent: 100, blocked: true, resets_at: resets },
+    ],
+  });
+  assert.deepEqual([usage.percent, usage.blocked], [100, true]);
+  // The old server still leaves another mode free: it is offered.
+  assert.equal(alternativeMode(usage, "normal")?.id, "fast");
 });
 
 test("the chosen mode survives only while the server offers it", () => {

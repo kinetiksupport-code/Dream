@@ -1,8 +1,8 @@
 "use client";
 import { useId } from "react";
 import {
-  MODE_HINTS,
   clockTime,
+  modeHint,
   type AiModeId,
   type AiUsage,
 } from "@/lib/ai-modes";
@@ -27,7 +27,7 @@ export function ModePicker({
       {usage.modes.map((m) => {
         const note = m.blocked
           ? `agotado${m.resets_at ? ` hasta las ${clockTime(m.resets_at)}` : ""}`
-          : MODE_HINTS[m.id];
+          : modeHint(m);
         return (
           <label
             key={m.id}

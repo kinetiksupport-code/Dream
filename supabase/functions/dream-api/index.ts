@@ -48,7 +48,7 @@ function safeFailure(error: unknown): Response {
     const status = error.status === 429 ? 429 : error instanceof AdmissionError ? error.status : 503;
     const code = error.code;
     if (status === 429) console.log(JSON.stringify({ event: 'dream_limit', code, retry_after: error.retryAfter || 0 }));
-    const message = status === 429 ? code === WINDOW_LIMIT_CODE ? 'Has usado todo este modo por ahora. Se reinicia al acabar tu ventana de uso; mientras tanto puedes cambiar a otro modo.' : code === 'provider_daily_limit' ? 'La IA gratis de hoy se ha agotado. Vuelve más tarde.' : code === 'provider_rate_limit' ? 'El proveedor ha limitado las solicitudes. Respeta la espera indicada.' : 'Has alcanzado un límite de Dream. Espera antes de volver a intentarlo.' : status === 409 ? 'Esta solicitud ya está en curso o fue procesada. Abre los datos guardados.' : status === 413 ? 'El archivo o contexto excede el presupuesto permitido por solicitud.' : 'La IA no está disponible ahora. Puedes consultar tus datos guardados.';
+    const message = status === 429 ? code === WINDOW_LIMIT_CODE ? 'Has usado toda tu IA por ahora. Se reinicia al acabar tu ventana de uso de 5 horas.' : code === 'provider_daily_limit' ? 'La IA gratis de hoy se ha agotado. Vuelve más tarde.' : code === 'provider_rate_limit' ? 'El proveedor ha limitado las solicitudes. Respeta la espera indicada.' : 'Has alcanzado un límite de Dream. Espera antes de volver a intentarlo.' : status === 409 ? 'Esta solicitud ya está en curso o fue procesada. Abre los datos guardados.' : status === 413 ? 'El archivo o contexto excede el presupuesto permitido por solicitud.' : 'La IA no está disponible ahora. Puedes consultar tus datos guardados.';
     return json({ error: message, code, retry_after: error.retryAfter || 0 }, status, error.retryAfter ? {'Retry-After':String(error.retryAfter)} : {});
   }
   return json({error:'No se pudo completar la operación. Tus datos guardados se conservan.'},503);
@@ -236,8 +236,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ profile: publicProfile, service_ready: groqConfigured() });
   }
 
-  // Uso de la ventana de 5 h por modo (solo lectura, no consume IA). Solo
-  // porcentajes y hora de reinicio: ni tokens ni nombres de modelo.
+  // Uso del límite conjunto de la ventana de 5 h (solo lectura, no consume
+  // IA): { percent, blocked, resets_at } arriba y modes[] con lo que gasta
+  // cada modo en palabras. Ni tokens ni nombres de modelo.
   if (body.action === 'ai_usage') {
     try {
       const data = await createWindowLimiter(admin, user.id).read();
@@ -531,8 +532,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ error: 'El servicio de IA todavía no está configurado en el servidor.', code: 'service_unconfigured' }, 503);
   }
 
-  // Límite por ventanas de 5 h: se comprueba ANTES de guardar nada y de
-  // llamar al proveedor. La carga atómica (más abajo) lo vuelve a comprobar.
+  // Límite conjunto por ventanas de 5 h: se comprueba ANTES de guardar nada y
+  // de llamar al proveedor. La carga atómica (más abajo) lo vuelve a comprobar
+  // sumando todos los modos en Postgres.
   const limiter = createWindowLimiter(admin, user.id);
   const windowUsage = usageSummary(await limiter.read(), { modes: [mode] }).modes[0];
   if (windowUsage?.blocked) {
@@ -753,7 +755,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         }
         if (!(isProviderError(error) && error.code === 'aborted')) {
           const known = error instanceof AdmissionError || isProviderError(error) || error instanceof TavilyError;
-          send({ type: 'error', ...(reverted ? { reverted: true } : {}), code: known ? error.code : 'stream_failed', retry_after: known ? error.retryAfter : 0, message: error instanceof AdmissionError && error.code === WINDOW_LIMIT_CODE ? 'Has usado todo este modo por ahora. Puedes cambiar a otro modo.' : error instanceof AdmissionError || error instanceof TavilyError || isProviderError(error) && error.status === 429 ? (error.status === 429 ? 'Se ha alcanzado un límite de solicitudes. Espera antes de reintentar.' : 'No se pudo consultar el servicio ahora. Tus datos se conservan.') : !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
+          send({ type: 'error', ...(reverted ? { reverted: true } : {}), code: known ? error.code : 'stream_failed', retry_after: known ? error.retryAfter : 0, message: error instanceof AdmissionError && error.code === WINDOW_LIMIT_CODE ? 'Has usado toda tu IA por ahora. Se reinicia al acabar tu ventana de uso.' : error instanceof AdmissionError || error instanceof TavilyError || isProviderError(error) && error.status === 429 ? (error.status === 429 ? 'Se ha alcanzado un límite de solicitudes. Espera antes de reintentar.' : 'No se pudo consultar el servicio ahora. Tus datos se conservan.') : !answer.trim() && error instanceof Error && error.message === 'web_search_failed'
             ? 'No se pudo consultar la web ahora mismo. Prueba de nuevo.' : answer.trim()
             ? 'La respuesta se interrumpió. Lo escrito hasta ahora se conserva.'
             : 'Dream está teniendo problemas para responder ahora mismo. Tu mensaje se ha conservado. Puedes intentarlo de nuevo.' });
