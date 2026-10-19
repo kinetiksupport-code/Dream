@@ -133,6 +133,58 @@ test("«Pensar más» appears only when the server offers it", async ({
   await expect(page.getByRole("radio", { name: /Pensar más/ })).toBeVisible();
 });
 
+test("without Cloudflare the server leaves «Pensar más» out and a remembered choice goes back to Normal", async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    localStorage.setItem("dream-ai-mode", "think"),
+  );
+  const chats = await signedIn(page, [fresh]);
+  await page.goto("/chat");
+  const picker = page.getByRole("group", { name: "Modo de respuesta" });
+  await expect(picker.getByRole("radio")).toHaveCount(2);
+  await expect(page.getByRole("radio", { name: /Pensar más/ })).toHaveCount(0);
+  await expect(picker.getByRole("radio", { name: /Normal/ })).toBeChecked();
+  const box = page.locator(".composer textarea");
+  await box.fill("¿Qué es una derivada?");
+  await box.press("Enter");
+  await expect(page.getByText("Una pista para empezar.")).toBeVisible();
+  expect(chats[0].mode).toBe("normal");
+});
+
+test("if «Pensar más» stops being available mid-session, the chat says so, keeps the text and drops the option", async ({
+  page,
+}) => {
+  const withThink: Usage = {
+    modes: [...fresh.modes, { id: "think", percent: 0, blocked: false }],
+  };
+  const chats = await signedIn(
+    page,
+    [withThink, fresh],
+    [
+      {
+        status: 400,
+        body: JSON.stringify({
+          error: "Ese modo no está disponible ahora. Elige otro.",
+          code: "mode_unavailable",
+        }),
+      },
+    ],
+  );
+  await page.goto("/chat");
+  await page.getByRole("radio", { name: /Pensar más/ }).check();
+  const box = page.locator(".composer textarea");
+  await box.fill("Explícame la regla de la cadena");
+  await box.press("Enter");
+  await expect(
+    page.getByText("Ese modo no está disponible ahora. Elige otro."),
+  ).toBeVisible();
+  expect(chats[0].mode).toBe("think");
+  await expect(box).toHaveValue("Explícame la regla de la cadena");
+  await expect(page.getByRole("radio", { name: /Pensar más/ })).toHaveCount(0);
+  await expect(page.getByRole("radio", { name: /Normal/ })).toBeChecked();
+});
+
 test("Ajustes shows one bar per mode with percentages and when it resets", async ({
   page,
 }) => {

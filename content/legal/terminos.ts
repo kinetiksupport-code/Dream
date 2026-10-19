@@ -1,6 +1,6 @@
 export const terminos = String.raw`# Términos y condiciones
 
-*Última actualización: 17 de octubre de 2026 (versión provisional).*
+*Última actualización: 19 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién ofrece Dream
 
@@ -25,7 +25,7 @@ Dream es una web (instalable como app) con un tutor de inteligencia artificial q
 
 Dream es **gratuito** y hoy no se cobra nada. El plan gratuito no tiene un número fijo de mensajes, pero sí **límites de uso razonable** para que el servicio funcione para todos. Cuando hay mucha demanda puedes tener que esperar en una **cola** o volver más tarde, y la IA puede dejar de estar disponible unas horas o hasta el día siguiente. Podemos cambiar estos límites.
 
-**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Cada modo tiene su propio límite de uso, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. Si agotas un modo, no podrás usarlo hasta que acabe la ventana, pero puedes seguir con otro modo que aún tenga uso disponible. En Ajustes, en «Límite de uso», ves qué parte has usado de cada modo y cuándo se reinicia.
+**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Cada modo tiene su propio límite de uso, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. Si agotas un modo, no podrás usarlo hasta que acabe la ventana, pero puedes seguir con otro modo que aún tenga uso disponible. Si nuestro proveedor principal de IA (Groq) no responde en «Rápido» o «Normal», la respuesta puede llegar de un proveedor de respaldo (Cloudflare), algo más corta; ese uso no cuenta en el límite del modo. En Ajustes, en «Límite de uso», ves qué parte has usado de cada modo y cuándo se reinicia.
 
 Si en el futuro se añade un plan de pago, te lo comunicaremos antes y no se te cobrará nada sin que lo aceptes expresamente.
 
@@ -109,7 +109,7 @@ Intentaremos ser proporcionados. Cuando el sistema (límites automáticos y filt
 
 ## 7. Tu contenido
 
-Lo que escribes y subes sigue siendo tuyo. Nos das permiso solo para prestarte el servicio, guardarlo y enviarlo a los proveedores de IA y de búsqueda que se explican en la Política de privacidad. Garantizas que tienes derecho a subirlo. No usamos tu contenido para anunciarte nada, ni para entrenar modelos ni para mejorar Dream.
+Lo que escribes y subes sigue siendo tuyo. Nos das permiso solo para prestarte el servicio, guardarlo y enviarlo a los proveedores de IA y de búsqueda que se explican en la Política de privacidad (Groq, Cloudflare y Tavily), que pueden tratarlo fuera de la Unión Europea. Garantizas que tienes derecho a subirlo. No usamos tu contenido para anunciarte nada, ni para entrenar modelos ni para mejorar Dream.
 
 ## 8. Voz y micrófono
 

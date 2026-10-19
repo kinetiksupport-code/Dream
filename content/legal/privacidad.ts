@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 17 de octubre de 2026 (versión provisional).*
+*Última actualización: 19 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -58,8 +58,8 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Supabase** (base de datos, autenticación y servidor de la aplicación). Región del proyecto: Zúrich (Suiza), en Europa.
 - **Vercel** (alojamiento de la web). Puede registrar datos técnicos de conexión como la dirección IP.
 - **Google** (inicio de sesión con tu cuenta de Google).
-- **Groq** (proveedor de inteligencia artificial que ejecuta el modelo Qwen). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder. Tus mensajes **no incluyen tu correo ni tu nombre**.
-- **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo.
+- **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder. Tus mensajes **no incluyen tu correo ni tu nombre**.
+- **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo, así que puede tratar tus mensajes fuera de la Unión Europea. Según Cloudflare, no usa este contenido para entrenar modelos de IA y no lo guarda cuando ya no lo necesita para responder.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
 - **PostHog** y **Sentry** (estadísticas y errores), solo si tú lo activas en Ajustes. Funcionan de forma anónima: sin grabación de pantalla, sin contenido de tus mensajes y sin geolocalización por IP.
 

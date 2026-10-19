@@ -97,3 +97,80 @@ export function createAttemptTracker({ admission, limiter, mode }) {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// El razonamiento de un modelo nunca llega al alumno ni se guarda.
+// Los parámetros de models.mjs (reasoningParams) ya lo piden así a Groq; esto
+// es la segunda barrera, por si un proveedor lo devuelve igualmente:
+// - campos aparte (`reasoning`, `reasoning_content`): se descartan;
+// - texto entre <think> y </think> dentro de `content`: se quita, también si
+//   las etiquetas llegan partidas entre fragmentos.
+const THINK_OPEN = '<think>';
+const THINK_CLOSE = '</think>';
+
+// Cuántos caracteres del final de `text` pueden ser el principio de `tag`.
+function partialTagLength(text, tag) {
+  for (let k = Math.min(tag.length - 1, text.length); k > 0; k--) {
+    if (tag.startsWith(text.slice(-k))) return k;
+  }
+  return 0;
+}
+
+export function createReasoningFilter() {
+  let inside = false;
+  let pending = '';
+  let trimStart = false; // quita los saltos de línea que siguen a </think>
+  const visible = (text) => {
+    if (!trimStart) return text;
+    const out = text.replace(/^\s+/, '');
+    if (out) trimStart = false;
+    return out;
+  };
+  return {
+    /** @param {string} text */
+    push(text) {
+      let buf = pending + text;
+      pending = '';
+      let out = '';
+      while (buf) {
+        const tag = inside ? THINK_CLOSE : THINK_OPEN;
+        const at = buf.indexOf(tag);
+        if (at >= 0) {
+          if (!inside) out += visible(buf.slice(0, at));
+          buf = buf.slice(at + tag.length);
+          inside = !inside;
+          if (!inside) trimStart = true;
+          continue;
+        }
+        const keep = partialTagLength(buf, tag);
+        if (!inside) out += visible(buf.slice(0, buf.length - keep));
+        pending = buf.slice(buf.length - keep);
+        buf = '';
+      }
+      return out;
+    },
+    /** Lo que quedó retenido al acabar: nada si el razonamiento no se cerró. */
+    flush() {
+      const out = inside ? '' : visible(pending);
+      pending = '';
+      return out;
+    },
+  };
+}
+
+/** @param {AsyncIterable<any>} stream */
+export async function* withoutReasoning(stream) {
+  const filter = createReasoningFilter();
+  for await (const chunk of stream) {
+    const choices = chunk?.choices;
+    const choice = Array.isArray(choices) ? choices[0] : null;
+    const delta = choice?.delta;
+    if (!delta || typeof delta !== 'object') { yield chunk; continue; }
+    const { reasoning, reasoning_content, content, ...rest } = delta;
+    const clean = typeof content === 'string' ? filter.push(content) : content;
+    const nextDelta = clean === '' || clean === undefined ? rest : { ...rest, content: clean };
+    yield { ...chunk, choices: [{ ...choice, delta: nextDelta }, ...choices.slice(1)] };
+  }
+  const tail = filter.flush();
+  if (tail) yield { choices: [{ delta: { content: tail } }] };
+}

@@ -14,9 +14,9 @@ import { selectEducationalSkills, educationalSkillPrompt } from './educational-s
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
-import { AI_FLAGS, CLOUDFLARE_FALLBACK, DEFAULT_MODE, availableModes, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
+import { CLOUDFLARE_FALLBACK, DEFAULT_MODE, aiContextFor, availableModes, reasoningParams, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
 import { createWindowLimiter, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
-import { createAttemptTracker, shouldFallback, streamWithFallback } from './ai-router.mjs';
+import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReasoning } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
@@ -42,7 +42,7 @@ const MAX_BODY_CHARS = 12_000_000;
 // Errores de proveedores de IA con la misma forma (code, status, retryAfter).
 const isProviderError = (error: unknown): error is GroqProviderError | CloudflareProviderError =>
   error instanceof GroqProviderError || error instanceof CloudflareProviderError;
-const aiContext = () => ({ flags: AI_FLAGS, cloudflareConfigured: cloudflareProvider.configured() });
+const aiContext = () => aiContextFor(cloudflareProvider);
 function safeFailure(error: unknown): Response {
   if (error instanceof AdmissionError || isProviderError(error) || error instanceof TavilyError) {
     const status = error.status === 429 ? 429 : error instanceof AdmissionError ? error.status : 503;
@@ -607,7 +607,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const fallbackMessages = [...fallbackSystemMessages, ...fallbackHistory, { role: 'user', content: prompt }];
   const baseBody = {
     model, stream: true, max_tokens: answerTokens, temperature: mode.temperature,
-    ...(mode.provider === 'groq' ? { stream_options: { include_usage: true } } : {}),
+    // Groq: uso real al final y razonamiento fuera del texto (models.mjs).
+    ...(mode.provider === 'groq' ? { stream_options: { include_usage: true }, ...reasoningParams(model, mode) } : {}),
   };
   const fallbackBase = {
     model: CLOUDFLARE_FALLBACK.model, stream: true,
@@ -647,12 +648,13 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   let servedByFallback = startOnFallback;
   const providerOptions = { generationId, signal: generationSignal, beforeAttempt: tracker.beforeAttempt, pause: admission.pause };
   const providerStream = (primaryBody: Record<string, unknown>, fallbackBody: Record<string, unknown>) => streamWithFallback({
-    primary: () => startOnFallback
+    // withoutReasoning: el razonamiento nunca se envía al alumno ni se guarda.
+    primary: () => withoutReasoning(startOnFallback
       ? cloudflareProvider.stream({ ...providerOptions, body: fallbackBody })
-      : primaryProvider.stream({ ...providerOptions, body: primaryBody }),
+      : primaryProvider.stream({ ...providerOptions, body: primaryBody })),
     fallback: canFallback && !startOnFallback ? () => {
       servedByFallback = true;
-      return cloudflareProvider.stream({ ...providerOptions, body: fallbackBody });
+      return withoutReasoning(cloudflareProvider.stream({ ...providerOptions, body: fallbackBody }));
     } : null,
     onFallback: (error) => console.log(JSON.stringify({ event: 'ai_fallback', mode: mode.id, reason: (error as { code?: string })?.code ?? 'unknown', stage: 'stream' })),
   });
