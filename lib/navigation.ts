@@ -29,6 +29,8 @@ export function activeNav(
 export function isFocusRoute(pathname: string) {
   return (
     pathname.startsWith("/tests/") ||
+    // Asistente de crear examen a pantalla completa (§5.1).
+    pathname === "/exams/new" ||
     /^\/exams\/[^/]+\/sessions\//.test(pathname)
   );
 }

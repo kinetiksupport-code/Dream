@@ -13,6 +13,17 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
+// Huge headlines (.hero-title) in Inter 800 italic, like Carlos's style
+// references (decision of 17/10/2026). Not preloaded: the browser downloads it
+// only when a page shows a .hero-title.
+const interHero = Inter({
+  subsets: ["latin", "latin-ext"],
+  weight: "800",
+  style: "italic",
+  variable: "--font-hero",
+  display: "swap",
+  preload: false,
+});
 // Easy-reading option in Ajustes (dyslexia-friendly). Downloaded only on use.
 const lexend = Lexend({
   subsets: ["latin", "latin-ext"],
@@ -62,7 +73,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${lexend.variable}`}
+      className={`${inter.variable} ${interHero.variable} ${lexend.variable}`}
       suppressHydrationWarning
     >
       <head>

@@ -135,6 +135,8 @@ async function fixture(page: Page, seed = true) {
         const e = {
           ...structuredClone(readyExam),
           ...b,
+          // The full-screen wizard (PR 3) starts an empty draft.
+          ...(b.wizard ? { title: "", subject: "", exam_date: "", topics: [], wizard_step: "upload" } : {}),
           id: b.exam_id,
           status: "draft",
           units: [],
@@ -146,8 +148,23 @@ async function fixture(page: Page, seed = true) {
         break;
       }
       case "exam_update":
+      case "exam_draft_update":
         Object.assign(exam!, b);
         response = { exam };
+        break;
+      case "exam_analyze":
+        response = { analysis: { files: exam!.materials.length, chars: 9000 } };
+        break;
+      case "exam_identify":
+        Object.assign(exam!, {
+          title: "Álgebra · primer trimestre",
+          subject: "Matemáticas",
+          topics: ["Ecuaciones", "Signos"],
+        });
+        response = {
+          exam,
+          identity: { title: exam!.title, subject: exam!.subject, topics: exam!.topics },
+        };
         break;
       case "exam_get":
         response = { exam };
@@ -297,17 +314,25 @@ test("create, persist, reopen, study, simulate, submit, reopen result and practi
     page.getByRole("heading", { name: "Exámenes", exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("link", { name: "Añadir examen", exact: true })
+    .getByRole("link", { name: "Crear examen", exact: true })
     .first()
     .click();
-  await page.getByLabel("Nombre del examen").fill("Álgebra · primer trimestre");
-  await page.getByLabel("Asignatura", { exact: true }).fill("Matemáticas");
-  await page.getByLabel("Fecha del examen").fill("2026-10-20");
-  await page.getByRole("button", { name: "Siguiente: materiales" }).click();
-  await page.getByLabel("Temas", { exact: true }).fill("Ecuaciones\nSignos");
-  await page.getByLabel("¿Qué te cuesta más?").fill("Los signos");
-  await page.getByRole("button", { name: "Revisar mi examen" }).click();
-  await page.getByRole("button", { name: "Generar plan de estudio" }).click();
+  // Full-screen wizard (PR 3): notes → date → grade → the AI names it.
+  await page.getByRole("button", { name: "Empezar" }).click();
+  await page.locator("input[type=file]:not([capture])").setInputFiles({
+    name: "Ecuaciones.pdf",
+    mimeType: "application/pdf",
+    buffer: Buffer.from("%PDF-1.4\n"),
+  });
+  await expect(page.getByText(/^Listo/)).toBeVisible();
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page.locator("[data-day][tabindex='0']").click();
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Álgebra · primer trimestre", level: 3 })).toBeVisible();
+  await page.getByRole("button", { name: "Crear mi ruta" }).click();
+  await expect(page.getByRole("heading", { name: /Tu examen está listo/ })).toBeVisible();
+  await page.goto(`/exams/${state.exams[0].id}`);
   await expect(
     page.getByRole("heading", {
       name: "Álgebra · primer trimestre",

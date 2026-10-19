@@ -99,6 +99,18 @@ export const PAIRS = [
   ["text-secondary", "home-halo", 4.5, "Saludo sobre el halo de Inicio"],
   ["switch-off", "surface", 3, "Interruptor apagado"],
   ["primary", "surface", 3, "Interruptor encendido"],
+  // New style (PROMPT_EXAMEN_ESTILO.md §2): text on saturated fills —
+  // pop screens, stickers and 3D pills. 4.5:1 so even small labels pass.
+  ["on-pop-blue", "pop-blue", 4.5, "Texto sobre azul eléctrico"],
+  ["on-pop-yellow", "pop-yellow", 4.5, "Texto sobre amarillo"],
+  ["on-pop-orange", "pop-orange", 4.5, "Texto sobre naranja"],
+  ["on-pop-red", "pop-red", 4.5, "Texto sobre rojo"],
+  ["on-pop-purple", "pop-purple", 4.5, "Texto sobre morado"],
+  ["on-pop-green", "pop-green", 4.5, "Texto sobre verde"],
+  ["on-pop-lime", "pop-lime", 4.5, "Texto sobre lima"],
+  ["on-primary", "pop-blue", 4.5, "Botón blanco sobre azul (texto)"],
+  // On a pop fill the focus ring takes the fill's text colour (.pop-* sets
+  // --focus: var(--on-pop-*)), so the pairs above also cover the ring (≥ 3:1).
 ];
 
 /** @param {{ light: Record<string, string>, dark: Record<string, string> }} tokens */

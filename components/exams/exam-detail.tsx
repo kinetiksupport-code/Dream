@@ -14,12 +14,15 @@ import {
   type ExamSession,
 } from "@/lib/exam-plans";
 import { ErrorNotice, Materials, useExam } from "./exam-ui";
+import { SubjectObject } from "../subject-object";
 import {
   DaysChip,
   ExamDetailSkeleton,
   ExamPage,
   FailedState,
   LoadError,
+  OBJECT_SIZE_DETAIL,
+  OBJECT_TRANSITION,
   PlanRows,
   PreparingState,
   examStyles as s,
@@ -165,7 +168,7 @@ export function ExamDetail({
     }
   }
 
-  if (loading && !exam) return <ExamDetailSkeleton />;
+  if (loading && !exam) return <ExamDetailSkeleton examId={id} />;
   if (!exam)
     return (
       <LoadError
@@ -179,10 +182,24 @@ export function ExamDetail({
     ? { href: `/exams/${id}`, label: exam.title }
     : { href: "/exams", label: "Exámenes" };
   const subtitle = `${exam.subject} · ${examDateLabel(exam.exam_date)}`;
+  // Objeto de la asignatura junto al título: el mismo que en la tarjeta del
+  // historial, que viaja hasta aquí con la transición de página.
+  const object = plan ? undefined : (
+    <SubjectObject
+      subject={exam.subject}
+      size={OBJECT_SIZE_DETAIL}
+      style={{ viewTransitionName: OBJECT_TRANSITION }}
+    />
+  );
 
   if (exam.status !== "ready" && exam.status !== "completed")
     return (
-      <ExamPage title={exam.title} subtitle={subtitle} back={back}>
+      <ExamPage
+        title={exam.title}
+        subtitle={subtitle}
+        back={back}
+        object={object}
+      >
         {exam.status === "preparing" ? (
           <PreparingState
             topics={exam.topics}
@@ -235,7 +252,7 @@ export function ExamDetail({
 
   const based = basedOn(exam);
   return (
-    <ExamPage title={exam.title} back={back}>
+    <ExamPage title={exam.title} back={back} object={object}>
       <section className={s.hero} aria-labelledby="exam-hero" id="simulacro">
         <div className={s.heroTop}>
           <div>

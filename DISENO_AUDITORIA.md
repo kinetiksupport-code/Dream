@@ -190,3 +190,26 @@ Capturas en `docs/diseno/referencias/`. Son solo las páginas públicas. Las app
 2. **Titulares:** ¿Inter, como en Claude Design, o Plus Jakarta Sans?
 3. **Hook de parada:** avisaría si hay cambios de interfaz sin actualizar `DISENO_EVIDENCIA.md`. Es opcional.
 4. **Racha de estudio diaria y «primero prueba, luego regístrate»:** ¿se hacen?
+
+## 8. Estilo nuevo y transiciones (17/10/2026)
+
+La auditoría de `app/globals.css` y `components/shell.tsx` está en `docs/diseno/estilo/README.md`. Incluye qué había, qué faltaba y qué cambia. Hallazgos nuevos:
+
+- Los tokens oscuros están duplicados en dos bloques. Ahora una prueba comprueba que coinciden.
+- Al volver con Atrás no se restauraba el scroll de `.workspace-main`. Ya está resuelto.
+- El anillo de foco azul no se ve sobre los fondos saturados. Ahora usa el color del texto de cada fondo.
+
+### Exámenes, historial (19/10/2026, PR 2)
+
+- Resuelto: los exámenes con la fecha pasada salían primeros en «Próximos». Ahora van en «Anteriores».
+- Resuelto: no se podía borrar ni marcar como hecho desde la lista. Ahora hay una hoja con las dos acciones y Deshacer.
+- Resuelto: el estado era una frase gris; ahora es una pegatina con color y texto.
+- Pendiente de Carlos: desplegar `exam_delete` (ver `docs/diseno/examenes-historial/README.md`).
+
+### Asistente de crear examen (19/10/2026, PR 3)
+
+- Resuelto: el formulario largo (nombre, asignatura, temas, dificultades, minutos) pasa a ser un asistente de una pregunta por pantalla; la IA pone nombre, asignatura y temas.
+- Resuelto: `/exams/new` es pantalla completa, sin menú ni barra.
+- Resuelto: la fecha usaba `input type=date` nativo; ahora es un calendario propio accesible.
+- Encontrado y arreglado en la migración: `exam_route_regenerate` no estaba admitida por `dream_admit`.
+- Pendiente: recortar y enderezar fotos; modelos 3D (PR 6).

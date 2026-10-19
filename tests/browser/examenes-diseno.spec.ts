@@ -121,10 +121,12 @@ const STATES: { name: string; path: string; opts?: Opts; ready?: (p: Page) => Pr
   { name: "plan", path: `/exams/${eid}/plan` },
   { name: "nuevo", path: "/exams/new" },
   {
-    name: "nuevo-errores",
+    name: "nuevo-apuntes",
     path: "/exams/new",
-    ready: (p) =>
-      p.getByRole("button", { name: /Siguiente: materiales/ }).click(),
+    ready: async (p) => {
+      await p.getByRole("button", { name: "Empezar" }).click();
+      await p.getByRole("heading", { name: "Primero, sube tus apuntes" }).waitFor();
+    },
   },
   {
     name: "preparando",
@@ -178,13 +180,11 @@ test.describe("examenes capturas", () => {
 test.describe("examenes microinteracciones", () => {
   test.skip(!!OUT, "screenshots only");
 
-  test("card: rest, hover lift + arrow, press .97, keyboard focus", async ({ page }) => {
+  test("card: rest, hover lift, press .97, keyboard focus", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await open(page, "lista");
     const card = page.getByRole("link", { name: /Álgebra · primer trimestre/ });
     const t = () => card.evaluate((el) => getComputedStyle(el).transform);
-    const arrow = () =>
-      card.evaluate((el) => getComputedStyle(el.querySelector("svg:last-child")!).transform);
     const lift = () =>
       card.evaluate((el) => getComputedStyle(el, "::after").opacity);
     await page.waitForTimeout(500); // entrance finished
@@ -193,7 +193,6 @@ test.describe("examenes microinteracciones", () => {
     await card.hover();
     await page.waitForTimeout(350);
     expect(await t()).toBe("matrix(1, 0, 0, 1, 0, -2)");
-    expect(await arrow()).toBe("matrix(1, 0, 0, 1, 4, 0)");
     expect(await lift()).toBe("1");
     await page.mouse.down();
     await page.waitForTimeout(250);
@@ -210,7 +209,7 @@ test.describe("examenes microinteracciones", () => {
     expect(outline).toBe("solid 2");
   });
 
-  test("reduced motion: no lift, no arrow shift, no press scale", async ({ page }) => {
+  test("reduced motion: no lift, no press scale, cards only fade", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width: 1280, height: 900 });
     await open(page, "lista");
@@ -220,29 +219,28 @@ test.describe("examenes microinteracciones", () => {
     await page.waitForTimeout(250);
     const t = await card.evaluate((el) => ({
       card: getComputedStyle(el).transform,
-      arrow: getComputedStyle(el.querySelector("svg:last-child")!).transform,
-      anim: getComputedStyle(el).animationName,
+      anim: getComputedStyle(el.closest("article")!).animationName,
+      float: getComputedStyle(el.querySelector(".subject-object img")!).animationName,
     }));
     await page.mouse.up();
-    expect(t).toEqual({ card: "none", arrow: "none", anim: expect.stringMatching(/cardFade/) });
+    expect(t).toEqual({ card: "none", anim: expect.stringMatching(/cardFade/), float: "none" });
   });
 
-  test("days to the exam: number in .num, icon and words, warning when ≤ 3 days", async ({ page }) => {
+  test("countdown in words, status sticker with words and dates in order", async ({ page }) => {
     await open(page, "lista");
-    const normal = page.getByRole("link", { name: /Álgebra/ }).locator("span[class*=days]");
-    await expect(normal).toContainText("12 días");
-    await expect(normal.locator(".num")).toHaveText("12");
-    await expect(normal.locator("svg")).toHaveCount(1);
-    const soon = page.getByRole("link", { name: /Comentario de texto/ }).locator("span[class*=days]");
-    await expect(soon).toHaveAttribute("data-soon", "true");
-    await expect(soon).toContainText("2 días");
-    await expect(soon.locator("svg")).toHaveCount(1);
+    const algebra = page.getByRole("link", { name: /Álgebra/ });
+    await expect(algebra).toContainText("Faltan 12 días");
+    await expect(algebra.locator(".sticker")).toHaveText("Listo");
+    const soon = page.getByRole("link", { name: /Comentario de texto/ });
+    await expect(soon.locator("[data-soon]")).toContainText("Faltan 2 días");
     // Ordered by date: the nearest exam first
-    await expect(page.locator("a[class*=examCard]").first()).toContainText("Comentario de texto");
+    await expect(page.locator("article").first()).toContainText("Comentario de texto");
     // A preparing exam says so in words
-    await expect(page.getByRole("link", { name: /Célula y tejidos/ })).toContainText(
-      "Dream está preparando el plan",
+    await expect(page.getByRole("link", { name: /Célula y tejidos/ }).locator(".sticker")).toHaveText(
+      "Preparando",
     );
+    // Units completed as a progress bar with words
+    await expect(algebra.getByRole("progressbar")).toHaveAttribute("aria-valuetext", "1 de 4 unidades");
   });
 
   test("skeleton has the list's shape and is announced", async ({ page }) => {
@@ -251,53 +249,39 @@ test.describe("examenes microinteracciones", () => {
     const sk = page.locator("[aria-busy=true]");
     await expect(sk).toBeVisible();
     await expect(sk.getByRole("status")).toHaveText("Cargando tus exámenes");
-    expect(await sk.locator("[class*=boneCard]").count()).toBe(2);
+    expect(await sk.locator("[class*=boneCard]").count()).toBe(3);
   });
 
-  test("empty state: inline SVG and a clear button", async ({ page }) => {
+  test("empty state: the Orb, the sentence and one clear «Crear examen»", async ({ page }) => {
     await open(page, "lista-vacia");
-    await expect(page.getByRole("heading", { name: "Aún no tienes exámenes" })).toBeVisible();
-    await expect(page.locator("section svg[aria-hidden=true]").first()).toBeVisible();
-    const cta = page.getByRole("link", { name: "Preparar un examen" });
+    await expect(page.getByRole("heading", { name: "Aún no tienes ningún examen" })).toBeVisible();
+    await expect(page.locator("section svg.orb")).toBeVisible();
+    const cta = page.getByRole("link", { name: "Crear examen" });
+    await expect(cta).toHaveCount(1);
     await expect(cta).toHaveAttribute("href", "/exams/new");
     expect((await cta.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   });
 
-  test("new exam: visible labels, errors with cause beside the field, focus moves there", async ({ page }) => {
-    await open(page, "nuevo");
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    const title = page.getByLabel("Nombre del examen");
-    await expect(title).toBeFocused();
-    await expect(title).toHaveAttribute("aria-invalid", "true");
-    await expect(title).toHaveAccessibleDescription(/Escribe un nombre/);
-    await expect(page.getByLabel("Asignatura")).toHaveAccessibleDescription(/Elige una asignatura/);
-    await expect(page.getByLabel("Fecha del examen")).toHaveAccessibleDescription(/Elige el día/);
-    await title.fill("Álgebra");
-    await expect(title).not.toHaveAttribute("aria-invalid", "true");
-    await page.getByLabel("Fecha del examen").fill("2020-01-10");
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    await expect(page.getByLabel("Fecha del examen")).toHaveAccessibleDescription(
-      "Elige hoy o un día futuro.",
-    );
+  test("new exam (wizard): date error in words, announced, focus on the step title", async ({ page }) => {
+    await setup(page, { exam: { status: "draft", exam_date: "", units: [] } });
+    await page.goto(`/exams/new?id=${eid}&paso=fecha`);
+    const heading = page.getByRole("heading", { name: /¿Cuándo es tu examen ?\?/ });
+    await expect(heading).toBeVisible();
+    await page.getByRole("button", { name: "Continuar", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Elige el día de tu examen." })).toBeVisible();
+    // Past days can't be chosen.
+    await expect(page.locator("[data-day]:disabled").first()).toBeAttached();
   });
 
-  test("new exam: loading button has aria-busy and is disabled", async ({ page }) => {
+  test("new exam (wizard): Empezar has aria-busy and is disabled while creating", async ({ page }) => {
     await setup(page, { delay: { exam_create: 1500 } });
     await page.goto("/exams/new");
-    await page.getByLabel("Nombre del examen").fill("Álgebra");
-    await page.getByLabel("Asignatura").fill("Matemáticas");
-    await page.getByLabel("Fecha del examen").fill(inDays(10));
-    await expect(page.getByText("Quedan 10 días.")).toBeVisible();
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    const busy = page.getByRole("button", { name: /Guardando/ });
+    await page.getByRole("button", { name: "Empezar" }).click();
+    const busy = page.getByRole("button", { name: "Empezar" });
     await expect(busy).toHaveAttribute("aria-busy", "true");
     await expect(busy).toBeDisabled();
-    await expect(page.getByLabel("Temas", { exact: true })).toBeVisible();
-    // Step 2 requires topics, with the cause beside the field
-    await page.getByRole("button", { name: /Revisar mi examen/ }).click();
-    await expect(page.getByLabel("Temas", { exact: true })).toHaveAccessibleDescription(
-      /Añade al menos un tema/,
-    );
+    await expect(page.getByRole("heading", { name: "Primero, sube tus apuntes" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Primero, sube tus apuntes" })).toBeFocused();
   });
 
   test("touch targets: 44 px on list, detail and form", async ({ page }) => {
@@ -315,7 +299,7 @@ test.describe("examenes microinteracciones", () => {
             const r = el.getBoundingClientRect();
             const after = getComputedStyle(el, "::after");
             const extra = after.content !== "none" ? 8 : 0;
-            return r.height + extra < 44 && !el.closest("[class*=examCard]");
+            return r.height + extra < 44 && !el.closest("article");
           })
           .map((el) => `${el.tagName} «${(el.textContent || el.getAttribute("aria-label") || "").trim().slice(0, 30)}» ${Math.round(el.getBoundingClientRect().height)}`),
       );
@@ -405,7 +389,7 @@ test.describe("examenes microinteracciones", () => {
       };
       requestAnimationFrame(tick);
     });
-    const cards = page.locator("a[class*=examCard]");
+    const cards = page.locator("a[class*=hLink]");
     for (let r = 0; r < 3; r++)
       for (let i = 0; i < (await cards.count()); i++) {
         await cards.nth(i).hover();
@@ -433,7 +417,7 @@ test.describe("examenes grabacion", () => {
     });
     const page = await ctx.newPage();
     await open(page, "lista");
-    const cards = page.locator("a[class*=examCard]");
+    const cards = page.locator("a[class*=hLink]");
     for (let i = 0; i < 3; i++) {
       await cards.nth(i).hover();
       await page.waitForTimeout(700);
@@ -454,13 +438,7 @@ test.describe("examenes grabacion", () => {
     await setup(page, { delay: { exam_create: 1200 } });
     await page.goto("/exams/new");
     await page.waitForTimeout(500);
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
-    await page.waitForTimeout(1200);
-    await page.getByLabel("Nombre del examen").fill("Álgebra · primer trimestre");
-    await page.getByLabel("Asignatura").fill("Matemáticas");
-    await page.getByLabel("Fecha del examen").fill(inDays(12));
-    await page.waitForTimeout(500);
-    await page.getByRole("button", { name: /Siguiente: materiales/ }).click();
+    await page.getByRole("button", { name: "Empezar" }).click();
     await page.waitForTimeout(1600);
     await page.unrouteAll({ behavior: "ignoreErrors" });
     await setup(page, {

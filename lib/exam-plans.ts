@@ -1,6 +1,8 @@
 import { callDream, type DreamAction } from "./dream-api";
 import type { AnswerValue, TestResult } from "./types";
 import type { StoredRoute } from "../supabase/functions/dream-api/route-plan.mjs";
+/** Materials per exam; the server enforces it in dream_exam_link_material. */
+export const MAX_EXAM_MATERIALS = 20;
 export interface ExamUnit {
   id: string;
   position: number;
@@ -67,6 +69,12 @@ export interface DreamExam extends ExamFields {
   route_source?: "ai" | "auto" | null;
   route_updated_at?: string | null;
   route_regenerated_on?: string | null;
+  /** Asistente (migración 20261018170000): nota objetivo 0–10 en saltos de 0,5. */
+  target_grade?: number | null;
+  /** Paso del asistente en el que va el borrador. */
+  wizard_step?: "upload" | "date" | "grade" | "identify" | null;
+  /** Ya contestó «Continuar con estos» al aviso de pocos apuntes. */
+  few_notes_ack?: boolean;
 }
 export interface ExamIndex extends ExamFields {
   id: string;
@@ -148,4 +156,58 @@ export function countdownLabel(iso: string) {
 }
 export function sessionPath(examId: string, sessionId: string) {
   return `/exams/${examId}/sessions/${sessionId}`;
+}
+
+// ---------------------------------------------------------------- Historial
+// Pantalla Exámenes (PROMPT_EXAMEN_ESTILO.md §4). Lógica pura, probada en
+// tests/exams.test.ts.
+
+/** Pegatina de estado: color Y texto (nunca solo color). */
+export const STATUS_STICKER: Record<
+  DreamExam["status"],
+  { label: string; tone: "yellow" | "purple" | "green" | "red" | "blue" }
+> = {
+  draft: { label: "Sin terminar", tone: "yellow" },
+  preparing: { label: "Preparando", tone: "purple" },
+  ready: { label: "Listo", tone: "green" },
+  failed: { label: "Algo falló", tone: "red" },
+  completed: { label: "Hecho", tone: "blue" },
+};
+
+/** «Faltan 12 días», «Es mañana», «Pasó hace 3 días»… */
+export function countdownText(iso: string | null | undefined, now = new Date()) {
+  const days = iso ? daysUntil(iso, now) : null;
+  if (days === null) return "Sin fecha";
+  if (days === 0) return "Es hoy";
+  if (days === 1) return "Es mañana";
+  if (days === -1) return "Fue ayer";
+  if (days < 0) return `Pasó hace ${-days} días`;
+  return `Faltan ${days} días`;
+}
+
+/**
+ * Próximos (por fecha, los sin fecha al final) y Anteriores (fecha pasada o
+ * hechos, el más reciente primero).
+ */
+export function groupExams<T extends { status: string; exam_date: string | null }>(
+  items: T[],
+  now = new Date(),
+) {
+  const days = (e: T) => (e.exam_date ? daysUntil(e.exam_date, now) : null);
+  const past = (e: T) => {
+    const d = days(e);
+    return e.status === "completed" || (d !== null && d < 0);
+  };
+  const upcoming = items
+    .filter((e) => !past(e))
+    .sort((a, b) => (days(a) ?? 1e6) - (days(b) ?? 1e6));
+  const previous = items
+    .filter(past)
+    .sort((a, b) => (days(b) ?? -1e6) - (days(a) ?? -1e6));
+  return { upcoming, previous };
+}
+
+/** Nombre visible de un examen: los borradores aún no tienen. */
+export function examTitle(exam: { title: string }) {
+  return exam.title.trim() || "Examen sin nombre";
 }

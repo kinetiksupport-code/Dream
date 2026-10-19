@@ -85,6 +85,7 @@ test("navigation maps every design screen to its route", () => {
   assert.equal(isFocusRoute("/tests/abc"), true);
   assert.equal(isFocusRoute("/exams/a/sessions/b"), true);
   assert.equal(isFocusRoute("/exams/a"), false);
+  assert.equal(isFocusRoute("/exams/new"), true);
 });
 
 test("history groups by Hoy, Ayer, Esta semana, Este mes and Más antiguas", () => {
