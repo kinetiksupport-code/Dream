@@ -137,6 +137,10 @@ function TasksLayout({
         className={`panel ${styles.solve}`}
         aria-label="Resolver un ejercicio"
       >
+        {/* Decorative sticker (estilo nuevo): the panel's one colour touch. */}
+        <span className={`${styles.sticker} pop-in`} aria-hidden="true">
+          <PencilIcon />
+        </span>
         <p className={styles.solveText}>
           Haz una foto del ejercicio o súbelo. Dream te guía paso a paso, sin
           darte todo hecho.
@@ -227,7 +231,7 @@ function TaskLists({
           Pendientes
         </h2>
         {pending.length ? (
-          <ul className={styles.list}>
+          <ul className={`${styles.list} stagger`}>
             {pending.map((task) => (
               <PendingRow
                 task={task}
@@ -240,7 +244,9 @@ function TaskLists({
           </ul>
         ) : (
           <p className={styles.allDone}>
-            <CheckIcon size={18} />
+            <span className={`${styles.allDoneIcon} pop-in`} aria-hidden="true">
+              <CheckIcon size={18} />
+            </span>
             Lo tienes todo al día.
           </p>
         )}
@@ -353,7 +359,9 @@ function EmptyTasks() {
   return (
     <div className={`empty-state ${styles.empty}`}>
       <EmptyIllustration />
-      <h2>Aún no tienes tareas</h2>
+      <h2>
+        Aún no tienes <span className="marker">tareas</span>
+      </h2>
       <p>Prepara un examen y Dream lo divide en tareas cortas.</p>
       <Link className="primary press" href="/exams/new">
         Preparar un examen
@@ -429,6 +437,27 @@ function EmptyIllustration() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+    </svg>
+  );
+}
+
+/** Pencil for the decorative sticker (inline: no icon library in this chunk). */
+function PencilIcon() {
+  return (
+    <svg
+      width="28"
+      height="28"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      focusable="false"
+    >
+      <path d="M4 20l1-4L16 5l3 3L8 19z" />
+      <path d="M14 7l3 3" />
+      <path d="M13 21h7" />
     </svg>
   );
 }

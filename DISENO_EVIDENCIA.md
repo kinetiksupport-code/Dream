@@ -113,6 +113,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Exámenes: historial y «Crear examen» (PR 2) | `docs/diseno/examenes-historial/antes/*` | `docs/diseno/examenes-historial/despues/*` | `examenes-historial-escritorio.webm`, `examenes-historial-movil.webm` | #34 |
 | Asistente de crear examen a pantalla completa (PR 3) | `docs/diseno/asistente/antes/*` | `docs/diseno/asistente/despues/*` | `asistente-movil.webm`, `asistente-escritorio.webm` | este PR |
 | Subida desde el móvil con QR (`/subir#<token>`) | — (pantalla nueva) | `docs/diseno/subir/*` | `subir.webm` | PR 5 |
+| Estilo nuevo · Tareas (PR 7) | `docs/diseno/estilo-tareas/antes/*` | `docs/diseno/estilo-tareas/despues/*` | — (pruebas en `tareas.spec.ts` › «estilo») | design/estilo-tareas |
 
 Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `README.md` con la tabla Antes | Después | Por qué. Nada está marcado como terminado sin capturas y pruebas. Lo que no se pudo comprobar (móviles reales, lectores de pantalla) se dice en cada PR.
 
@@ -123,3 +124,17 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
 - **libraries-dev:** espera de más de 2 s (procesar un archivo) → la regla pide un indicador de «pensando»; se usa el orbe de marca con `orb-pulsing` en vez de `thinking-orbs` (no se instala nada sin OK). Sin `border-beam`: la pantalla ya tiene un solo foco y no se apilan efectos.
 - Panel QR del ordenador (`components/exams/qr-panel.tsx`): aún sin capturas; no está montado en ninguna pantalla hasta que el asistente nuevo lo integre. `docs/diseno/subir/qr-ejemplo.svg` es un QR de ejemplo generado con `lib/qr.ts` para escanearlo con un móvil real.
 
+
+### Estilo nuevo · Tareas (PR 7, `design/estilo-tareas`)
+
+- **Qué es:** una lista de trabajo, con estilo sobrio y toques de color. El CSS está en la sección `=== Estilo nuevo · Tareas ===` de `components/tasks-view.module.css`. El detalle está en `docs/diseno/estilo-tareas/README.md`.
+- **emil-design-eng:**
+  - Las filas pendientes entran con `.stagger` (40 ms, 8 como máximo).
+  - El tick de la casilla usa el muelle suave (250 ms, desde 0,9).
+  - La pegatina entra con `pop-in`.
+  - Pulsación 0,97 y hover solo con puntero fino. Reducido: solo fundido.
+- **apple-design:**
+  - `color.md`: pegatina amarilla con un lápiz (decorativa, tinta 12,15:1 y 9,47:1) y pegatina lima en «Lo tienes todo al día» (15,62:1 y 12,86:1).
+  - `branding.md`: una pegatina por pantalla.
+  - `accessibility.md`: 44 px y foco visible en la píldora «Resolver con Dream».
+- **libraries-dev:** sin efectos. No hay esperas largas.
