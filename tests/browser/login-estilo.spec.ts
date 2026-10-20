@@ -105,7 +105,7 @@ test("registration: mascot, italic heading and the 3D «Empezar»", async ({
   const screen = SCREENS.find((s) => s.name === "login-registro")!;
   await mock(page, { profile: screen.profile });
   await page.goto("/chat");
-  const heading = page.getByRole("heading", { name: "Antes de empezar" });
+  const heading = page.getByRole("heading", { name: /Hola! Soy Dream/ });
   await expect(heading).toHaveCSS("font-style", "italic");
   const submit = page.getByRole("button", { name: "Empezar" });
   await expect(submit).toHaveClass(/button-3d/);
@@ -132,7 +132,7 @@ test("reduced motion: login and registration only fade", async ({ page }) => {
   const screen = SCREENS.find((s) => s.name === "login-registro")!;
   await mock(page, { profile: screen.profile });
   await page.goto("/chat");
-  await page.getByRole("heading", { name: "Antes de empezar" }).waitFor();
+  await page.getByRole("heading", { name: /Hola! Soy Dream/ }).waitFor();
   for (const a of await keyframeProps(page))
     if (!a.loop) expect(a.moves, a.name).toBe(false);
 });
