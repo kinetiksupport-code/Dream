@@ -6,6 +6,7 @@ import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
+import { AiPermission, WelcomeProfile } from "@/components/welcome/profile-settings";
 import { UsageLimits } from "@/components/usage-limits";
 import { useDream } from "@/components/providers";
 import { Sticker } from "@/components/sticker";
@@ -193,9 +194,13 @@ export default function Settings() {
             </div>
           </dl>
         </div>
-        <p className="page-intro">
-          Tu nombre y tu correo vienen de tu cuenta de Google.
-        </p>
+        {profile?.nickname === undefined ? (
+          <p className="page-intro">
+            Tu nombre y tu correo vienen de tu cuenta de Google.
+          </p>
+        ) : (
+          <WelcomeProfile />
+        )}
       </section>
 
       <section className="group" aria-labelledby="theme-title">
@@ -261,6 +266,7 @@ export default function Settings() {
         <p className="page-intro">
           Tus apuntes y conversaciones son solo tuyos.
         </p>
+        <AiPermission />
         <div className="button-row">
           <button
             type="button"

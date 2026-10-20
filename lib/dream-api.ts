@@ -46,7 +46,10 @@ export type DreamAction =
   | "test_get"
   | "test_check_answer"
   | "test_submit"
-  | "consent";
+  | "consent"
+  | "consent_withdraw"
+  | "onboarding_save"
+  | "onboarding_age";
 export class DreamApiError extends Error {
   constructor(
     message: string,
@@ -248,29 +251,63 @@ export async function getDreamProfile(signal?: AbortSignal) {
     email: p.email ?? "",
     display_name: p.display_name ?? "",
   };
-  // Consent fields only exist once dream-api sends them (docs/CONSENTIMIENTO.md).
-  // Copied only when present, so today's server keeps the gate off.
+  // Consent and welcome fields only exist once dream-api sends them
+  // (docs/CONSENTIMIENTO.md). Copied only when present, so today's server
+  // keeps the welcome off.
   if (p.ai_consent_at !== undefined) {
     profile.ai_consent_at = p.ai_consent_at ?? null;
+    profile.terms_accepted_at = p.terms_accepted_at ?? null;
+    profile.terms_version = p.terms_version ?? null;
     profile.age_band = p.age_band ?? null;
-    profile.guardian_required = p.guardian_required === true;
-    profile.guardian_confirmed_at = p.guardian_confirmed_at ?? null;
+    profile.nickname = p.nickname ?? null;
+    profile.interests = Array.isArray(p.interests)
+      ? p.interests.filter((x): x is string => typeof x === "string")
+      : [];
+    profile.onboarding_completed = p.onboarding_completed === true;
+    profile.onboarding_step =
+      typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
   }
   return { profile, service_ready: data.service_ready ?? true };
 }
 
-/**
- * Saves the sign-up consent (Parte D).
- *
- * TODO(dream-api): the `consent` action does not exist yet. It is designed in
- * docs/CONSENTIMIENTO.md and needs Carlos's OK to deploy. Until then the
- * welcome screen never shows (see needsConsent), so this is never called in
- * production; the browser tests answer it with a mock.
+/*
+ * Welcome actions (prompt «bienvenida» §4.4). TODO(dream-api): they are
+ * designed in docs/CONSENTIMIENTO.md and need Carlos's OK to deploy. Until
+ * then the welcome never shows (see consentGate), so they are never called in
+ * production; the browser tests answer them with a mock.
  */
+
+/** Steps 2–4: name, hobbies and nickname, plus the next step to resume at. */
+export function saveOnboarding(input: {
+  /** Next welcome step; left out when editing from Ajustes › Perfil. */
+  step?: number;
+  display_name?: string;
+  interests?: string[];
+  nickname?: string;
+}) {
+  return callDream<{ profile?: unknown }>("onboarding_save", input);
+}
+
+/**
+ * Step 5: the server checks the age. Under 14 it erases what the welcome
+ * saved (name, hobbies, nickname) and keeps no birth date; 14 or older it
+ * keeps nothing yet (the date is saved with the consent).
+ */
+export function checkAge(birth_date: string) {
+  return callDream<{ allowed: boolean }>("onboarding_age", { birth_date });
+}
+
+/** Ajustes › Privacidad: the account stays, without chat (docs/CONSENTIMIENTO.md §5). */
+export function withdrawConsent() {
+  return callDream<{ profile?: unknown }>("consent_withdraw", { kind: "ai" });
+}
+
+/** Step 6: both boxes, with the version of the terms shown. */
 export function saveConsent(input: {
-  birth_date: string;
-  guardian_confirmed: boolean;
+  birth_date?: string;
   ai_consent: boolean;
+  terms_accepted: boolean;
+  terms_version: string;
 }) {
   return callDream<{ profile?: unknown }>("consent", input);
 }

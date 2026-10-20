@@ -1,0 +1,493 @@
+/* === Bienvenida para usuarios nuevos (prompt «bienvenida» §4.2) ============
+   Lo propio de la bienvenida; el marco, los fondos, la barra de arriba, el
+   pie y la celebración vienen del asistente de crear examen
+   (components/exams/wizard/wizard.module.css). Tokens de globals.css.
+   Movimiento: transform y opacity, 120–250 ms, ease-out; reducido: fundidos.
+   Áreas táctiles de 44 px o más. */
+
+.page {
+  min-height: var(--viewport-height, 100dvh);
+  display: flex;
+  flex-direction: column;
+  /* A step entering from the side must never make the page scroll sideways. */
+  overflow-x: clip;
+}
+
+/* «Salir», arriba a la derecha: siempre a mano, nunca protagonista. */
+.exit {
+  min-height: var(--touch);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  color: inherit;
+  font-weight: 700;
+  font-size: var(--text-secondary-size);
+  background-color: rgba(255, 255, 255, 0.16);
+}
+[data-tone="warm"] .exit,
+[data-tone="yellow"] .exit {
+  background-color: rgba(8, 11, 20, 0.08);
+}
+
+.mascot {
+  line-height: 0;
+  margin-bottom: 8px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.label {
+  font-weight: 700;
+}
+.hint {
+  margin: 0;
+  font-size: var(--text-secondary-size);
+  line-height: 1.45;
+  opacity: 0.92;
+}
+
+/* Fields on the saturated background use the normal surfaces. */
+.input,
+.bigInput {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 18px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-body);
+  transition: border-color var(--dur-fast) ease;
+}
+.bigInput {
+  min-height: 72px;
+  font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.input::placeholder,
+.bigInput::placeholder {
+  color: var(--text-secondary);
+}
+.input[aria-invalid="true"],
+.bigInput[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+.input:focus-visible,
+.bigInput:focus-visible {
+  outline: 3px solid var(--wizard-ink, var(--focus));
+  outline-offset: 3px;
+}
+
+/* Error next to its field: icon + cause on a card, never colour alone. */
+.inlineError,
+.saveError {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: var(--danger);
+  font-weight: 600;
+  font-size: var(--text-secondary-size);
+  line-height: 1.4;
+  animation: rise var(--dur-base) var(--ease) both;
+}
+.inlineError svg,
+.saveError svg {
+  flex: none;
+  margin-top: 1px;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Chips: hobbies and nickname suggestions. Selected = filled + tick, so it
+   never relies on colour alone. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0 16px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  transition:
+    transform var(--dur-press) var(--ease),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--card);
+  background: var(--card);
+  color: var(--text);
+}
+.chip:disabled {
+  opacity: 0.45;
+}
+.chipTick {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-right: -6px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.chip:not([aria-pressed]) .chipTick {
+  display: none;
+}
+.chip[aria-pressed="true"] .chipTick {
+  opacity: 1;
+  transform: none;
+}
+.chipAdd {
+  border-style: dashed;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chip:hover:not(:disabled):not([aria-pressed="true"]) {
+    background-color: rgba(255, 255, 255, 0.14);
+  }
+  .exit:hover {
+    background-color: rgba(255, 255, 255, 0.26);
+  }
+}
+.addForm {
+  display: flex;
+  gap: 10px;
+}
+.addForm .input {
+  flex: 1;
+  min-width: 0;
+}
+.addForm button {
+  min-height: 56px;
+}
+
+/* Birth date */
+.birthValue {
+  margin: 0;
+  font-size: clamp(1.5rem, 1.1rem + 2vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.wheelWrap {
+  outline: none;
+}
+.wheels {
+  display: grid;
+  grid-template-columns: 0.8fr 1.5fr 1fr;
+  gap: 8px;
+  max-width: 460px;
+}
+.wheel {
+  position: relative;
+  height: 260px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.55);
+  outline-offset: 4px;
+}
+.wheel::before {
+  /* Centre band */
+  content: "";
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 104px;
+  height: 52px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(8, 11, 20, 0.12);
+  pointer-events: none;
+}
+.wheel:focus-visible {
+  outline: 3px solid var(--on-pop-yellow);
+}
+.wheelScroller {
+  position: relative;
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  padding: 104px 0;
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+.wheelScroller::-webkit-scrollbar {
+  display: none;
+}
+.wheelItem {
+  display: grid;
+  place-items: center;
+  height: 52px;
+  scroll-snap-align: center;
+  font-size: 1.375rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-pop-yellow);
+  cursor: pointer;
+  user-select: none;
+  will-change: transform, opacity;
+}
+.wheelItem[data-settle] {
+  animation: settle var(--dur-spring) var(--ease-spring);
+}
+@keyframes settle {
+  from {
+    transform: scale(1.1);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.switchInput {
+  align-self: flex-start;
+  min-height: var(--touch);
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* «Vas a hablar con una IA»: the text and the boxes on a card, so the
+   consent reads on --card (not on the saturated blue). */
+.consent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 20px;
+  border-radius: 28px;
+  background: var(--card);
+  color: var(--text);
+}
+.consent :focus-visible {
+  outline-color: var(--focus);
+}
+.consentOrb {
+  line-height: 0;
+}
+.disclosure {
+  margin: 0;
+  font-size: var(--text-body);
+  line-height: 1.5;
+  font-weight: 500;
+}
+.consent .hint {
+  color: var(--text-secondary);
+  opacity: 1;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.optionWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The whole row is the label: tapping the text ticks the box. */
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 56px;
+  padding: 6px 16px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  cursor: pointer;
+  transition:
+    transform var(--dur-press) var(--ease),
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
+}
+.option:has(input:checked) {
+  border-color: var(--primary-ink);
+}
+.option[data-invalid="true"] {
+  border-color: var(--danger);
+}
+.option:has(input:focus-visible) {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .option:hover {
+    background-color: var(--surface-hover);
+  }
+}
+.option a {
+  padding-block: 14px;
+  color: var(--primary-ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* 44 × 44 hit area around a 24 px box. */
+.control {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+}
+.control input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.box {
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--text-secondary);
+  border-radius: 7px;
+  background: var(--bg);
+  color: var(--on-primary);
+  transition:
+    background-color var(--dur-fast) ease,
+    border-color var(--dur-fast) ease;
+}
+.box svg {
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease);
+}
+.control input:checked + .box {
+  border-color: var(--primary);
+  background: var(--primary);
+}
+.control input:checked + .box svg {
+  opacity: 1;
+  transform: none;
+}
+.option[data-invalid="true"] .box {
+  border-color: var(--danger);
+}
+.optionText {
+  padding: 10px 0;
+  font-size: var(--text-secondary-size);
+  line-height: 1.45;
+}
+
+/* «¡Listo!»: the sticker drops in once with a short spring, the sparks of
+   the exam wizard around it. Reduced motion: a fade, no drop, no sparks. */
+.celebrate {
+  min-height: 170px;
+  align-items: center;
+}
+.drop {
+  line-height: 0;
+  animation: drop var(--dur-spring) var(--ease-spring) both;
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    transform: translateY(-28px) rotate(-6deg) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop,
+  .inlineError,
+  .saveError {
+    animation: fadeIn var(--dur-page-reduced) ease-out both;
+  }
+  .celebrate > span:not(.drop) {
+    display: none;
+  }
+  .wheelItem[data-settle] {
+    animation: none;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 399.98px) {
+  .wheels {
+    gap: 6px;
+  }
+  .wheelItem {
+    font-size: 1.125rem;
+  }
+}
+
+/* Ajustes › Perfil: the same chips on the normal surfaces. */
+.plain .chip {
+  border-color: var(--border);
+  color: var(--text);
+}
+.plain .chip[aria-pressed="true"] {
+  border-color: var(--primary-ink);
+  background: var(--primary-tint);
+  color: var(--primary-ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  .plain .chip:hover:not(:disabled):not([aria-pressed="true"]) {
+    background-color: var(--surface-hover);
+  }
+}
+.plain .input {
+  border-color: var(--border);
+  background: var(--bg);
+}
+.plain .input:focus-visible {
+  outline-color: var(--focus);
+}
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+.editForm .chips {
+  max-height: min(36vh, 260px);
+  overflow-y: auto;
+  padding: 2px;
+}
+.interestsValue {
+  text-align: right;
+}
