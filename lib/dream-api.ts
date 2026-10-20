@@ -49,7 +49,13 @@ export type DreamAction =
   | "consent"
   | "consent_withdraw"
   | "onboarding_save"
-  | "onboarding_age";
+  | "onboarding_age"
+  | "syntax_state"
+  | "syntax_settings"
+  | "syntax_conventions"
+  | "syntax_next"
+  | "syntax_check"
+  | "syntax_hint";
 export class DreamApiError extends Error {
   constructor(
     message: string,

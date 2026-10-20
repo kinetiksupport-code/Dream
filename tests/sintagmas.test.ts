@@ -216,3 +216,61 @@ test("the new AI actions count against the usage limits", () => {
   for (const action of ["syntax_conventions", "syntax_next", "syntax_check"]) assert.ok(consumingActions.has(action), action);
   for (const action of ["syntax_state", "syntax_settings", "syntax_hint"]) assert.equal(consumingActions.has(action), false, action);
 });
+
+// --- Web (lib/sintagmas.ts) -------------------------------------------------
+import {
+  DESKTOP_ONLY_MESSAGE,
+  DESKTOP_QUERY,
+  commit,
+  emptyHistory,
+  markRows,
+  phaseMessage,
+  readTutorialHidden,
+  redo,
+  uncovered,
+  undo,
+  wouldCross,
+  writeTutorialHidden,
+  type Mark,
+} from "../lib/sintagmas";
+
+const m = (id: string, start: number, end: number, label: Mark["label"]): Mark => ({ id, start, end, label });
+
+test("rows: outer phrase on top, its parts below, same span phrase above part", () => {
+  const rows = markRows([m("n", 0, 1, "N"), m("sn", 0, 2, "SN"), m("det", 0, 1, "Det"), m("sv", 2, 3, "SV"), m("solo", 2, 3, "N")]);
+  assert.equal(rows.get("sn"), 0);
+  assert.equal(rows.get("sv"), 0);
+  assert.equal(rows.get("solo"), 1);
+  assert.equal(rows.get("det"), 1);
+  assert.equal(rows.get("n"), 1);
+  // Una raya gris (sin etiqueta) puede tener otras dentro.
+  const grey = markRows([m("g", 0, 3, null), m("in", 1, 2, "N")]);
+  assert.deepEqual([grey.get("g"), grey.get("in")], [0, 1]);
+});
+
+test("crossing, uncovered words and undo/redo", () => {
+  const marks = [m("a", 0, 2, "SN")];
+  assert.equal(wouldCross(marks, { start: 1, end: 3 }), true);
+  assert.equal(wouldCross(marks, { start: 0, end: 3 }), false);
+  assert.equal(wouldCross(marks, { start: 1, end: 3 }, "a"), false);
+  assert.deepEqual(uncovered(4, [m("a", 0, 2, "SN"), m("b", 2, 3, "N")]), [2, 3]);
+  let h = commit(emptyHistory(), marks);
+  h = commit(h, [...marks, m("b", 2, 3, "SV")]);
+  assert.equal(h.present.length, 2);
+  h = undo(h);
+  assert.equal(h.present.length, 1);
+  h = redo(h);
+  assert.equal(h.present.length, 2);
+  assert.equal(undo(undo(undo(h))).present.length, 0);
+  assert.equal(redo(h), h);
+});
+
+test("desktop only, positive phase messages, tolerant local backup", () => {
+  assert.equal(DESKTOP_ONLY_MESSAGE, "Esta experiencia solo se puede usar en un ordenador");
+  assert.match(DESKTOP_QUERY, /pointer: fine/);
+  assert.match(phaseMessage("write"), /^¡/);
+  assert.match(phaseMessage("options"), /afianzar/);
+  // Sin window (o con el almacenamiento bloqueado) no rompe.
+  assert.equal(readTutorialHidden(), false);
+  assert.doesNotThrow(() => writeTutorialHidden(true));
+});
