@@ -111,6 +111,10 @@ async function request(
     if (response.status === 401)
       if (typeof window !== "undefined")
         window.dispatchEvent(new Event("dream:session-expired"));
+    // The AI permission is missing (withdrawn, or new terms): the profile is
+    // read again and the welcome asks for it (docs/CONSENTIMIENTO.md §4).
+    if (code === "consent_required" && typeof window !== "undefined")
+      window.dispatchEvent(new Event("dream:consent-required"));
     throw new DreamApiError(
       message,
       response.status,

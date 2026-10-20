@@ -186,6 +186,11 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("dream:session-expired", expire);
   }, [router]);
   useEffect(() => {
+    const ask = () => void refreshProfile();
+    window.addEventListener("dream:consent-required", ask);
+    return () => window.removeEventListener("dream:consent-required", ask);
+  }, [refreshProfile]);
+  useEffect(() => {
     let saved: string | null = null;
     try {
       saved = localStorage.getItem("dream-theme");
