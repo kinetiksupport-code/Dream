@@ -295,6 +295,12 @@ test.describe("login: estados del botón de Google y mensajes", () => {
   test("disabled look while Dream is not ready", async ({ page }) => {
     await page.goto("/login");
     const button = google(page);
+    // Measure after the entrance (the button rises in with the rest).
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
+    );
     // `ready` comes from the local session at once, so force the attribute
     // the page sets before that moment and check how it looks.
     const look = await button.evaluate((el) => {

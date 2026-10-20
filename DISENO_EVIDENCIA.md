@@ -145,6 +145,17 @@ Skills releídas. Detalle en `docs/diseno/estilo-login/README.md`. El login es p
   - `branding.md`: la identidad (azul, mascota y titular) va en la pantalla de entrada. El botón de Google y el formulario son los de siempre.
 - **`libraries-dev`:** la espera de «Abriendo Google…» ya tiene su anillo, y sin `border-beam` porque dura poco. No se instalan paquetes.
 
+## Login animado y transición desde la landing (20/10/2026, entrega 3 del encargo «landing, login y bienvenida»)
+
+Skills cargadas de nuevo. Detalle en `docs/diseno/login-animado/README.md`.
+
+| Qué | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|
+| El orbe viaja de la landing al login | *Spatial consistency* y *Use blur/crossfade… one transformation*: el mismo objeto continúa, no aparece otro. 280 ms, `ease-out` fuerte (`--ease`), dentro de 200–300 ms. | `motion.md`: movimiento con propósito, breve, y nunca el único portador de significado (sin la API se navega igual). | `lib/orb-transition.ts`, `components/orb-link.tsx`, `globals.css › dream-orb` |
+| Entrada escalonada del login | *Stagger 30–80 ms*: pegatina, titular, texto, botón y enlaces, 40 ms entre cada uno; `backwards` para no pisar el `scale(0.97)` de `.press`. *Stagger is decorative — never block interaction*: el botón se puede pulsar desde el primer fotograma. | `launching.md`: el login sale al instante; nada espera a la animación. | `app/login/login.module.css` |
+| El error no empuja de golpe | *Preventing jarring changes*: lo de debajo se desliza a su sitio (FLIP con `transform`, 200 ms). Reducido: sin deslizamiento. | `feedback.md`: el error dice qué pasó y ofrece «Volver a intentarlo» donde se mira. | `app/login/page.tsx` |
+| Movimiento reducido | Sin viaje ni deslizamiento; la entrada es un fundido de 120 ms. | `accessibility.md › Motion`. | `orb-transition.ts › canTravel`, `login.module.css` |
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
