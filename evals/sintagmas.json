@@ -1,0 +1,2002 @@
+{
+ "description": "40 frases analizadas a mano (convenciones estándar: SN, SV, SAdj, SAdv, SPrep, Det, N, E). Las marcadas como doubtful las revisa Carlos o un profesor.",
+ "version": 1,
+ "sentences": [
+  {
+   "id": 1,
+   "text": "El perro ladra.",
+   "bracket": "[SN [Det El] [N perro]] [SV [N ladra]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El perro",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "perro"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "ladra",
+     "children": [
+      {
+       "label": "N",
+       "text": "ladra"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 2,
+   "text": "Marta canta.",
+   "bracket": "[SN [N Marta]] [SV [N canta]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Marta",
+     "children": [
+      {
+       "label": "N",
+       "text": "Marta"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "canta",
+     "children": [
+      {
+       "label": "N",
+       "text": "canta"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 3,
+   "text": "Los niños juegan en el parque.",
+   "bracket": "[SN [Det Los] [N niños]] [SV [N juegan] [SPrep [E en] [SN [Det el] [N parque]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Los niños",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Los"
+      },
+      {
+       "label": "N",
+       "text": "niños"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "juegan en el parque",
+     "children": [
+      {
+       "label": "N",
+       "text": "juegan"
+      },
+      {
+       "label": "SPrep",
+       "text": "en el parque",
+       "children": [
+        {
+         "label": "E",
+         "text": "en"
+        },
+        {
+         "label": "SN",
+         "text": "el parque",
+         "children": [
+          {
+           "label": "Det",
+           "text": "el"
+          },
+          {
+           "label": "N",
+           "text": "parque"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 4,
+   "text": "Mi hermana lee un libro.",
+   "bracket": "[SN [Det Mi] [N hermana]] [SV [N lee] [SN [Det un] [N libro]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Mi hermana",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Mi"
+      },
+      {
+       "label": "N",
+       "text": "hermana"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "lee un libro",
+     "children": [
+      {
+       "label": "N",
+       "text": "lee"
+      },
+      {
+       "label": "SN",
+       "text": "un libro",
+       "children": [
+        {
+         "label": "Det",
+         "text": "un"
+        },
+        {
+         "label": "N",
+         "text": "libro"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 5,
+   "text": "El gato negro duerme.",
+   "bracket": "[SN [Det El] [N gato] [SAdj [N negro]]] [SV [N duerme]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El gato negro",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "gato"
+      },
+      {
+       "label": "SAdj",
+       "text": "negro",
+       "children": [
+        {
+         "label": "N",
+         "text": "negro"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "duerme",
+     "children": [
+      {
+       "label": "N",
+       "text": "duerme"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 6,
+   "text": "Llueve mucho.",
+   "bracket": "[SV [N Llueve] [SAdv [N mucho]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Llueve mucho",
+     "children": [
+      {
+       "label": "N",
+       "text": "Llueve"
+      },
+      {
+       "label": "SAdv",
+       "text": "mucho",
+       "children": [
+        {
+         "label": "N",
+         "text": "mucho"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 7,
+   "text": "Ella es muy alta.",
+   "bracket": "[SN [N Ella]] [SV [N es] [SAdj [SAdv [N muy]] [N alta]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Ella",
+     "children": [
+      {
+       "label": "N",
+       "text": "Ella"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "es muy alta",
+     "children": [
+      {
+       "label": "N",
+       "text": "es"
+      },
+      {
+       "label": "SAdj",
+       "text": "muy alta",
+       "children": [
+        {
+         "label": "SAdv",
+         "text": "muy",
+         "children": [
+          {
+           "label": "N",
+           "text": "muy"
+          }
+         ]
+        },
+        {
+         "label": "N",
+         "text": "alta"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 8,
+   "text": "El perro de mi vecino ladra.",
+   "bracket": "[SN [Det El] [N perro] [SPrep [E de] [SN [Det mi] [N vecino]]]] [SV [N ladra]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El perro de mi vecino",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "perro"
+      },
+      {
+       "label": "SPrep",
+       "text": "de mi vecino",
+       "children": [
+        {
+         "label": "E",
+         "text": "de"
+        },
+        {
+         "label": "SN",
+         "text": "mi vecino",
+         "children": [
+          {
+           "label": "Det",
+           "text": "mi"
+          },
+          {
+           "label": "N",
+           "text": "vecino"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "ladra",
+     "children": [
+      {
+       "label": "N",
+       "text": "ladra"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 9,
+   "text": "Comemos pan con tomate.",
+   "bracket": "[SV [N Comemos] [SN [N pan] [SPrep [E con] [SN [N tomate]]]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Comemos pan con tomate",
+     "children": [
+      {
+       "label": "N",
+       "text": "Comemos"
+      },
+      {
+       "label": "SN",
+       "text": "pan con tomate",
+       "children": [
+        {
+         "label": "N",
+         "text": "pan"
+        },
+        {
+         "label": "SPrep",
+         "text": "con tomate",
+         "children": [
+          {
+           "label": "E",
+           "text": "con"
+          },
+          {
+           "label": "SN",
+           "text": "tomate",
+           "children": [
+            {
+             "label": "N",
+             "text": "tomate"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 10,
+   "text": "La casa de piedra es antigua.",
+   "bracket": "[SN [Det La] [N casa] [SPrep [E de] [SN [N piedra]]]] [SV [N es] [SAdj [N antigua]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "La casa de piedra",
+     "children": [
+      {
+       "label": "Det",
+       "text": "La"
+      },
+      {
+       "label": "N",
+       "text": "casa"
+      },
+      {
+       "label": "SPrep",
+       "text": "de piedra",
+       "children": [
+        {
+         "label": "E",
+         "text": "de"
+        },
+        {
+         "label": "SN",
+         "text": "piedra",
+         "children": [
+          {
+           "label": "N",
+           "text": "piedra"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "es antigua",
+     "children": [
+      {
+       "label": "N",
+       "text": "es"
+      },
+      {
+       "label": "SAdj",
+       "text": "antigua",
+       "children": [
+        {
+         "label": "N",
+         "text": "antigua"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 11,
+   "text": "Ayer llegó una carta.",
+   "bracket": "[SV [SAdv [N Ayer]] [N llegó]] [SN [Det una] [N carta]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Ayer llegó",
+     "children": [
+      {
+       "label": "SAdv",
+       "text": "Ayer",
+       "children": [
+        {
+         "label": "N",
+         "text": "Ayer"
+        }
+       ]
+      },
+      {
+       "label": "N",
+       "text": "llegó"
+      }
+     ]
+    },
+    {
+     "label": "SN",
+     "text": "una carta",
+     "children": [
+      {
+       "label": "Det",
+       "text": "una"
+      },
+      {
+       "label": "N",
+       "text": "carta"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 12,
+   "text": "Los alumnos estudian bastante.",
+   "bracket": "[SN [Det Los] [N alumnos]] [SV [N estudian] [SAdv [N bastante]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Los alumnos",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Los"
+      },
+      {
+       "label": "N",
+       "text": "alumnos"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "estudian bastante",
+     "children": [
+      {
+       "label": "N",
+       "text": "estudian"
+      },
+      {
+       "label": "SAdv",
+       "text": "bastante",
+       "children": [
+        {
+         "label": "N",
+         "text": "bastante"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 13,
+   "text": "Pedro ha comprado pan.",
+   "bracket": "[SN [N Pedro]] [SV [N ha comprado] [SN [N pan]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Pedro",
+     "children": [
+      {
+       "label": "N",
+       "text": "Pedro"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "ha comprado pan",
+     "children": [
+      {
+       "label": "N",
+       "text": "ha comprado"
+      },
+      {
+       "label": "SN",
+       "text": "pan",
+       "children": [
+        {
+         "label": "N",
+         "text": "pan"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 14,
+   "text": "Mi abuelo vive lejos.",
+   "bracket": "[SN [Det Mi] [N abuelo]] [SV [N vive] [SAdv [N lejos]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Mi abuelo",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Mi"
+      },
+      {
+       "label": "N",
+       "text": "abuelo"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "vive lejos",
+     "children": [
+      {
+       "label": "N",
+       "text": "vive"
+      },
+      {
+       "label": "SAdv",
+       "text": "lejos",
+       "children": [
+        {
+         "label": "N",
+         "text": "lejos"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 15,
+   "text": "El agua está muy fría.",
+   "bracket": "[SN [Det El] [N agua]] [SV [N está] [SAdj [SAdv [N muy]] [N fría]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El agua",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "agua"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "está muy fría",
+     "children": [
+      {
+       "label": "N",
+       "text": "está"
+      },
+      {
+       "label": "SAdj",
+       "text": "muy fría",
+       "children": [
+        {
+         "label": "SAdv",
+         "text": "muy",
+         "children": [
+          {
+           "label": "N",
+           "text": "muy"
+          }
+         ]
+        },
+        {
+         "label": "N",
+         "text": "fría"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 16,
+   "text": "Esa chica habla con su madre.",
+   "bracket": "[SN [Det Esa] [N chica]] [SV [N habla] [SPrep [E con] [SN [Det su] [N madre]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Esa chica",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Esa"
+      },
+      {
+       "label": "N",
+       "text": "chica"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "habla con su madre",
+     "children": [
+      {
+       "label": "N",
+       "text": "habla"
+      },
+      {
+       "label": "SPrep",
+       "text": "con su madre",
+       "children": [
+        {
+         "label": "E",
+         "text": "con"
+        },
+        {
+         "label": "SN",
+         "text": "su madre",
+         "children": [
+          {
+           "label": "Det",
+           "text": "su"
+          },
+          {
+           "label": "N",
+           "text": "madre"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 17,
+   "text": "Tres pájaros cantan en la rama.",
+   "bracket": "[SN [Det Tres] [N pájaros]] [SV [N cantan] [SPrep [E en] [SN [Det la] [N rama]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Tres pájaros",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Tres"
+      },
+      {
+       "label": "N",
+       "text": "pájaros"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "cantan en la rama",
+     "children": [
+      {
+       "label": "N",
+       "text": "cantan"
+      },
+      {
+       "label": "SPrep",
+       "text": "en la rama",
+       "children": [
+        {
+         "label": "E",
+         "text": "en"
+        },
+        {
+         "label": "SN",
+         "text": "la rama",
+         "children": [
+          {
+           "label": "Det",
+           "text": "la"
+          },
+          {
+           "label": "N",
+           "text": "rama"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 18,
+   "text": "Mañana iremos a la playa.",
+   "bracket": "[SV [SAdv [N Mañana]] [N iremos] [SPrep [E a] [SN [Det la] [N playa]]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Mañana iremos a la playa",
+     "children": [
+      {
+       "label": "SAdv",
+       "text": "Mañana",
+       "children": [
+        {
+         "label": "N",
+         "text": "Mañana"
+        }
+       ]
+      },
+      {
+       "label": "N",
+       "text": "iremos"
+      },
+      {
+       "label": "SPrep",
+       "text": "a la playa",
+       "children": [
+        {
+         "label": "E",
+         "text": "a"
+        },
+        {
+         "label": "SN",
+         "text": "la playa",
+         "children": [
+          {
+           "label": "Det",
+           "text": "la"
+          },
+          {
+           "label": "N",
+           "text": "playa"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 19,
+   "text": "El vaso está lleno de agua.",
+   "bracket": "[SN [Det El] [N vaso]] [SV [N está] [SAdj [N lleno] [SPrep [E de] [SN [N agua]]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El vaso",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "vaso"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "está lleno de agua",
+     "children": [
+      {
+       "label": "N",
+       "text": "está"
+      },
+      {
+       "label": "SAdj",
+       "text": "lleno de agua",
+       "children": [
+        {
+         "label": "N",
+         "text": "lleno"
+        },
+        {
+         "label": "SPrep",
+         "text": "de agua",
+         "children": [
+          {
+           "label": "E",
+           "text": "de"
+          },
+          {
+           "label": "SN",
+           "text": "agua",
+           "children": [
+            {
+             "label": "N",
+             "text": "agua"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 20,
+   "text": "Nosotros vemos una película divertida.",
+   "bracket": "[SN [N Nosotros]] [SV [N vemos] [SN [Det una] [N película] [SAdj [N divertida]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Nosotros",
+     "children": [
+      {
+       "label": "N",
+       "text": "Nosotros"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "vemos una película divertida",
+     "children": [
+      {
+       "label": "N",
+       "text": "vemos"
+      },
+      {
+       "label": "SN",
+       "text": "una película divertida",
+       "children": [
+        {
+         "label": "Det",
+         "text": "una"
+        },
+        {
+         "label": "N",
+         "text": "película"
+        },
+        {
+         "label": "SAdj",
+         "text": "divertida",
+         "children": [
+          {
+           "label": "N",
+           "text": "divertida"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 21,
+   "text": "Mi prima tiene un perro pequeño.",
+   "bracket": "[SN [Det Mi] [N prima]] [SV [N tiene] [SN [Det un] [N perro] [SAdj [N pequeño]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Mi prima",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Mi"
+      },
+      {
+       "label": "N",
+       "text": "prima"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "tiene un perro pequeño",
+     "children": [
+      {
+       "label": "N",
+       "text": "tiene"
+      },
+      {
+       "label": "SN",
+       "text": "un perro pequeño",
+       "children": [
+        {
+         "label": "Det",
+         "text": "un"
+        },
+        {
+         "label": "N",
+         "text": "perro"
+        },
+        {
+         "label": "SAdj",
+         "text": "pequeño",
+         "children": [
+          {
+           "label": "N",
+           "text": "pequeño"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 22,
+   "text": "El tren sale muy temprano.",
+   "bracket": "[SN [Det El] [N tren]] [SV [N sale] [SAdv [SAdv [N muy]] [N temprano]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El tren",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "tren"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "sale muy temprano",
+     "children": [
+      {
+       "label": "N",
+       "text": "sale"
+      },
+      {
+       "label": "SAdv",
+       "text": "muy temprano",
+       "children": [
+        {
+         "label": "SAdv",
+         "text": "muy",
+         "children": [
+          {
+           "label": "N",
+           "text": "muy"
+          }
+         ]
+        },
+        {
+         "label": "N",
+         "text": "temprano"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 23,
+   "text": "Laura escribe cartas a sus amigos.",
+   "bracket": "[SN [N Laura]] [SV [N escribe] [SN [N cartas]] [SPrep [E a] [SN [Det sus] [N amigos]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Laura",
+     "children": [
+      {
+       "label": "N",
+       "text": "Laura"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "escribe cartas a sus amigos",
+     "children": [
+      {
+       "label": "N",
+       "text": "escribe"
+      },
+      {
+       "label": "SN",
+       "text": "cartas",
+       "children": [
+        {
+         "label": "N",
+         "text": "cartas"
+        }
+       ]
+      },
+      {
+       "label": "SPrep",
+       "text": "a sus amigos",
+       "children": [
+        {
+         "label": "E",
+         "text": "a"
+        },
+        {
+         "label": "SN",
+         "text": "sus amigos",
+         "children": [
+          {
+           "label": "Det",
+           "text": "sus"
+          },
+          {
+           "label": "N",
+           "text": "amigos"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 24,
+   "text": "Las flores de mi jardín huelen bien.",
+   "bracket": "[SN [Det Las] [N flores] [SPrep [E de] [SN [Det mi] [N jardín]]]] [SV [N huelen] [SAdv [N bien]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Las flores de mi jardín",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Las"
+      },
+      {
+       "label": "N",
+       "text": "flores"
+      },
+      {
+       "label": "SPrep",
+       "text": "de mi jardín",
+       "children": [
+        {
+         "label": "E",
+         "text": "de"
+        },
+        {
+         "label": "SN",
+         "text": "mi jardín",
+         "children": [
+          {
+           "label": "Det",
+           "text": "mi"
+          },
+          {
+           "label": "N",
+           "text": "jardín"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "huelen bien",
+     "children": [
+      {
+       "label": "N",
+       "text": "huelen"
+      },
+      {
+       "label": "SAdv",
+       "text": "bien",
+       "children": [
+        {
+         "label": "N",
+         "text": "bien"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 25,
+   "text": "Ese libro parece interesante.",
+   "bracket": "[SN [Det Ese] [N libro]] [SV [N parece] [SAdj [N interesante]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Ese libro",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Ese"
+      },
+      {
+       "label": "N",
+       "text": "libro"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "parece interesante",
+     "children": [
+      {
+       "label": "N",
+       "text": "parece"
+      },
+      {
+       "label": "SAdj",
+       "text": "interesante",
+       "children": [
+        {
+         "label": "N",
+         "text": "interesante"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 26,
+   "text": "Va a llover mañana.",
+   "bracket": "[SV [N Va a llover] [SAdv [N mañana]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Va a llover mañana",
+     "children": [
+      {
+       "label": "N",
+       "text": "Va a llover"
+      },
+      {
+       "label": "SAdv",
+       "text": "mañana",
+       "children": [
+        {
+         "label": "N",
+         "text": "mañana"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "doubtful": "Perífrasis «va a llover» como un solo núcleo; algunos profesores la analizan distinto."
+  },
+  {
+   "id": 27,
+   "text": "Los estudiantes de música ensayan hoy.",
+   "bracket": "[SN [Det Los] [N estudiantes] [SPrep [E de] [SN [N música]]]] [SV [N ensayan] [SAdv [N hoy]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Los estudiantes de música",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Los"
+      },
+      {
+       "label": "N",
+       "text": "estudiantes"
+      },
+      {
+       "label": "SPrep",
+       "text": "de música",
+       "children": [
+        {
+         "label": "E",
+         "text": "de"
+        },
+        {
+         "label": "SN",
+         "text": "música",
+         "children": [
+          {
+           "label": "N",
+           "text": "música"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "ensayan hoy",
+     "children": [
+      {
+       "label": "N",
+       "text": "ensayan"
+      },
+      {
+       "label": "SAdv",
+       "text": "hoy",
+       "children": [
+        {
+         "label": "N",
+         "text": "hoy"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 28,
+   "text": "Mi madre prepara una tarta de chocolate.",
+   "bracket": "[SN [Det Mi] [N madre]] [SV [N prepara] [SN [Det una] [N tarta] [SPrep [E de] [SN [N chocolate]]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Mi madre",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Mi"
+      },
+      {
+       "label": "N",
+       "text": "madre"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "prepara una tarta de chocolate",
+     "children": [
+      {
+       "label": "N",
+       "text": "prepara"
+      },
+      {
+       "label": "SN",
+       "text": "una tarta de chocolate",
+       "children": [
+        {
+         "label": "Det",
+         "text": "una"
+        },
+        {
+         "label": "N",
+         "text": "tarta"
+        },
+        {
+         "label": "SPrep",
+         "text": "de chocolate",
+         "children": [
+          {
+           "label": "E",
+           "text": "de"
+          },
+          {
+           "label": "SN",
+           "text": "chocolate",
+           "children": [
+            {
+             "label": "N",
+             "text": "chocolate"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 29,
+   "text": "Ellos confían en sus amigos.",
+   "bracket": "[SN [N Ellos]] [SV [N confían] [SPrep [E en] [SN [Det sus] [N amigos]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Ellos",
+     "children": [
+      {
+       "label": "N",
+       "text": "Ellos"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "confían en sus amigos",
+     "children": [
+      {
+       "label": "N",
+       "text": "confían"
+      },
+      {
+       "label": "SPrep",
+       "text": "en sus amigos",
+       "children": [
+        {
+         "label": "E",
+         "text": "en"
+        },
+        {
+         "label": "SN",
+         "text": "sus amigos",
+         "children": [
+          {
+           "label": "Det",
+           "text": "sus"
+          },
+          {
+           "label": "N",
+           "text": "amigos"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 30,
+   "text": "El profesor explica la lección con paciencia.",
+   "bracket": "[SN [Det El] [N profesor]] [SV [N explica] [SN [Det la] [N lección]] [SPrep [E con] [SN [N paciencia]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El profesor",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "profesor"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "explica la lección con paciencia",
+     "children": [
+      {
+       "label": "N",
+       "text": "explica"
+      },
+      {
+       "label": "SN",
+       "text": "la lección",
+       "children": [
+        {
+         "label": "Det",
+         "text": "la"
+        },
+        {
+         "label": "N",
+         "text": "lección"
+        }
+       ]
+      },
+      {
+       "label": "SPrep",
+       "text": "con paciencia",
+       "children": [
+        {
+         "label": "E",
+         "text": "con"
+        },
+        {
+         "label": "SN",
+         "text": "paciencia",
+         "children": [
+          {
+           "label": "N",
+           "text": "paciencia"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 31,
+   "text": "Aquel coche rojo corre demasiado.",
+   "bracket": "[SN [Det Aquel] [N coche] [SAdj [N rojo]]] [SV [N corre] [SAdv [N demasiado]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Aquel coche rojo",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Aquel"
+      },
+      {
+       "label": "N",
+       "text": "coche"
+      },
+      {
+       "label": "SAdj",
+       "text": "rojo",
+       "children": [
+        {
+         "label": "N",
+         "text": "rojo"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "corre demasiado",
+     "children": [
+      {
+       "label": "N",
+       "text": "corre"
+      },
+      {
+       "label": "SAdv",
+       "text": "demasiado",
+       "children": [
+        {
+         "label": "N",
+         "text": "demasiado"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 32,
+   "text": "Los días son largos en verano.",
+   "bracket": "[SN [Det Los] [N días]] [SV [N son] [SAdj [N largos]] [SPrep [E en] [SN [N verano]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Los días",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Los"
+      },
+      {
+       "label": "N",
+       "text": "días"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "son largos en verano",
+     "children": [
+      {
+       "label": "N",
+       "text": "son"
+      },
+      {
+       "label": "SAdj",
+       "text": "largos",
+       "children": [
+        {
+         "label": "N",
+         "text": "largos"
+        }
+       ]
+      },
+      {
+       "label": "SPrep",
+       "text": "en verano",
+       "children": [
+        {
+         "label": "E",
+         "text": "en"
+        },
+        {
+         "label": "SN",
+         "text": "verano",
+         "children": [
+          {
+           "label": "N",
+           "text": "verano"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 33,
+   "text": "Ana está contenta con su nota.",
+   "bracket": "[SN [N Ana]] [SV [N está] [SAdj [N contenta] [SPrep [E con] [SN [Det su] [N nota]]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Ana",
+     "children": [
+      {
+       "label": "N",
+       "text": "Ana"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "está contenta con su nota",
+     "children": [
+      {
+       "label": "N",
+       "text": "está"
+      },
+      {
+       "label": "SAdj",
+       "text": "contenta con su nota",
+       "children": [
+        {
+         "label": "N",
+         "text": "contenta"
+        },
+        {
+         "label": "SPrep",
+         "text": "con su nota",
+         "children": [
+          {
+           "label": "E",
+           "text": "con"
+          },
+          {
+           "label": "SN",
+           "text": "su nota",
+           "children": [
+            {
+             "label": "Det",
+             "text": "su"
+            },
+            {
+             "label": "N",
+             "text": "nota"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "doubtful": "Ambigua: «con su nota» puede ir dentro del SAdj (complemento del adjetivo) o depender del verbo."
+  },
+  {
+   "id": 34,
+   "text": "Vivimos cerca de la estación.",
+   "bracket": "[SV [N Vivimos] [SAdv [N cerca] [SPrep [E de] [SN [Det la] [N estación]]]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Vivimos cerca de la estación",
+     "children": [
+      {
+       "label": "N",
+       "text": "Vivimos"
+      },
+      {
+       "label": "SAdv",
+       "text": "cerca de la estación",
+       "children": [
+        {
+         "label": "N",
+         "text": "cerca"
+        },
+        {
+         "label": "SPrep",
+         "text": "de la estación",
+         "children": [
+          {
+           "label": "E",
+           "text": "de"
+          },
+          {
+           "label": "SN",
+           "text": "la estación",
+           "children": [
+            {
+             "label": "Det",
+             "text": "la"
+            },
+            {
+             "label": "N",
+             "text": "estación"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 35,
+   "text": "Algunos alumnos llegan tarde.",
+   "bracket": "[SN [Det Algunos] [N alumnos]] [SV [N llegan] [SAdv [N tarde]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Algunos alumnos",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Algunos"
+      },
+      {
+       "label": "N",
+       "text": "alumnos"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "llegan tarde",
+     "children": [
+      {
+       "label": "N",
+       "text": "llegan"
+      },
+      {
+       "label": "SAdv",
+       "text": "tarde",
+       "children": [
+        {
+         "label": "N",
+         "text": "tarde"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 36,
+   "text": "El sol calienta la tierra.",
+   "bracket": "[SN [Det El] [N sol]] [SV [N calienta] [SN [Det la] [N tierra]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "El sol",
+     "children": [
+      {
+       "label": "Det",
+       "text": "El"
+      },
+      {
+       "label": "N",
+       "text": "sol"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "calienta la tierra",
+     "children": [
+      {
+       "label": "N",
+       "text": "calienta"
+      },
+      {
+       "label": "SN",
+       "text": "la tierra",
+       "children": [
+        {
+         "label": "Det",
+         "text": "la"
+        },
+        {
+         "label": "N",
+         "text": "tierra"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 37,
+   "text": "Mis padres trabajan en una tienda pequeña.",
+   "bracket": "[SN [Det Mis] [N padres]] [SV [N trabajan] [SPrep [E en] [SN [Det una] [N tienda] [SAdj [N pequeña]]]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Mis padres",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Mis"
+      },
+      {
+       "label": "N",
+       "text": "padres"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "trabajan en una tienda pequeña",
+     "children": [
+      {
+       "label": "N",
+       "text": "trabajan"
+      },
+      {
+       "label": "SPrep",
+       "text": "en una tienda pequeña",
+       "children": [
+        {
+         "label": "E",
+         "text": "en"
+        },
+        {
+         "label": "SN",
+         "text": "una tienda pequeña",
+         "children": [
+          {
+           "label": "Det",
+           "text": "una"
+          },
+          {
+           "label": "N",
+           "text": "tienda"
+          },
+          {
+           "label": "SAdj",
+           "text": "pequeña",
+           "children": [
+            {
+             "label": "N",
+             "text": "pequeña"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 38,
+   "text": "Este verano viajaremos a Italia.",
+   "bracket": "[SV [SN [Det Este] [N verano]] [N viajaremos] [SPrep [E a] [SN [N Italia]]]]",
+   "analysis": [
+    {
+     "label": "SV",
+     "text": "Este verano viajaremos a Italia",
+     "children": [
+      {
+       "label": "SN",
+       "text": "Este verano",
+       "children": [
+        {
+         "label": "Det",
+         "text": "Este"
+        },
+        {
+         "label": "N",
+         "text": "verano"
+        }
+       ]
+      },
+      {
+       "label": "N",
+       "text": "viajaremos"
+      },
+      {
+       "label": "SPrep",
+       "text": "a Italia",
+       "children": [
+        {
+         "label": "E",
+         "text": "a"
+        },
+        {
+         "label": "SN",
+         "text": "Italia",
+         "children": [
+          {
+           "label": "N",
+           "text": "Italia"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 39,
+   "text": "La niña de las trenzas sonríe.",
+   "bracket": "[SN [Det La] [N niña] [SPrep [E de] [SN [Det las] [N trenzas]]]] [SV [N sonríe]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "La niña de las trenzas",
+     "children": [
+      {
+       "label": "Det",
+       "text": "La"
+      },
+      {
+       "label": "N",
+       "text": "niña"
+      },
+      {
+       "label": "SPrep",
+       "text": "de las trenzas",
+       "children": [
+        {
+         "label": "E",
+         "text": "de"
+        },
+        {
+         "label": "SN",
+         "text": "las trenzas",
+         "children": [
+          {
+           "label": "Det",
+           "text": "las"
+          },
+          {
+           "label": "N",
+           "text": "trenzas"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "sonríe",
+     "children": [
+      {
+       "label": "N",
+       "text": "sonríe"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": 40,
+   "text": "Tu respuesta es bastante clara.",
+   "bracket": "[SN [Det Tu] [N respuesta]] [SV [N es] [SAdj [SAdv [N bastante]] [N clara]]]",
+   "analysis": [
+    {
+     "label": "SN",
+     "text": "Tu respuesta",
+     "children": [
+      {
+       "label": "Det",
+       "text": "Tu"
+      },
+      {
+       "label": "N",
+       "text": "respuesta"
+      }
+     ]
+    },
+    {
+     "label": "SV",
+     "text": "es bastante clara",
+     "children": [
+      {
+       "label": "N",
+       "text": "es"
+      },
+      {
+       "label": "SAdj",
+       "text": "bastante clara",
+       "children": [
+        {
+         "label": "SAdv",
+         "text": "bastante",
+         "children": [
+          {
+           "label": "N",
+           "text": "bastante"
+          }
+         ]
+        },
+        {
+         "label": "N",
+         "text": "clara"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
