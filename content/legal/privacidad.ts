@@ -12,6 +12,7 @@ El responsable del tratamiento de tus datos es **Carlos Sánchez**, a título pa
 | --- | --- | --- | --- |
 | Correo y nombre de tu cuenta de Google | Inicio de sesión con Google | Crear y proteger tu cuenta | Ejecución del servicio |
 | Nombre, fecha de nacimiento y nivel educativo | Lo escribes al empezar | Adaptar la ayuda a tu curso y saber si eres menor de 14 años | Ejecución del servicio y obligación legal (menores) |
+| Apodo y aficiones | Los eliges en la bienvenida (puedes saltarlo) | Personalizar las explicaciones: el apodo para dirigirse a ti y las aficiones para poner ejemplos que te suenen | Ejecución del servicio |
 | Conversaciones con el tutor y tus mensajes | Lo que escribes o dictas | Responderte y guardar tu historial | Ejecución del servicio |
 | Archivos que subes (fotos, PDF, Word, PowerPoint, Excel, texto) | Los subes tú, desde el dispositivo o escaneando el QR con el móvil | Leer su contenido para ayudarte a estudiar | Ejecución del servicio |
 | Exámenes, temas, fechas, planes de estudio, tests, respuestas y notas | Lo creas tú o lo genera Dream | Preparar tus exámenes y simulacros | Ejecución del servicio |
@@ -28,7 +29,7 @@ No pedimos teléfono, dirección, DNI ni datos de pago. Hoy Dream no cobra nada.
 1. **Entras con Google.** Google confirma quién eres y nos da tu correo (y tu nombre si lo comparte). Nunca vemos tu contraseña de Google. Con eso se crea tu perfil en nuestra base de datos.
 2. **Te presentas.** Nos dices tu nombre, tu fecha de nacimiento y tu nivel (por ejemplo 2.º de Bachillerato). La fecha de nacimiento solo sirve para calcular tu franja de edad (menor de 14, de 14 a 17 o adulto) y saber si hace falta tutor; no la usamos para nada más.
 3. **Escribes un mensaje al tutor.** Tu navegador lo envía por una conexión cifrada a nuestro servidor en Supabase. El servidor comprueba que eres tú, mira que no te hayas pasado de los límites de uso y guarda tu mensaje en tu conversación.
-4. **El servidor pide la respuesta a la IA.** Envía a Groq (o a Cloudflare Workers AI, si Groq no responde o si usas el modo «Pensar más») el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
+4. **El servidor pide la respuesta a la IA.** Envía a Groq (o a Cloudflare Workers AI, si Groq no responde o si usas el modo «Pensar más») el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. Tampoco tu apodo: la IA escribe una marca y Dream pone tu apodo al mostrarte la respuesta. Sí envía, cuando sirven para un ejemplo, las aficiones que elegiste, sin nada que te identifique. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
 5. **Si hace falta buscar en internet,** el servidor envía a Tavily una consulta corta (máximo 300 caracteres) que escribe el propio tutor. Como esa consulta puede reflejar lo que preguntaste, evita poner nombres, teléfonos o datos privados en tus preguntas. Las webs consultadas aparecen en «Buscado en la web»; para mostrar su logo, tu navegador pide a Google el icono de cada web con solo su dirección (por ejemplo, «wikipedia.org»), nunca tu pregunta.
 6. **Subes un archivo.** El servidor lo abre, extrae el texto (las imágenes se leen con un modelo de IA de Groq) y guarda solo ese texto. El archivo original no se guarda. Ese texto se usa para responderte y para crear tus tests y simulacros.
 7. **Preparas un examen.** Guardamos el título, la asignatura, la fecha, los temas, tus dificultades y objetivo, el plan que genera la IA, y tus respuestas y resultados de cada test o simulacro.
@@ -58,7 +59,7 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Supabase** (base de datos, autenticación y servidor de la aplicación). Región del proyecto: Zúrich (Suiza), en Europa.
 - **Vercel** (alojamiento de la web). Puede registrar datos técnicos de conexión como la dirección IP.
 - **Google** (inicio de sesión con tu cuenta de Google).
-- **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder. Tus mensajes **no incluyen tu correo ni tu nombre**.
+- **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder (incluidas, si ayudan para un ejemplo, tus aficiones). Tus mensajes **no incluyen tu correo, tu nombre ni tu apodo**.
 - **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo, así que puede tratar tus mensajes fuera de la Unión Europea. Según Cloudflare, no usa este contenido para entrenar modelos de IA y no lo guarda cuando ya no lo necesita para responder.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
 - **Google** (iconos de webs). Cuando abres una respuesta con búsqueda, tu navegador pide a Google el logo de cada web consultada. Google recibe la dirección de esa web y la de tu conexión (IP), igual que al visitar cualquier página; no recibe tu pregunta, tu nombre ni tu correo.
@@ -84,6 +85,7 @@ En España, un menor puede dar su consentimiento para tratar sus datos a partir 
 
 - Tu cuenta, conversaciones, textos de archivos y exámenes se guardan **mientras tengas cuenta**.
 - Puedes **borrar todo tu historial de conversaciones** desde Ajustes cuando quieras.
+- Puedes **cambiar o borrar tu apodo y tus aficiones** en Ajustes › Perfil. Si eliminas tu cuenta, se borran con ella.
 - Para eliminar tu cuenta y todos tus datos, escríbenos a **hellodream@edudream.es** y lo haremos en un máximo de **30 días**.
 - Los registros técnicos de uso y abuso se conservan solo el tiempo necesario para su finalidad.
 - Las copias de seguridad del proveedor pueden conservar datos un tiempo limitado después de borrarlos.
