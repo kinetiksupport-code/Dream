@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useDream } from "@/components/providers";
@@ -13,6 +13,7 @@ import {
   getAuthRedirectUrl,
   isAuthErrorCode,
 } from "@/lib/auth-redirect";
+import { orbArrived } from "@/lib/orb-transition";
 import s from "./login.module.css";
 
 export default function Login() {
@@ -22,6 +23,10 @@ export default function Login() {
   const [busy, setBusy] = useState(false);
   const [canRetry, setCanRetry] = useState(false);
   const [expired, setExpired] = useState(false);
+  const form = useRef<HTMLDivElement>(null);
+  const places = useRef(new Map<Element, number>());
+  // The Orb from the landing can land now (lib/orb-transition.ts).
+  useEffect(() => orbArrived(), []);
   useEffect(() => {
     if (ready && session) router.replace("/chat");
     const params = new URLSearchParams(location.search);
@@ -60,6 +65,23 @@ export default function Login() {
     }
   }
   const message = error || bootError;
+  // When a message appears or goes, what sits below it glides to its new
+  // place instead of jumping (FLIP: transform only, 200 ms ease-out).
+  // Reduced motion: no glide, it just appears.
+  useLayoutEffect(() => {
+    const items = [...(form.current?.querySelectorAll("[data-glide]") ?? [])];
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    for (const el of items) {
+      const top = el.getBoundingClientRect().top;
+      const before = places.current.get(el);
+      places.current.set(el, top);
+      if (reduce || before === undefined || Math.abs(before - top) < 1) continue;
+      el.animate([{ transform: `translateY(${before - top}px)` }, { transform: "none" }], {
+        duration: 200,
+        easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+      });
+    }
+  }, [message, expired]);
   return (
     <main className={s.login}>
       <section
@@ -88,7 +110,7 @@ export default function Login() {
         </div>
       </section>
       <section className={s.formPanel}>
-        <div className={s.form}>
+        <div className={s.form} ref={form}>
           <Link
             className={`press ${s.mobileBrand}`}
             href="/"
@@ -166,12 +188,12 @@ export default function Login() {
               </div>
             </div>
           )}
-          <p className={s.legal}>
+          <p className={s.legal} data-glide>
             Al continuar, aceptas los{" "}
             <Link href="/terminos">Términos y condiciones</Link> y la{" "}
             <Link href="/privacidad">Política de privacidad</Link>.
           </p>
-          <Link className={`press text-link ${s.back}`} href="/">
+          <Link className={`press text-link ${s.back}`} href="/" data-glide>
             Volver al inicio
           </Link>
         </div>

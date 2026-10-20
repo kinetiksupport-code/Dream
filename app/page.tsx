@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Orb } from "@/components/orb";
+import { OrbLink } from "@/components/orb-link";
 import s from "./landing.module.css";
 
-// Server component: no client JS for the public landing (LCP).
+// Server component: the only client JS is OrbLink (the Orb travels to the
+// login, lib/orb-transition.ts).
 export default function LandingPage() {
   return (
     <div className={s.site}>
@@ -11,13 +13,13 @@ export default function LandingPage() {
           <Orb size={32} />
           Dream
         </Link>
-        <Link className={`primary press ${s.navCta}`} href="/login">
+        <OrbLink className={`primary press ${s.navCta}`} href="/login">
           Entrar
-        </Link>
+        </OrbLink>
       </header>
       <main id="main">
         <section className={s.hero}>
-          <Orb size={72} className="rise" />
+          <Orb size={72} className={`rise ${s.heroOrb}`} />
           <h1 className={`${s.heroTitle} rise rise-1`}>
             No es magia. Es tu mente amplificada.
           </h1>
@@ -27,9 +29,9 @@ export default function LandingPage() {
             mejor.
           </p>
           <div className={`${s.actions} rise rise-2`}>
-            <Link className={`primary press ${s.cta}`} href="/login">
+            <OrbLink className={`primary press ${s.cta}`} href="/login">
               Probar Dream
-            </Link>
+            </OrbLink>
             <span className={s.note}>Gratis. Entra con Google.</span>
           </div>
         </section>
@@ -67,9 +69,9 @@ export default function LandingPage() {
             Pregunta. Aprende. Practica. Vuelve mañana. Sin tarjeta ni
             suscripción.
           </p>
-          <Link className={`primary press ${s.cta}`} href="/login">
+          <OrbLink className={`primary press ${s.cta}`} href="/login">
             Probar Dream
-          </Link>
+          </OrbLink>
         </section>
       </main>
       <footer className={s.footer}>
