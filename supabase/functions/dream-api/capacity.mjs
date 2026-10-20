@@ -1,5 +1,6 @@
-// Capacity helpers for the free AI tier. Groq limits are per organization, not
-// per key, so a 429 on any key applies to all of them (see groq.mjs).
+// Capacity helpers for the free AI tier. Groq limits are per organization; each
+// of Dream's keys belongs to its own organization, so a 429 cools only that key
+// (see groq.mjs).
 
 // Above this wait, a provider 429 means "today's quota is spent", not "wait a
 // minute": the client must not queue for it.

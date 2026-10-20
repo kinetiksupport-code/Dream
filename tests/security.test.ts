@@ -36,7 +36,7 @@ for (const status of [401, 403, 408, 425, 500, 503])
     await manager.request({ body: {}, beforeAttempt: async () => {} });
     assert.equal(calls, 2);
   });
-test("Groq 429 pauses every key, propagates Retry-After, never rotates", async () => {
+test("Groq 429 on every key pauses with the shortest Retry-After", async () => {
   let calls = 0;
   let pause = 0;
   const manager = createGroqProviderManager({
@@ -46,7 +46,7 @@ test("Groq 429 pauses every key, propagates Retry-After, never rotates", async (
       calls++;
       return new Response("", {
         status: 429,
-        headers: { "Retry-After": "125" },
+        headers: { "Retry-After": calls === 1 ? "125" : "40" },
       });
     },
   });
@@ -58,11 +58,12 @@ test("Groq 429 pauses every key, propagates Retry-After, never rotates", async (
       },
     }),
     (e: unknown) =>
-      !!e && typeof e === "object" && "retryAfter" in e && e.retryAfter === 125,
+      !!e && typeof e === "object" && "retryAfter" in e && e.retryAfter === 40,
   );
+  // Both keys are cooling down now: no new call until one is free.
   await assert.rejects(manager.request({ body: {} }));
-  assert.equal(calls, 1);
-  assert.equal(pause, 125);
+  assert.equal(calls, 2);
+  assert.equal(pause, 40);
 });
 test("admission failure never becomes provider failover", async () => {
   let calls = 0;

@@ -1,8 +1,7 @@
 // Elección de proveedor y respaldo para el chat.
 // - Rápido y Normal van primero a Groq. Si TODAS las claves de Groq fallan
-//   (5xx, caída, o un 429, que ya enfría todas: nunca se prueba otra clave
-//   para saltarse el límite de una organización), se prueba Cloudflare antes
-//   de mandar al alumno a la cola. Solo si el respaldo está activado.
+//   (5xx, caída o 429 en cada una), se prueba Cloudflare antes de mandar al
+//   alumno a la cola. Solo si el respaldo está activado.
 // - «Pensar más» va directo a Cloudflare, sin respaldo.
 // - Nada de esto reintenta cuando ya ha llegado texto al alumno.
 import { estimateWindowTokens, actualTokens } from './usage-window.mjs';

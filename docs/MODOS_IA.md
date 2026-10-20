@@ -83,7 +83,7 @@ export const MODE_WEIGHTS = Object.freeze({ fast: 0.5, normal: 1, think: 2 });
 
 Antes eran tres presupuestos separados (Rápido 30.000, Normal 40.000, Pensar más 12.000). Con el límite conjunto, un alumno que solo usa Normal tiene lo mismo que antes. Uno que solo usa Pensar más tiene hasta 20.000 tokens reales (antes 12.000). Uno que solo usa Rápido, hasta 80.000 (antes 30.000).
 
-**Los límites de Groq por organización no cambian y nunca se saltan.** Un 429 enfría todas las claves y guarda la pausa (`provider_state`). Los topes diarios de `dream_private.limits` siguen activos y mandan si se alcanzan antes. Si Rápido se usa mucho, el tope que se nota antes es el diario de Groq de gpt-oss-20b (200.000 tokens/día por organización), no la ventana.
+**Las cuatro claves de Groq se reparten la carga** (decisión de Carlos, 20-oct-2026). Un 429 enfría solo esa clave y la petición prueba la siguiente; la pausa (`provider_state`) solo se guarda cuando las cuatro dan 429. Los topes diarios de `dream_private.limits` siguen activos y mandan si se alcanzan antes. Si Rápido se usa mucho, el tope que se nota antes es el diario de Groq de gpt-oss-20b (200.000 tokens/día por organización), no la ventana.
 
 ### Cifras anteriores (presupuesto por modo, ya no se usan)
 
@@ -97,7 +97,7 @@ Se dejan para entender de dónde salen los 40.000 y el peso de Pensar más.
 
 ### Cómo he llegado a esas cifras
 
-Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 tokens/día por organización y modelo**. Las cuatro claves son de cuatro organizaciones, pero solo son respaldo de una caída: un 429 enfría todas y nunca se prueba otra organización para saltarse el límite. Así que la capacidad real es **200.000 tokens/día por modelo**.
+Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 tokens/día por organización y modelo**. Las cuatro claves son de cuatro organizaciones. Hasta el 20-oct-2026 solo eran respaldo de una caída (capacidad real 200.000 tokens/día por modelo). Desde entonces se reparten la carga y un 429 prueba la siguiente clave, así que la capacidad sube hasta **4 × 200.000 tokens/día por modelo**.
 
 - **Mensaje típico** (≈3,6 caracteres por token, medido en el código):
   - Rápido: 410 de instrucciones + 250 de política + ≈450 de memoria y habilidades + ≈850 de historial + salida corta (más el razonamiento de gpt-oss, `low`). ⚠️ El presupuesto de 30.000 se calculó con Llama 8B: revisar con el uso real de las primeras semanas.
@@ -124,7 +124,7 @@ Cupos de Groq que me has dado: **30 peticiones/min, 8.000 tokens/min y 200.000 t
 - [`cloudflare.mjs`](../supabase/functions/dream-api/cloudflare.mjs) tiene la misma interfaz que el gestor de Groq (`request`, `stream`, `configured`). Usa la API compatible con OpenAI: `…/accounts/{id}/ai/v1/chat/completions`.
 - Lee los secretos `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID`. Si faltan o no son válidos, `configured()` es falso: el respaldo se desactiva en silencio y se usa la cola. Nunca llega al navegador.
 - **Orden** ([`ai-router.mjs`](../supabase/functions/dream-api/ai-router.mjs)): Groq primero para Rápido y Normal.
-  - Si **todas** las claves fallan antes de escribir nada (5xx, caída, `all_keys_cooling_down`, o un 429, que ya enfría todas), o Groq está en pausa guardada, se prueba Cloudflare.
+  - Si **todas** las claves fallan antes de escribir nada (5xx, caída, `all_keys_cooling_down` o un 429 en cada una), o Groq está en pausa guardada, se prueba Cloudflare.
   - Si también falla, el alumno ve la cola como antes.
   - Nunca se reintenta si ya llegó texto.
   - Si la respuesta usaba la búsqueda web, el respaldo recibe el resultado como contexto, sin herramientas.
@@ -202,7 +202,7 @@ Encendidos no bastan: sin `CLOUDFLAREAI_API_KEY` y `CLOUDFLARE_ACCOUNT_ID` váli
 - `chat` con `mode: "think"` responde 400 `mode_unavailable` («Ese modo no está disponible ahora. Elige otro.»). La web lo muestra, devuelve el texto a la caja y vuelve a pedir `ai_usage`, que ya no ofrece el modo.
 - El respaldo de Rápido y Normal sigue apagado sin avisar; Groq funciona como antes.
 
-Ni el respaldo ni las cuatro claves saltan los límites de Groq por organización: un 429 enfría todas las claves y guarda la pausa (`provider_state`), y el respaldo es otro proveedor con su propia admisión diaria.
+Un 429 de Groq enfría solo esa clave y la petición prueba la siguiente. Cloudflare solo entra cuando las cuatro claves han fallado, y es otro proveedor con su propia admisión diaria.
 
 ## 7. Acción nueva de `dream-api`
 

@@ -689,7 +689,7 @@ test("Groq goes first; when every key fails Cloudflare answers before the queue"
   assert.equal(cfUrl, cloudflareEndpoint("0123456789abcdef0123456789abcdef"));
 });
 
-test("a Groq 429 stops at the first key (no rotating organisations) and then tries Cloudflare", async () => {
+test("a Groq 429 tries every key and only then Cloudflare", async () => {
   let groqCalls = 0;
   const groq = createGroqProviderManager({
     getEnv: groqEnv,
@@ -714,7 +714,7 @@ test("a Groq 429 stops at the first key (no rotating organisations) and then tri
     }),
   );
   assert.equal(text, "Hola");
-  assert.equal(groqCalls, 1);
+  assert.equal(groqCalls, 4);
 });
 
 test("without fallback, or once text has arrived, the Groq error reaches the queue as before", async () => {

@@ -8,6 +8,9 @@ export const DEFAULT_MODEL = GROQ_NORMAL_MODEL;
 const KEY_NAMES = ['GROQ_API_KEY_1', 'GROQ_API_KEY_2', 'GROQ_API_KEY_3', 'GROQ_API_KEY_4'];
 const TRANSIENT_COOLDOWN_MS = 30_000;
 const AUTH_COOLDOWN_MS = 15 * 60_000;
+// Tras un 429, esa clave espera lo que pida Groq: entre 1 s y 1 h. Si el cupo
+// del día sigue agotado al volver, otro 429 la vuelve a apartar.
+const RATE_LIMIT_COOLDOWN_MAX_S = 3600;
 
 export class GroqProviderError extends Error {
   constructor(code, { status = 0, retryable = false, emittedContent = false, retryAfter = 0 } = {}) {
@@ -25,7 +28,8 @@ function validKey(value) {
 function statusPolicy(status) {
   if (status === 401 || status === 403) return { failover: true, kind: 'auth' };
   if (status === 408 || status === 425 || status >= 500) return { failover: true, kind: 'transient' };
-  return { failover: false, kind: status === 429 ? 'rate_limit' : 'request' };
+  if (status === 429) return { failover: true, kind: 'rate_limit' };
+  return { failover: false, kind: 'request' };
 }
 
 function attemptSignal(parent, timeoutMs) {
@@ -42,13 +46,21 @@ export function createGroqProviderManager({
   now = () => Date.now(), logger = console,
 } = {}) {
   const health = new Map();
+  let turn = 0;
   const configuredKeys = () => KEY_NAMES.flatMap((name, index) => {
     const key = validKey(getEnv(name));
     if (key && KEY_NAMES.slice(0,index).some(n => validKey(getEnv(n)) === key)) return [];
     return key ? [{ slot: index + 1, key }] : [];
   });
   const stateFor = (slot) => health.get(slot) || { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' };
-  const candidates = () => configuredKeys().filter(({ slot }) => stateFor(slot).cooldownUntil <= now());
+  // Reparto: cada petición empieza por la siguiente clave libre (rotación
+  // circular entre las que no están enfriadas).
+  const candidates = () => {
+    const ready = configuredKeys().filter(({ slot }) => stateFor(slot).cooldownUntil <= now());
+    const start = ready.length ? turn++ % ready.length : 0;
+    return [...ready.slice(start), ...ready.slice(0, start)];
+  };
+  const shortestCooldown = () => Math.max(1, Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil - now())) / 1000));
 
   function safeLog(fields) { logger.log(JSON.stringify({ provider: 'groq', ...fields })); }
   function markSuccess(slot) { health.set(slot, { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' }); }
@@ -59,27 +71,41 @@ export function createGroqProviderManager({
     health.set(slot, { consecutiveFailures, lastFailureAt: timestamp, cooldownUntil: timestamp + cooldown,
       state: authFailure ? 'unavailable' : cooldown ? 'cooldown' : 'degraded' });
   }
-  // A 429 on any key is the organization's limit: cool down every key.
-  async function rateLimited(response, generationId, operation, pause) {
+  // Un 429 enfría SOLO esa clave durante su retry-after y deja una línea de
+  // registro; la petición sigue con la siguiente clave.
+  async function keyRateLimited(response, { slot, attempt, started, generationId, operation }) {
     const body = await response.text().then((t) => t.slice(0, 2000)).catch(() => '');
     const limit = classifyProviderLimit({
       retryAfter: retryAfterSeconds(response.headers.get('retry-after'), now()),
       header: (name) => response.headers.get(name), body,
     });
-    for (const entry of configuredKeys()) health.set(entry.slot, { ...stateFor(entry.slot), cooldownUntil: now() + limit.retryAfter * 1000, state: 'cooldown' });
-    safeLog({ generation: generationId, operation, result: limit.code, retry_after: limit.retryAfter,
-      remaining_requests: response.headers.get('x-ratelimit-remaining-requests'), remaining_tokens: response.headers.get('x-ratelimit-remaining-tokens') });
-    await pause?.('groq', limit.retryAfter);
-    return new GroqProviderError(limit.code, { status: 429, retryAfter: limit.retryAfter });
+    const seconds = Math.min(RATE_LIMIT_COOLDOWN_MAX_S, limit.retryAfter);
+    health.set(slot, { ...stateFor(slot), lastFailureAt: now(), cooldownUntil: now() + seconds * 1000, state: 'cooldown' });
+    safeLog({ generation: generationId, operation, key_slot: slot, attempt, result: 'rate_limit', limit: limit.code, retry_after: limit.retryAfter,
+      remaining_requests: response.headers.get('x-ratelimit-remaining-requests'), remaining_tokens: response.headers.get('x-ratelimit-remaining-tokens'),
+      duration_ms: now() - started });
+    return new GroqProviderError(limit.code, { status: 429, retryAfter: limit.retryAfter, retryable: true });
+  }
+  // Todas las claves probadas dieron 429: solo entonces se lanza el límite (con
+  // la espera más corta) y se pausa Groq para todos.
+  async function allRateLimited(limits, pause) {
+    const retryAfter = shortestCooldown();
+    const code = limits.every((e) => e.code === 'provider_daily_limit') ? 'provider_daily_limit' : 'provider_rate_limit';
+    await pause?.('groq', retryAfter);
+    return new GroqProviderError(code, { status: 429, retryAfter });
   }
   function ensureConfigured() { if (!configuredKeys().length) throw new GroqProviderError('missing_key'); }
+  function startAttempts() {
+    ensureConfigured(); const available = candidates();
+    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: shortestCooldown() });
+    return available;
+  }
 
   /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
   async function request({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'completion', beforeAttempt = undefined, pause = undefined }) {
     signal = attemptSignal(signal, 90_000);
-    ensureConfigured(); const available = candidates();
-    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: Math.max(1,Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil-now()))/1000)) });
-    let lastError = null;
+    const available = startAttempts();
+    let lastError = null; const limits = [];
     for (let index = 0; index < available.length; index++) {
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
@@ -94,8 +120,11 @@ export function createGroqProviderManager({
           await reservation?.reconcile?.(data?.usage).catch(() => {});
           return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': 'application/json' } });
         }
+        if (response.status === 429) {
+          lastError = await keyRateLimited(response, { slot, attempt: index + 1, started, generationId, operation });
+          limits.push(lastError); continue;
+        }
         const policy = statusPolicy(response.status);
-        if (response.status === 429) throw await rateLimited(response, generationId, operation, pause);
         safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
         await discardResponse(response);
         if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
@@ -113,15 +142,15 @@ export function createGroqProviderManager({
         } else lastError = error;
       }
     }
+    if (limits.length && limits.length === available.length) throw await allRateLimited(limits, pause);
     throw lastError || new GroqProviderError('provider_unavailable', { retryable: true });
   }
 
   /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
   async function* stream({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'chat_stream', beforeAttempt = undefined, pause = undefined }) {
     signal = attemptSignal(signal, 90_000);
-    ensureConfigured(); const available = candidates();
-    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: Math.max(1,Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil-now()))/1000)) });
-    let lastError = null;
+    const available = startAttempts();
+    let lastError = null; const limits = [];
     for (let index = 0; index < available.length; index++) {
       const { slot, key } = available[index];
       if (signal?.aborted) throw new GroqProviderError('aborted');
@@ -130,9 +159,12 @@ export function createGroqProviderManager({
       try {
         const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
           headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (response.status === 429) {
+          lastError = await keyRateLimited(response, { slot, attempt: index + 1, started, generationId, operation });
+          limits.push(lastError); continue;
+        }
         if (!response.ok || !response.body) {
           const policy = statusPolicy(response.status);
-        if (response.status === 429) throw await rateLimited(response, generationId, operation, pause);
           safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
           await discardResponse(response);
           if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
@@ -166,6 +198,7 @@ export function createGroqProviderManager({
         lastError = new GroqProviderError('network_or_timeout', { retryable: true });
       }
     }
+    if (limits.length && limits.length === available.length) throw await allRateLimited(limits, pause);
     throw lastError || new GroqProviderError('provider_unavailable', { retryable: true });
   }
 

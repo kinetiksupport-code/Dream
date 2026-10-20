@@ -13,8 +13,9 @@ Fuente: https://console.groq.com/docs/rate-limits (comprobado el 15/10/2026). Co
 | Tokens por minuto (TPM) | 8.000 | 250.000 |
 | Tokens por día (TPD) | 200.000 | sin límite |
 
-- **Los límites son por organización, no por clave.** Si las cuatro claves `GROQ_API_KEY_1..4` son de la misma cuenta, no suman nada. El código ya lo trata así: cuando Groq responde 429 con cualquier clave, enfría las cuatro y guarda la pausa en `dream_private.provider_state`. Nunca prueba otra clave para saltarse un 429.
-- No puedo leer los secretos, así que no sé a qué organización pertenece cada clave. Para comprobarlo: entra en console.groq.com con cada cuenta → API Keys. Si todas están en la misma organización, sobran tres. Solo sirven de respaldo si una clave se revoca.
+- **Los límites son por organización, no por clave.** Si las cuatro claves `GROQ_API_KEY_1..4` fueran de la misma cuenta, no sumarían nada.
+- **Decisión de Carlos (20-oct-2026):** las cuatro claves son de cuatro organizaciones y se reparten la carga. Cada petición empieza por una clave distinta (rotación). Si una clave responde 429, se enfría solo esa durante su `retry-after` (entre 1 s y 1 h) y la misma petición prueba la siguiente. Solo cuando las cuatro dan 429 se lanza el límite con la espera más corta y se guarda la pausa en `dream_private.provider_state`. Carlos asume el riesgo con las condiciones de uso de Groq y Tavily.
+- No puedo leer los secretos, así que no sé a qué organización pertenece cada clave. Para comprobarlo: entra en console.groq.com con cada cuenta → API Keys. Si todas están en la misma organización, el reparto no suma capacidad.
 - Los tokens en caché no cuentan para el límite.
 - Groq solo envía cabeceras del límite diario de peticiones (`x-ratelimit-*-requests`) y del límite por minuto de tokens (`x-ratelimit-*-tokens`). Del TPM y del TPD no hay cabecera de «cuánto queda hoy», así que Dream tiene que llevar su propia cuenta.
 - Qwen 3.8 27B está marcado como **Preview** en Groq («no para producción»).

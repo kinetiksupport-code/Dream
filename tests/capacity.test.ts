@@ -80,7 +80,7 @@ test("answers are short unless the student asks for complete notes", () => {
   );
 });
 
-test("a Groq 429 cools every key and is never retried on another key", async () => {
+test("a Groq daily 429 cools only that key; on every key it is the daily limit", async () => {
   let calls = 0;
   const paused: number[] = [];
   const groq = createGroqProviderManager({
@@ -111,11 +111,12 @@ test("a Groq 429 cools every key and is never retried on another key", async () 
       body: {},
       pause: async (_p: string, s: number) => void paused.push(s),
     }),
+    // Each key cools for at most 1 h, so Groq is retried after that.
     (e: { code: string; retryAfter: number }) =>
-      e.code === "provider_daily_limit" && e.retryAfter === 18000,
+      e.code === "provider_daily_limit" && e.retryAfter === 3600,
   );
-  assert.equal(calls, 1);
-  assert.deepEqual(paused, [18000]);
+  assert.equal(calls, 2);
+  assert.deepEqual(paused, [3600]);
   assert.ok(
     groq
       .healthSnapshot()
