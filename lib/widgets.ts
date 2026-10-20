@@ -3,6 +3,8 @@ export function parseDreamContent(content: string) {
   const widgets: QuizWidget[] = [];
   const sources: WebSource[] = [];
   const requestTest = content.includes("<!--DREAM_ACTION:TEST-->");
+  // Actividad de sintagmas (prompt «sintagmas» §1): una tarjeta con Empezar.
+  const requestSyntax = content.includes("<!--DREAM_ACTION:SINTAGMAS-->");
   const text = content
     .replace(/<!--DREAM_WIDGET:([\s\S]*?)-->/g, (_, raw: string) => {
       try {
@@ -27,9 +29,9 @@ export function parseDreamContent(content: string) {
       sources.push(...parseSources(raw));
       return "";
     })
-    .replace(/<!--DREAM_ACTION:TEST-->/g, "")
+    .replace(/<!--DREAM_ACTION:(?:TEST|SINTAGMAS)-->/g, "")
     .replace(/<!--DREAM_(?:WIDGET|ACTION|SOURCES):[\s\S]*$/g, "");
-  return { text, widgets, requestTest, sources: sources.slice(0, 5) };
+  return { text, widgets, requestTest, requestSyntax, sources: sources.slice(0, 5) };
 }
 
 function parseSources(raw: string): WebSource[] {
