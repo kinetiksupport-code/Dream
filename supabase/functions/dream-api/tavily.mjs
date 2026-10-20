@@ -1,4 +1,8 @@
 import { retryAfterSeconds } from "./admission.mjs";
+// Resultados que se reenvían a la IA: 3 de 700 caracteres (antes 4 de 1.200),
+// para que la segunda llamada de la búsqueda gaste menos tokens.
+export const SEARCH_RESULTS = 3;
+export const RESULT_CHARS = 700;
 export class TavilyError extends Error {
   constructor(code, status = 503, retryAfter = 0) {
     super(code);
@@ -61,7 +65,7 @@ export function createTavilyManager({
             body: JSON.stringify({
               query: query.trim(),
               search_depth: "basic",
-              max_results: 4,
+              max_results: SEARCH_RESULTS,
               include_answer: false,
             }),
           });
@@ -100,7 +104,7 @@ export function createTavilyManager({
           if (!Array.isArray(data.results))
             throw new TavilyError("invalid_search_response", 502);
           const results = data.results
-            .slice(0, 4)
+            .slice(0, SEARCH_RESULTS)
             .filter((item) => {
               try {
                 return ["https:", "http:"].includes(new URL(item.url).protocol);
@@ -111,7 +115,7 @@ export function createTavilyManager({
             .map((item) => ({
               title: String(item.title ?? "").slice(0, 200),
               url: String(item.url).slice(0, 500),
-              content: String(item.content ?? "").slice(0, 1200),
+              content: String(item.content ?? "").slice(0, RESULT_CHARS),
             }));
           return JSON.stringify(results);
         } catch (e) {

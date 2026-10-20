@@ -114,3 +114,14 @@ No sale de la admisión ni de la contrapresión. Lo devolvía el stub de `dream-
 ## 7. Otras cosas que he visto
 
 - `DREAM_VISION_INPUT_TOKEN_CEILING`: si no está en los secretos de Supabase, subir una imagen da 503 `vision_budget_unconfigured`. Groq cuenta 2.048 tokens por imagen, así que 2048 es un buen valor.
+
+## Turno con búsqueda web (20-oct-2026)
+
+Antes, las dos llamadas de un turno con búsqueda reenviaban el prompt completo del modo. En Normal, el peor caso (historial largo) era ≈8.000 + ≈9.800 tokens estimados: más que los 8.000 tokens por minuto de una clave. Ahora:
+
+- **Primera llamada** (el alumno pide buscar): solo decide la consulta. Bloque común + instrucción corta + 2 mensajes recientes, salida máx. 600. ≈1.650 tokens.
+- **Segunda llamada** (con resultados): bloque común + estilo de búsqueda + política + contexto dinámico + 2 mensajes recientes + 3 resultados de 700 caracteres, salida máx. 1.000. ≈3.400 tokens.
+- Total ≈5.100 (antes ≈17.800 en Normal y ≈7.250 en Rápido).
+- Lo que más pesa es el prompt de Normal (`DREAM_SYSTEM_PROMPT`, ≈16.000 caracteres ≈ 4.500 tokens). Sigue entero en los mensajes sin búsqueda.
+- Cada llamada deja una línea `dream_call_usage` con los tokens reales (`search_plan`, `search_answer` o `first`).
+

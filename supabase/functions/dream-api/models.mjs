@@ -114,6 +114,15 @@ export const CLOUDFLARE_FALLBACK = Object.freeze({
   attachmentChars: 6_000,
 });
 
+// Turno con búsqueda web (Rápido y Normal): la primera llamada solo decide la
+// consulta y la segunda responde con los resultados. Las dos van con contexto
+// corto para quedar muy por debajo de los 8.000 tokens por minuto de Groq.
+export const SEARCH_TURN = Object.freeze({
+  plannerMaxTokens: 600, // cabe el razonamiento oculto + la llamada a la herramienta
+  answerMaxTokens: 1000,
+  history: Object.freeze({ maxMessages: 2, recentFull: 2, recentChars: 1200, olderChars: 200, totalChars: 2400 }),
+});
+
 export function modeAvailable(id, { flags = AI_FLAGS, cloudflareConfigured = false } = {}) {
   const mode = MODES[id];
   if (!mode) return false;
