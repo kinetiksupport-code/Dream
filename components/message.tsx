@@ -14,6 +14,7 @@ import { AiStatus } from "./ai-status";
 import { WebSources } from "./web-sources";
 import { useReveal } from "./use-reveal";
 import { parseDreamContent } from "@/lib/widgets";
+import { SyntaxCard } from "./sintagmas/syntax-card";
 import { settleStreaming } from "@/lib/stream-text";
 import type { Message, DreamState } from "@/lib/types";
 
@@ -137,6 +138,7 @@ export const MessageView = memo(function MessageView({
             </span>
           </Link>
         ))}
+      {!revealing && !live && parsed.requestSyntax && <SyntaxCard />}
       {message.stopped && !revealing && (
         <small className="muted">
           Respuesta detenida · Lo recibido se conserva

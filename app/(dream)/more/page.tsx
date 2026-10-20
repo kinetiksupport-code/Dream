@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Spline } from "lucide-react";
 import {
   ChevronIcon,
   ExamsIcon,
@@ -25,6 +26,13 @@ export default function More() {
           <Link className="group-row group-link press" href="/exams">
             <ExamsIcon />
             <span>Exámenes</span>
+            <ChevronIcon />
+          </Link>
+        </li>
+        <li>
+          <Link className="group-row group-link press" href="/sintagmas">
+            <Spline size={22} aria-hidden="true" />
+            <span>Sintagmas</span>
             <ChevronIcon />
           </Link>
         </li>
