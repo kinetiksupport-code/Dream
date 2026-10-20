@@ -20,6 +20,10 @@ export const consumingActions = new Set([
   "exam_session_submit",
   "exam_route_regenerate",
   "exam_identify",
+  // Actividad de sintagmas (prompt «sintagmas» §6).
+  "syntax_conventions",
+  "syntax_next",
+  "syntax_check",
 ]);
 export const DEFAULT_GROQ_MODEL = GROQ_NORMAL_MODEL;
 // Proveedores de IA que se cuentan en tokens (mismo formato de petición).
