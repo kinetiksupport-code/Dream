@@ -51,6 +51,8 @@ export function createTavilyManager({
         AbortSignal.timeout(25000),
       ]);
       let last = new TavilyError("web_search_failed");
+      // Esperas de las claves que han dado 429 en esta búsqueda.
+      const limited = [];
       for (const { key, slot } of available) {
         await beforeAttempt?.("tavily", {});
         const start = now();
@@ -79,14 +81,16 @@ export function createTavilyManager({
           );
           if (!response.ok) {
             await response.body?.cancel();
+            // Un 429 enfría solo esa clave y se prueba la siguiente.
             if (response.status === 429) {
               const wait = retryAfterSeconds(
                 response.headers.get("retry-after"),
                 now(),
               );
-              blockedUntil = now() + wait * 1000;
-              await pause?.("tavily", wait);
-              throw new TavilyError("provider_rate_limit", 429, wait);
+              health.set(slot, now() + wait * 1000);
+              limited.push(wait);
+              last = new TavilyError("provider_rate_limit", 429, wait);
+              continue;
             }
             const recoverable =
               [401, 403, 408, 425].includes(response.status) ||
@@ -128,6 +132,14 @@ export function createTavilyManager({
           health.set(slot, now() + 30000);
           last = new TavilyError("web_search_failed", 503);
         }
+      }
+      // Todas las claves libres dieron 429: solo entonces se bloquea Tavily
+      // (y se guarda la pausa) hasta que quede libre la primera.
+      if (limited.length && limited.length === available.length) {
+        const wait = Math.min(...limited);
+        blockedUntil = now() + wait * 1000;
+        await pause?.("tavily", wait);
+        throw new TavilyError("provider_rate_limit", 429, wait);
       }
       throw last;
     },

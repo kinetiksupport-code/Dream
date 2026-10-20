@@ -112,7 +112,7 @@ test("SSE oversized frame is rejected", async () => {
     }
   });
 });
-test("Tavily new keys fail over on authentication, not 429", async () => {
+test("Tavily keys fail over on authentication; 429 on both keys blocks", async () => {
   let calls = 0;
   const manager = createTavilyManager({
     getEnv: env,
@@ -136,7 +136,7 @@ test("Tavily new keys fail over on authentication, not 429", async () => {
       limitedCalls++;
       return new Response("", {
         status: 429,
-        headers: { "Retry-After": "75" },
+        headers: { "Retry-After": limitedCalls === 1 ? "90" : "75" },
       });
     },
   });
@@ -148,8 +148,8 @@ test("Tavily new keys fail over on authentication, not 429", async () => {
     }),
   );
   await assert.rejects(limited.search("consulta"));
-  assert.equal(limitedCalls, 1);
-  assert.equal(pause, 75);
+  assert.equal(limitedCalls, 2); // both keys tried once, then blocked
+  assert.equal(pause, 75); // the shortest wait
 });
 test("Tavily all keys fail explicitly and caller abort is respected", async () => {
   let calls = 0;
