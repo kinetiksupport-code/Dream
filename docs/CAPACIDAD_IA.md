@@ -15,6 +15,7 @@ Fuente: https://console.groq.com/docs/rate-limits (comprobado el 15/10/2026). Co
 
 - **Los límites son por organización, no por clave.** Si las cuatro claves `GROQ_API_KEY_1..4` fueran de la misma cuenta, no sumarían nada.
 - **Decisión de Carlos (20-oct-2026):** las cuatro claves son de cuatro organizaciones y se reparten la carga. Cada petición empieza por una clave distinta (rotación). Si una clave responde 429, se enfría solo esa durante su `retry-after` (entre 1 s y 1 h) y la misma petición prueba la siguiente. Solo cuando las cuatro dan 429 se lanza el límite con la espera más corta y se guarda la pausa en `dream_private.provider_state`. Carlos asume el riesgo con las condiciones de uso de Groq y Tavily.
+- Al arrancar, `dream-api` deja una línea `{"provider":"groq","event":"groq_keys","groq_key_slots":N,"discarded":[…]}` con los huecos descartados y el motivo (`empty`, `invalid_format` o `duplicate` con `duplicate_of`), sin valores. Si `groq_key_slots` no es 4, revisa el secreto del hueco que aparece ahí.
 - No puedo leer los secretos, así que no sé a qué organización pertenece cada clave. Para comprobarlo: entra en console.groq.com con cada cuenta → API Keys. Si todas están en la misma organización, el reparto no suma capacidad.
 - Los tokens en caché no cuentan para el límite.
 - Groq solo envía cabeceras del límite diario de peticiones (`x-ratelimit-*-requests`) y del límite por minuto de tokens (`x-ratelimit-*-tokens`). Del TPM y del TPD no hay cabecera de «cuánto queda hoy», así que Dream tiene que llevar su propia cuenta.

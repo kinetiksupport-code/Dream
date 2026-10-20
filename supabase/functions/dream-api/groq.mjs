@@ -19,10 +19,25 @@ export class GroqProviderError extends Error {
   }
 }
 
-function validKey(value) {
-  if (typeof value !== 'string' || !value.trim()) return null;
-  const key = value.trim();
-  return /[\s"']/.test(key) ? null : key;
+/**
+ * Qué huecos GROQ_API_KEY_1..4 valen y por qué se descarta cada uno
+ * (vacía, formato inválido o duplicada). Nunca devuelve ni registra valores
+ * fuera de `keys`.
+ * @param {(name: string) => string | undefined} getEnv
+ */
+export function inspectGroqKeys(getEnv) {
+  /** @type {{slot: number, key: string}[]} */ const keys = [];
+  /** @type {{slot: number, reason: string, duplicate_of?: number}[]} */ const discarded = [];
+  KEY_NAMES.forEach((name, index) => {
+    const slot = index + 1; const raw = getEnv(name);
+    if (typeof raw !== 'string' || !raw.trim()) { discarded.push({ slot, reason: 'empty' }); return; }
+    const key = raw.trim();
+    if (/[\s"']/.test(key)) { discarded.push({ slot, reason: 'invalid_format' }); return; }
+    const first = keys.find((k) => k.key === key);
+    if (first) { discarded.push({ slot, reason: 'duplicate', duplicate_of: first.slot }); return; }
+    keys.push({ slot, key });
+  });
+  return { keys, discarded };
 }
 
 function statusPolicy(status) {
@@ -46,12 +61,15 @@ export function createGroqProviderManager({
   now = () => Date.now(), logger = console,
 } = {}) {
   const health = new Map();
+  let reported = false;
   let turn = 0;
-  const configuredKeys = () => KEY_NAMES.flatMap((name, index) => {
-    const key = validKey(getEnv(name));
-    if (key && KEY_NAMES.slice(0,index).some(n => validKey(getEnv(n)) === key)) return [];
-    return key ? [{ slot: index + 1, key }] : [];
-  });
+  const configuredKeys = () => {
+    const { keys, discarded } = inspectGroqKeys(getEnv);
+    // Registro de arranque (una vez por instancia): cuántas claves valen y qué
+    // huecos se descartan y por qué, sin valores.
+    if (!reported) { reported = true; safeLog({ event: 'groq_keys', groq_key_slots: keys.length, discarded }); }
+    return keys;
+  };
   const stateFor = (slot) => health.get(slot) || { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' };
   // Reparto: cada petición empieza por la siguiente clave libre (rotación
   // circular entre las que no están enfriadas).
@@ -204,6 +222,7 @@ export function createGroqProviderManager({
 
   return { request, stream, configuredKeyCount: () => configuredKeys().length,
     configured: () => configuredKeys().length > 0,
+    keyReport: () => { const { keys, discarded } = inspectGroqKeys(getEnv); return { groq_key_slots: keys.length, discarded }; },
     healthSnapshot: () => configuredKeys().map(({ slot }) => ({ slot, ...stateFor(slot) })) };
 }
 

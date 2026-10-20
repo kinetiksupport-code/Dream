@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createGroqProviderManager } from "../supabase/functions/dream-api/groq.mjs";
+import {
+  createGroqProviderManager,
+  inspectGroqKeys,
+} from "../supabase/functions/dream-api/groq.mjs";
 
 const keys: Record<string, string> = {
   GROQ_API_KEY_1: "synthetic-one",
@@ -136,4 +139,34 @@ test("401/403 keep the long cooldown of that key and fail over", async () => {
   await groq.request({ body: {} });
   assert.equal(groq.healthSnapshot()[0].state, "unavailable");
   assert.equal(used.length, 2);
+});
+
+test("start-up log says which slots are discarded and why, never the values", () => {
+  const report = inspectGroqKeys(
+    env({
+      GROQ_API_KEY_2: "  ",
+      GROQ_API_KEY_3: '"synthetic-three"',
+      GROQ_API_KEY_4: "synthetic-one",
+    }),
+  );
+  assert.deepEqual(report.keys.map((k) => k.slot), [1]);
+  assert.deepEqual(report.discarded, [
+    { slot: 2, reason: "empty" },
+    { slot: 3, reason: "invalid_format" },
+    { slot: 4, reason: "duplicate", duplicate_of: 1 },
+  ]);
+  const { groq, lines } = manager(async () => ok(), {
+    getEnv: env({ GROQ_API_KEY_4: undefined }),
+  });
+  assert.equal(groq.configuredKeyCount(), 3);
+  groq.configuredKeyCount();
+  const startup = lines.filter((l) => l.event === "groq_keys");
+  assert.equal(startup.length, 1); // once per instance
+  assert.equal(startup[0].groq_key_slots, 3);
+  assert.deepEqual(startup[0].discarded, [{ slot: 4, reason: "empty" }]);
+  assert.ok(!JSON.stringify(lines).includes("synthetic-"));
+  assert.deepEqual(groq.keyReport(), {
+    groq_key_slots: 3,
+    discarded: [{ slot: 4, reason: "empty" }],
+  });
 });
