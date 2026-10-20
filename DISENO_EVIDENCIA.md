@@ -245,3 +245,23 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `generative-ai.md`: al 100 % se dice qué pasa y cuándo vuelve. No se ofrece «Cambiar a Rápido», porque no funcionaría.
 - **emil-design-eng:** ningún elemento nuevo que se mueva. La pista de coste va en el nombre accesible y el `title` del selector, sin añadir ruido visual.
 - **libraries-dev:** sin efectos.
+
+### Ayuda con el chat de Crisp (`feat/ayuda-crisp`)
+
+- **Qué es:** en Ajustes, el apartado «Ayuda» tiene el botón «Hablar con soporte», una frase corta y los enlaces legales. Crisp solo se carga al pulsar el botón y, la primera vez, después de aceptar el aviso.
+- **Capturas** en `docs/diseno/`:
+  - `ayuda-*`: el apartado;
+  - `ayuda-aviso-*`: el aviso;
+  - `ayuda-error-*`: con Crisp bloqueado;
+  - todas en móvil 390 px y escritorio 1280 px, claro y oscuro;
+  - `ayuda-crisp-real-*`: el chat real abierto, en español.
+- **emil-design-eng:**
+  - el botón usa la misma pulsación `press` que el resto de Ajustes;
+  - mientras carga, muestra un indicador giratorio y el texto «Abriendo el chat…»;
+  - la línea de error entra con un fundido y, con movimiento reducido, sin animación;
+  - el indicador se mantiene porque es la única señal de que está cargando.
+- **apple-design:**
+  - `accessibility.md`: botón de 44 px con nombre claro y `aria-busy` mientras carga;
+  - el aviso es un `alertdialog` con el foco atrapado y devuelto al botón;
+  - el error se anuncia con `role="status"`, sin robar el foco.
+- **libraries-dev:** sin efectos.

@@ -6,6 +6,7 @@ import { PrivacySettings } from "@/components/observability";
 import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
+import { HelpSupport } from "@/components/help-support";
 import { UsageLimits } from "@/components/usage-limits";
 import { useDream } from "@/components/providers";
 import { Sticker } from "@/components/sticker";
@@ -294,6 +295,8 @@ export default function Settings() {
       <PrivacySettings />
 
       <InstallDream />
+
+      <HelpSupport />
 
       <section className="group" aria-labelledby="account-title">
         <h2 className="section-title" id="account-title">
