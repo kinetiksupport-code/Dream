@@ -4473,3 +4473,118 @@ fieldset:disabled .test-option {
     animation: fade var(--dur-page-reduced) ease-out both;
   }
 }
+
+/* «Buscado en la web»: the pages the AI read, folded above the answer. */
+.web-sources {
+  margin-bottom: 8px;
+}
+.web-sources-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0 12px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-chip);
+  background: var(--elevated);
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+.web-sources-icons {
+  display: inline-flex;
+}
+.web-sources-icons .site-icon + .site-icon {
+  margin-left: -6px;
+}
+.site-icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border);
+  object-fit: contain;
+}
+.site-icon-letter {
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  background: var(--nav-active);
+  color: var(--primary-ink-tint);
+  font-size: 11px;
+  font-weight: 700;
+}
+.web-sources-chevron {
+  transition: transform var(--dur-base) var(--ease);
+}
+.web-sources.is-open .web-sources-chevron {
+  transform: rotate(180deg);
+}
+.web-sources-list {
+  display: grid;
+  gap: 4px;
+  max-width: 520px;
+  margin: 8px 0 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--elevated);
+  animation: web-sources-in var(--dur-base) var(--ease);
+}
+.web-source {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--touch);
+  padding: 6px 10px;
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+}
+@media (hover: hover) {
+  .web-source:hover {
+    background: var(--nav-active);
+  }
+}
+.web-source-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.web-source-text strong,
+.web-source-text small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.web-source-text strong {
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+.web-source-text small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+@keyframes web-sources-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .web-sources-list {
+    animation-name: fade-in-only;
+  }
+  .web-sources-chevron {
+    transition: none;
+  }
+}
+@keyframes fade-in-only {
+  from {
+    opacity: 0;
+  }
+}

@@ -56,6 +56,11 @@ export type DreamStreamEvent =
       /** The server undid the saved turn, so the same message can be retried. */
       reverted?: boolean;
     };
+/** A web page the AI read to answer («Buscado en la web»). */
+export interface WebSource {
+  title: string;
+  url: string;
+}
 export interface QuizWidget {
   type: "quiz";
   testId: string;

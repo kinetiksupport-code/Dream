@@ -996,3 +996,48 @@ test("Ajustes: delete history end to end, failure stays visible, account deletio
   expect((await request).postDataJSON().confirm).toBe("ELIMINAR");
   await expect(page).toHaveURL(/\/login/);
 });
+
+test("web search answer: sources folded in «Buscado en la web», not in the text", async ({
+  page,
+}) => {
+  await authenticated(page);
+  // Site icons come from Google's favicon service; offline here, so the
+  // initial is shown instead.
+  await page.route("https://www.google.com/s2/favicons**", (route) =>
+    route.abort(),
+  );
+  const sources = [
+    { title: "Fracción — Wikipedia", url: "https://es.wikipedia.org/wiki/Fracci%C3%B3n" },
+    { title: "Suma de fracciones", url: "https://www.khanacademy.org/math/fracciones" },
+  ];
+  await page.route("**/functions/v1/dream-api", async (route, request) => {
+    if (request.postDataJSON().action !== "chat") return route.fallback();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body: [
+        { type: "activity", activity: "searching" },
+        { type: "delta", text: `<!--DREAM_SOURCES:${JSON.stringify(sources)}-->` },
+        { type: "delta", text: "Para sumar fracciones con distinto denominador, primero buscas un denominador común." },
+        { type: "complete" },
+      ].map((e) => JSON.stringify(e)).join("\n") + "\n",
+    });
+  });
+  await page.goto("/chat");
+  await page
+    .getByRole("textbox", { name: "Mensaje para Dream" })
+    .fill("búscame en internet las operaciones con fracciones");
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  const toggle = page.getByRole("button", { name: /Buscado en la web · 2 fuentes/ });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".message-assistant")).not.toContainText("DREAM_SOURCES");
+  await expect(page.locator(".message-assistant")).not.toContainText("wikipedia");
+  await toggle.click();
+  const wiki = page.getByRole("link", { name: /Fracción — Wikipedia/ });
+  await expect(wiki).toHaveAttribute("href", sources[0].url);
+  await expect(wiki).toHaveAttribute("target", "_blank");
+  await expect(wiki).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(page.getByText("khanacademy.org", { exact: true })).toBeVisible();
+  await page.screenshot({ animations: "disabled", path: "test-results/chat-web-sources.png" });
+});

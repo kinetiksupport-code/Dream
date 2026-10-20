@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 19 de octubre de 2026 (versión provisional).*
+*Última actualización: 20 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -29,7 +29,7 @@ No pedimos teléfono, dirección, DNI ni datos de pago. Hoy Dream no cobra nada.
 2. **Te presentas.** Nos dices tu nombre, tu fecha de nacimiento y tu nivel (por ejemplo 2.º de Bachillerato). La fecha de nacimiento solo sirve para calcular tu franja de edad (menor de 14, de 14 a 17 o adulto) y saber si hace falta tutor; no la usamos para nada más.
 3. **Escribes un mensaje al tutor.** Tu navegador lo envía por una conexión cifrada a nuestro servidor en Supabase. El servidor comprueba que eres tú, mira que no te hayas pasado de los límites de uso y guarda tu mensaje en tu conversación.
 4. **El servidor pide la respuesta a la IA.** Envía a Groq (o a Cloudflare Workers AI, si Groq no responde o si usas el modo «Pensar más») el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
-5. **Si hace falta buscar en internet,** el servidor envía a Tavily una consulta corta (máximo 300 caracteres) que escribe el propio tutor. Como esa consulta puede reflejar lo que preguntaste, evita poner nombres, teléfonos o datos privados en tus preguntas.
+5. **Si hace falta buscar en internet,** el servidor envía a Tavily una consulta corta (máximo 300 caracteres) que escribe el propio tutor. Como esa consulta puede reflejar lo que preguntaste, evita poner nombres, teléfonos o datos privados en tus preguntas. Las webs consultadas aparecen en «Buscado en la web»; para mostrar su logo, tu navegador pide a Google el icono de cada web con solo su dirección (por ejemplo, «wikipedia.org»), nunca tu pregunta.
 6. **Subes un archivo.** El servidor lo abre, extrae el texto (las imágenes se leen con un modelo de IA de Groq) y guarda solo ese texto. El archivo original no se guarda. Ese texto se usa para responderte y para crear tus tests y simulacros.
 7. **Preparas un examen.** Guardamos el título, la asignatura, la fecha, los temas, tus dificultades y objetivo, el plan que genera la IA, y tus respuestas y resultados de cada test o simulacro.
 8. **Controlamos el uso.** Para que el servicio gratuito aguante, apuntamos cuántas peticiones, búsquedas y "tokens" (unidades de texto) gastas por minuto y día, y su coste aproximado. También apuntamos cuántos tokens gastas en cada modo de IA (Rápido, Normal o Pensar más) dentro de tu ventana de 5 horas, y aparte los que gasta el proveedor de respaldo (Cloudflare) cuando responde en lugar de Groq. Con ello se forma la cola de espera y se bloquea, de forma automática y temporal, a quien abusa del sistema. Estos registros no contienen el texto de tus mensajes.
@@ -61,13 +61,14 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder. Tus mensajes **no incluyen tu correo ni tu nombre**.
 - **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo, así que puede tratar tus mensajes fuera de la Unión Europea. Según Cloudflare, no usa este contenido para entrenar modelos de IA y no lo guarda cuando ya no lo necesita para responder.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
+- **Google** (iconos de webs). Cuando abres una respuesta con búsqueda, tu navegador pide a Google el logo de cada web consultada. Google recibe la dirección de esa web y la de tu conexión (IP), igual que al visitar cualquier página; no recibe tu pregunta, tu nombre ni tu correo.
 - **PostHog** y **Sentry** (estadísticas y errores), solo si tú lo activas en Ajustes. Funcionan de forma anónima: sin grabación de pantalla, sin contenido de tus mensajes y sin geolocalización por IP.
 
 No cedemos tus datos a nadie más salvo obligación legal.
 
 ## 5. Transferencias internacionales
 
-Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo. En el caso de Cloudflare Workers AI no sabemos en qué región se ejecuta el modelo de IA, así que tus mensajes pueden tratarse fuera de la Unión Europea (transferencia internacional).
+Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Google, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo. En el caso de Cloudflare Workers AI no sabemos en qué región se ejecuta el modelo de IA, así que tus mensajes pueden tratarse fuera de la Unión Europea (transferencia internacional).
 
 ## 6. Inteligencia artificial
 

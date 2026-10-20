@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Markdown } from "./markdown";
 import { AiStatus } from "./ai-status";
+import { WebSources } from "./web-sources";
 import { useReveal } from "./use-reveal";
 import { parseDreamContent } from "@/lib/widgets";
 import { settleStreaming } from "@/lib/stream-text";
@@ -90,6 +91,7 @@ export const MessageView = memo(function MessageView({
     <article
       className={`message message-assistant${enter}${typing ? " is-typing" : ""}${onRegenerate ? " is-last" : ""}${revealing ? " is-revealing" : ""}`}
     >
+      {parsed.sources.length > 0 && <WebSources sources={parsed.sources} />}
       {/* Polite live region, busy until the reveal ends: read once, whole,
           never word by word, and it never takes the focus. A tap or click on
           the answer shows it all at once. */}
