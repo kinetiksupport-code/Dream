@@ -267,6 +267,7 @@ const birth = (years: number) => {
   return d.toISOString().slice(0, 10);
 };
 export const SCREENS: Screen[] = [
+  { name: "landing", path: "/", signedOut: true },
   { name: "login", path: "/login", signedOut: true },
   { name: "login-error", path: "/login?error=cancelled", signedOut: true },
   { name: "login-registro", path: "/chat", profile: CONSENT_PENDING },
