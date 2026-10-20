@@ -4222,6 +4222,21 @@ fieldset:disabled .test-option {
   }
 }
 
+/* --- Landing → login: el orbe viaja (lib/orb-transition.ts) -------------- */
+/* The Orb of the landing and the login's sticker share the name dream-orb:
+   the browser moves the snapshot from one place to the other (it is an
+   image, so nothing is laid out again) in 280 ms with --ease, while the rest
+   of the page cross-fades (200 ms, above). Reduced motion: no transition. */
+:root[data-orb-transition]::view-transition-group(dream-orb) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease);
+}
+:root[data-orb-transition]::view-transition-old(dream-orb),
+:root[data-orb-transition]::view-transition-new(dream-orb) {
+  animation-duration: 280ms;
+  animation-timing-function: var(--ease);
+}
+
 /* --- Transiciones entre páginas (§3) --------------------------------------- */
 /* With View Transitions (components/page-transitions.ts): only the page area
    (.route-view, named "page") moves; the sidebar and tab bar stay put. The

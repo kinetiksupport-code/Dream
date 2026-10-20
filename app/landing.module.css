@@ -1,52 +1,121 @@
+/* === Landing con scroll cinematográfico =================================
+   Guion: docs/diseno/landing-storyboard.md. Tokens de globals.css (fondos
+   --pop-*, .hero-title, .marker, .button-3d, Sticker, Orb). Sin animaciones,
+   cada escena se ve completa: el movimiento se añade solo con
+   `animation-timeline` (@supports) y sin movimiento reducido. Solo
+   transform y opacity; el reloj es el propio scroll (sin JavaScript). */
+
 .site {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
+  overflow-x: clip;
 }
+
+/* --- Barra superior ------------------------------------------------------ */
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: calc(16px + var(--safe-top)) 24px 16px;
+  padding: calc(12px + var(--safe-top)) calc(20px + var(--safe-right)) 12px calc(20px + var(--safe-left));
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: var(--touch);
+  padding-right: 8px;
+  border-radius: var(--radius-nav);
+  color: inherit;
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 .navCta {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
   padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  font-weight: 700;
 }
+@media (hover: hover) and (pointer: fine) {
+  .brand:hover,
+  .navCta:hover {
+    background-color: rgba(255, 255, 255, 0.24);
+  }
+  .footer a:hover {
+    color: var(--text);
+  }
+}
+
+/* --- Escenas ---------------------------------------------------------------- */
+.scene {
+  position: relative;
+  padding: clamp(72px, 12vh, 128px) calc(24px + var(--safe-right)) clamp(72px, 12vh, 128px) calc(24px + var(--safe-left));
+}
+.sceneTitle {
+  margin: 0;
+}
+.lead {
+  max-width: 46ch;
+  margin: 0;
+  font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
+  font-weight: 500;
+  line-height: 1.5;
+}
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+}
+.tag {
+  line-height: 0;
+}
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 96px);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.cta {
+  min-width: 220px;
+}
+
+/* 1. Héroe */
 .hero {
+  min-height: calc(100svh - 68px);
+  display: grid;
+  place-items: center;
+  padding-top: 32px;
+  text-align: center;
+}
+.heroInner {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 24px;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 96px 24px 80px;
-  text-align: center;
+  max-width: 860px;
+}
+.heroSticker {
+  line-height: 0;
+  /* Landing → login: this sticker is the Orb that travels (lib/orb-transition.ts). */
+  view-transition-name: dream-orb;
 }
 .heroTitle {
-  font-size: clamp(2.125rem, 6vw, 3.5rem);
-  line-height: 1.05;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  margin: 0;
+  font-size: clamp(3rem, 2rem + 6vw, 6.5rem);
 }
-.heroCopy {
-  max-width: 56ch;
-  color: var(--text-secondary);
-  font-size: var(--text-body);
+.hero .lead {
+  margin-inline: auto;
 }
 .actions {
   display: flex;
@@ -54,86 +123,326 @@
   align-items: center;
   gap: 12px;
 }
-.cta {
-  min-height: 52px;
-  padding: 0 32px;
-  border-radius: 26px;
-  font-size: var(--text-body);
-}
 .note {
-  font-size: var(--text-small);
-  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+  font-weight: 600;
 }
-.features {
+
+/* 2. Apuntes → examen (momento firma) */
+.notesStage {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
-  gap: 16px;
-  width: 100%;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(32px, 6vw, 96px);
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 24px 96px;
 }
-.features article {
+.notesVisual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 420px;
+}
+.phone {
+  position: relative;
+  width: 210px;
+  height: 400px;
+  padding: 44px 14px 18px;
+  border-radius: 36px;
+  background: #0b0f1c;
+  box-shadow:
+    0 0 0 3px rgba(255, 255, 255, 0.25),
+    0 30px 60px rgba(8, 11, 20, 0.35);
+}
+.phoneNotch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 72px;
+  height: 18px;
+  margin-left: -36px;
+  border-radius: 10px;
+  background: #1c2235;
+}
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100%;
+  padding: 18px 16px;
+  border-radius: 14px;
+  background: #fffdf4;
+  color: #1c2235;
+  font-size: 0.8125rem;
+  transform: rotate(-3deg);
+}
+.sheet i {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: #c9cfe0;
+}
+.sheet i:nth-child(odd) {
+  width: 78%;
+}
+.examCard {
+  position: absolute;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 240px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 24px 48px rgba(8, 11, 20, 0.28);
+  transform: rotate(4deg);
+}
+.examCard b {
+  font-size: 1.125rem;
+}
+.examCard span {
+  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+}
+.examCard .examReady {
+  align-self: flex-start;
+  margin-top: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--pop-green);
+  color: var(--on-pop-green);
+  font-weight: 700;
+}
+
+/* 3. Chat con pistas */
+.chat {
+  background: var(--bg);
+  color: var(--text);
+}
+.bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bubbles li {
+  max-width: 34ch;
+  padding: 14px 18px;
+  border-radius: 22px;
+  font-size: var(--text-body);
+  line-height: 1.45;
+}
+.me {
+  align-self: flex-end;
+  border-bottom-right-radius: 6px;
+  background: var(--pop-blue);
+  color: var(--on-pop-blue);
+}
+.dream {
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* 4. Tests y nota objetivo */
+.testsVisual {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+}
+.deck {
+  position: relative;
+  display: grid;
+  min-height: 260px;
+}
+.card {
+  grid-area: 1 / 1;
+  align-self: center;
+  justify-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(100%, 260px);
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 16px 32px rgba(8, 11, 20, 0.2);
+}
+.card small {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+.card b {
+  font-size: 1.0625rem;
+  line-height: 1.35;
+}
+/* Final (static) arrangement: a fan. */
+.card:nth-child(1) {
+  transform: translateX(-28%) rotate(-9deg);
+}
+.card:nth-child(3) {
+  transform: translateX(28%) rotate(9deg);
+}
+.wheel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.wheelRing {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wheelRing li {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  margin: -12px 0 0 -18px;
+  font-weight: 800;
+  text-align: center;
+  transform: rotate(calc(var(--i) * 51.4deg)) translateY(-82px);
+  opacity: 0.55;
+}
+.wheelValue {
+  display: grid;
+  place-items: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.wheelValue small {
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* 5. Progreso */
+.progressCard {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 28px;
-  border-radius: var(--radius-panel);
+  border-radius: 28px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 24px 48px rgba(8, 11, 20, 0.22);
+}
+.example {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  font-weight: 700;
+}
+.cap {
+  position: absolute;
+  top: -28px;
+  right: 20px;
+}
+.progressLabel {
+  margin: 8px 0 0;
+  font-weight: 700;
+}
+.bigNumber {
+  margin: 0;
+  font-size: clamp(4rem, 3rem + 4vw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.odometer {
+  display: inline-flex;
+  align-items: flex-end;
+}
+.digit {
+  display: inline-flex;
+  flex-direction: column;
+  height: 1em;
+  overflow: clip;
+  font-variant-numeric: tabular-nums;
+}
+.digit > span {
+  display: block;
+  height: 1em;
+  transform: translateY(calc(var(--to) * -1em));
+}
+.pct {
+  margin-left: 0.08em;
+  font-size: 0.5em;
+  line-height: 1.6;
+}
+.bar {
+  position: relative;
+  display: block;
+  height: 14px;
+  margin-top: 8px;
+  border-radius: 7px;
+  overflow: hidden;
   background: var(--surface);
 }
-.features h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+.bar i {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--pop-green);
+  transform-origin: left center;
+  transform: scaleX(0.82);
 }
-.features p {
-  color: var(--text-secondary);
-  font-size: var(--text-secondary-size);
-}
-.pricing {
+
+/* 6. Gratis */
+.freeInner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
-  max-width: 720px;
+  gap: 24px;
+  max-width: 760px;
   margin: 0 auto;
-  padding: 0 24px 112px;
   text-align: center;
 }
-.pricing p {
-  color: var(--text-secondary);
-  max-width: 48ch;
+.freeInner .lead {
+  margin-inline: auto;
 }
-.pricing h2 {
-  font-size: clamp(2.125rem, 5vw, 2.75rem);
-  line-height: 1.1;
-  font-weight: 700;
-  letter-spacing: -0.025em;
+.freeSticker {
+  line-height: 0;
 }
+
+/* 7. Pie */
 .footer {
-  margin-top: auto;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  width: 100%;
-  max-width: 1120px;
-  margin-left: auto;
-  margin-right: auto;
-  padding: 24px 24px calc(24px + var(--safe-bottom));
-  border-top: 1px solid var(--border);
+  gap: 8px 24px;
+  padding: 24px calc(24px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
   color: var(--text-secondary);
-  font-size: var(--text-small);
+  font-size: var(--text-secondary-size);
 }
-.footer span {
-  display: flex;
+.footer > span {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 .footer nav {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 0 8px;
 }
 .footer a {
   display: inline-flex;
@@ -141,17 +450,212 @@
   min-height: var(--touch);
   padding: 0 8px;
   color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-@media (hover: hover) and (pointer: fine) {
-  .footer a:hover {
-    color: var(--text);
+
+/* --- Móvil: escenas apiladas, nada fijado ---------------------------------- */
+@media (max-width: 899.98px) {
+  .split,
+  .notesStage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .notesVisual {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .phone {
+    width: 180px;
+    height: 330px;
+  }
+  .examCard {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    justify-self: center;
+    margin-top: -64px;
+  }
+  .testsVisual {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+  }
+  .deck {
+    width: 100%;
+  }
+  .card:nth-child(1) {
+    transform: translateX(-14%) rotate(-7deg);
+  }
+  .card:nth-child(3) {
+    transform: translateX(14%) rotate(7deg);
   }
 }
-@media (max-width: 639.98px) {
-  .hero {
-    padding: 56px 20px 56px;
+
+/* --- Movimiento ligado al scroll (escritorio y móvil) ---------------------- */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* 1. The hero leaves: it rises, shrinks a little and fades (the
+       wrapper moves; its children keep their load-time stagger). */
+    .heroInner {
+      animation: hero-out linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+    /* 3. Each bubble slides in from its side as it reaches the view. */
+    .bubbles li {
+      animation: bubble-in linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 70%;
+    }
+    .me {
+      --from: 32px;
+    }
+    .dream {
+      --from: -32px;
+    }
+    /* 4. The cards fan out and the wheel turns while the scene crosses. */
+    .card {
+      animation: card-fan linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 55%;
+    }
+    .card:nth-child(1) {
+      --fan: translateX(-28%) rotate(-9deg);
+    }
+    .card:nth-child(2) {
+      --fan: none;
+    }
+    .card:nth-child(3) {
+      --fan: translateX(28%) rotate(9deg);
+    }
+    .wheelRing {
+      animation: wheel-turn linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 60%;
+    }
+    /* 5. The number rolls and the bar grows as the card comes in. */
+    /* One clock for the whole card: every digit row moves together. */
+    .progressCard {
+      view-timeline-name: --progress;
+    }
+    .digit > span {
+      animation: digit-roll linear both;
+      animation-timeline: --progress;
+      animation-range: entry 40% contain 10%;
+    }
+    .bar i {
+      animation: bar-grow linear both;
+      animation-timeline: --progress;
+      animation-range: entry 40% contain 10%;
+    }
+    /* 6. The sticker drops into place. */
+    .freeSticker {
+      animation: sticker-drop linear both;
+      animation-timeline: view();
+      animation-range: entry 20% entry 90%;
+    }
   }
-  .features {
-    padding: 0 20px 64px;
+}
+
+/* 2. Signature moment, desktop with a fine pointer: the scene is pinned
+   (sticky) for 0.8 screens while the sheet leaves the phone and becomes the
+   exam card, then holds. Phones and reduced motion: stacked, not pinned. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) and (pointer: fine) {
+    .notes {
+      height: 180vh;
+      padding-block: 0;
+      view-timeline-name: --notes;
+    }
+    .notesStage {
+      position: sticky;
+      top: 0;
+      min-height: 100vh;
+    }
+    .sheet {
+      animation: sheet-out linear both;
+      animation-timeline: --notes;
+      animation-range: contain 0% contain 40%;
+    }
+    .examCard {
+      animation: card-become linear both;
+      animation-timeline: --notes;
+      animation-range: contain 25% contain 65%;
+    }
+  }
+  @media (prefers-reduced-motion: no-preference) and ((max-width: 899.98px) or (pointer: coarse)) {
+    .phone,
+    .examCard {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 70%;
+    }
+  }
+}
+
+@keyframes hero-out {
+  to {
+    transform: translateY(-48px) scale(0.94);
+    opacity: 0.4;
+  }
+}
+@keyframes bubble-in {
+  from {
+    transform: translateX(var(--from, 0));
+    opacity: 0;
+  }
+}
+@keyframes card-fan {
+  from {
+    transform: translateY(24px) rotate(0deg);
+  }
+  to {
+    transform: var(--fan);
+  }
+}
+@keyframes wheel-turn {
+  from {
+    transform: rotate(-300deg);
+  }
+}
+@keyframes digit-roll {
+  from {
+    transform: translateY(0);
+  }
+}
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0.02);
+  }
+}
+@keyframes sticker-drop {
+  from {
+    transform: translateY(-48px) rotate(-10deg) scale(0.92);
+    opacity: 0;
+  }
+}
+@keyframes sheet-out {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: translate(70%, -18%) rotate(10deg) scale(0.9);
+    opacity: 0;
+  }
+}
+@keyframes card-become {
+  from {
+    transform: translate(-45%, -30%) rotate(-12deg) scale(0.6);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(4deg);
+    opacity: 1;
+  }
+}
+@keyframes reveal {
+  from {
+    transform: translateY(32px);
+    opacity: 0;
   }
 }

@@ -162,6 +162,31 @@ Skills cargadas de nuevo (`emil-design-eng`, `apple-design`). Detalle en `docs/d
 | Ajustes › Perfil | La hoja usa el `Modal` de siempre (sale en 120 ms, más rápido que entra). | `settings.md`: lo elegido en la bienvenida se cambia aquí; retirar el permiso pide confirmación con «Cancelar» enfocado (`alerts.md`). | `components/welcome/profile-settings.tsx` |
 
 `libraries-dev`: no se instala nada; la espera de guardar es el orbe pequeño del botón, como en el asistente.
+## Login animado y transición desde la landing (20/10/2026, entrega 3 del encargo «landing, login y bienvenida»)
+
+Skills cargadas de nuevo. Detalle en `docs/diseno/login-animado/README.md`.
+
+| Qué | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|
+| El orbe viaja de la landing al login | *Spatial consistency* y *Use blur/crossfade… one transformation*: el mismo objeto continúa, no aparece otro. 280 ms, `ease-out` fuerte (`--ease`), dentro de 200–300 ms. | `motion.md`: movimiento con propósito, breve, y nunca el único portador de significado (sin la API se navega igual). | `lib/orb-transition.ts`, `components/orb-link.tsx`, `globals.css › dream-orb` |
+| Entrada escalonada del login | *Stagger 30–80 ms*: pegatina, titular, texto, botón y enlaces, 40 ms entre cada uno; `backwards` para no pisar el `scale(0.97)` de `.press`. *Stagger is decorative — never block interaction*: el botón se puede pulsar desde el primer fotograma. | `launching.md`: el login sale al instante; nada espera a la animación. | `app/login/login.module.css` |
+| El error no empuja de golpe | *Preventing jarring changes*: lo de debajo se desliza a su sitio (FLIP con `transform`, 200 ms). Reducido: sin deslizamiento. | `feedback.md`: el error dice qué pasó y ofrece «Volver a intentarlo» donde se mira. | `app/login/page.tsx` |
+| Movimiento reducido | Sin viaje ni deslizamiento; la entrada es un fundido de 120 ms. | `accessibility.md › Motion`. | `orb-transition.ts › canTravel`, `login.module.css` |
+
+## Landing con scroll cinematográfico (20/10/2026, entrega 4 del encargo «landing, login y bienvenida»)
+
+Skills cargadas: `cinematic-scroll` (primero el guion: `docs/diseno/landing-storyboard.md`), `apple-design` y `emil-design-eng`. Detalle en `docs/diseno/landing/README.md`.
+
+| Escena | `cinematic-scroll` | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|---|
+| Todas | *Static composition first*: cada escena se lee completa sin animaciones (sin soporte, sin JS, con movimiento reducido). *One scroll clock*: el del navegador, sin suavizados. | Solo `transform` y `opacity`. | `accessibility.md`: un `h1`, un `h2` por escena, texto real y foco visible. `color.md`: tinta AA de cada `--pop-*`. | `app/page.tsx`, `app/landing.module.css` |
+| 1. Héroe | *Keep copy and the primary action accessible without waiting for spectacle*: «Probar Dream» desde el primer fotograma. | *Stagger 30–80 ms* al cargar (`.stagger`). Al salir, el héroe sube y se funde, ligado al scroll (lineal: *direct scrubbing stays direct*). | `branding.md`: la identidad (azul, titular, orbe) va en la entrada; el botón es el 3D de la app. | `.heroInner`, `.heroSticker` (`dream-orb`) |
+| 2. Apuntes → examen | *Signature moment*: la foto se convierte en examen. *Selective pinning*: solo escritorio con puntero fino, 180 vh (0,8 pantallas de recorrido), con pausa legible del 65 al 100 %. | *Spatial consistency*: la hoja sale del móvil y es la misma que llega a la tarjeta. | `layout.md`: en móvil, apilado y sin fijar. | `.notes`, `.notesStage`, `--notes` |
+| 3. Chat | *Use only the chapters the content needs*: una conversación corta que cuenta la regla de Dream. | Cada burbuja entra desde su lado (32 px), con fundido. | `generative-ai.md`: se ve que la IA da pistas, no respuestas. | `.bubbles` |
+| 4. Tests | *Compose midpoints*: el abanico de tarjetas se ve bien a mitad. | Rotación de la rueda ligada al scroll, sin muelles encima. | `pickers.md`: la rueda de la nota como en la app. | `.deck`, `.wheel` |
+| 5. Progreso | *Do not promise what the product does not do*: rótulo «Ejemplo». | El número rueda como un cuentakilómetros (`transform`), sin animar texto; un solo reloj para toda la tarjeta. | `accessibility.md`: el valor real «82 %» es texto oculto; las cifras animadas, `aria-hidden`. | `.odometer`, `--progress` |
+| 6. Gratis | Cierre con la acción. | *Never animate from scale(0)*: la pegatina cae desde 0,92. | `writing.md`: una frase clara y el botón. | `.freeSticker` |
+| Reducido | *Complete reduced motion*: sin fijar, sin parallax ni animaciones de scroll. | Solo fundidos de carga. | `accessibility.md › Motion`. | `@media (prefers-reduced-motion: no-preference)` |
 
 ## Criterio sobre «solo transform y opacity»
 

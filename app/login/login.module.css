@@ -204,18 +204,48 @@
   border-radius: var(--radius-nav);
 }
 
-/* Entry: mascot, heading, legal and back link rise 40 ms apart. The Google
-   button and the messages (.rise) are left out so nothing delays the main
-   action and .press keeps working (backwards fill, never `both`). */
-.form > :not(:global(.rise)):not(.googleButton) {
+/* Entry (prompt «bienvenida» §3.3): sticker, title, text, Google button
+   and the links rise 40 ms apart, 200 ms ease-out, transform and opacity.
+   `backwards` (never `both`), so .press keeps its own scale afterwards. The
+   button can be pressed from the first frame: the rise never blocks it.
+   The messages (.rise) keep their own entrance. */
+.form > :where(:not(:global(.rise), .heading)),
+.heading > * {
   animation: riseIn var(--dur-rise) var(--ease) backwards;
 }
-.form > .heading {
+.heading > h1 {
   animation-delay: var(--stagger);
+}
+.heading > p {
+  animation-delay: calc(var(--stagger) * 2);
+}
+.form > .googleButton {
+  animation-delay: calc(var(--stagger) * 3);
 }
 .form > .legal,
 .form > .back {
+  animation-delay: calc(var(--stagger) * 4);
+}
+/* The brand panel on desktop: the pitch follows the sticker. */
+.pitch > * {
+  animation: riseIn var(--dur-rise) var(--ease) backwards;
   animation-delay: calc(var(--stagger) * 2);
+}
+.pitch > :nth-child(2) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+/* Landing → login: the Orb sticker is where the landing's Orb lands
+   (lib/orb-transition.ts). One name per layout: the desktop mascot or the
+   phone sticker, never both on screen. */
+@media (min-width: 1024px) {
+  .mascot {
+    view-transition-name: dream-orb;
+  }
+}
+@media (max-width: 1023.98px) and (min-height: 500.02px) {
+  .mobileBrand {
+    view-transition-name: dream-orb;
+  }
 }
 @keyframes riseIn {
   from {
@@ -234,7 +264,9 @@
   .spinner {
     animation: breathe 1.2s ease-in-out infinite;
   }
-  .form > :not(:global(.rise)):not(.googleButton) {
+  .form > :where(:not(:global(.rise), .heading)),
+  .heading > *,
+  .pitch > * {
     animation-name: fadeIn;
     animation-duration: var(--dur-fast);
   }
