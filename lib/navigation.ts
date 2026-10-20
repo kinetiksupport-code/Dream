@@ -31,6 +31,8 @@ export function isFocusRoute(pathname: string) {
     pathname.startsWith("/tests/") ||
     // Asistente de crear examen a pantalla completa (§5.1).
     pathname === "/exams/new" ||
+    // Actividad de sintagmas, solo ordenador (prompt «sintagmas» §3).
+    pathname === "/sintagmas" ||
     /^\/exams\/[^/]+\/sessions\//.test(pathname)
   );
 }

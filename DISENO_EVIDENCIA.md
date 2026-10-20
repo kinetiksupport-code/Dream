@@ -188,6 +188,24 @@ Skills cargadas: `cinematic-scroll` (primero el guion: `docs/diseno/landing-stor
 | 6. Gratis | Cierre con la acción. | *Never animate from scale(0)*: la pegatina cae desde 0,92. | `writing.md`: una frase clara y el botón. | `.freeSticker` |
 | Reducido | *Complete reduced motion*: sin fijar, sin parallax ni animaciones de scroll. | Solo fundidos de carga. | `accessibility.md › Motion`. | `@media (prefers-reduced-motion: no-preference)` |
 
+## Actividad de sintagmas (20/10/2026, encargo «sintagmas»)
+
+Skills cargadas de nuevo (`emil-design-eng`, `apple-design`; páginas leídas: `undo-and-redo.md`, `onboarding.md`, `keyboards.md`, `focus-and-selection.md`, `feedback.md`, `pointing-devices.md`). Detalle en `docs/diseno/sintagmas/README.md`. Solo ordenador.
+
+| Qué | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|
+| Dibujar la raya | *Never animate keyboard-initiated actions* y *Tens of times/day → drastically reduce*: mientras arrastras la raya sigue al ratón sin animación; al soltar entra en 200 ms desde `scaleX(0.85)` con fundido. Se imanta a palabras enteras. | `pointing-devices.md`: el ratón con teclado. `accessibility.md › more than color alone`: azul al arrastrar, roja **y discontinua** si cruzaría otra, gris con «?» sin etiqueta. | `components/sintagmas/sentence-board.tsx`, `sintagmas.module.css › .mark, .bracket` |
+| Etiquetas junto a la raya | *Make popovers origin-aware*: el selector sale de debajo de la raya (`transform-origin: center top`), 120 ms, desde 0,97. | `entering-data.md` (ya citado en la bienvenida): opciones en vez de escribir en la fase fácil. | `label-picker.tsx`, `.picker` |
+| Escribir la etiqueta | Sin animación en las sugerencias (se ven al teclear, decenas de veces). | `keyboards.md › Respect standard keyboard shortcuts`: Tab/Intro aceptan, Esc cancela, flechas recorren. Combobox con `aria-activedescendant`. | `label-picker.tsx › WriteLabel` |
+| Deshacer y rehacer | Sin animación (atajo de teclado). | `undo-and-redo.md › Let people undo multiple times` (100 pasos) y `› Respect standard keyboard shortcuts` (`keyboards.md`): Ctrl/Cmd+Z, Mayús+Ctrl/Cmd+Z y Ctrl+Y. Los botones se quedan porque el encargo los pide visibles. | `lib/sintagmas.ts › commit/undo/redo` |
+| Teclado | — | `focus-and-selection.md`: las palabras son un grupo con una sola parada de Tab; flechas dentro, Mayús+flechas abarcan, Intro dibuja, Supr borra. Anillo de foco de 3 px. | `sentence-board.tsx › wordKey, markKey` |
+| Pista y corrección | Pista y tarjeta de corrección suben 6 px con fundido (200–240 ms). | `feedback.md › Consider integrating status feedback into your interface`: la corrección va en cada raya (✓/✗) y debajo, no en una alerta. `› Show people when a command can’t be carried out`: «Las rayas no se pueden cruzar…», «Ponle etiqueta a la raya gris». | `syntax-activity.tsx › Feedback`, `.hint` |
+| Tutorial | La demo es un bucle (permitido para indicadores) con `transform` y `opacity`; reducido: quieta y resuelta. *Rare/first-time: can add delight*. | `onboarding.md › Teach through interactivity` y `› design a brief experience`: tres pasos de una frase y un ejemplo. Choca con `› If you let people skip the tutorial… don’t present it again`: Carlos pidió que salga cada vez; la casilla «No volverme a mostrar» y «?» lo resuelven. | `tutorial.tsx`, `.demo*` |
+| Solo ordenador | — | `layout.md` (ya citado): mismo mensaje en el sitio de la tarjeta y de la pantalla. `writing.md`: una frase clara. | `desktop-only.tsx` |
+| Cambio de fase | Mensaje en pastilla verde, sube con fundido. | `writing.md`: positivo y breve («¡Lo dominas! Ahora escribe tú las etiquetas.»). | `lib/sintagmas.ts › phaseMessage` |
+
+`libraries-dev`: no se instala nada; la espera es el `DreamActivity` de siempre.
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:
