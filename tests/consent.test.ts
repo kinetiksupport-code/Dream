@@ -2,12 +2,21 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   ageOn,
-  needsConsent,
+  consentGate,
   validateConsent,
   CONSENT_ERRORS,
+  CONSENT_TEXT,
+  TERMS_VERSION,
 } from "../lib/consent";
 
 const today = new Date(2026, 9, 17); // 17/10/2026, local time
+const done = {
+  ai_consent_at: "2026-10-20T10:00:00Z",
+  terms_accepted_at: "2026-10-20T10:00:00Z",
+  terms_version: TERMS_VERSION,
+  age_band: "14_17" as const,
+  onboarding_completed: true,
+};
 
 test("age counts whole years and waits for the birthday", () => {
   assert.equal(ageOn("2012-10-17", today), 14);
@@ -20,66 +29,37 @@ test("invalid, impossible or future birth dates have no age", () => {
     assert.equal(ageOn(value, today), null, value);
 });
 
-test("the gate stays off while dream-api does not send ai_consent_at", () => {
-  assert.equal(needsConsent(null), false);
-  assert.equal(needsConsent({}), false);
+test("the welcome stays off while dream-api does not send ai_consent_at", () => {
+  assert.equal(consentGate(null), "off");
+  assert.equal(consentGate({}), "off");
+  assert.equal(consentGate({ nickname: "Ale" }), "off");
 });
 
-test("the gate is on until the server records every required consent", () => {
-  assert.equal(needsConsent({ ai_consent_at: null, age_band: null }), true);
-  assert.equal(
-    needsConsent({ ai_consent_at: "2026-10-17T10:00:00Z", age_band: null }),
-    true,
-  );
-  assert.equal(
-    needsConsent({
-      ai_consent_at: "2026-10-17T10:00:00Z",
-      age_band: "under_14",
-      guardian_required: true,
-      guardian_confirmed_at: null,
-    }),
-    true,
-  );
-  assert.equal(
-    needsConsent({
-      ai_consent_at: "2026-10-17T10:00:00Z",
-      age_band: "under_14",
-      guardian_required: true,
-      guardian_confirmed_at: "2026-10-17T10:00:00Z",
-    }),
-    false,
-  );
-  assert.equal(
-    needsConsent({ ai_consent_at: "2026-10-17T10:00:00Z", age_band: "14_17" }),
-    false,
-  );
+test("a new student gets the whole welcome", () => {
+  assert.equal(consentGate({ ai_consent_at: null }), "welcome");
+  assert.equal(consentGate({ ...done, onboarding_completed: false }), "welcome");
 });
 
-test("nothing is accepted by default: every box must be ticked", () => {
-  assert.deepEqual(
-    validateConsent({ birthDate: "", guardian: false, ai: false }, today),
-    { birthDate: CONSENT_ERRORS.birthMissing, ai: CONSENT_ERRORS.ai },
-  );
+test("after the welcome, a withdrawn permission or new terms ask only the consent", () => {
+  assert.equal(consentGate(done), "off");
+  assert.equal(consentGate({ ...done, ai_consent_at: null }), "consent");
+  assert.equal(consentGate({ ...done, terms_accepted_at: null }), "consent");
+  assert.equal(consentGate({ ...done, terms_version: "2026-10-01" }), "consent");
+  assert.equal(consentGate({ ...done, age_band: null }), "consent");
 });
 
-test("under 14 needs the guardian box; 14 or older does not", () => {
-  assert.deepEqual(
-    validateConsent({ birthDate: "2013-05-01", guardian: false, ai: true }, today),
-    { guardian: CONSENT_ERRORS.guardian },
-  );
-  assert.deepEqual(
-    validateConsent({ birthDate: "2013-05-01", guardian: true, ai: true }, today),
-    {},
-  );
-  assert.deepEqual(
-    validateConsent({ birthDate: "2012-10-17", guardian: false, ai: true }, today),
-    {},
-  );
+test("nothing is accepted by default: both boxes must be ticked", () => {
+  assert.deepEqual(validateConsent({ ai: false, terms: false }), {
+    ai: CONSENT_ERRORS.ai,
+    terms: CONSENT_ERRORS.terms,
+  });
+  assert.deepEqual(validateConsent({ ai: true, terms: false }), { terms: CONSENT_ERRORS.terms });
+  assert.deepEqual(validateConsent({ ai: true, terms: true }), {});
 });
 
-test("a future date is an error with its cause", () => {
-  assert.deepEqual(
-    validateConsent({ birthDate: "2027-01-01", guardian: false, ai: true }, today),
-    { birthDate: CONSENT_ERRORS.birthInvalid },
+test("the AI box keeps the exact text of the Política de privacidad", () => {
+  assert.equal(
+    CONSENT_TEXT.ai,
+    "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme",
   );
 });
