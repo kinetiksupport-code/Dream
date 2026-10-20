@@ -11,7 +11,7 @@ El responsable del tratamiento de tus datos es **Carlos Sánchez**, a título pa
 | Datos | De dónde salen | Para qué | Base legal |
 | --- | --- | --- | --- |
 | Correo y nombre de tu cuenta de Google | Inicio de sesión con Google | Crear y proteger tu cuenta | Ejecución del servicio |
-| Nombre, fecha de nacimiento y nivel educativo | Lo escribes al empezar | Adaptar la ayuda a tu curso y saber si eres menor de 14 años | Ejecución del servicio y obligación legal (menores) |
+| Nombre, fecha de nacimiento y nivel educativo | Lo escribes al empezar | Adaptar la ayuda a tu curso y comprobar que tienes al menos 14 años | Ejecución del servicio y obligación legal (edad mínima) |
 | Apodo y aficiones | Los eliges en la bienvenida (puedes saltarlo) | Personalizar las explicaciones: el apodo para dirigirse a ti y las aficiones para poner ejemplos que te suenen | Ejecución del servicio |
 | Conversaciones con el tutor y tus mensajes | Lo que escribes o dictas | Responderte y guardar tu historial | Ejecución del servicio |
 | Archivos que subes (fotos, PDF, Word, PowerPoint, Excel, texto) | Los subes tú, desde el dispositivo o escaneando el QR con el móvil | Leer su contenido para ayudarte a estudiar | Ejecución del servicio |
@@ -27,7 +27,7 @@ No pedimos teléfono, dirección, DNI ni datos de pago. Hoy Dream no cobra nada.
 ### Qué pasa con tus datos, paso a paso
 
 1. **Entras con Google.** Google confirma quién eres y nos da tu correo (y tu nombre si lo comparte). Nunca vemos tu contraseña de Google. Con eso se crea tu perfil en nuestra base de datos.
-2. **Te presentas.** Nos dices tu nombre, tu fecha de nacimiento y tu nivel (por ejemplo 2.º de Bachillerato). La fecha de nacimiento solo sirve para calcular tu franja de edad (menor de 14, de 14 a 17 o adulto) y saber si hace falta tutor; no la usamos para nada más.
+2. **Te presentas.** Nos dices tu nombre, tu fecha de nacimiento y tu nivel (por ejemplo 2.º de Bachillerato). La fecha de nacimiento solo sirve para comprobar que tienes al menos 14 años y calcular tu franja de edad (de 14 a 17 o adulto); no la usamos para nada más.
 3. **Escribes un mensaje al tutor.** Tu navegador lo envía por una conexión cifrada a nuestro servidor en Supabase. El servidor comprueba que eres tú, mira que no te hayas pasado de los límites de uso y guarda tu mensaje en tu conversación.
 4. **El servidor pide la respuesta a la IA.** Envía a Groq (o a Cloudflare Workers AI, si Groq no responde o si usas el modo «Pensar más») el texto de tu mensaje, la parte reciente de esa conversación, el texto de los archivos que hayas adjuntado y las instrucciones internas del tutor. No envía tu correo ni tu nombre. Tampoco tu apodo: la IA escribe una marca y Dream pone tu apodo al mostrarte la respuesta. Sí envía, cuando sirven para un ejemplo, las aficiones que elegiste, sin nada que te identifique. La respuesta vuelve a nuestro servidor, se guarda en tu historial y se te muestra poco a poco.
 5. **Si hace falta buscar en internet,** el servidor envía a Tavily una consulta corta (máximo 300 caracteres) que escribe el propio tutor. Como esa consulta puede reflejar lo que preguntaste, evita poner nombres, teléfonos o datos privados en tus preguntas. Las webs consultadas aparecen en «Buscado en la web»; para mostrar su logo, tu navegador pide a Google el icono de cada web con solo su dirección (por ejemplo, «wikipedia.org»), nunca tu pregunta.
@@ -73,13 +73,13 @@ Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Goog
 
 ## 6. Inteligencia artificial
 
-Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
+Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras en Ajustes › Privacidad o escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
 
 Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. No se toman decisiones automáticas con efectos legales sobre ti. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
 
 ## 7. Menores de edad
 
-En España, un menor puede dar su consentimiento para tratar sus datos a partir de los **14 años**. Si tienes **menos de 14**, necesitas la autorización de tu padre, madre o tutor legal. Dream te pregunta tu fecha de nacimiento para saberlo y, para usar Dream, tienes que marcar una casilla que dice: "Mi padre, madre o tutor legal me ha dado permiso para usar Dream y acepta la Política de privacidad y los Términos y condiciones". Guardamos la fecha y hora en que la marcas. Esa casilla es una declaración tuya; no verificamos la identidad del tutor. Los padres o tutores pueden escribirnos a hellodream@edudream.es para pedir el acceso o la eliminación de los datos de su hijo o hija.
+En España, un menor puede dar su consentimiento para tratar sus datos a partir de los **14 años**. Por eso **Dream es solo para mayores de 14 años**. Al empezar te preguntamos tu fecha de nacimiento: si tienes menos de 14, no puedes crear la cuenta, borramos lo que hubieras escrito en la bienvenida (nombre, apodo y aficiones), no guardamos tu fecha de nacimiento y cerramos la sesión. No verificamos tu identidad: la fecha es una declaración tuya. Si un padre, madre o tutor legal cree que un menor de 14 años está usando Dream, puede escribirnos a hellodream@edudream.es y borraremos su cuenta y sus datos.
 
 ## 8. Cuánto tiempo guardamos los datos
 

@@ -15,10 +15,7 @@ Dream es una web (instalable como app) con un tutor de inteligencia artificial q
 - Entras con tu cuenta de Google. Eres responsable de mantenerla segura.
 - Debes dar datos verdaderos, sobre todo tu fecha de nacimiento. Para usar el tutor debes marcar también una casilla aparte: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme" (ver Política de privacidad). Sin ella no podemos responderte, así que no podrás usar el chat.
 - Una cuenta es personal: no la compartas.
-- **Si tienes menos de 14 años,** para crear la cuenta debes marcar la casilla: "Mi padre, madre o tutor legal me ha dado permiso para usar Dream y acepta la Política de privacidad y los Términos y condiciones".
-- **Esa casilla es una declaración formal y vinculante.** Al marcarla confirmas que es verdad y que tu tutor ha leído y aceptado estos textos. Si no lo es, estarás incumpliendo estos términos: podremos cerrar la cuenta sin aviso y borrar sus datos, y la responsabilidad por el uso indebido será de quien haya dado la autorización falsa.
-- **Si eres tutor legal** de un menor de 14 años que use Dream, aceptas estos términos en su nombre, eres responsable de supervisar su uso y puedes pedir en cualquier momento que cerremos su cuenta y borremos sus datos escribiendo a hellodream@edudream.es.
-- **Menores de 14 años: normas más estrictas.** Su uso está pensado solo para estudiar, no pueden subir fotos de personas ni datos personales, y podemos aplicar límites o bloqueos con más rapidez si se incumple cualquier norma.
+- **Dream es solo para mayores de 14 años.** Si tienes menos de 14, no puedes crear una cuenta.
 - Si tienes 14 o 15 años puedes aceptar tú mismo; de todos modos te recomendamos hablarlo con tu familia.
 
 ## 4. Dream es gratis, con límites de uso
@@ -51,7 +48,7 @@ Estas normas existen para que Dream siga siendo gratis, justo y seguro para todo
 - Una persona, una cuenta. No compartas tu acceso ni uses la cuenta de otra persona.
 - No crees varias cuentas para saltarte los límites de uso, la cola de espera o un bloqueo.
 - Mantén tu cuenta de Google segura. Lo que ocurra desde tu cuenta lo asumes tú.
-- Da una fecha de nacimiento real. Mentir sobre la edad para evitar la autorización de un tutor incumple estos términos.
+- Da una fecha de nacimiento real. Mentir sobre la edad para usar Dream con menos de 14 años incumple estos términos y supone el cierre de la cuenta.
 
 **C. Lo que escribes y subes**
 
