@@ -4,6 +4,7 @@ import { AdmissionError, consumingActions, createAdmission, readBoundedBody } fr
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
+import { SYNTAX_ACTIONS, SyntaxActivityError, syntaxAction } from './syntax.ts';
 import { chatShortcut, type ChatShortcut } from './validation.ts';
 import {
   DESKTOP_UPLOAD_ACTIONS, MOBILE_UPLOAD_ACTIONS, QR_CHANNEL_HEADER, UploadSessionError,
@@ -139,6 +140,18 @@ async function groqJson(system: string, user: string, operation: string, signal?
   return JSON.parse(content);
 }
 
+/** JSON de la IA con mensajes propios y temperatura baja (actividad de sintagmas). */
+async function groqJsonMessages(messages: {role:string;content:string}[], operation: string, opts: {temperature:number;maxTokens:number}, signal?: AbortSignal, admission?: ReturnType<typeof createAdmission>) {
+  const response = await groqProvider.request({ operation, signal, beforeAttempt: admission?.beforeAttempt, pause: admission?.pause, body: {
+    model: groqModel(), stream: false, temperature: opts.temperature, max_tokens: opts.maxTokens,
+    response_format: { type: 'json_object' }, messages,
+  }});
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string') throw new Error('empty');
+  return JSON.parse(content);
+}
+
 const normalizeAnswer = (value: unknown) => String(value ?? '').trim().toLocaleLowerCase('es');
 function objectiveAnswerIsCorrect(type: string, answer: unknown, expected: unknown) {
   if (answer == null || typeof answer === 'string' && !answer.trim()) return false;
@@ -250,6 +263,20 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     } catch (error) {
       if (error instanceof AdmissionError || isProviderError(error) || error instanceof TavilyError) return safeFailure(error);
       return json({ error: error instanceof ExamError ? error.message : 'No se pudo completar la operación. Tus datos guardados se conservan.' }, error instanceof ExamError ? error.status : 503);
+    }
+  }
+
+  // Actividad de sintagmas (prompt «sintagmas»). Sin la migración
+  // 20261021090000 responde 503 y la web lo dice sin romperse.
+  if (SYNTAX_ACTIONS.has(String(body.action))) {
+    if (!groqConfigured() && ['syntax_conventions','syntax_next'].includes(String(body.action))) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    try {
+      return json(await syntaxAction(admin, user.id, body, (messages, operation, opts) => groqJsonMessages(messages, operation, opts, req.signal, admission)));
+    } catch (error) {
+      if (error instanceof AdmissionError || isProviderError(error)) return safeFailure(error);
+      if (error instanceof SyntaxActivityError) return json({ error: error.message }, error.status);
+      console.error(JSON.stringify({ event: 'syntax_failed', action: String(body.action) }));
+      return json({ error: 'La actividad de sintagmas no está disponible ahora.', code: 'syntax_unavailable' }, 503);
     }
   }
 
