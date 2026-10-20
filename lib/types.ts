@@ -1,9 +1,5 @@
-export interface UserPreferences {
-  pref_step_by_step: boolean;
-  pref_practice_suggestions: boolean;
-  pref_calm_tone: boolean;
-}
-export interface DreamProfile extends UserPreferences {
+import type { ConsentProfile } from "./consent";
+export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
 }
@@ -27,6 +23,7 @@ export type DreamState =
   | "composing"
   | "shaping"
   | "listening"
+  | "waiting"
   | "done"
   | "error";
 export interface Attachment {
@@ -36,6 +33,7 @@ export interface Attachment {
   preview?: string;
   status: "uploading" | "processing" | "ready" | "error";
   error?: string;
+  queued?: boolean;
 }
 export interface StreamDelta {
   type: "delta";
@@ -49,7 +47,20 @@ export type DreamStreamEvent =
   | StreamDelta
   | StreamActivity
   | { type: "complete" }
-  | { type: "error"; message: string };
+  | {
+      type: "error";
+      message: string;
+      code?: string;
+      retry_after?: number;
+      position?: number;
+      /** The server undid the saved turn, so the same message can be retried. */
+      reverted?: boolean;
+    };
+/** A web page the AI read to answer («Buscado en la web»). */
+export interface WebSource {
+  title: string;
+  url: string;
+}
 export interface QuizWidget {
   type: "quiz";
   testId: string;
@@ -59,12 +70,7 @@ export interface QuizWidget {
   questionCount?: number;
   mode?: "practice" | "exam";
 }
-export type DreamWidget = QuizWidget;
 export type AnswerValue = string | string[] | Record<string, string>;
-export interface TestAnswer {
-  question_id: string;
-  answer: AnswerValue;
-}
 export interface DreamQuestion {
   id: string;
   position: number;
@@ -108,10 +114,4 @@ export interface TestResult {
     prompt: string;
     answer: AnswerValue;
   })[];
-}
-export interface LearningTopic {
-  concept: string;
-  subject: string;
-  topic: string;
-  status: "practicing" | "improving" | "almost_mastered" | "mastered";
 }

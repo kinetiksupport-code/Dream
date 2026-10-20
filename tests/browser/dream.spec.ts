@@ -6,9 +6,6 @@ const qid = "32345678-1234-1234-1234-123456789abc";
 const profile = {
   email: "qa@example.test",
   display_name: "Alex",
-  pref_step_by_step: true,
-  pref_practice_suggestions: true,
-  pref_calm_tone: true,
 };
 async function authenticated(page: Page) {
   await page.addInitScript(() => {
@@ -87,9 +84,6 @@ async function authenticated(page: Page) {
           body: '{"type":"activity","activity":"searching"}\n{"type":"delta","text":"Una respuesta real del contrato de prueba."}\n{"type":"complete"}\n',
         });
         return;
-      case "preferences_update":
-        data = { profile: { ...profile, ...body } };
-        break;
       case "attachment_upload":
         data = { attachment: { id: qid, status: "processed" } };
         break;
@@ -188,7 +182,7 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
   await authenticated(page);
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
@@ -228,11 +222,9 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
     "DREAM_WIDGET",
   );
   await page.goto("/settings");
-  await expect(page.getByRole("switch", { name: "Paso a paso" })).toBeChecked();
-  await page.getByRole("switch", { name: "Paso a paso" }).click();
-  await expect(
-    page.getByRole("switch", { name: "Paso a paso" }),
-  ).not.toBeChecked();
+  // Ajustes shows the Google account behind the session; no help-style toggles.
+  await expect(page.getByText("qa@example.test")).toBeVisible();
+  await expect(page.getByText("Cómo te ayuda Dream")).toHaveCount(0);
   await page.screenshot({
     animations: "disabled",
     path: "test-results/settings-light.png",
@@ -248,23 +240,23 @@ test("chat contract, real parser, markdown, attachments, widgets and theme", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
     path: "test-results/chat-mobile-dark.png",
   });
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
+  await page
+    .getByRole("navigation", { name: "Principal" })
+    .getByRole("link", { name: "Más" })
+    .click();
+  await page.getByRole("link", { name: "Apuntes", exact: true }).click();
   await expect(
-    page.getByRole("link", { name: "Progreso", exact: true }),
-  ).toBeVisible();
-  await page.getByRole("link", { name: "Progreso", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Mira cuánto has avanzado." }),
+    page.getByRole("heading", { name: "Apuntes", exact: true }),
   ).toBeVisible();
   await page.screenshot({
     animations: "disabled",
-    path: "test-results/progress-mobile-dark.png",
+    path: "test-results/notes-mobile-dark.png",
   });
 });
 test("practice corrects server-side and shows returned result", async ({
@@ -406,7 +398,7 @@ test("conversation rename/delete, keyboard dialog and PWA assets", async ({
   await page
     .getByRole("button", { name: "Opciones de Una idea sobre el universo" })
     .click();
-  await page.getByRole("button", { name: "Renombrar", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Renombrar", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Nombre de conversación" })
     .fill("Otra perspectiva");
@@ -417,10 +409,13 @@ test("conversation rename/delete, keyboard dialog and PWA assets", async ({
   await page
     .getByRole("button", { name: "Opciones de Otra perspectiva" })
     .click();
-  await page.getByRole("button", { name: "Eliminar", exact: true }).click();
-  await expect(page.getByRole("dialog")).toBeVisible();
-  await page.keyboard.press("Escape");
+  // Historial: delete has undo instead of a confirmation dialog.
+  await page.getByRole("menuitem", { name: "Borrar", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "Deshacer" }).click();
+  await expect(
+    page.getByRole("link", { name: /^Otra perspectiva/ }),
+  ).toBeVisible();
   const manifest = await page.request.get("/manifest.webmanifest");
   expect(manifest.ok()).toBeTruthy();
   expect((await manifest.json()).display).toBe("standalone");
@@ -576,7 +571,7 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
       });
       await page.goto("/chat");
       await expect(
-        page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+        page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
       ).toBeVisible();
       await page.screenshot({
         path: `test-results/empty-${size.name}-${theme}.png`,
@@ -586,13 +581,13 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
       await expect(page.locator(".message")).toHaveCount(12);
       await page.locator(".chat-scroll").evaluate((el) => (el.scrollTop = 0));
       await expect(
-        page.getByRole("button", { name: "Volver al final" }),
+        page.getByRole("button", { name: "Ir al último mensaje" }),
       ).toBeVisible();
       await page.screenshot({
         path: `test-results/long-${size.name}-${theme}.png`,
         animations: "disabled",
       });
-      await page.getByRole("button", { name: "Volver al final" }).click();
+      await page.getByRole("button", { name: "Ir al último mensaje" }).click();
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -612,7 +607,7 @@ test("visual sweep: tablet, mobile, light/dark, long chat and reduced viewport",
   });
 });
 
-test("Figma states: test feedback, original orb, files, bottom sheet and editorial math", async ({
+test("design states: test feedback, Orb, files, tab bar and editorial math", async ({
   page,
 }) => {
   test.setTimeout(120000);
@@ -724,22 +719,31 @@ test("Figma states: test feedback, original orb, files, bottom sheet and editori
   });
   await page.goto("/chat");
   await expect(
-    page.getByRole("heading", { name: "¿Qué quieres entender?" }),
+    page.getByRole("heading", { name: "¿Qué quieres entender hoy?" }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
-  await expect(page.locator(".bottom-sheet")).toBeVisible();
+  // Mobile tab bar: Inicio, Chat, Tareas, Más (design "Móvil · Inicio").
+  const tabs = page.getByRole("navigation", { name: "Principal" });
+  await expect(tabs.getByRole("link")).toHaveText([
+    "Inicio",
+    "Chat",
+    "Tareas",
+    "Más",
+  ]);
+  await expect(tabs.getByRole("link", { name: "Inicio" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await tabs.getByRole("link", { name: "Más" }).click();
+  await expect(page.getByRole("heading", { name: "Más" })).toBeVisible();
+  await expect(tabs.getByRole("link", { name: "Más" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
   await page.screenshot({
-    path: "test-results/figma-bottom-sheet.png",
+    path: "test-results/design-more.png",
     animations: "disabled",
   });
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Abrir navegación" }),
-  ).toBeFocused();
-  await page.getByRole("button", { name: "Abrir navegación" }).click();
-  await page.locator(".sheet-backdrop").click({ position: { x: 3, y: 3 } });
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await tabs.getByRole("link", { name: "Inicio" }).click();
   await page.locator("input[type=file]").setInputFiles({
     name: "Ecuaciones.pdf",
     mimeType: "application/pdf",
@@ -757,9 +761,8 @@ test("Figma states: test feedback, original orb, files, bottom sheet and editori
     path: "test-results/figma-math.png",
     animations: "disabled",
   });
-  expect(
-    await page.locator(".dream-mark img").first().getAttribute("src"),
-  ).toContain("dream-orb.png");
+  // The Orb is the canvas SVG, not a redrawn mark.
+  await expect(page.locator(".orb .orb-nucleus").first()).toBeAttached();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -807,6 +810,16 @@ test("real UI states from stream events and failed upload recovery", async ({
     .fill("Una idea actual");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
   await expect(page.locator(".activity-thinking")).toBeVisible();
+  // "Thinking" shows before the chat request starts: wait for the simulated
+  // stream to exist so the events below are not dropped.
+  await page.waitForFunction(
+    () =>
+      !!(
+        window as typeof window & {
+          qaStream?: ReadableStreamDefaultController<Uint8Array>;
+        }
+      ).qaStream,
+  );
   await page.screenshot({
     path: "test-results/figma-thinking.png",
     animations: "disabled",
@@ -862,7 +875,7 @@ test("real UI states from stream events and failed upload recovery", async ({
   });
   const chooser = page.waitForEvent("filechooser");
   await page
-    .getByRole("button", { name: "Analizar archivo", exact: true })
+    .getByRole("button", { name: "Subir apuntes", exact: true })
     .click();
   await (
     await chooser
@@ -881,9 +894,6 @@ test("real UI states from stream events and failed upload recovery", async ({
     .getByRole("button", { name: "Reintentar Ecuaciones.pdf" })
     .click();
   await expect(page.locator(".file-card .attachment-chip.ready")).toBeVisible();
-  await page
-    .locator(".chat-scroll")
-    .evaluate((el) => (el.scrollTop = el.scrollHeight));
   await page.screenshot({
     path: "test-results/figma-file-card.png",
     animations: "disabled",
@@ -917,4 +927,117 @@ test("real UI states from stream events and failed upload recovery", async ({
       animations: "disabled",
     });
   }
+});
+
+test("Ajustes: delete history end to end, failure stays visible, account deletion with confirmation", async ({
+  page,
+}) => {
+  await authenticated(page);
+  let deleted = false;
+  let failNext = true;
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.action === "conversations_delete_all") {
+      if (failNext) {
+        failNext = false;
+        await route.fulfill({
+          status: 503,
+          json: { error: "No se pudo borrar el historial. Inténtalo de nuevo." },
+        });
+        return;
+      }
+      deleted = true;
+      await route.fulfill({ json: { ok: true } });
+      return;
+    }
+    if (body.action === "conversations" && deleted) {
+      await route.fulfill({ json: { items: [] } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Borrar historial" }).click();
+  // Confirmations are alert dialogs (role="alertdialog"), centred.
+  const dialog = page.getByRole("alertdialog");
+  await expect(dialog).toContainText("¿Borrar todo el historial?");
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "No se pudo borrar el historial",
+  );
+  await dialog.getByRole("button", { name: "Borrar historial" }).click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Historial borrado." }),
+  ).toBeVisible();
+  // With nothing left, the button explains why there is nothing to delete.
+  await expect(
+    page.getByRole("button", { name: "Borrar historial" }),
+  ).toHaveAccessibleDescription(/No tienes conversaciones guardadas/);
+  expect(deleted).toBe(true);
+  await page.goto("/chat?view=recent");
+  await expect(
+    page.getByRole("heading", { name: "Aún no hay conversaciones" }),
+  ).toBeVisible();
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Eliminar mi cuenta" }).click();
+  const account = page.getByRole("alertdialog");
+  const remove = account.getByRole("button", { name: "Eliminar cuenta" });
+  await expect(remove).toBeDisabled();
+  await account
+    .getByRole("textbox", { name: "Escribe ELIMINAR para confirmar" })
+    .fill("ELIMINAR");
+  const request = page.waitForRequest(
+    (req) =>
+      req.url().includes("/functions/v1/dream-api") &&
+      req.postDataJSON()?.action === "account_delete",
+  );
+  await remove.click();
+  expect((await request).postDataJSON().confirm).toBe("ELIMINAR");
+  await expect(page).toHaveURL(/\/login/);
+});
+
+test("web search answer: sources folded in «Buscado en la web», not in the text", async ({
+  page,
+}) => {
+  await authenticated(page);
+  // Site icons come from Google's favicon service; offline here, so the
+  // initial is shown instead.
+  await page.route("https://www.google.com/s2/favicons**", (route) =>
+    route.abort(),
+  );
+  const sources = [
+    { title: "Fracción — Wikipedia", url: "https://es.wikipedia.org/wiki/Fracci%C3%B3n" },
+    { title: "Suma de fracciones", url: "https://www.khanacademy.org/math/fracciones" },
+  ];
+  await page.route("**/functions/v1/dream-api", async (route, request) => {
+    if (request.postDataJSON().action !== "chat") return route.fallback();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body: [
+        { type: "activity", activity: "searching" },
+        { type: "delta", text: `<!--DREAM_SOURCES:${JSON.stringify(sources)}-->` },
+        { type: "delta", text: "Para sumar fracciones con distinto denominador, primero buscas un denominador común." },
+        { type: "complete" },
+      ].map((e) => JSON.stringify(e)).join("\n") + "\n",
+    });
+  });
+  await page.goto("/chat");
+  await page
+    .getByRole("textbox", { name: "Mensaje para Dream" })
+    .fill("búscame en internet las operaciones con fracciones");
+  await page.getByRole("button", { name: "Enviar mensaje" }).click();
+  const toggle = page.getByRole("button", { name: /Buscado en la web · 2 fuentes/ });
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator(".message-assistant")).not.toContainText("DREAM_SOURCES");
+  await expect(page.locator(".message-assistant")).not.toContainText("wikipedia");
+  await toggle.click();
+  const wiki = page.getByRole("link", { name: /Fracción — Wikipedia/ });
+  await expect(wiki).toHaveAttribute("href", sources[0].url);
+  await expect(wiki).toHaveAttribute("target", "_blank");
+  await expect(wiki).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(page.getByText("khanacademy.org", { exact: true })).toBeVisible();
+  await page.screenshot({ animations: "disabled", path: "test-results/chat-web-sources.png" });
 });

@@ -1,0 +1,276 @@
+import { retryAfterSeconds } from './admission.mjs';
+import { classifyProviderLimit } from './capacity.mjs';
+import { GROQ_NORMAL_MODEL } from './models.mjs';
+export const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+// Modelo por defecto (modo Normal, tests y exámenes): se configura en models.mjs.
+export const DEFAULT_MODEL = GROQ_NORMAL_MODEL;
+
+const KEY_NAMES = ['GROQ_API_KEY_1', 'GROQ_API_KEY_2', 'GROQ_API_KEY_3', 'GROQ_API_KEY_4'];
+const TRANSIENT_COOLDOWN_MS = 30_000;
+const AUTH_COOLDOWN_MS = 15 * 60_000;
+// Tras un 429, esa clave espera lo que pida Groq: entre 1 s y 1 h. Si el cupo
+// del día sigue agotado al volver, otro 429 la vuelve a apartar.
+const RATE_LIMIT_COOLDOWN_MAX_S = 3600;
+
+export class GroqProviderError extends Error {
+  constructor(code, { status = 0, retryable = false, emittedContent = false, retryAfter = 0 } = {}) {
+    super(code); this.name = 'GroqProviderError'; this.code = code; this.status = status;
+    this.retryAfter = retryAfter; this.retryable = retryable; this.emittedContent = emittedContent;
+  }
+}
+
+/**
+ * Qué huecos GROQ_API_KEY_1..4 valen y por qué se descarta cada uno
+ * (vacía, formato inválido o duplicada). Nunca devuelve ni registra valores
+ * fuera de `keys`.
+ * @param {(name: string) => string | undefined} getEnv
+ */
+export function inspectGroqKeys(getEnv) {
+  /** @type {{slot: number, key: string}[]} */ const keys = [];
+  /** @type {{slot: number, reason: string, duplicate_of?: number}[]} */ const discarded = [];
+  KEY_NAMES.forEach((name, index) => {
+    const slot = index + 1; const raw = getEnv(name);
+    if (typeof raw !== 'string' || !raw.trim()) { discarded.push({ slot, reason: 'empty' }); return; }
+    const key = raw.trim();
+    if (/[\s"']/.test(key)) { discarded.push({ slot, reason: 'invalid_format' }); return; }
+    const first = keys.find((k) => k.key === key);
+    if (first) { discarded.push({ slot, reason: 'duplicate', duplicate_of: first.slot }); return; }
+    keys.push({ slot, key });
+  });
+  return { keys, discarded };
+}
+
+function statusPolicy(status) {
+  if (status === 401 || status === 403) return { failover: true, kind: 'auth' };
+  if (status === 408 || status === 425 || status >= 500) return { failover: true, kind: 'transient' };
+  if (status === 429) return { failover: true, kind: 'rate_limit' };
+  return { failover: false, kind: 'request' };
+}
+
+function attemptSignal(parent, timeoutMs) {
+  const timeout = AbortSignal.timeout(timeoutMs);
+  return parent ? AbortSignal.any([parent, timeout]) : timeout;
+}
+
+async function discardResponse(response) {
+  try { await response.body?.cancel(); } catch { /* best effort: release the connection */ }
+}
+
+export function createGroqProviderManager({
+  getEnv = (name) => Deno.env.get(name), fetchImpl = fetch,
+  now = () => Date.now(), logger = console,
+} = {}) {
+  const health = new Map();
+  let reported = false;
+  let turn = 0;
+  const configuredKeys = () => {
+    const { keys, discarded } = inspectGroqKeys(getEnv);
+    // Registro de arranque (una vez por instancia): cuántas claves valen y qué
+    // huecos se descartan y por qué, sin valores.
+    if (!reported) { reported = true; safeLog({ event: 'groq_keys', groq_key_slots: keys.length, discarded }); }
+    return keys;
+  };
+  const stateFor = (slot) => health.get(slot) || { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' };
+  // Reparto: cada petición empieza por la siguiente clave libre (rotación
+  // circular entre las que no están enfriadas).
+  const candidates = () => {
+    const ready = configuredKeys().filter(({ slot }) => stateFor(slot).cooldownUntil <= now());
+    const start = ready.length ? turn++ % ready.length : 0;
+    return [...ready.slice(start), ...ready.slice(0, start)];
+  };
+  const shortestCooldown = () => Math.max(1, Math.ceil(Math.min(...configuredKeys().map(k => stateFor(k.slot).cooldownUntil - now())) / 1000));
+
+  function safeLog(fields) { logger.log(JSON.stringify({ provider: 'groq', ...fields })); }
+  function markSuccess(slot) { health.set(slot, { consecutiveFailures: 0, lastFailureAt: 0, cooldownUntil: 0, state: 'healthy' }); }
+  function markFailure(slot, kind) {
+    const previous = stateFor(slot); const consecutiveFailures = previous.consecutiveFailures + 1; const timestamp = now();
+    const authFailure = kind === 'auth';
+    const cooldown = authFailure ? AUTH_COOLDOWN_MS : consecutiveFailures >= 2 ? Math.min(120_000, TRANSIENT_COOLDOWN_MS * (consecutiveFailures - 1)) : 0;
+    health.set(slot, { consecutiveFailures, lastFailureAt: timestamp, cooldownUntil: timestamp + cooldown,
+      state: authFailure ? 'unavailable' : cooldown ? 'cooldown' : 'degraded' });
+  }
+  // Un 429 enfría SOLO esa clave durante su retry-after y deja una línea de
+  // registro; la petición sigue con la siguiente clave.
+  async function keyRateLimited(response, { slot, attempt, started, generationId, operation }) {
+    const body = await response.text().then((t) => t.slice(0, 2000)).catch(() => '');
+    const limit = classifyProviderLimit({
+      retryAfter: retryAfterSeconds(response.headers.get('retry-after'), now()),
+      header: (name) => response.headers.get(name), body,
+    });
+    const seconds = Math.min(RATE_LIMIT_COOLDOWN_MAX_S, limit.retryAfter);
+    health.set(slot, { ...stateFor(slot), lastFailureAt: now(), cooldownUntil: now() + seconds * 1000, state: 'cooldown' });
+    safeLog({ generation: generationId, operation, key_slot: slot, attempt, result: 'rate_limit', limit: limit.code, retry_after: limit.retryAfter,
+      remaining_requests: response.headers.get('x-ratelimit-remaining-requests'), remaining_tokens: response.headers.get('x-ratelimit-remaining-tokens'),
+      duration_ms: now() - started });
+    return new GroqProviderError(limit.code, { status: 429, retryAfter: limit.retryAfter, retryable: true });
+  }
+  // Todas las claves probadas dieron 429: solo entonces se lanza el límite (con
+  // la espera más corta) y se pausa Groq para todos.
+  async function allRateLimited(limits, pause) {
+    const retryAfter = shortestCooldown();
+    const code = limits.every((e) => e.code === 'provider_daily_limit') ? 'provider_daily_limit' : 'provider_rate_limit';
+    await pause?.('groq', retryAfter);
+    return new GroqProviderError(code, { status: 429, retryAfter });
+  }
+  function ensureConfigured() { if (!configuredKeys().length) throw new GroqProviderError('missing_key'); }
+  function startAttempts() {
+    ensureConfigured(); const available = candidates();
+    if (!available.length) throw new GroqProviderError('all_keys_cooling_down', { status: 503, retryable: true, retryAfter: shortestCooldown() });
+    return available;
+  }
+
+  /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
+  async function request({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'completion', beforeAttempt = undefined, pause = undefined }) {
+    signal = attemptSignal(signal, 90_000);
+    const available = startAttempts();
+    let lastError = null; const limits = [];
+    for (let index = 0; index < available.length; index++) {
+      const { slot, key } = available[index];
+      if (signal?.aborted) throw new GroqProviderError('aborted');
+      const started = now();
+      const reservation = await beforeAttempt?.('groq', body);
+      try {
+        const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
+          headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (response.ok) {
+          markSuccess(slot); safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
+          const data = await response.json();
+          await reservation?.reconcile?.(data?.usage).catch(() => {});
+          return new Response(JSON.stringify(data), { status: response.status, headers: { 'Content-Type': 'application/json' } });
+        }
+        if (response.status === 429) {
+          lastError = await keyRateLimited(response, { slot, attempt: index + 1, started, generationId, operation });
+          limits.push(lastError); continue;
+        }
+        const policy = statusPolicy(response.status);
+        safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
+        await discardResponse(response);
+        if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
+        markFailure(slot, policy.kind); lastError = new GroqProviderError(`http_${response.status}`, { status: response.status, retryable: true });
+      } catch (error) {
+        if (error?.name === 'AdmissionError' || error instanceof GroqProviderError && !error.retryable) throw error;
+        if (signal?.aborted) {
+          safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'aborted', duration_ms: now() - started });
+          throw new GroqProviderError('aborted');
+        }
+        if (!(error instanceof GroqProviderError)) {
+          markFailure(slot, 'transient');
+          safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'network_or_timeout', duration_ms: now() - started });
+          lastError = new GroqProviderError('network_or_timeout', { retryable: true });
+        } else lastError = error;
+      }
+    }
+    if (limits.length && limits.length === available.length) throw await allRateLimited(limits, pause);
+    throw lastError || new GroqProviderError('provider_unavailable', { retryable: true });
+  }
+
+  /** @param {{body: object, signal?: AbortSignal, timeoutMs?: number, generationId?: string, operation?: string, beforeAttempt?: (provider:string,body:Record<string,unknown>)=>Promise<unknown>, pause?: (provider:string,seconds:number)=>Promise<unknown>}} options */
+  async function* stream({ body, signal = undefined, timeoutMs = 60_000, generationId = crypto.randomUUID(), operation = 'chat_stream', beforeAttempt = undefined, pause = undefined }) {
+    signal = attemptSignal(signal, 90_000);
+    const available = startAttempts();
+    let lastError = null; const limits = [];
+    for (let index = 0; index < available.length; index++) {
+      const { slot, key } = available[index];
+      if (signal?.aborted) throw new GroqProviderError('aborted');
+      const started = now(); let emittedContent = false; let usage = null;
+      const reservation = await beforeAttempt?.('groq', body);
+      try {
+        const response = await fetchImpl(GROQ_ENDPOINT, { method: 'POST', signal: attemptSignal(signal, timeoutMs),
+          headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (response.status === 429) {
+          lastError = await keyRateLimited(response, { slot, attempt: index + 1, started, generationId, operation });
+          limits.push(lastError); continue;
+        }
+        if (!response.ok || !response.body) {
+          const policy = statusPolicy(response.status);
+          safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: policy.kind, status: response.status, duration_ms: now() - started });
+          await discardResponse(response);
+          if (!policy.failover) throw new GroqProviderError(`http_${response.status}`, { status: response.status });
+          markFailure(slot, policy.kind); lastError = new GroqProviderError(`http_${response.status}`, { status: response.status, retryable: true });
+          continue;
+        }
+        for await (const chunk of parseSSE(response.body)) {
+          const delta = chunk?.choices?.[0]?.delta?.content;
+          if ((typeof delta === 'string' && delta) || chunk?.choices?.[0]?.delta?.tool_calls?.length) emittedContent = true;
+          if (chunk?.usage) usage = chunk.usage;
+          yield chunk;
+        }
+        if (!emittedContent) {
+          markFailure(slot, 'transient');
+          safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'empty_stream', duration_ms: now() - started });
+          lastError = new GroqProviderError('empty_stream', { retryable: true }); continue;
+        }
+        markSuccess(slot);
+        await reservation?.reconcile?.(usage).catch(() => {});
+        safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'success', duration_ms: now() - started });
+        return;
+      } catch (error) {
+        if (signal?.aborted) {
+          safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: 'aborted', duration_ms: now() - started });
+          throw new GroqProviderError('aborted', { emittedContent });
+        }
+        if (error?.name === 'AdmissionError' || error instanceof GroqProviderError && !error.retryable) throw error;
+        markFailure(slot, 'transient');
+        safeLog({ generation: generationId, operation, key_slot: slot, attempt: index + 1, result: emittedContent ? 'stream_interrupted' : 'network_or_timeout', duration_ms: now() - started });
+        if (emittedContent) throw new GroqProviderError('stream_interrupted', { emittedContent: true });
+        lastError = new GroqProviderError('network_or_timeout', { retryable: true });
+      }
+    }
+    if (limits.length && limits.length === available.length) throw await allRateLimited(limits, pause);
+    throw lastError || new GroqProviderError('provider_unavailable', { retryable: true });
+  }
+
+  return { request, stream, configuredKeyCount: () => configuredKeys().length,
+    configured: () => configuredKeys().length > 0,
+    keyReport: () => { const { keys, discarded } = inspectGroqKeys(getEnv); return { groq_key_slots: keys.length, discarded }; },
+    healthSnapshot: () => configuredKeys().map(({ slot }) => ({ slot, ...stateFor(slot) })) };
+}
+
+export const groqProvider = createGroqProviderManager();
+
+export function groqModel() {
+  const value = Deno.env.get('GROQ_MODEL');
+  return typeof value === 'string' && value.trim() ? value.trim() : DEFAULT_MODEL;
+}
+export function groqConfigured() { return groqProvider.configured(); }
+
+export async function* parseSSE(stream) {
+  const reader = stream.getReader(); const decoder = new TextDecoder(); let buffer = ''; let completed = false;
+  const parseLine = (rawLine) => {
+    const line = rawLine.replace(/\r$/, '');
+    if (!line.startsWith('data:')) return null;
+    const payload = line.slice(5).trim();
+    if (!payload) return null;
+    if (payload === '[DONE]') { completed = true; return null; }
+    try { return JSON.parse(payload); }
+    catch { throw new GroqProviderError('malformed_stream', { retryable: true }); }
+  };
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true });
+      if (buffer.length > 262144) throw new GroqProviderError('oversized_stream');
+      let pos;
+      while ((pos = buffer.indexOf('\n')) !== -1) {
+        const parsed = parseLine(buffer.slice(0, pos)); buffer = buffer.slice(pos + 1);
+        if (parsed) yield parsed;
+        if (completed) return;
+      }
+      if (done) break;
+    }
+    if (buffer.trim()) {
+      const parsed = parseLine(buffer);
+      if (parsed) yield parsed;
+    }
+    if (!completed) throw new GroqProviderError('incomplete_stream', { retryable: true });
+  } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
+}
+
+export function upstreamError(status) {
+  if (status === 401 || status === 403) return 'El servidor no tiene una credencial válida para el servicio de IA.';
+  if (status === 404) return 'El modelo configurado no está disponible.';
+  if (status === 429) return 'El servicio de IA ha limitado las peticiones. Inténtalo en unos minutos.';
+  if (status === 400 || status === 422) return 'El servicio rechazó los parámetros de la petición.';
+  return 'Dream está teniendo problemas para responder ahora mismo. Tu mensaje se ha conservado. Puedes intentarlo de nuevo.';
+}
+

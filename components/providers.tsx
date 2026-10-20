@@ -1,5 +1,6 @@
 "use client";
 import {
+  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -9,10 +10,14 @@ import {
   type ReactNode,
 } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
+import { ConnectionStatus } from "@/components/connection-status";
+import { ObservabilityRoutes } from "@/components/observability";
+import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
+import { THEME_COLORS } from "@/lib/theme";
 type Theme = "light" | "dark" | "system";
 interface Context {
   session: Session | null;
@@ -29,6 +34,7 @@ interface Context {
 const DreamContext = createContext<Context | null>(null);
 export function Providers({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [session, setSession] = useState<Session | null>(null);
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState<DreamProfile | null>(null);
@@ -78,6 +84,22 @@ export function Providers({ children }: { children: ReactNode }) {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, next) => {
         if (alive) {
+          if (_event === "SIGNED_IN" && next) {
+            try {
+              if (sessionStorage.getItem("dream-login-pending") === "1") {
+                sessionStorage.removeItem("dream-login-pending");
+                track("login_completed", { section: "login" });
+              }
+            } catch {}
+          }
+          if (_event === "SIGNED_OUT") {
+            resetAnalytics();
+            // Remove the short-lived maintenance session on every sign-out path.
+            void fetch("/api/auth/verify-maintenance", {
+              method: "POST",
+              cache: "no-store",
+            }).catch(() => {});
+          }
           if (currentUser.current !== next?.user.id) {
             setProfile(null);
             currentUser.current = next?.user.id;
@@ -96,6 +118,59 @@ export function Providers({ children }: { children: ReactNode }) {
       setReady(true);
     }
   }, []);
+
+  // Depend on the token string, not the session object, so routine session
+  // refreshes with the same token do not restart the verification loop.
+  const accessToken = session?.access_token;
+  useEffect(() => {
+    if (!accessToken) return;
+    let alive = true;
+
+    async function verifyMaintenanceAccess() {
+      try {
+        const response = await fetch("/api/auth/verify-maintenance", {
+          method: "POST",
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!alive) return;
+
+        if (!response.ok) {
+          if ([401, 403, 503].includes(response.status)) {
+            await getSupabase().auth.signOut({ scope: "local" });
+            if (alive) router.replace("/maintenance");
+          }
+          return;
+        }
+
+        const result = (await response.json().catch(() => null)) as
+          | { allowed?: boolean; maintenance?: boolean }
+          | null;
+        if (result?.allowed !== true) {
+          await getSupabase().auth.signOut({ scope: "local" });
+          if (alive) router.replace("/maintenance");
+          return;
+        }
+
+        if (result.maintenance && pathname === "/maintenance") {
+          router.replace("/chat");
+        }
+      } catch {
+        // Middleware remains fail-closed if verification is temporarily unavailable.
+      }
+    }
+
+    void verifyMaintenanceAccess();
+    const interval = window.setInterval(
+      () => void verifyMaintenanceAccess(),
+      5 * 60 * 1000,
+    );
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+    };
+  }, [accessToken, pathname, router]);
+
   const userId = session?.user.id;
   useEffect(() => {
     if (userId) void refreshProfile();
@@ -129,7 +204,7 @@ export function Providers({ children }: { children: ReactNode }) {
       document
         .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
         .forEach(
-          (meta) => (meta.content = actual === "dark" ? "#0F0F10" : "#F4F1E9"),
+          (meta) => (meta.content = THEME_COLORS[actual]),
         );
     };
     apply();
@@ -140,18 +215,17 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => media.removeEventListener("change", apply);
   }, [theme, themeReady]);
   useEffect(() => {
-    if ("serviceWorker" in navigator)
-      void navigator.serviceWorker.register("/sw.js").catch(() => {});
     const viewport = window.visualViewport;
     const update = () => {
+      const height = viewport?.height ?? window.innerHeight;
       document.documentElement.style.setProperty(
         "--viewport-height",
-        `${viewport?.height ?? window.innerHeight}px`,
+        `${height}px`,
       );
-      document.documentElement.style.setProperty(
-        "--viewport-top",
-        `${viewport?.offsetTop ?? 0}px`,
-      );
+      // On-screen keyboard: the visual viewport shrinks well below the layout
+      // viewport. The tab bar hides so the composer sits right above the keys.
+      document.documentElement.dataset.keyboard =
+        window.innerHeight - height > 150 ? "open" : "closed";
     };
     update();
     viewport?.addEventListener("resize", update);
@@ -164,6 +238,13 @@ export function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
   const logout = async () => {
+    // Clears the HTTP-only maintenance cookie before ending the auth session.
+    try {
+      await fetch("/api/auth/verify-maintenance", {
+        method: "POST",
+        cache: "no-store",
+      });
+    } catch {}
     const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
     setProfile(null);
@@ -184,7 +265,9 @@ export function Providers({ children }: { children: ReactNode }) {
         logout,
       }}
     >
-      {children}
+      <ObservabilityRoutes />
+      <ConnectionStatus />
+      <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>
   );
 }

@@ -1,96 +1,67 @@
 "use client";
-import { MathBlock } from "./math-block";
-import { normalizeMath } from "@/lib/math";
-import { Children, useState, type ReactNode } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import { Copy, Check } from "lucide-react";
-function CodeBlock({ children }: { children?: ReactNode }) {
-  const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
-  async function copy(e: React.MouseEvent<HTMLButtonElement>) {
-    const code = e.currentTarget.closest(".code-block")?.querySelector("code");
-    try {
-      const clone = code?.cloneNode(true);
-      if (!(clone instanceof HTMLElement)) return;
-      clone.querySelector(".code-language")?.remove();
-      await navigator.clipboard.writeText(clone.textContent || "");
-      setCopied(true);
-    } catch {
-      setError("No se pudo copiar. Selecciona el código.");
-    }
-  }
-  return (
-    <div className="code-block">
-      <div className="code-toolbar">
-        <span>Código</span>
-        <button onClick={copy} aria-label="Copiar código">
-          {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
-          {copied ? "Copiado" : "Copiar"}
-        </button>
-      </div>
-      <pre>{children}</pre>
-      {error && <small role="alert">{error}</small>}
-    </div>
+import { useEffect, useSyncExternalStore } from "react";
+// KaTeX styles go with the page that shows Markdown, not with the lazy chunk:
+// a stylesheet that arrives with a chunk is inserted by Next as a blocking
+// <link precedence>, and React holds every update until it loads, keystrokes
+// in the composer included (the chunk is warmed right after the chat opens,
+// so a student typing at once lost the Enter). Only @font-face rules and
+// classes: the fonts themselves still download on the first formula.
+import "katex/dist/katex.min.css";
+
+// react-markdown, remark/rehype and KaTeX load on demand, outside the initial
+// JS. Not React.lazy: a lazy component suspends on its first render even when
+// its chunk is already loaded, so a warmed chunk (preloadMarkdown) would still
+// flash the plain-text fallback, and an answer that mounts already complete
+// would start its soft reveal with no words in it.
+type Renderer = typeof import("./markdown-renderer").default;
+let renderer: Renderer | null = null;
+let loading: Promise<void> | null = null;
+const listeners = new Set<() => void>();
+
+/** Load the Markdown chunk now; every Markdown on screen switches to it. */
+export function preloadMarkdown() {
+  loading ??= import("./markdown-renderer").then(
+    (m) => {
+      renderer = m.default;
+      listeners.forEach((listener) => listener());
+    },
+    () => {
+      loading = null; // try again on the next render (offline, deploy)
+    },
   );
+  return loading;
 }
-export function Markdown({ content }: { content: string }) {
-  const normalized = normalizeMath(content);
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => void listeners.delete(listener);
+};
+
+export function Markdown({
+  content,
+  streaming = false,
+  reveal = false,
+}: {
+  content: string;
+  /** Re-parse only the block being written (see splitBlocks). */
+  streaming?: boolean;
+  /** Words wrapped for the soft reveal; the raw fallback stays hidden. */
+  reveal?: boolean;
+}) {
+  const MarkdownRenderer = useSyncExternalStore(
+    subscribe,
+    () => renderer,
+    () => null,
+  );
+  useEffect(() => {
+    if (!MarkdownRenderer) void preloadMarkdown();
+  }, [MarkdownRenderer]);
+  if (!MarkdownRenderer)
+    return (
+      <div className={`markdown${reveal ? " markdown-pending" : ""}`}>
+        <p>{content}</p>
+      </div>
+    );
   return (
-    <div className="markdown">
-      <ReactMarkdown
-        skipHtml
-        remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[
-          [rehypeKatex, { strict: false, throwOnError: false, trust: false }],
-        ]}
-        components={{
-          h3: ({ children }) => (
-            <h3
-              className={
-                Children.toArray(children).some(
-                  (child) =>
-                    typeof child === "string" && /^\d{1,2}\s*[/.]/.test(child),
-                )
-                  ? "learning-step"
-                  : undefined
-              }
-            >
-              {children}
-            </h3>
-          ),
-          span: ({ className, children, ...props }) =>
-            className?.includes("katex-display") ? (
-              <MathBlock>
-                <span className={className} {...props}>
-                  {children}
-                </span>
-              </MathBlock>
-            ) : (
-              <span className={className} {...props}>
-                {children}
-              </span>
-            ),
-          pre: ({ children }) => <CodeBlock>{children}</CodeBlock>,
-          code: ({ className, children, ...props }) => (
-            <code className={className} {...props}>
-              {className?.startsWith("language-") && (
-                <span className="code-language">{className.slice(9)}</span>
-              )}
-              {children}
-            </code>
-          ),
-          a: ({ href, children }) => (
-            <a href={href} target="_blank" rel="noopener noreferrer">
-              {children}
-            </a>
-          ),
-        }}
-      >
-        {normalized}
-      </ReactMarkdown>
-    </div>
+    <MarkdownRenderer content={content} streaming={streaming} reveal={reveal} />
   );
 }

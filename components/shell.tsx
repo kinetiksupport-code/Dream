@@ -5,36 +5,47 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
+  type ComponentType,
 } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  Plus,
-  Home,
-  History,
-  ChartNoAxesColumn,
-  ListChecks,
-  SquarePen,
-  ChevronRight,
-  Settings2,
-  Menu,
-  MoreHorizontal,
-  LogOut,
-  X,
-} from "lucide-react";
 import { Modal } from "./modal";
 import { useDream } from "./providers";
-import { DreamMark, DreamActivity } from "./dream-mark";
+import { Orb } from "./orb";
+import { NavIndicator } from "./nav-indicator";
+import { usePageTransitions } from "./page-transitions";
+import {
+  BackIcon,
+  ChatIcon,
+  ExamsIcon,
+  HistoryIcon,
+  HomeIcon,
+  MoreIcon,
+  NotesIcon,
+  SettingsIcon,
+  TasksIcon,
+} from "./icons";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import { Toast } from "./toast";
 import type { Conversation } from "@/lib/types";
+import { activeNav, isFocusRoute, type NavKey } from "@/lib/navigation";
+import { isDefaultTitle, titleFromPrompt } from "@/lib/conversation-title";
+/** Time to undo a deleted conversation before it is really deleted. */
+export const UNDO_MS = 5000;
+import { needsConsent } from "@/lib/consent";
+import { WelcomeConsent } from "./welcome-consent";
 interface ConversationsContext {
   items: Conversation[];
+  loaded: boolean;
   refresh: () => Promise<void>;
   add: (c: Conversation) => void;
   onRename: (c: Conversation) => void;
+  /** Hides the conversation and deletes it after UNDO_MS unless undone. */
   onDelete: (c: Conversation) => void;
+  /** First message of a «Nueva conversación»: name it from the question. */
+  autoTitle: (id: string, prompt: string) => void;
   setWorkspaceEmpty: (empty: boolean) => void;
   setPageTitle: (title: string | null) => void;
 }
@@ -44,22 +55,38 @@ export function useConversations() {
   if (!ctx) throw new Error("Missing conversations");
   return ctx;
 }
+
+interface NavItem {
+  key: NavKey;
+  label: string;
+  href: string;
+  icon: ComponentType<{ size?: number }>;
+}
+
 export function Shell({ children }: { children: ReactNode }) {
   const { ready, session, profile, bootError, refreshProfile, logout } =
     useDream();
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
+  // How the page area enters on a route change (forward, back, lateral…).
+  const enter = usePageTransitions(pathname, search);
   const [items, setItems] = useState<Conversation[]>([]);
-  const [open, setOpen] = useState(false);
+  const [loaded, setLoaded] = useState(false);
   const [workspaceEmpty, setWorkspaceEmpty] = useState(!search.get("c"));
   const [pageTitle, setPageTitle] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [toast, setToast] = useState("");
   const [editing, setEditing] = useState<Conversation | null>(null);
   const [title, setTitle] = useState("");
-  const [deleting, setDeleting] = useState<Conversation | null>(null);
+  // Deleted but still undoable (hidden from the list until the toast ends).
+  const [pending, setPending] = useState<Conversation | null>(null);
+  const [deleteError, setDeleteError] = useState<Conversation | null>(null);
   const [busy, setBusy] = useState(false);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const pendingRef = useRef(pending);
+  pendingRef.current = pending;
   const refresh = useCallback(async () => {
     try {
       const r = await callDream<{ items: Conversation[] }>("conversations");
@@ -67,15 +94,17 @@ export function Shell({ children }: { children: ReactNode }) {
       setError("");
     } catch (e) {
       setError(errorMessage(e));
+    } finally {
+      setLoaded(true);
     }
   }, []);
   useEffect(() => {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
+  const profileEmail = profile?.email;
   useEffect(() => {
-    if (profile) void refresh();
-  }, [profile, refresh]);
-  useEffect(() => setOpen(false), [pathname, search]);
+    if (profileEmail) void refresh();
+  }, [profileEmail, refresh]);
   async function rename() {
     if (!editing || !title.trim() || busy) return;
     setBusy(true);
@@ -95,318 +124,269 @@ export function Shell({ children }: { children: ReactNode }) {
       setBusy(false);
     }
   }
-  async function remove() {
-    if (!deleting || busy) return;
-    setBusy(true);
-    try {
-      await callDream("conversation_delete", { conversation_id: deleting.id });
-      setItems((s) => s.filter((c) => c.id !== deleting.id));
-      if (search.get("c") === deleting.id) router.push("/chat");
-      setDeleting(null);
-      setToast("Conversación eliminada.");
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
+  // Delete with undo: the row disappears now, the API call waits for the
+  // toast to run out (apple-design undo-and-redo.md, feedback.md).
+  const commitDelete = useCallback(
+    async (c: Conversation) => {
+      setPending((p) => (p?.id === c.id ? null : p));
+      setDeleteError(null);
+      setItems((s) => s.filter((x) => x.id !== c.id));
+      try {
+        await callDream("conversation_delete", { conversation_id: c.id });
+        if (search.get("c") === c.id) router.push("/chat");
+      } catch {
+        // Put it back where it was and offer to try again.
+        setItems((s) =>
+          s.some((x) => x.id === c.id)
+            ? s
+            : [...s, c].sort((a, b) =>
+                b.updated_at.localeCompare(a.updated_at),
+              ),
+        );
+        setDeleteError(c);
+      }
+    },
+    [router, search],
+  );
+  const scheduleDelete = useCallback(
+    (c: Conversation) => {
+      const previous = pendingRef.current;
+      if (previous && previous.id !== c.id) void commitDelete(previous);
+      setDeleteError(null);
+      setToast("");
+      setPending(c);
+    },
+    [commitDelete],
+  );
+  const undoDelete = useCallback(() => setPending(null), []);
+  useEffect(() => {
+    if (!pending) return;
+    // Ctrl/Cmd+Z undoes too, unless a text field is using it.
+    function key(e: KeyboardEvent) {
+      if (
+        !(e.metaKey || e.ctrlKey) ||
+        e.shiftKey ||
+        e.key.toLowerCase() !== "z"
+      )
+        return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest("input, textarea, [contenteditable='true']")) return;
+      e.preventDefault();
+      setPending(null);
     }
-  }
+    document.addEventListener("keydown", key);
+    return () => document.removeEventListener("keydown", key);
+  }, [pending]);
+  const autoTitle = useCallback((id: string, prompt: string) => {
+    const current = itemsRef.current.find((c) => c.id === id);
+    if (current && !isDefaultTitle(current.title)) return;
+    const title = titleFromPrompt(prompt, new Date());
+    setItems((s) => s.map((c) => (c.id === id ? { ...c, title } : c)));
+    callDream("conversation_rename", { conversation_id: id, title }).catch(() =>
+      setItems((s) =>
+        s.map((c) =>
+          c.id === id && c.title === title
+            ? { ...c, title: current?.title ?? "Nueva conversación" }
+            : c,
+        ),
+      ),
+    );
+  }, []);
   if (!ready || !session || !profile)
     return (
       <main className="boot">
         {bootError ? (
           <div className="boot-error">
+            <Orb size={56} />
+            <h1>Dream necesita un momento</h1>
             <p className="error" role="alert">
               {bootError}
             </p>
-            <button className="primary" onClick={() => void refreshProfile()}>
-              Reintentar
-            </button>
-            <button
-              className="text-button"
-              onClick={() =>
-                void logout().catch((e) => setError(errorMessage(e)))
-              }
-            >
-              Volver a entrar
-            </button>
+            <div className="button-row">
+              <button className="primary" onClick={() => void refreshProfile()}>
+                Reintentar
+              </button>
+              <button
+                className="secondary"
+                onClick={() =>
+                  void logout().catch((e) => setError(errorMessage(e)))
+                }
+              >
+                Volver a entrar
+              </button>
+            </div>
           </div>
         ) : (
-          <DreamActivity state="thinking" />
+          <div className="boot-spinner" role="status" aria-label="Cargando">
+            <Orb size={48} pulsing />
+          </div>
         )}
       </main>
     );
+  // Parte D: no chat, apuntes or exámenes until the sign-up consent is saved.
+  // Ajustes stays open so the student can sign out or delete their data.
+  if (needsConsent(profile) && !pathname.startsWith("/settings"))
+    return <WelcomeConsent />;
+  const conversationId = search.get("c");
   const view = search.get("view");
-  const currentConversation = items.find((c) => c.id === search.get("c"));
-  const home =
-    pathname === "/chat" && !view && (!search.get("c") || workspaceEmpty);
-  const nav = [
-    { label: "Inicio", href: "/chat", icon: Home, active: home },
+  const current = activeNav(pathname, {
+    c: conversationId && !workspaceEmpty ? conversationId : null,
+    view,
+  });
+  const focus = isFocusRoute(pathname);
+  const visible = pending ? items.filter((c) => c.id !== pending.id) : items;
+  const currentConversation = items.find((c) => c.id === conversationId);
+  const chatHref = visible[0] ? `/chat?c=${visible[0].id}` : "/chat";
+  const nav: NavItem[] = [
+    { key: "home", label: "Inicio", href: "/chat", icon: HomeIcon },
+    { key: "chat", label: "Chat", href: chatHref, icon: ChatIcon },
+    { key: "tasks", label: "Tareas", href: "/tasks", icon: TasksIcon },
+    { key: "notes", label: "Apuntes", href: "/notes", icon: NotesIcon },
+    { key: "exams", label: "Exámenes", href: "/exams", icon: ExamsIcon },
     {
-      label: "Recientes",
+      key: "history",
+      label: "Historial",
       href: "/chat?view=recent",
-      icon: History,
-      active: view === "recent",
-    },
-    {
-      label: "Progreso",
-      href: "/progress",
-      icon: ChartNoAxesColumn,
-      active: pathname === "/progress",
-    },
-    {
-      label: "Tests",
-      href: "/chat?view=tests",
-      icon: ListChecks,
-      active: view === "tests",
-    },
-    {
-      label: "Ajustes",
-      href: "/settings",
-      icon: Settings2,
-      active: pathname === "/settings",
+      icon: HistoryIcon,
     },
   ];
-  const account = (
-    <Link className="account-link" href="/settings">
-      <span className="avatar">
-        {(profile.display_name || profile.email || "D")
-          .slice(0, 1)
-          .toUpperCase()}
-      </span>
-      <span>
-        <strong>{profile.display_name?.split(" ")[0] || "Mi cuenta"}</strong>
-        <small>Tu espacio de aprendizaje</small>
-      </span>
-      <ChevronRight size={18} />
+  const settings: NavItem = {
+    key: "settings",
+    label: "Ajustes",
+    href: "/settings",
+    icon: SettingsIcon,
+  };
+  const tabs: NavItem[] = [
+    nav[0],
+    nav[1],
+    nav[2],
+    { key: "more", label: "Más", href: "/more", icon: MoreIcon },
+  ];
+  const moreActive =
+    current === "more" ||
+    current === "notes" ||
+    current === "exams" ||
+    current === "history" ||
+    current === "settings";
+  const showChatHeader =
+    pathname === "/chat" && !view && !!conversationId && !workspaceEmpty;
+  const link = (n: NavItem, active: boolean, className: string) => (
+    <Link
+      key={n.key}
+      className={className}
+      href={n.href}
+      aria-current={active ? "page" : undefined}
+      title={n.label}
+    >
+      <n.icon size={className.startsWith("tab") ? 24 : 22} />
+      <span className="nav-label">{n.label}</span>
     </Link>
   );
   return (
     <Context.Provider
       value={{
-        items,
+        items: visible,
+        loaded,
         refresh,
         add: (c) => setItems((s) => [c, ...s.filter((x) => x.id !== c.id)]),
         onRename: (c) => {
           setEditing(c);
           setTitle(c.title);
         },
-        onDelete: setDeleting,
+        onDelete: scheduleDelete,
+        autoTitle,
         setWorkspaceEmpty,
         setPageTitle,
       }}
     >
-      <div className="app-shell">
+      <div className={`app-shell${focus ? " is-focus" : ""}`}>
         <a className="skip-link" href="#main">
           Ir al contenido
         </a>
-        <aside className="sidebar">
-          <Link className="wordmark" href="/chat">
-            <DreamMark size={28} />
-            dream
-          </Link>
-          <Link
-            className="new-conversation primary"
-            href={`/chat?new=${Date.now()}`}
-          >
-            Nueva conversación
-          </Link>
-          <nav className="primary-nav" aria-label="Navegación principal">
-            {nav.map((n) => (
-              <Link
-                key={n.label}
-                href={n.href}
-                aria-current={n.active ? "page" : undefined}
-              >
-                <n.icon size={20} />
-                {n.label}
-                {n.label === "Recientes" && items.length > 0 && (
-                  <small>{items.length}</small>
-                )}
-              </Link>
-            ))}
+        {!focus && (
+          <nav className="sidebar" aria-label="Principal">
+            <NavIndicator activeKey={current} />
+            <Link className="brand" href="/chat" title="Dream">
+              <Orb size={32} />
+              <span className="nav-label">Dream</span>
+            </Link>
+            <div className="sidebar-links">
+              {nav.map((n) => link(n, current === n.key, "nav-link press"))}
+            </div>
+            {link(settings, current === "settings", "nav-link press")}
           </nav>
-          <div className="sidebar-account">
-            {account}
-            <button
-              className="icon-button"
-              aria-label="Cerrar sesión"
-              onClick={() =>
-                void logout().catch((e) => setError(errorMessage(e)))
-              }
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        </aside>
+        )}
         <div className="workspace">
-          <header className={`workspace-header ${home ? "home-topbar" : ""}`}>
-            <div className="topbar-left">
-              {home ? (
-                <>
-                  <Link className="wordmark mobile-brand" href="/chat">
-                    <DreamMark size={24} />
-                    dream
-                  </Link>
-                  <span className="desktop-header-label">
-                    TU ESPACIO PARA ENTENDER
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Link
-                    className="icon-button back-button"
-                    href="/chat"
-                    aria-label="Volver al inicio"
-                  >
-                    <ChevronRight size={20} />
-                  </Link>
-                  <strong>
-                    {pathname === "/settings"
-                      ? "Ajustes"
-                      : pathname === "/progress"
-                        ? "Progreso"
-                        : view === "recent"
-                          ? "Recientes"
-                          : view === "tests"
-                            ? "Tests"
-                            : pathname.startsWith("/tests")
-                              ? pageTitle || "Practicar"
-                              : currentConversation?.title || "Mi Dream"}
-                  </strong>
-                </>
-              )}
-            </div>
-            <div className="topbar-controls">
-              {home && (
-                <Link
-                  className="icon-button"
-                  href={`/chat?new=${Date.now()}`}
-                  aria-label="Nueva conversación"
-                >
-                  <SquarePen size={20} />
-                </Link>
-              )}
-              <button
-                className="icon-button mobile-menu"
-                aria-label="Abrir navegación"
-                aria-expanded={open}
-                onClick={() => setOpen(true)}
+          {showChatHeader && (
+            <header className="topbar">
+              <Link
+                className="icon-button back-button press"
+                href="/chat"
+                aria-label="Volver a Inicio"
               >
-                {home ? <Menu size={20} /> : <MoreHorizontal size={20} />}
-              </button>
+                <BackIcon />
+              </Link>
+              <h1>
+                {currentConversation?.title ||
+                  pageTitle ||
+                  "Nueva conversación"}
+              </h1>
+              <span className="topbar-spacer" aria-hidden="true" />
+            </header>
+          )}
+          <main id="main" className="workspace-main" tabIndex={-1}>
+            {/* Page transition: a View Transition on link clicks, or this
+                CSS enter animation (data-enter) on Back/Forward and in
+                browsers without View Transitions. globals.css › «Transiciones
+                entre páginas». */}
+            <div className="route-view" key={pathname} data-enter={enter}>
+              {children}
             </div>
-          </header>
-          <main id="main" className="workspace-main">
-            {children}
           </main>
         </div>
-        {open && (
-          <Modal
-            labelledBy="bottom-sheet-title"
-            onClose={() => setOpen(false)}
-            variant="sheet"
-          >
-            <div className="sheet-handle" />
-            <div className="sheet-brand">
-              <Link id="bottom-sheet-title" className="wordmark" href="/chat">
-                <DreamMark size={28} />
-                dream
-              </Link>
-              <button
-                className="icon-button"
-                aria-label="Cerrar navegación"
-                onClick={() => setOpen(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <Link
-              className="primary sheet-new"
-              href={`/chat?new=${Date.now()}`}
-              onClick={() => setOpen(false)}
-            >
-              Nueva conversación <Plus size={20} />
-            </Link>
-            <nav className="sheet-nav" aria-label="Navegación móvil">
-              {nav.map((n) => (
-                <Link
-                  key={n.label}
-                  href={n.href}
-                  aria-current={n.active ? "page" : undefined}
-                  onClick={() => setOpen(false)}
-                >
-                  <n.icon size={20} />
-                  {n.label}
-                  {n.label === "Recientes" && items.length > 0 && (
-                    <small>{items.length}</small>
-                  )}
-                </Link>
-              ))}
-            </nav>
-            <div className="sheet-account">{account}</div>
-          </Modal>
+        {!focus && (
+          <nav className="tabbar" aria-label="Principal">
+            <NavIndicator activeKey={moreActive ? "more" : current} />
+            {tabs.map((n) =>
+              link(
+                n,
+                n.key === "more" ? moreActive : current === n.key,
+                "tab press",
+              ),
+            )}
+          </nav>
         )}
-        {(editing || deleting) && (
-          <Modal
-            labelledBy="dialog-title"
-            onClose={() => {
-              setEditing(null);
-              setDeleting(null);
-            }}
-          >
-            <h2 id="dialog-title">
-              {editing ? "Un nombre para esta idea" : "¿Eliminar conversación?"}
-            </h2>
-            {editing ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  void rename();
-                }}
-              >
+        {editing && (
+          <Modal labelledBy="dialog-title" onClose={() => setEditing(null)}>
+            <h2 id="dialog-title">Cambiar nombre</h2>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void rename();
+              }}
+            >
+              <label className="field">
+                <span>Nombre de conversación</span>
                 <input
                   autoFocus
                   value={title}
                   maxLength={120}
                   onChange={(e) => setTitle(e.target.value)}
-                  aria-label="Nombre de conversación"
                 />
-                <div className="modal-actions">
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={() => setEditing(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button className="primary" disabled={busy || !title.trim()}>
-                    Guardar
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <p>
-                  Se eliminará de tu Dream. Esta acción no se puede deshacer.
-                </p>
-                <div className="modal-actions">
-                  <button
-                    className="text-button"
-                    autoFocus
-                    onClick={() => setDeleting(null)}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    className="primary danger-button"
-                    disabled={busy}
-                    onClick={() => void remove()}
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </>
-            )}
+              </label>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={() => setEditing(null)}
+                >
+                  Cancelar
+                </button>
+                <button className="primary" disabled={busy || !title.trim()}>
+                  Guardar
+                </button>
+              </div>
+            </form>
             {error && (
               <p className="error" role="alert">
                 {error}
@@ -414,12 +394,35 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </Modal>
         )}
-        {toast && (
-          <div className="toast-position">
-            <Toast message={toast} onClose={() => setToast("")} />
+        {pending ? (
+          <div className="toast-position" key={pending.id}>
+            <Toast
+              message="Conversación borrada"
+              action={{ label: "Deshacer", run: undoDelete }}
+              duration={UNDO_MS}
+              onExpire={() => void commitDelete(pending)}
+            />
           </div>
+        ) : deleteError ? (
+          <div className="toast-position">
+            <Toast
+              message="No se pudo borrar la conversación."
+              error
+              onClose={() => setDeleteError(null)}
+              action={{
+                label: "Reintentar",
+                run: () => void commitDelete(deleteError),
+              }}
+            />
+          </div>
+        ) : (
+          toast && (
+            <div className="toast-position">
+              <Toast message={toast} onClose={() => setToast("")} />
+            </div>
+          )
         )}
-        {error && !editing && !deleting && (
+        {error && !editing && (
           <div className="toast-position">
             <Toast
               message={error}

@@ -1,0 +1,112 @@
+/* Style lab (app/estilo): layout only. Colours, type and motion come from the
+   tokens and primitives in app/globals.css › «Estilo nuevo». */
+.lab {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+  padding: calc(24px + var(--safe-top)) 16px calc(48px + var(--safe-bottom));
+}
+.inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.hero {
+  position: relative;
+  display: grid;
+  gap: 24px;
+  padding: 40px 24px;
+  border-radius: var(--radius-hero);
+  overflow: hidden;
+}
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 56px 48px;
+  }
+}
+.heroText {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.lead {
+  max-width: 34ch;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.heroArt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 200px;
+}
+.heroSticker {
+  position: absolute;
+  top: 0;
+  right: 8%;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.section h2 {
+  font-size: 1.375rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  min-height: 112px;
+  padding: 14px;
+  border-radius: var(--radius-card);
+  font-size: var(--text-small);
+}
+.swatch strong {
+  font-size: var(--text-body);
+  font-weight: 800;
+}
+.big {
+  font-size: var(--text-hero);
+  font-weight: var(--weight-hero);
+  line-height: 1;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+}
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.list li {
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+}

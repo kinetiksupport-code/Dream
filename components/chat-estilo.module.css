@@ -1,0 +1,138 @@
+/* === Estilo nuevo · Chat === (PROMPT_EXAMEN_ESTILO.md §2.3, §6, PR 7)
+   The chat is where people study for hours: text stays on the calm
+   surfaces (no pop background, no huge type). The new style shows in
+   colour, radii, one sticker and micro-interactions. Scoped to the
+   conversation view (`.estilo` on `.chat-view`), so Inicio and the rest
+   of globals.css are untouched. Motion: transform and opacity only,
+   120–250 ms, ease-out to enter; hover only with a fine pointer; reduced
+   motion keeps fades. */
+
+/* --- Generated test card: the one sticker of the screen ------------------- */
+/* The icon becomes a round sticker: yellow for practice, orange for an
+   exam, always with dark ink (12.15:1 / 5.79:1; dark 9.47:1 / 4.79:1). The
+   label («Práctica» / «Examen») says the same, so colour is never alone. */
+.estilo :global(.quiz-widget) {
+  border-radius: var(--radius-panel);
+}
+.estilo :global(.quiz-icon) {
+  --tone: var(--pop-yellow);
+  --on-tone: var(--on-pop-yellow);
+  border-radius: 50%;
+  border: 3px solid var(--sticker-ring);
+  background: var(--tone);
+  color: var(--on-tone);
+  box-shadow: var(--shadow-sticker);
+  transform: rotate(-6deg);
+}
+.estilo :global(.quiz-widget[data-mode="exam"] .quiz-icon) {
+  --tone: var(--pop-orange);
+  --on-tone: var(--on-pop-orange);
+}
+/* «Empezar» as a small 3D pill: glossy top edge and a darker base. */
+.estilo :global(.quiz-start) {
+  border-radius: var(--radius-pill);
+  box-shadow:
+    var(--gloss),
+    0 3px 0 color-mix(in srgb, var(--primary) 62%, #000);
+}
+/* A new card (never the history) lands with a small pop from 0.96.
+   `backwards`, not `both`: once in, hover and :active move it again. */
+.estilo :global(.message-enter .quiz-widget),
+.estilo :global(.quiz-skeleton.message-enter) {
+  animation: card-in var(--dur-spring) var(--ease-spring) backwards;
+}
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* --- Bubbles, files and chips: rounder, softer ---------------------------- */
+.estilo :global(.bubble) {
+  border-radius: var(--radius-panel) var(--radius-panel) 8px var(--radius-panel);
+}
+.estilo :global(.message-files span) {
+  border-radius: var(--radius-pill);
+}
+.estilo :global(.message-files svg) {
+  color: var(--primary-ink);
+}
+.estilo :global(.message-actions .chip),
+.estilo :global(.icon-action),
+.estilo :global(.older-button),
+.estilo :global(.chat-retry) {
+  border-radius: var(--radius-pill);
+}
+/* New answers only: the actions arrive one after another (40 ms apart, 3 at
+   most), after the last word. The history never animates. */
+.estilo :global(.message-enter .message-actions > :is(button, .chip)) {
+  animation: action-in var(--dur-base) var(--ease) backwards;
+}
+.estilo :global(.message-enter .message-actions > :nth-child(2)) {
+  animation-delay: var(--stagger);
+}
+.estilo :global(.message-enter .message-actions > :nth-child(3)) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+@keyframes action-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* A colour touch on hover (fine pointer only): the step chip warms up. */
+@media (hover: hover) and (pointer: fine) {
+  .estilo :global(.message-actions .chip:hover) {
+    background: color-mix(in srgb, var(--pop-yellow) 28%, var(--surface));
+  }
+}
+
+/* --- Composer: a rounder dock with a glossy send button ------------------- */
+.estilo :global(.composer-dock) {
+  border-radius: calc(var(--radius-composer) + 4px);
+}
+.estilo :global(.composer-dock::after) {
+  border-radius: calc(var(--radius-composer) + 7px);
+}
+.estilo :global(.send-button:not(:disabled)) {
+  box-shadow: var(--gloss);
+}
+
+/* --- Study conversation, errors and the jump button ----------------------- */
+.estilo :global(.study-conversation-empty h2) {
+  /* A marker under «idea» (decorative): normal weight and size, no italic. */
+  isolation: isolate;
+}
+.estilo :global(.chat-error) {
+  border-radius: var(--radius-panel);
+}
+.estilo :global(.jump-bottom) {
+  border-radius: var(--radius-pill);
+}
+
+/* --- Reduced motion: fades only ------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .estilo :global(.message-enter .quiz-widget),
+  .estilo :global(.quiz-skeleton.message-enter),
+  .estilo :global(.message-enter .message-actions > :is(button, .chip)) {
+    animation-name: fade-only;
+    animation-delay: 0ms;
+  }
+}
+@keyframes fade-only {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

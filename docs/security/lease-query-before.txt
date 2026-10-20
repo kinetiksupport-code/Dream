@@ -1,0 +1,13 @@
+                                              QUERY PLAN
+-------------------------------------------------------------------------------------------------------
+ Aggregate  (cost=48.82..48.83 rows=1 width=8) (actual time=0.270..0.270 rows=1 loops=1)
+   Buffers: shared hit=29
+   ->  Seq Scan on leases  (cost=0.00..48.81 rows=1 width=0) (actual time=0.267..0.267 rows=0 loops=1)
+         Filter: ((NOT finished) AND (expires_at > clock_timestamp()))
+         Rows Removed by Filter: 1442
+         Buffers: shared hit=29
+ Planning:
+   Buffers: shared hit=63
+ Planning Time: 1.259 ms
+ Execution Time: 0.327 ms
+(10 rows)

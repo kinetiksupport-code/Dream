@@ -1,5 +1,15 @@
-import Image from "next/image";
+import { Orb } from "./orb";
 import type { DreamState } from "@/lib/types";
+
+const WORKING = new Set<DreamState>([
+  "thinking",
+  "searching",
+  "composing",
+  "shaping",
+  "listening",
+  "waiting",
+]);
+
 export function DreamMark({
   state = "idle",
   large = false,
@@ -9,46 +19,41 @@ export function DreamMark({
   large?: boolean;
   size?: number;
 }) {
-  const dimension = size ?? (large ? 64 : 36);
   return (
-    <span
-      className={`dream-mark state-${state}`}
-      aria-hidden="true"
-      style={{ width: dimension, height: dimension }}
-    >
-      <Image
-        src="/brand/dream-orb.png"
-        width={dimension}
-        height={dimension}
-        alt=""
-        unoptimized
-      />
+    <span className={`dream-mark state-${state}`} aria-hidden="true">
+      <Orb size={size ?? (large ? 64 : 32)} pulsing={WORKING.has(state)} />
     </span>
   );
 }
-export function DreamActivity({ state }: { state: DreamState }) {
-  const labels: Record<DreamState, string> = {
-    idle: "Listo",
-    thinking: "Pensando · Ordenando las ideas",
-    searching: "Buscando en Internet · Comprobando fuentes",
-    composing: "Escribiendo",
-    shaping: "Preparando práctica",
-    listening: "Escuchando",
-    done: "Listo",
-    error: "Error · No se ha podido completar",
-  };
+
+const ACTIVITY_LABELS: Record<DreamState, string> = {
+  idle: "Listo",
+  thinking: "Pensando",
+  searching: "Buscando en Internet",
+  composing: "Escribiendo",
+  shaping: "Preparando la práctica",
+  listening: "Escuchando",
+  waiting: "Esperando turno",
+  done: "Listo",
+  error: "No se ha podido completar",
+};
+
+/** Orb + one line of status. Announced politely to assistive technology. */
+export function DreamActivity({
+  state,
+  label,
+}: {
+  state: DreamState;
+  label?: string;
+}) {
   return (
-    <div className={`activity activity-${state}`} role="status">
-      <DreamMark state={state} />
-      <span>
-        <strong>Dream</strong>
-        <small>{labels[state]}</small>
-      </span>
-      {!["idle", "done", "error"].includes(state) && (
-        <span className="activity-dots" aria-hidden="true">
-          ···
-        </span>
-      )}
+    <div
+      className={`activity activity-${state}`}
+      role="status"
+      aria-live="polite"
+    >
+      <Orb size={28} pulsing={WORKING.has(state)} />
+      <span>{label ?? ACTIVITY_LABELS[state]}</span>
     </div>
   );
 }

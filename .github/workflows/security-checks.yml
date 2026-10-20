@@ -1,0 +1,47 @@
+name: Dream checks (no deployment)
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: isolated-test-only
+        ports: ['55432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npx --yes deno@2.9.6 check --config supabase/functions/dream-api/deno.json supabase/functions/dream-api/index.ts
+      - run: npx --yes deno@2.9.6 test --config supabase/functions/dream-api/deno.json --allow-read --allow-env --allow-net=127.0.0.1 supabase/tests/security_deno.mjs supabase/tests/uploads_deno.mjs supabase/tests/exam_wizard_deno.mjs supabase/tests/exam_route_deno.mjs
+      - run: npm audit --omit=dev --audit-level=high
+      - name: Bootstrap isolated database and admission migration
+        env:
+          PGPASSWORD: isolated-test-only
+        run: |
+          psql -h 127.0.0.1 -p 55432 -U postgres -v ON_ERROR_STOP=1 -f scripts/security/bootstrap.sql
+          psql -h 127.0.0.1 -p 55432 -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/20261008192123_security_admission.sql
+      - run: npm run test:security-db
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://cxaujyagtpsxvkwkdxbc.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_public_placeholder
+          NEXT_PUBLIC_DREAM_API_URL: https://cxaujyagtpsxvkwkdxbc.supabase.co/functions/v1/dream-api
+      - run: npx playwright install --with-deps chromium
+      - name: Browser contract QA (synthetic fixtures, no provider calls)
+        run: |
+          npm start > /tmp/dream-next.log 2>&1 &
+          for i in $(seq 1 30); do curl --fail --silent http://localhost:3000/login > /dev/null && break; sleep 1; done
+          npx playwright test tests/browser/dream.spec.ts tests/browser/exams.spec.ts tests/browser/security.spec.ts
