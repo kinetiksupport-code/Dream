@@ -4588,3 +4588,50 @@ fieldset:disabled .test-option {
     opacity: 0;
   }
 }
+
+/* Ajustes > Ayuda: «Hablar con soporte» (Crisp loads only after the click). */
+.help-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-button[aria-busy="true"] {
+  cursor: progress;
+}
+.help-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: help-spin 0.8s linear infinite;
+}
+@keyframes help-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.help-failed {
+  animation: fade-in-only var(--dur-base) ease;
+}
+.help-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 12px 0 0;
+  font-size: var(--text-small);
+}
+.help-links .text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The spinner stays: it is the only sign that the chat is loading. */
+  .help-failed {
+    animation: none;
+  }
+}
+.help-notice-link {
+  margin: 0;
+}

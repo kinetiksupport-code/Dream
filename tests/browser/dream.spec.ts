@@ -1041,3 +1041,90 @@ test("web search answer: sources folded in «Buscado en la web», not in the tex
   await expect(page.getByText("khanacademy.org", { exact: true })).toBeVisible();
   await page.screenshot({ animations: "disabled", path: "test-results/chat-web-sources.png" });
 });
+
+// Stand-in for client.crisp.chat/l.js: replays the queue like the real SDK.
+const FAKE_CRISP = `(() => {
+  const queue = Array.isArray(window.$crisp) ? window.$crisp : [];
+  const state = { opened: false, visible: true, closed: [] };
+  window.__crispLog = [];
+  const box = document.createElement("div");
+  box.id = "crisp-chatbox"; box.textContent = "Chat de soporte"; box.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:1000000;display:none;padding:24px;background:#fff;border:1px solid #ccc";
+  document.body.appendChild(box);
+  const render = () => { box.style.display = state.opened && state.visible ? "block" : "none"; };
+  const api = {
+    push(c) {
+      window.__crispLog.push(c.slice(0, 2).join(" "));
+      if (c[0] === "on" && c[1] === "chat:closed") state.closed.push(c[2]);
+      if (c[0] === "do") {
+        if (c[1] === "chat:hide") state.visible = false;
+        if (c[1] === "chat:show") state.visible = true;
+        if (c[1] === "chat:open") state.opened = true;
+        if (c[1] === "chat:close") { state.opened = false; state.closed.forEach((f) => f()); }
+      }
+      render();
+    },
+    is(s) { return s === "chat:opened" ? state.opened : s === "chat:visible" ? state.visible : false; },
+  };
+  window.$crisp = api;
+  queue.forEach((c) => api.push(c));
+  setTimeout(() => window.CRISP_READY_TRIGGER && window.CRISP_READY_TRIGGER(), 50);
+})();`;
+
+test("Ajustes > Ayuda: Crisp loads only after the notice and opens the chat", async ({
+  page,
+}) => {
+  await authenticated(page);
+  const crispRequests: string[] = [];
+  await page.route("https://client.crisp.chat/**", async (route) => {
+    crispRequests.push(route.request().url());
+    await route.fulfill({ contentType: "text/javascript", body: FAKE_CRISP });
+  });
+  await page.goto("/settings");
+  const button = page.getByRole("button", { name: "Hablar con soporte" });
+  await expect(button).toBeVisible();
+  expect(crispRequests).toEqual([]);
+  await page.screenshot({ fullPage: true, animations: "disabled", path: "test-results/settings-help.png" });
+
+  // Cancel loads nothing.
+  await button.click();
+  const notice = page.getByRole("alertdialog", { name: "Chat de ayuda" });
+  await expect(notice).toContainText("lo gestiona Crisp, un servicio externo");
+  await expect(notice.getByRole("link", { name: "Política de privacidad" })).toBeVisible();
+  await page.screenshot({ animations: "disabled", path: "test-results/settings-help-notice.png" });
+  await notice.getByRole("button", { name: "Cancelar" }).click();
+  await expect(notice).toBeHidden();
+  expect(crispRequests).toEqual([]);
+
+  // Accept: loads once and the chat appears.
+  await button.click();
+  await page.getByRole("button", { name: "Abrir chat" }).click();
+  await expect(page.locator("#crisp-chatbox")).toBeVisible();
+  expect(crispRequests).toHaveLength(1);
+  const log = await page.evaluate(() => (window as unknown as { __crispLog: string[] }).__crispLog);
+  expect(log.slice(0, 2)).toEqual(["do chat:hide", "on chat:closed"]);
+  expect(log).toContain("do chat:open");
+  expect(log.some((c) => c.startsWith("set"))).toBe(false);
+  await expect(button).toBeEnabled();
+
+  // Closing hides it again; the next click skips the notice.
+  await page.evaluate(() => (window as unknown as { $crisp: { push: (c: unknown[]) => void } }).$crisp.push(["do", "chat:close"]));
+  await expect(page.locator("#crisp-chatbox")).toBeHidden();
+  await button.click();
+  await expect(page.getByRole("alertdialog")).toHaveCount(0);
+  await expect(page.locator("#crisp-chatbox")).toBeVisible();
+  expect(crispRequests).toHaveLength(1);
+});
+
+test("Ajustes > Ayuda: a blocked Crisp shows one quiet line and nothing else", async ({
+  page,
+}) => {
+  await authenticated(page);
+  await page.addInitScript(() => localStorage.setItem("dream-crisp-notice", "1"));
+  await page.route("https://client.crisp.chat/**", (route) => route.abort("blockedbyclient"));
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Hablar con soporte" }).click();
+  await expect(page.getByText("No se pudo abrir el chat ahora. Inténtalo más tarde.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hablar con soporte" })).toBeEnabled();
+  await expect(page.locator(".group").filter({ hasText: "Ayuda" })).not.toContainText("@");
+  await page.screenshot({ animations: "disabled", path: "test-results/settings-help-error.png" });
+});
