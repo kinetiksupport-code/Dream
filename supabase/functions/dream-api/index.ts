@@ -12,6 +12,7 @@ import {
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { chatSystemMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
+import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBlock, consentDecision, createNicknameReplacer, madridToday, nicknameFor, onboardingPatch, personalContext, replaceNickname, welcomeFields } from './onboarding.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
@@ -40,6 +41,14 @@ const json = (data: unknown, status = 200, extra: Record<string,string> = {}) =>
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PROMPT = 12000;
 const MAX_BODY_CHARS = 12_000_000;
+/** Acciones de la bienvenida (docs/CONSENTIMIENTO.md). */
+const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent', 'consent_withdraw']);
+/**
+ * Además de las que gastan IA (consumingActions): crear conversaciones,
+ * apuntes y exámenes nuevos también espera al permiso. Ver, descargar o
+ * borrar lo guardado sigue abierto.
+ */
+const CONSENT_GATED = new Set(['conversation_create', 'exam_create', 'exam_upload_start', 'exam_material_add', 'upload_session_create']);
 // Errores de proveedores de IA con la misma forma (code, status, retryAfter).
 const isProviderError = (error: unknown): error is GroqProviderError | CloudflareProviderError =>
   error instanceof GroqProviderError || error instanceof CloudflareProviderError;
@@ -192,6 +201,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   let streamOwnsLease = false;
   let admitted = false;
   const consuming = !examInternal && consumingActions.has(String(body.action));
+  // Bienvenida: sin el permiso de IA y los Términos vigentes, nada de IA, ni
+  // apuntes ni exámenes nuevos. Antes de la admisión para no gastar cupo. Ver
+  // y borrar datos sigue abierto (docs/CONSENTIMIENTO.md §4).
+  if (!examInternal && (consuming || CONSENT_GATED.has(String(body.action)))) {
+    const row = verified?.profile ?? (await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle()).data;
+    const blocked = consentBlock(row);
+    if (blocked) return json({ error: blocked.message, code: blocked.code }, blocked.status);
+  }
   try {
     if (consuming) { await admission.admit(String(body.action)); admitted = true; }
   const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
@@ -214,7 +231,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const publicProfile = {
     email,
     display_name: profile.display_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-    academic_level: profile.academic_level ?? null
+    academic_level: profile.academic_level ?? null,
+    // Campos de la bienvenida (solo con la migración 20261020120000; nunca birth_date).
+    ...welcomeFields(profile),
   };
 
   if (DESKTOP_UPLOAD_ACTIONS.has(String(body.action))) {
@@ -236,6 +255,57 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
 
   if (body.action === 'profile') {
     return json({ profile: publicProfile, service_ready: groqConfigured() });
+  }
+
+  // Bienvenida (prompt «bienvenida» §4.4, docs/CONSENTIMIENTO.md). Todo se
+  // valida aquí: el navegador no puede escribir estas columnas.
+  if (WELCOME_ACTIONS.has(String(body.action))) {
+    if (!('terms_version' in profile)) return json({ error: 'La bienvenida aún no está disponible.' }, 503);
+    const reload = async () => (await admin.from('dream_profiles').select('*').eq('id', user.id).single()).data ?? profile;
+    const answer = (row: Record<string, unknown>) => ({ ...publicProfile, display_name: row.display_name ?? publicProfile.display_name, ...welcomeFields(row) });
+    try {
+      if (body.action === 'onboarding_save') {
+        const patch = onboardingPatch(body);
+        const saved = await admin.from('dream_profiles').update({ ...patch, updated_at: new Date().toISOString() }).eq('id', user.id);
+        if (saved.error) return json({ error: 'No se pudo guardar tu respuesta.' }, 503);
+        return json({ profile: answer(await reload()) });
+      }
+      if (body.action === 'onboarding_age') {
+        const age = ageOn(body.birth_date, madridToday());
+        if (age === null) return json({ error: 'Indica una fecha de nacimiento válida.', code: 'invalid_birth_date' }, 400);
+        if (age >= MIN_AGE) return json({ allowed: true });
+        // Menor de 14: se borra lo que guardó la bienvenida y no se guarda la fecha.
+        const erased = await admin.from('dream_profiles').update({ ...MINOR_RESET, updated_at: new Date().toISOString() }).eq('id', user.id);
+        if (erased.error) return json({ error: 'No se pudo completar. Inténtalo de nuevo.' }, 503);
+        console.log(JSON.stringify({ event: 'onboarding_under_age' }));
+        return json({ allowed: false });
+      }
+      if (body.action === 'consent') {
+        let decision;
+        try { decision = consentDecision(body, profile); }
+        catch (error) {
+          if (error instanceof OnboardingError && error.code === 'under_age' && !profile.birth_date)
+            await admin.from('dream_profiles').update({ ...MINOR_RESET, updated_at: new Date().toISOString() }).eq('id', user.id);
+          throw error;
+        }
+        const saved = await admin.from('dream_profiles').update({ ...decision.patch, guardian_required: false, updated_at: new Date().toISOString() }).eq('id', user.id);
+        if (saved.error) return json({ error: 'No se pudo guardar tu respuesta.' }, 503);
+        const logged = await admin.schema('dream_private').from('consent_events')
+          .insert(decision.events.map((e) => ({ ...e, user_id: user.id })));
+        if (logged.error) console.error(JSON.stringify({ event: 'consent_event_failed' }));
+        return json({ profile: answer(await reload()) });
+      }
+      // consent_withdraw: la cuenta queda sin chat; los datos se conservan.
+      if (body.kind !== 'ai') return json({ error: 'Permiso no válido.' }, 400);
+      const saved = await admin.from('dream_profiles').update({ ai_consent_at: null, updated_at: new Date().toISOString() }).eq('id', user.id);
+      if (saved.error) return json({ error: 'No se pudo retirar el permiso. Inténtalo de nuevo.' }, 503);
+      await admin.schema('dream_private').from('consent_events')
+        .insert({ user_id: user.id, kind: 'ai', granted: false, text_shown: CONSENT_TEXT.ai, terms_version: profile.terms_version ?? null });
+      return json({ profile: answer(await reload()) });
+    } catch (error) {
+      if (error instanceof OnboardingError) return json({ error: error.message, code: error.code }, error.status);
+      throw error;
+    }
   }
 
   // Uso del límite conjunto de la ventana de 5 h (solo lectura, no consume
@@ -304,7 +374,10 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const { data, error } = await admin.from('dream_messages').select('id,role,content,created_at')
       .eq('conversation_id', body.conversation_id).eq('owner_id', user.id)
       .order('created_at', { ascending: false }).order('id',{ascending:false}).range(offset,offset+49);
-    return error ? json({error:'No se pudieron cargar los mensajes.'},503) : json({items:data?.reverse(),next_offset:data?.length===50?offset+50:null});
+    // Las respuestas se guardan con {{APODO}}; el nombre se pone al leerlas.
+    const nickname = nicknameFor(profile);
+    const items = data?.reverse().map((m: { role: string; content: string }) => m.role === 'assistant' ? { ...m, content: replaceNickname(m.content, nickname) } : m);
+    return error ? json({error:'No se pudieron cargar los mensajes.'},503) : json({items,next_offset:data?.length===50?offset+50:null});
   }
 
   if (body.action === 'attachment_upload') {
@@ -601,8 +674,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Mismo constructor para los tres modos y para el respaldo: el bloque común
   // (no dar el ejercicio resuelto, español, «Estás hablando con una IA») va
   // siempre primero.
+  // Personalización sin datos que identifiquen: el apodo va como marcador y
+  // las aficiones solo cuando el turno explica algo nuevo (ahí sirven para
+  // los ejemplos; en el resto se ahorran los tokens).
+  const examples = educationalSelection.skills.includes('EXPLICAR') && ['foundation', 'reframe', 'overview'].includes(educationalSelection.pacing);
+  const personal = personalContext(profile, { interests: examples });
   const contextParts = {
     academicMemory,
+    personal,
     skillPrompt: educationalSkillPrompt(educationalSelection, profile.academic_level),
     examContext: examStudyContext,
     attachmentFiles: attachmentRows,
@@ -701,14 +780,19 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       // el turno se puede reintentar igual que antes.
       // Lo mismo con las fuentes de la búsqueda (marca oculta para la web).
       let pendingNotice = searchMissing ? `_${SEARCH_UNAVAILABLE_NOTICE}_\n\n` : '';
+      // Se guarda con {{APODO}} (y así vuelve a la IA en el historial); al
+      // alumno le llega ya con su nombre, aunque el marcador venga partido.
+      const nickname = createNicknameReplacer(nicknameFor(profile));
       const emit = (text: string) => {
         if (pendingNotice) { answer += pendingNotice; send({ type: 'delta', text: pendingNotice }); pendingNotice = ''; }
         answer += text;
         if (!firstChunkAt) firstChunkAt = Date.now();
         chunkCount++; chunkCharacters += text.length;
         largestChunk = Math.max(largestChunk, text.length);
-        send({ type: 'delta', text });
+        const shown = nickname.push(text);
+        if (shown) send({ type: 'delta', text: shown });
       };
+      const flushNickname = () => { const rest = nickname.flush(); if (rest) send({ type: 'delta', text: rest }); };
       try {
         const searchKey = searchAvailable;
         let usage: any = null;
@@ -749,7 +833,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           if (!searchFailed) pendingNotice = sourcesMarker(result) + pendingNotice;
           // Segunda llamada con contexto corto: bloque común, estilo de
           // búsqueda, historial reciente y los resultados. Sin el prompt largo.
-          const answerMessages = [...searchAnswerMessages({ academicMemory, shortcut }), ...searchHistory, { role: 'user', content: prompt },
+          const answerMessages = [...searchAnswerMessages({ academicMemory, shortcut, personal }), ...searchHistory, { role: 'user', content: prompt },
             { role: 'assistant', content: provisional || null, tool_calls: calls },
             { role: 'tool', tool_call_id: validated.id, content: result }];
           // El respaldo no usa herramientas: recibe el resultado como contexto.
@@ -764,6 +848,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           }
           logUsage('search_answer', usage);
         } else if (searchKey && provisional) emit(provisional);
+        flushNickname();
         if (answer.trim()) {
           await admin.from('dream_messages').insert({
             conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: answer.slice(0, 32000)
@@ -775,6 +860,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           send({ type: 'error', message: 'El servicio respondió sin texto. Tu mensaje se conserva.' });
         }
       } catch (error) {
+        flushNickname();
         if (!generationSignal.aborted) captureEdgeFailure('chat',error instanceof AdmissionError ? error.code : 'stream_failed');
         if (answer.trim()) {
           await admin.from('dream_messages').insert({

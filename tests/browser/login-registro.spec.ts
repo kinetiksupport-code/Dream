@@ -316,6 +316,33 @@ test.describe("bienvenida: después", () => {
     });
   });
 
+  test("a server «consent_required» brings the consent step back", async ({ page }) => {
+    await open(page, { ...CONSENT_WITHDRAWN, ai_consent_at: "2026-10-20T10:00:00Z" });
+    let withdrawn = false;
+    await page.route("**/functions/v1/dream-api", async (route) => {
+      const action = route.request().postDataJSON()?.action;
+      if (action === "conversation_create") {
+        withdrawn = true;
+        return route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Para usar Dream, acepta antes enviar tu información a los proveedores de IA.", code: "consent_required" }),
+        });
+      }
+      if (action === "profile" && withdrawn)
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ profile: { email: "alex@example.test", display_name: "Alex", ...CONSENT_WITHDRAWN }, service_ready: true }),
+        });
+      return route.fallback();
+    });
+    const box = page.getByRole("textbox", CHAT);
+    await box.fill("Hola");
+    await box.press("Enter");
+    await expect(title(page, /Vas a hablar con una IA/)).toBeVisible();
+  });
+
   test("Ajustes › Privacidad withdraws the AI permission after a warning", async ({ page }) => {
     const sent = requests(page);
     await open(page, { ...CONSENT_WITHDRAWN, ai_consent_at: "2026-10-20T10:00:00Z" }, "/settings");

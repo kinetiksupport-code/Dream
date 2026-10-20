@@ -614,7 +614,12 @@ export function shortcutInstruction(shortcut) {
  * @param {any[]} [memory]
  * @param {string | null} [shortcut]
  */
-export function dynamicContextFor(memory = [], shortcut = null) {
+/**
+ * @param {any[]} [memory]
+ * @param {string|null} [shortcut]
+ * @param {string} [personal] personalización de la bienvenida (onboarding.mjs › personalContext): el marcador del apodo y, si ayuda, las aficiones. Nunca el nombre real.
+ */
+export function dynamicContextFor(memory = [], shortcut = null, personal = '') {
   const lines = [
     'Contexto proporcionado por el sistema (no lo cites textualmente al usuario):',
     '- Rol: alumno.',
@@ -629,6 +634,7 @@ export function dynamicContextFor(memory = [], shortcut = null) {
   } else lines.push('- No hay memoria académica relevante para esta consulta. No inventes progreso anterior.');
   const shortcutLine = shortcutInstruction(shortcut);
   if (shortcutLine) lines.push(shortcutLine);
+  if (personal) lines.push(personal);
   lines.push('- Existe un motor de tests interactivos separado. Si decides comprobar varios conceptos ahora, añade la señal <!--DREAM_ACTION:TEST--> y no escribas las preguntas en el chat. Una sola comprobación breve sí puede ir en la conversación. No escribas respuestas correctas de un test activo.');
 
   return lines.join('\n');
@@ -690,18 +696,18 @@ export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes bus
  * Mensajes de sistema del chat. Es el MISMO camino para los tres modos y para
  * el respaldo: solo cambia el prompt base y cuánto contexto entra.
  * @param {string} modeId
- * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null}} [parts]
+ * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null, personal?: string}} [parts]
  */
 export function chatSystemMessages(modeId, {
   fallback = false, search = false, academicMemory = [], skillPrompt = '',
-  examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null,
+  examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null, personal = '',
 } = {}) {
   const messages = [
     { role: 'system', content: systemPromptFor(modeId, { fallback }) },
     { role: 'system', content: CONVERSATION_POLICY },
   ];
   if (search) messages.push({ role: 'system', content: SEARCH_TOOL_PROMPT });
-  messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut) });
+  messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut, personal) });
   if (skillPrompt) messages.push({ role: 'system', content: skillPrompt });
   if (examContext) messages.push({ role: 'system', content: examContext });
   // El material del alumno va siempre delimitado como datos y con la
@@ -740,13 +746,13 @@ export function searchPlannerMessages() {
 /**
  * Segunda llamada (con los resultados): reglas comunes, estilo de búsqueda,
  * política y contexto dinámico. Sin el prompt largo de Normal.
- * @param {{academicMemory?: any[], shortcut?: string|null}} [parts]
+ * @param {{academicMemory?: any[], shortcut?: string|null, personal?: string}} [parts]
  */
-export function searchAnswerMessages({ academicMemory = [], shortcut = null } = {}) {
+export function searchAnswerMessages({ academicMemory = [], shortcut = null, personal = '' } = {}) {
   return [
     { role: 'system', content: `${COMMON_RULES}\n\n${SEARCH_ANSWER_STYLE}` },
     { role: 'system', content: CONVERSATION_POLICY },
-    { role: 'system', content: dynamicContextFor(academicMemory, shortcut) },
+    { role: 'system', content: dynamicContextFor(academicMemory, shortcut, personal) },
   ];
 }
 
