@@ -39,7 +39,7 @@ export default function LandingPage() {
       <main id="main">
         {/* 1. Héroe */}
         <section className={`${s.scene} ${s.hero} pop tone-blue pop-grid`} aria-labelledby="hero-title">
-          <div className={`${s.heroInner} stagger`}>
+          <div className={s.heroInner}>
             <span className={s.heroSticker} aria-hidden="true">
               <Sticker shape="round" tone="yellow" size={168} tilt={-6}>
                 <Orb size={104} breathing />

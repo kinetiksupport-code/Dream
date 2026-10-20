@@ -454,6 +454,48 @@
   text-underline-offset: 3px;
 }
 
+/* Hero entrance at load: sticker, text and button rise 40 ms apart. The
+   title (the LCP element) only moves, it never starts transparent, so the
+   largest paint is not delayed by the animation. */
+.heroInner > * {
+  animation: heroRise var(--dur-rise) var(--ease) backwards;
+}
+.heroInner > .heroTitle {
+  animation-name: heroTitleRise;
+  animation-delay: var(--stagger);
+}
+.heroInner > :nth-child(3) {
+  animation-delay: calc(var(--stagger) * 2);
+}
+.heroInner > :nth-child(4) {
+  animation-delay: calc(var(--stagger) * 3);
+}
+@keyframes heroRise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes heroTitleRise {
+  from {
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .heroInner > * {
+    animation-name: heroFade;
+    animation-duration: var(--dur-fast);
+  }
+  .heroInner > .heroTitle {
+    animation: none;
+  }
+}
+@keyframes heroFade {
+  from {
+    opacity: 0;
+  }
+}
+
 /* --- Móvil: escenas apiladas, nada fijado ---------------------------------- */
 @media (max-width: 899.98px) {
   .split,
