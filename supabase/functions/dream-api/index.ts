@@ -1,6 +1,7 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
+import { moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
@@ -231,10 +232,32 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Bienvenida: sin el permiso de IA y los Términos vigentes, nada de IA, ni
   // apuntes ni exámenes nuevos. Antes de la admisión para no gastar cupo. Ver
   // y borrar datos sigue abierto (docs/CONSENTIMIENTO.md §4).
+  let consentRow: Record<string, unknown> | null = null;
   if (!examInternal && (consuming || CONSENT_GATED.has(String(body.action)))) {
     const row = verified?.profile ?? (await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle()).data;
+    consentRow = row ?? null;
     const blocked = consentBlock(row);
     if (blocked) return json({ error: blocked.message, code: blocked.code }, blocked.status);
+  }
+  // Antiabuso por tasa (docs/MODERACION.md): solo las acciones que gastan IA,
+  // nunca el inicio de sesión, las páginas legales ni «Reclamar». MOD_MODE=off
+  // por defecto: sin activarlo no hace nada. Falla abierta.
+  if (consuming) {
+    const limited = await moderationGate({
+      rpc: async (fn: string, args: Record<string, unknown>) => {
+        const result = await admin.rpc(fn, args);
+        if (result.error) throw new Error(fn);
+        return result.data;
+      },
+      headers: req.headers,
+      userId: user.id,
+      ageBand: typeof consentRow?.age_band === 'string' ? consentRow.age_band : null,
+      env: {
+        MOD_MODE: Deno.env.get('MOD_MODE'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER'),
+        MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'),
+      },
+    });
+    if (limited) return json({ error: limited.message, code: limited.code, retry_after: limited.retryAfter }, limited.status, { 'Retry-After': String(limited.retryAfter) });
   }
   try {
     if (consuming) { await admission.admit(String(body.action)); admitted = true; }
