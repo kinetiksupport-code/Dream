@@ -2,6 +2,8 @@ import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Present only while the account is banned: Dream then shows only the ban screen. */
+  ban?: { until: string | null; permanent: boolean; rule: string | null };
 }
 export interface Conversation {
   id: string;

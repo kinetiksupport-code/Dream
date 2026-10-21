@@ -1,0 +1,167 @@
+/* Moderación, lado del alumno (B6): pantalla de baneo, reclamar y avisos.
+   Solo tokens del sistema de diseño de Dream; contraste AA en claro y oscuro. */
+.screen {
+  min-height: var(--viewport-height, 100dvh);
+  display: grid;
+  place-items: start center;
+  padding: calc(24px + var(--safe-top)) 16px calc(32px + var(--safe-bottom));
+  background: var(--bg);
+  color: var(--text);
+}
+.card {
+  width: min(560px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.title {
+  margin: 0;
+  font-size: var(--text-title);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.lead {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-body);
+}
+.facts {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.facts dt {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+.facts dd {
+  margin: 2px 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.section {
+  display: grid;
+  gap: 12px;
+  padding-top: 8px;
+}
+.section h2 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+.section p {
+  margin: 0;
+}
+.hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+.form {
+  display: grid;
+  gap: 12px;
+}
+.textarea {
+  width: 100%;
+  min-height: 7.5em;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-nav);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.4;
+  resize: vertical;
+}
+.textarea:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.sent {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--success-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.sent h3,
+.sent p {
+  margin: 0;
+}
+.code {
+  display: grid;
+  gap: 6px;
+}
+.codeLabel {
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+.codeRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.codeValue {
+  padding: 10px 14px;
+  border-radius: var(--radius-nav);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  user-select: all;
+}
+.codeRow button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.notices {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 16px 0;
+  max-width: 760px;
+}
+.notice {
+  padding: 16px;
+  border-radius: var(--radius-card);
+  background: var(--warning-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.notice[data-kind="block"] {
+  background: var(--danger-surface);
+}
+.notice h2 {
+  margin: 0 0 6px;
+  font-size: 1.0625rem;
+}
+.notice p {
+  margin: 0 0 12px;
+}
+.noticeActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.noticeActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen *,
+  .notices * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

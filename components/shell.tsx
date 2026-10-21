@@ -36,6 +36,8 @@ import { isDefaultTitle, titleFromPrompt } from "@/lib/conversation-title";
 export const UNDO_MS = 5000;
 import { consentGate } from "@/lib/consent";
 import { WelcomeFlow } from "./welcome/welcome-flow";
+import { BanScreen } from "./moderation/ban-screen";
+import { ModerationNotices } from "./moderation/notices";
 interface ConversationsContext {
   items: Conversation[];
   loaded: boolean;
@@ -102,9 +104,11 @@ export function Shell({ children }: { children: ReactNode }) {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
   const profileEmail = profile?.email;
+  const banned = !!profile?.ban;
   useEffect(() => {
-    if (profileEmail) void refresh();
-  }, [profileEmail, refresh]);
+    // Una cuenta baneada solo ve su pantalla: dream-api no le contesta lo demás.
+    if (profileEmail && !banned) void refresh();
+  }, [profileEmail, banned, refresh]);
   async function rename() {
     if (!editing || !title.trim() || busy) return;
     setBusy(true);
@@ -226,6 +230,8 @@ export function Shell({ children }: { children: ReactNode }) {
   // Bienvenida: a new student sees only the welcome until it is done (it can
   // just «Salir»). After a withdrawn permission or new terms, only the consent
   // step, and Ajustes stays open to sign out or delete data.
+  // Baneo (B6): solo la pantalla de baneo, con apelación y borrar la cuenta.
+  if (profile.ban) return <BanScreen ban={profile.ban} />;
   const gate = consentGate(profile);
   if (gate === "welcome" || (gate === "consent" && !pathname.startsWith("/settings")))
     return <WelcomeFlow key={gate} gate={gate} />;
@@ -337,6 +343,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </header>
           )}
           <main id="main" className="workspace-main" tabIndex={-1}>
+            <ModerationNotices />
             {/* Page transition: a View Transition on link clicks, or this
                 CSS enter animation (data-enter) on Back/Forward and in
                 browsers without View Transitions. globals.css › «Transiciones
