@@ -33,6 +33,8 @@ async function materialTexts(db:SupabaseClient,owner:string,examId:string):Promi
  return m.length?(checked(await db.from('dream_attachments').select('file_name,extracted_text').in('id',m.map(x=>x.attachment_id)).eq('owner_id',owner))??[]).map(r=>({file_name:String(r.file_name??''),extracted_text:String(r.extracted_text??'')})):[];
 }
 function answerValue(a:unknown):a is Answer {return typeof a==='string'||Array.isArray(a)&&a.length<=20&&a.every(v=>typeof v==='string')||!!a&&typeof a==='object'&&!Array.isArray(a)&&Object.keys(a).length<=20&&Object.values(a).every(v=>typeof v==='string');}
+/** Exámenes por alumno: muy por encima del uso real; frena el relleno de la base compartida (auditoría). */
+const MAX_EXAMS_PER_OWNER=200;
 export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI,legacy:(body:Body)=>Promise<Response>,signal:AbortSignal):Promise<unknown>{
  const action=b.action;
  if(action==='exams'){
@@ -44,6 +46,9 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  const examId=id(b.exam_id);const existing=await db.from('dream_exams').select('id').eq('id',examId).eq('owner_id',owner).maybeSingle();
  if(existing.error)throw new ExamError('No se pudo consultar el examen.',503);
  if(existing.data)return {exam:await detail(db,owner,examId)};
+ const owned_exams=await db.from('dream_exams').select('id',{count:'exact',head:true}).eq('owner_id',owner);
+ if(owned_exams.error)throw new ExamError('No se pudo consultar el examen.',503);
+ if((owned_exams.count??0)>=MAX_EXAMS_PER_OWNER)throw new ExamError('Has llegado al máximo de exámenes. Borra alguno antiguo para crear otro.',409);
  // Asistente (§5): borrador vacío para poder subir apuntes; la IA pone
  // nombre, asignatura y temas al final y el alumno, fecha y nota.
  const fields=b.wizard===true?{title:'',subject:'',exam_date:null,topics:[],difficulties:'',goal:'',daily_minutes:DEFAULT_DAILY_MINUTES,wizard_step:'upload'}:examFields(b);
