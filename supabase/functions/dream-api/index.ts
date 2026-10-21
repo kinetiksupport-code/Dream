@@ -48,7 +48,7 @@ const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent',
  * apuntes y exámenes nuevos también espera al permiso. Ver, descargar o
  * borrar lo guardado sigue abierto.
  */
-const CONSENT_GATED = new Set(['conversation_create', 'exam_create', 'exam_upload_start', 'exam_material_add', 'upload_session_create']);
+const CONSENT_GATED = new Set(['conversation_create', 'exam_create', 'exam_upload_start', 'exam_material_add', 'upload_session_create', 'upload_session_renew']);
 // Errores de proveedores de IA con la misma forma (code, status, retryAfter).
 const isProviderError = (error: unknown): error is GroqProviderError | CloudflareProviderError =>
   error instanceof GroqProviderError || error instanceof CloudflareProviderError;
@@ -94,6 +94,10 @@ async function handleQr(req: Request): Promise<Response> {
     if (found.error || !found.data.user) throw new UploadSessionError(404, 'upload_link_invalid', 'Este código ya no vale. Escanea uno nuevo desde tu ordenador.');
     const profile = await admin.from('dream_profiles').select('*').eq('id', owner).maybeSingle();
     if (profile.error || !profile.data) throw new UploadSessionError(503, 'upload_unavailable', 'No se pudo conectar ahora. Inténtalo de nuevo.');
+    // El despacho interno se salta la puerta de consentimiento de handle()
+    // (examInternal). Sin permiso de IA o con Términos antiguos, el enlace deja
+    // de valer igual que uno caducado (auditoría SEC-02).
+    if (consentBlock(profile.data)) throw new UploadSessionError(404, 'upload_link_invalid', 'Este código ya no vale. Escanea uno nuevo desde tu ordenador.');
     const context = { user: found.data.user, profile: profile.data, admission: createAdmission(admin, owner, crypto.randomUUID()) };
     owners.set(owner, context); return context;
   };
@@ -301,6 +305,11 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       if (saved.error) return json({ error: 'No se pudo retirar el permiso. Inténtalo de nuevo.' }, 503);
       await admin.schema('dream_private').from('consent_events')
         .insert({ user_id: user.id, kind: 'ai', granted: false, text_shown: CONSENT_TEXT.ai, terms_version: profile.terms_version ?? null });
+      // Los códigos QR abiertos dejan de valer al retirar el permiso.
+      const now = new Date().toISOString();
+      const closed = await admin.schema('dream_private').from('upload_sessions')
+        .update({ state: 'closed', closed_at: now, updated_at: now }).eq('owner_id', user.id).neq('state', 'closed');
+      if (closed.error) console.error(JSON.stringify({ event: 'upload_sessions_close_failed' }));
       return json({ profile: answer(await reload()) });
     } catch (error) {
       if (error instanceof OnboardingError) return json({ error: error.message, code: error.code }, error.status);
