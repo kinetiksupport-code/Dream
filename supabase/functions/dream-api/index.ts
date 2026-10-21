@@ -1,7 +1,7 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
-import { moderationEntry, moderationGate } from './moderation.mjs';
+import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
@@ -63,6 +63,12 @@ const maintenanceAllows = (user: User) => {
   return Boolean(user.email_confirmed_at) && allowed.includes(String(user.email ?? '').trim().toLowerCase());
 };
 const maintenanceResponse = () => json({ error: 'Dream está en mantenimiento. Vuelve en un rato.' }, 503, { 'Retry-After': '300' });
+/** RPC de moderación con la clave de servicio: lanza si la base de datos da error. */
+const rpcFor = (db: SupabaseClient) => async (fn: string, args: Record<string, unknown>) => {
+  const result = await db.rpc(fn, args);
+  if (result.error) throw new Error(fn);
+  return result.data;
+};
 /** Acciones de la bienvenida (docs/CONSENTIMIENTO.md). */
 const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent', 'consent_withdraw']);
 /**
@@ -121,6 +127,10 @@ async function handleQr(req: Request): Promise<Response> {
     // (examInternal). Sin permiso de IA o con Términos antiguos, el enlace deja
     // de valer igual que uno caducado (auditoría SEC-02).
     if (consentBlock(profile.data)) throw new UploadSessionError(404, 'upload_link_invalid', 'Este código ya no vale. Escanea uno nuevo desde tu ordenador.');
+    // Una cuenta baneada tampoco sube nada desde el móvil (B5b).
+    if (await banState({ rpc: rpcFor(admin), userId: owner })) {
+      throw new UploadSessionError(404, 'upload_link_invalid', 'Este código ya no vale. Escanea uno nuevo desde tu ordenador.');
+    }
     const context = { user: found.data.user, profile: profile.data, admission: createAdmission(admin, owner, crypto.randomUUID()) };
     owners.set(owner, context); return context;
   };
@@ -232,6 +242,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Bienvenida: sin el permiso de IA y los Términos vigentes, nada de IA, ni
   // apuntes ni exámenes nuevos. Antes de la admisión para no gastar cupo. Ver
   // y borrar datos sigue abierto (docs/CONSENTIMIENTO.md §4).
+  // Baneo (B5b): se comprueba en el servidor en CADA petición, también con la
+  // sesión ya abierta. Una cuenta baneada solo puede ver su pantalla, apelar y
+  // borrar su cuenta. Las llamadas internas (examInternal) ya pasaron por aquí.
+  let ban: Awaited<ReturnType<typeof banState>> = null;
+  if (!examInternal && !verified) {
+    ban = await banState({ rpc: rpcFor(admin), userId: user.id });
+    if (ban && !BAN_ALLOWED_ACTIONS.has(String(body.action))) {
+      const denied = bannedResponse(ban);
+      return json(denied.body, denied.status);
+    }
+  }
   let consentRow: Record<string, unknown> | null = null;
   if (!examInternal && (consuming || CONSENT_GATED.has(String(body.action)))) {
     const row = verified?.profile ?? (await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle()).data;
@@ -242,11 +263,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Antiabuso (docs/MODERACION.md): solo las acciones que gastan IA, nunca el
   // inicio de sesión, las páginas legales ni «Reclamar». MOD_MODE=off por
   // defecto: sin activarlo no hace nada. Falla abierta.
-  const modRpc = async (fn: string, args: Record<string, unknown>) => {
-    const result = await admin.rpc(fn, args);
-    if (result.error) throw new Error(fn);
-    return result.data;
-  };
+  const modRpc = rpcFor(admin);
   const modEnv = {
     MOD_MODE: Deno.env.get('MOD_MODE'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER'),
     MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'),
@@ -308,7 +325,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   if (body.action === 'profile') {
-    return json({ profile: publicProfile, service_ready: groqConfigured() });
+    return json({ profile: publicProfile, service_ready: groqConfigured(), ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null });
   }
 
   // Bienvenida (prompt «bienvenida» §4.4, docs/CONSENTIMIENTO.md). Todo se
