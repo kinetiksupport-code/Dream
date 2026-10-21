@@ -4,6 +4,8 @@ export interface DreamProfile extends ConsentProfile {
   display_name: string | null;
   /** Solo lo envía dream-api a la cuenta administradora. Ocultar el enlace no es la seguridad. */
   admin_panel?: { path: string };
+  /** Present only while the account is banned: Dream then shows only the ban screen. */
+  ban?: { until: string | null; permanent: boolean; rule: string | null };
 }
 export interface Conversation {
   id: string;

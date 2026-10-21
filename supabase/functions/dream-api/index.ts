@@ -3,6 +3,7 @@ import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
 import { ADMIN_ACTIONS, adminLink, handleAdminAction } from './admin.mjs';
 import { contentModerationEnabled, CONTENT_THRESHOLDS, moderateMessage } from './content-moderation.mjs';
+import { STUDENT_MOD_ACTIONS, handleStudentModeration } from './student-moderation.mjs';
 import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
@@ -407,6 +408,12 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Uso del límite conjunto de la ventana de 5 h (solo lectura, no consume
   // IA): { percent, blocked, resets_at } arriba y modes[] con lo que gasta
   // cada modo en palabras. Ni tokens ni nombres de modelo.
+  // Moderación, lado del alumno (B6): ver su baneo, reclamar, marcar avisos como vistos.
+  if (STUDENT_MOD_ACTIONS.has(String(body.action))) {
+    const studentResult = await handleStudentModeration({ action: String(body.action), body, userId: user.id, rpc: rpcFor(admin) });
+    if (studentResult) return json(studentResult.body, studentResult.status, { 'Cache-Control': 'no-store' });
+  }
+
   if (body.action === 'ai_usage') {
     try {
       const data = await createWindowLimiter(admin, user.id).read();

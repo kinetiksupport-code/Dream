@@ -49,7 +49,11 @@ export type DreamAction =
   | "consent"
   | "consent_withdraw"
   | "onboarding_save"
-  | "onboarding_age";
+  | "onboarding_age"
+  | "mod_ban_info"
+  | "mod_appeal_create"
+  | "mod_notices"
+  | "mod_ack";
 export class DreamApiError extends Error {
   constructor(
     message: string,
@@ -115,6 +119,15 @@ async function request(
     // read again and the welcome asks for it (docs/CONSENTIMIENTO.md §4).
     if (code === "consent_required" && typeof window !== "undefined")
       window.dispatchEvent(new Event("dream:consent-required"));
+    // A ban was applied while the session was open: the profile is read again
+    // and Dream shows the ban screen (B6). A moderation block (unusual use from
+    // the connection or a limited account) shows the notice with «Reclamar».
+    if (code === "banned" && typeof window !== "undefined")
+      window.dispatchEvent(new Event("dream:banned"));
+    if ((code === "mod_ip_blocked" || code === "mod_user_limited") && typeof window !== "undefined")
+      window.dispatchEvent(
+        new CustomEvent("dream:mod-limited", { detail: { code, message, retryAfter } }),
+      );
     throw new DreamApiError(
       message,
       response.status,
@@ -246,6 +259,7 @@ export async function getDreamProfile(signal?: AbortSignal) {
   const data = await callDream<{
     profile: DreamProfile | null;
     service_ready?: boolean;
+    ban?: { until?: string | null; permanent?: boolean; rule?: string | null } | null;
   }>("profile", {}, signal);
   const p = data?.profile;
   if (!p || typeof p !== "object") {
@@ -276,6 +290,13 @@ export async function getDreamProfile(signal?: AbortSignal) {
   const panel = (p as { admin_panel?: { path?: unknown } }).admin_panel;
   if (typeof panel?.path === "string" && /^\/[a-z0-9][a-z0-9-]{2,40}$/.test(panel.path))
     profile.admin_panel = { path: panel.path };
+  // Banned (manual or automatic): dream-api only answers the ban screen.
+  if (data.ban && typeof data.ban === "object")
+    profile.ban = {
+      until: typeof data.ban.until === "string" ? data.ban.until : null,
+      permanent: data.ban.permanent === true,
+      rule: typeof data.ban.rule === "string" ? data.ban.rule : null,
+    };
   return { profile, service_ready: data.service_ready ?? true };
 }
 

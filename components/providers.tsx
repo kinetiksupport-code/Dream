@@ -188,7 +188,11 @@ export function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
     const ask = () => void refreshProfile();
     window.addEventListener("dream:consent-required", ask);
-    return () => window.removeEventListener("dream:consent-required", ask);
+    window.addEventListener("dream:banned", ask);
+    return () => {
+      window.removeEventListener("dream:consent-required", ask);
+      window.removeEventListener("dream:banned", ask);
+    };
   }, [refreshProfile]);
   useEffect(() => {
     let saved: string | null = null;
