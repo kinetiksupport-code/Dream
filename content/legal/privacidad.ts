@@ -75,7 +75,7 @@ Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Goog
 
 Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras en Ajustes › Privacidad o escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
 
-Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. No se toman decisiones automáticas con efectos legales sobre ti. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
+Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. Con carácter general no se toman decisiones automáticas con efectos legales sobre ti; la única excepción posible es la de la sección 11 (cuentas nuevas para saltarse un baneo), que solo se aplica si está activada. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
 
 ## 7. Menores de edad
 
@@ -87,7 +87,7 @@ En España, un menor puede dar su consentimiento para tratar sus datos a partir 
 - Puedes **borrar todo tu historial de conversaciones** desde Ajustes cuando quieras.
 - Puedes **cambiar o borrar tu apodo y tus aficiones** en Ajustes › Perfil. Si eliminas tu cuenta, se borran con ella.
 - Para eliminar tu cuenta y todos tus datos, escríbenos a **hellodream@edudream.es** y lo haremos en un máximo de **30 días**.
-- Los registros técnicos de uso y abuso se conservan solo el tiempo necesario para su finalidad.
+- Los registros técnicos de uso y abuso se conservan solo el tiempo necesario para su finalidad. Las huellas de conexión de la sección 11 se borran a los **30 días**.
 - Las copias de seguridad del proveedor pueden conservar datos un tiempo limitado después de borrarlos.
 
 ## 9. Tus derechos
@@ -98,7 +98,23 @@ Puedes pedirnos **acceso, rectificación, supresión, oposición, limitación y 
 
 La conexión va cifrada (HTTPS). Cada usuario solo puede leer sus propios datos (reglas de seguridad por fila en la base de datos), las escrituras pasan por un servidor con comprobación de identidad, y las claves de los proveedores de IA no están en tu navegador. Ningún sistema es infalible: avisaremos de cualquier brecha según exige la ley.
 
-## 11. Cambios
+## 11. Seguridad contra abusos y moderación
+
+Dream tiene medidas para que el servicio siga siendo gratis, justo y seguro, y para aplicar las normas de uso de los Términos (apartado 6). Esto es lo que hacen, y qué datos usan.
+
+**Huella de tu conexión (no tu IP).** Para detectar abusos, como usos anormales desde una misma conexión o varias cuentas para saltarse un baneo, calculamos de tu dirección IP una *huella*: un código que se obtiene con un secreto que solo conoce el servidor y del que no se puede recuperar la IP. **Nunca guardamos ni registramos tu IP en claro.** Finalidad: seguridad y prevención de abuso. Base legal: interés legítimo. La huella se guarda **30 días** y se borra sola; también se borra con tu cuenta. (Si tu cuenta pasa por la observación de la que hablamos más abajo, las huellas anotadas en ese caso se conservan mientras dure el caso y, como mucho, hasta que se borre tu cuenta.) Una misma huella solo indica la misma red, no la misma persona (un colegio, una biblioteca o una casa comparten conexión), por eso nunca sirve por sí sola para castigar a alguien en una red compartida.
+
+**Moderación automática y revisión humana.** Algunos límites son automáticos, como bloquear 24 horas el uso de la IA desde una conexión con un uso anormal o limitar unas horas una cuenta que satura el chat. Cualquier sanción de 7 días o más (baneos) **la decide una persona**: el sistema solo la propone. La única excepción posible es el baneo de 7 días a una cuenta nueva que entra repetidamente desde la conexión de una cuenta baneada tras 2 días de observación; **solo se aplica si Carlos lo activa**, solo en conexiones de tamaño de hogar (nunca en redes compartidas) y siempre con aviso y apelación atendida por una persona.
+
+**Revisión de mensajes con IA.** Cuando está activada, un filtro previo busca en tus mensajes señales de incumplir las normas (insultos, intentos de saltarse las reglas de la IA, datos de otras personas…). **Solo si el filtro marca un mensaje**, ese mensaje se envía a Groq (nuestro proveedor de IA) para clasificarlo; el resto no se envía por este motivo. El resultado nunca decide solo una sanción dura. **No guardamos el texto de tus mensajes en los registros de moderación**, solo el código de la norma y el identificador de la conversación. Si un mensaje habla de que te sientes mal o en peligro, no es una infracción: Dream te responde con apoyo (024 y 112) y no te sanciona.
+
+**Qué ves y cómo reclamar.** Verás qué norma se ha incumplido, hasta cuándo dura y cómo reclamar. Puedes reclamar escribiendo a **hellodream@edudream.es** (y, cuando esté disponible, desde el formulario «Reclamar» de la app): lo revisa una persona y te respondemos en un máximo de **30 días**. Si nos equivocamos, quitamos la sanción.
+
+**Quién puede ver esto.** Solo la persona administradora de Dream, con doble factor de seguridad. Ve el mínimo de datos (un identificador corto y tu correo parcialmente tapado, nunca tu IP) y **cada acción queda anotada en un registro que no se puede modificar ni borrar**.
+
+Las partes de esta sección que dependen de funciones apagadas hasta que Carlos las active (la moderación automática, la revisión de mensajes con IA y el baneo por evasión) solo se aplican **cuando están activadas**.
+
+## 12. Cambios
 
 Si cambiamos esta política de forma importante (por ejemplo al añadir pagos o nuevas funciones), te lo avisaremos en la app antes de que se aplique.
 `;
