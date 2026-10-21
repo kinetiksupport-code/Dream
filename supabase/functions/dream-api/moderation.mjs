@@ -15,6 +15,7 @@ import { isIP } from "node:net";
 export const RULES = Object.freeze({
   spam: Object.freeze({ id: "G-SPAM", table: "Spam, mensajes repetidos o saturar el chat" }),
   bot: Object.freeze({ id: "G-BOT", table: "Bots, scripts, scraping o sobrecargar el servicio" }),
+  multi: Object.freeze({ id: "G-MULTI", table: "Varias cuentas para saltarse límites, cola o un baneo" }),
 });
 
 const HOUR = 3600_000;
@@ -41,6 +42,16 @@ export const THRESHOLDS = Object.freeze({
   proposeBanAfterPrior: 2,
   proposedBanMs: 7 * DAY,
   repeatWindowDays: 7,
+  // B3: cuentas nuevas desde la IP de una cuenta baneada.
+  observationDays: 2,
+  windowDays: 30,
+  entryGapMinutes: 30,
+  // 4 cuentas distintas o menos en 30 días: IP «de tamaño de hogar». Más: red compartida.
+  homeMaxAccounts: 4,
+  // Entradas mínimas para confirmar (configurable entre 4 y 7; empieza en 4).
+  minEntries: 4,
+  minEntriesRange: [4, 7],
+  banDays: 7,
 });
 
 export const MESSAGES = Object.freeze({
@@ -221,6 +232,58 @@ export async function moderationGate({ rpc, headers, userId, ageBand, env, now =
     return reject("mod_user_limited", until, now);
   } catch {
     log(JSON.stringify({ event: "mod_gate_failed" }));
+    return null;
+  }
+}
+
+// ── B3: cuentas nuevas desde la IP de una cuenta baneada ─────────────────────
+
+/** Entradas mínimas: configurable, siempre entre 4 y 7. */
+export function minEntriesFrom(value) {
+  const n = Number(value);
+  const [low, high] = THRESHOLDS.minEntriesRange;
+  return Number.isInteger(n) ? Math.min(high, Math.max(low, n)) : THRESHOLDS.minEntries;
+}
+
+/** El baneo automático por evasión solo se aplica con el interruptor encendido. */
+export function autoBanEnabled(env) {
+  return modMode(env.MOD_MODE) === "enforce" && env.MOD_AUTO_BAN_ENABLED === "true";
+}
+
+/**
+ * Apunta la entrada de una cuenta y, si es una cuenta nueva desde la IP de una
+ * cuenta baneada, la deja «en observación» 2 días. No cambia nada de lo que ve
+ * el alumno: sigue con los límites normales y sin aviso de sospecha. Pasado el
+ * plazo cierra la observación: sin entradas suficientes se descarta; en una red
+ * compartida o con el interruptor apagado solo se propone; en una IP de hogar
+ * con el interruptor encendido se aplica la fila de la tabla G.
+ * Falla abierta: ante cualquier error no hace nada.
+ */
+export async function moderationEntry({ rpc, headers, userId, env, now = Date.now(), log = console.error }) {
+  const mode = modMode(env.MOD_MODE);
+  if (mode === "off") return null;
+  try {
+    const ip = trustedClientIp(headers, {
+      header: env.MOD_IP_HEADER || DEFAULT_IP_HEADER,
+      hopsFromRight: Number(env.MOD_IP_XFF_HOPS) || 1,
+    });
+    if (!ip) return null;
+    const hash = await ipFingerprint(ip, env.MOD_IP_PEPPER);
+    const obs = await rpc("mod_entry", {
+      p_ip_hash: hash, p_user: userId,
+      p_window_days: THRESHOLDS.windowDays, p_gap_minutes: THRESHOLDS.entryGapMinutes,
+      p_observe_days: THRESHOLDS.observationDays, p_home_max: THRESHOLDS.homeMaxAccounts,
+    });
+    if (!obs || mode !== "enforce") return null;
+    if (obs.status === "observando" && Date.parse(obs.ends_at) <= now) {
+      await rpc("mod_observation_resolve", {
+        p_id: obs.id, p_auto: autoBanEnabled(env), p_min_entries: minEntriesFrom(env.MOD_OBS_MIN_ENTRIES),
+        p_home_max: THRESHOLDS.homeMaxAccounts, p_ban_days: THRESHOLDS.banDays, p_window_days: THRESHOLDS.windowDays,
+      });
+    }
+    return null;
+  } catch {
+    log(JSON.stringify({ event: "mod_entry_failed" }));
     return null;
   }
 }

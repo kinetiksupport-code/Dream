@@ -22,6 +22,20 @@ Lo automático por tasa es **solo** un bloqueo temporal de 24 h (decisión de Ca
 
 Los umbrales están en `THRESHOLDS` (`moderation.mjs`). Con el límite normal (6 por minuto y 50 al día por cuenta) un alumno no los alcanza.
 
+## B3 · Cuentas nuevas desde la IP de una cuenta baneada
+
+Regla de Carlos: no se banea en el primer momento, **se espera 2 días y se observa**. Fila de la tabla G: «Varias cuentas para saltarse límites, cola o un baneo» (cierre de las cuentas extra y baneo de 7 días, `G-MULTI`).
+
+1. Si una cuenta tiene un baneo **activo** y aparece una cuenta **creada después del baneo** con la misma huella de IP (ventana de 30 días), la cuenta nueva queda «en observación» 2 días. Sigue usando Dream con los límites normales y **sin ningún aviso de sospecha**. Cada entrada se anota con su huella de IP, nunca con la IP.
+2. Una «entrada» es una visita separada de la anterior por al menos 30 minutos.
+3. **Salvaguarda contra baneos injustos:** la regla solo es automática en una IP «de tamaño de hogar». Si en 30 días esa huella la han usado **más de 4 cuentas distintas**, es una red compartida (colegio, biblioteca, datos móviles): **no se banea a nadie solo**, el caso va al panel como «revisión pendiente».
+4. Pasados los 2 días: con **4 entradas o más** (configurable entre 4 y 7), en una IP de hogar **y con el interruptor encendido**, se aplica la fila de la tabla G (baneo de 7 días, sesiones cerradas, motivo en `mod_events`). Con menos entradas se descarta. Con el interruptor apagado, o en una red compartida, solo queda como propuesta.
+5. **`MOD_AUTO_BAN_ENABLED` está apagado por defecto.** Es una decisión automatizada con efecto significativo (RGPD art. 22): conviene que la revise un abogado o gestor antes de encenderla. Mientras tanto el sistema solo propone en el panel.
+6. Riesgo conocido: una IP repetida demuestra la misma red, no la misma persona (un hermano, un compañero de piso). Por eso existen la apelación y el botón de levantar el baneo.
+7. No se relaciona a nadie por nada más que la huella de IP y el comportamiento: sin huellas de dispositivo ni cookies de seguimiento.
+
+Como `mod_ip_signals` solo se rellena con `MOD_MODE` distinto de `off`, **las cuentas baneadas antes de activarlo no se relacionan con nada**: la observación empieza a funcionar desde el momento en que se activa.
+
 ## Cómo se activa (todo apagado por defecto)
 
 Secretos de la función `dream-api` (Supabase):
@@ -32,6 +46,8 @@ Secretos de la función `dream-api` (Supabase):
 | `MOD_IP_PEPPER` | Secreto de al menos 32 caracteres. Lo crea Carlos; yo no lo imprimo ni lo guardo |
 | `MOD_IP_HEADER` | Cabecera de la que se lee la IP (por defecto `cf-connecting-ip`) |
 | `MOD_IP_XFF_HOPS` | Solo si la cabecera es `x-forwarded-for`: qué salto desde la derecha |
+| `MOD_AUTO_BAN_ENABLED` | `true` para el baneo automático por evasión (B3). Apagado por defecto |
+| `MOD_OBS_MIN_ENTRIES` | Entradas mínimas para confirmar, entre 4 y 7 (por defecto 4) |
 
 Orden recomendado: aplicar la migración → crear `MOD_IP_PEPPER` → **verificar la cabecera de IP (ver abajo)** → `MOD_MODE=observe` unos días → revisar los eventos → `enforce`.
 
@@ -50,4 +66,3 @@ Los términos dicen que algunos bloqueos son automáticos «por ejemplo por uso 
 
 - El botón **«Reclamar»** y la pantalla del alumno baneado (B6). Hoy el mensaje de bloqueo dice «escríbenos».
 - Baneo manual y comprobación de baneos en cada petición (B5b).
-- Observación de cuentas nuevas desde una IP baneada (B3).
