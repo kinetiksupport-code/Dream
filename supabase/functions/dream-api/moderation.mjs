@@ -287,3 +287,31 @@ export async function moderationEntry({ rpc, headers, userId, env, now = Date.no
     return null;
   }
 }
+
+// ── B5b: baneo comprobado en cada petición ──────────────────────────────────
+
+export const BAN_MESSAGE = "Has sido baneado de la plataforma.";
+/** Lo único que puede hacer una cuenta baneada: ver su pantalla, apelar y borrar su cuenta. */
+export const BAN_ALLOWED_ACTIONS = new Set(["profile", "mod_ban_info", "mod_appeal_create", "account_delete"]);
+
+/**
+ * Estado de baneo de una cuenta, leído de la base en cada petición (no hay
+ * caché: un baneo escrito a mano en Supabase vale en la petición siguiente).
+ * Devuelve null si no está baneada o si no se puede comprobar (falla abierto y
+ * lo registra; la migración puede no estar aplicada todavía).
+ */
+export async function banState({ rpc, userId, log = console.error }) {
+  try {
+    const state = await rpc("mod_ban_state", { p_user: userId });
+    if (!state || state.banned !== true) return null;
+    return { id: state.id, rule: state.rule ?? null, until: state.until ?? null, permanent: state.permanent === true };
+  } catch {
+    log(JSON.stringify({ event: "mod_ban_check_failed" }));
+    return null;
+  }
+}
+
+/** Respuesta para una acción no permitida de una cuenta baneada. */
+export function bannedResponse(ban) {
+  return { status: 403, body: { error: BAN_MESSAGE, code: "banned", until: ban.until, permanent: ban.permanent, rule: ban.rule } };
+}
