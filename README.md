@@ -56,6 +56,8 @@ Solo con Google (`/login` → `/auth/callback`, PKCE). En Supabase → Authentic
 
 Con `MAINTENANCE_MODE=true`, solo las cuentas de la lista de `lib/maintenance.ts` pueden entrar; el resto ve `/maintenance` y las API responden 503.
 
+`dream-api` aplica lo mismo por su cuenta, porque el navegador la llama directamente: con el secreto `DREAM_MAINTENANCE_MODE=true` y la lista `DREAM_MAINTENANCE_ALLOWED_EMAILS` (correos separados por comas, los mismos de `lib/maintenance.ts`) responde 503 al resto. Hay que activar ambos a la vez.
+
 ## Rutas
 
 | Ruta | Pantalla |

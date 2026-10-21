@@ -48,6 +48,20 @@ const MAX_BODY_CHARS = 12_000_000;
  */
 const MAX_ANSWER_CHARS = 4000;
 const answerTooLong = (answer: unknown) => (typeof answer === 'string' ? answer : JSON.stringify(answer ?? '')).length > MAX_ANSWER_CHARS;
+
+/** Filas por alumno. Muy por encima del uso real; frenan el relleno de la base compartida (auditoría). */
+const MAX_CONVERSATIONS_PER_OWNER = 1000;
+/**
+ * Mantenimiento también en el backend: el navegador llama a esta función
+ * directamente, sin pasar por el middleware de Vercel (auditoría). Misma
+ * lista que lib/maintenance.ts, pero como secreto de la función.
+ */
+const maintenanceOn = () => Deno.env.get('DREAM_MAINTENANCE_MODE') === 'true';
+const maintenanceAllows = (user: User) => {
+  const allowed = (Deno.env.get('DREAM_MAINTENANCE_ALLOWED_EMAILS') ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+  return Boolean(user.email_confirmed_at) && allowed.includes(String(user.email ?? '').trim().toLowerCase());
+};
+const maintenanceResponse = () => json({ error: 'Dream está en mantenimiento. Vuelve en un rato.' }, 503, { 'Retry-After': '300' });
 /** Acciones de la bienvenida (docs/CONSENTIMIENTO.md). */
 const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent', 'consent_withdraw']);
 /**
@@ -82,6 +96,7 @@ const serviceClient = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env
 // (exam_upload_start → attachment_upload → exam_material_add) como el dueño del
 // examen, con su admisión. El token nunca se registra.
 async function handleQr(req: Request): Promise<Response> {
+  if (maintenanceOn()) return maintenanceResponse();
   let body: any;
   try {
     const raw = await readBoundedBody(req, MAX_BODY_CHARS);
@@ -189,6 +204,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     user=authenticated.data.user;
     if(authError || !user) return json({error:'La sesión ha caducado. Vuelve a entrar.'},401);
   }
+  if (maintenanceOn() && !maintenanceAllows(user)) return maintenanceResponse();
 
   let body: any;
   try {
@@ -354,6 +370,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   if (body.action === 'conversation_create') {
     const title = typeof body.title === 'string' && body.title.trim()
       ? body.title.trim().slice(0, 120) : 'Nueva conversación';
+    const owned = await admin.from('dream_conversations').select('id', { count: 'exact', head: true }).eq('owner_id', user.id);
+    if (owned.error) return json({ error: 'No se pudo crear la conversación.' }, 503);
+    if ((owned.count ?? 0) >= MAX_CONVERSATIONS_PER_OWNER) return json({ error: 'Has llegado al máximo de conversaciones. Borra alguna antigua para crear otra.' }, 409);
     const { data, error } = await admin
       .from('dream_conversations').insert({ owner_id: user.id, title }).select('id,title,updated_at').single();
     return error ? json({ error: 'No se pudo crear la conversación.' }, 503) : json({ conversation: data });
