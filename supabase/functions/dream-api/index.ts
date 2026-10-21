@@ -1,6 +1,7 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
+import { contentModerationEnabled, CONTENT_THRESHOLDS, moderateMessage } from './content-moderation.mjs';
 import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
@@ -176,6 +177,22 @@ async function groqJson(system: string, user: string, operation: string, signal?
   return JSON.parse(content);
 }
 
+/**
+ * Clasificador de moderación (B4): una llamada corta, sin razonamiento largo, por
+ * el mismo camino de admisión que el resto. Devuelve el texto crudo; la validación
+ * con esquema está en content-moderation.mjs y cualquier error significa permitir.
+ */
+async function groqClassify(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>) {
+  const response = await groqProvider.request({ operation: 'moderation', signal, timeoutMs: 8000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
+    model: groqModel(), stream: false, temperature: 0, max_tokens: CONTENT_THRESHOLDS.maxOutputTokens,
+    response_format: { type: 'json_object' }, messages
+  }});
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string') throw new Error('empty');
+  return content;
+}
+
 const normalizeAnswer = (value: unknown) => String(value ?? '').trim().toLocaleLowerCase('es');
 function objectiveAnswerIsCorrect(type: string, answer: unknown, expected: unknown) {
   if (answer == null || typeof answer === 'string' && !answer.trim()) return false;
@@ -268,6 +285,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     MOD_MODE: Deno.env.get('MOD_MODE'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER'),
     MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'),
     MOD_AUTO_BAN_ENABLED: Deno.env.get('MOD_AUTO_BAN_ENABLED'), MOD_OBS_MIN_ENTRIES: Deno.env.get('MOD_OBS_MIN_ENTRIES'),
+    MOD_AI_ENABLED: Deno.env.get('MOD_AI_ENABLED'),
   };
   if (consuming) {
     const limited = await moderationGate({
@@ -688,6 +706,29 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ error: 'El servicio de IA todavía no está configurado en el servidor.', code: 'service_unconfigured' }, 503);
   }
 
+  // Moderación de contenido (B4): antes de llamar al modelo. Apagada por defecto
+  // (MOD_MODE=off y MOD_AI_ENABLED sin definir). Falla hacia permitir. No se
+  // guarda el texto del mensaje en ninguna tabla de moderación.
+  let moderationNotice = '';
+  let moderationFooter = '';
+  if (!examInternal && contentModerationEnabled(modEnv)) {
+    const moderated = await moderateMessage({
+      text: prompt, ref: `conv:${body.conversation_id}`, userId: user.id, rpc: modRpc, env: modEnv,
+      classify: (messages: { role: string; content: string }[]) => groqClassify(messages, req.signal, admission),
+    });
+    if (moderated.action === 'reply') {
+      // Respuesta fija: el mensaje NO llega al modelo y no queda guardado su texto.
+      const when = () => new Date().toISOString();
+      await admin.from('dream_messages').insert({ conversation_id: conversation.data.id, owner_id: user.id, role: 'user', content: 'Mensaje no enviado a la IA.' });
+      await admin.from('dream_messages').insert({ conversation_id: conversation.data.id, owner_id: user.id, role: 'assistant', content: moderated.text });
+      await admin.from('dream_conversations').update({ updated_at: when() }).eq('id', conversation.data.id).eq('owner_id', user.id);
+      const lines = JSON.stringify({ type: 'delta', text: moderated.text }) + '\n' + JSON.stringify({ type: 'complete' }) + '\n';
+      return new Response(lines, { headers: { ...cors, 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+    }
+    moderationNotice = moderated.notice ?? '';
+    moderationFooter = moderated.footer ?? '';
+  }
+
   // Límite conjunto por ventanas de 5 h: se comprueba ANTES de guardar nada y
   // de llamar al proveedor. La carga atómica (más abajo) lo vuelve a comprobar
   // sumando todos los modos en Postgres.
@@ -859,7 +900,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       // de la respuesta (y se guarda con ella). Si no llega texto, no sale, y
       // el turno se puede reintentar igual que antes.
       // Lo mismo con las fuentes de la búsqueda (marca oculta para la web).
-      let pendingNotice = searchMissing ? `_${SEARCH_UNAVAILABLE_NOTICE}_\n\n` : '';
+      let pendingNotice = moderationNotice + (searchMissing ? `_${SEARCH_UNAVAILABLE_NOTICE}_\n\n` : '');
       // Se guarda con {{APODO}} (y así vuelve a la IA en el historial); al
       // alumno le llega ya con su nombre, aunque el marcador venga partido.
       const nickname = createNicknameReplacer(nicknameFor(profile));
@@ -928,6 +969,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           }
           logUsage('search_answer', usage);
         } else if (searchKey && provisional) emit(provisional);
+        if (moderationFooter && answer.trim()) emit(moderationFooter);
         flushNickname();
         if (answer.trim()) {
           await admin.from('dream_messages').insert({
