@@ -30,6 +30,11 @@ export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}
       const user = state.users[token];
       return user ? Response.json(user) : Response.json({ message: "invalid JWT", code: 401 }, { status: 401 });
     }
+    const byId = /^\/auth\/v1\/admin\/users\/([^/]+)$/.exec(url.pathname);
+    if (byId) {
+      const found = Object.values(state.users).find((u) => u.id === byId[1]);
+      return found ? Response.json(found) : Response.json({ message: "User not found" }, { status: 404 });
+    }
     if (url.pathname.startsWith("/rest/v1/rpc/")) {
       const name = url.pathname.slice("/rest/v1/rpc/".length);
       const handler = state.rpc[name];

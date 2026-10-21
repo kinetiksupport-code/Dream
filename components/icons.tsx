@@ -157,3 +157,11 @@ export const CloseIcon = (p: P) => (
     <path d="M6 6l12 12M18 6 6 18" />
   </Icon>
 );
+
+/** Escudo: Panel de administración (solo se pinta si dream-api confirma al administrador). */
+export const ShieldIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 3 5 6v5c0 4.5 2.9 8.3 7 10 4.1-1.7 7-5.5 7-10V6l-7-3Z" />
+    <path d="m9 12 2 2 4-4" />
+  </Icon>
+);

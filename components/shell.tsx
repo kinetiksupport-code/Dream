@@ -25,6 +25,7 @@ import {
   MoreIcon,
   NotesIcon,
   SettingsIcon,
+  ShieldIcon,
   TasksIcon,
 } from "./icons";
 import { callDream, errorMessage } from "@/lib/dream-api";
@@ -316,6 +317,13 @@ export function Shell({ children }: { children: ReactNode }) {
               {nav.map((n) => link(n, current === n.key, "nav-link press"))}
             </div>
             {link(settings, current === "settings", "nav-link press")}
+            {profile.admin_panel && (
+              // Enlace normal (carga completa): la página del panel tiene sus propias cabeceras.
+              <a className="nav-link press" href={profile.admin_panel.path} title="Panel de administración">
+                <ShieldIcon size={22} />
+                <span className="nav-label">Panel de administración</span>
+              </a>
+            )}
           </nav>
         )}
         <div className="workspace">
