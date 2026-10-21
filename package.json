@@ -13,7 +13,7 @@
     "design:check:browser": "playwright test tests/browser/design.spec.ts",
     "test:browser": "playwright test",
     "format": "prettier --write app components lib tests *.ts *.mjs",
-    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs && node scripts/security/moderation-integration.mjs && node scripts/security/moderation-evasion-integration.mjs && node scripts/security/moderation-ban-integration.mjs",
+    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs && node scripts/security/moderation-integration.mjs && node scripts/security/moderation-evasion-integration.mjs && node scripts/security/moderation-ban-integration.mjs && node scripts/security/moderation-admin-integration.mjs",
     "test:load-server": "node scripts/security/load-server.mjs"
   },
   "keywords": [],

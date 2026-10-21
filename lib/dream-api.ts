@@ -271,6 +271,11 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.onboarding_step =
       typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
   }
+  // Solo la cuenta administradora recibe esto; la ruta se valida para que nunca
+  // sea un enlace raro (el enlace ni es la seguridad ni se fía del servidor a ciegas).
+  const panel = (p as { admin_panel?: { path?: unknown } }).admin_panel;
+  if (typeof panel?.path === "string" && /^\/[a-z0-9][a-z0-9-]{2,40}$/.test(panel.path))
+    profile.admin_panel = { path: panel.path };
   return { profile, service_ready: data.service_ready ?? true };
 }
 

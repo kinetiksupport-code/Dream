@@ -1,6 +1,7 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
+import { ADMIN_ACTIONS, adminLink, handleAdminAction } from './admin.mjs';
 import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
@@ -325,7 +326,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   if (body.action === 'profile') {
-    return json({ profile: publicProfile, service_ready: groqConfigured(), ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null });
+    const panel = await adminLink({ user, rpc: rpcFor(admin), env: { ADMIN_EMAIL: Deno.env.get('ADMIN_EMAIL'), ADMIN_PANEL_PATH: Deno.env.get('ADMIN_PANEL_PATH') } });
+    return json({ profile: panel ? { ...publicProfile, admin_panel: panel } : publicProfile, service_ready: groqConfigured(), ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null });
   }
 
   // Bienvenida (prompt «bienvenida» §4.4, docs/CONSENTIMIENTO.md). Todo se
@@ -656,6 +658,19 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const practice = allConcepts.filter(c => !mastered.includes(c));
     return json({ result: { attempt_id: attemptId, score, total: items.length, percentage: Math.round(score / Math.max(1, items.length) * 100), mastered, practice,
       items: items.map(({ concepts, ...item }: any) => item) } });
+  }
+
+  // Panel de administración (B5). Quien no es administrador, no tiene doble factor
+  // o no viene de un origen conocido NO recibe nada especial: handleAdminAction
+  // devuelve null y se sigue hasta «Acción no válida», igual que ante una acción
+  // que no existe.
+  if (ADMIN_ACTIONS.has(String(body.action))) {
+    const adminResult = await handleAdminAction({
+      action: String(body.action), body, user, token: bearer.slice(7), origin: req.headers.get('origin'), originAllowed,
+      rpc: rpcFor(admin), db: admin,
+      env: { ADMIN_EMAIL: Deno.env.get('ADMIN_EMAIL'), CONFIRM_SECRET: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') },
+    });
+    if (adminResult) return json(adminResult.body, adminResult.status, { 'Cache-Control': 'no-store' });
   }
 
   if (body.action !== 'chat') return json({ error: 'Acción no válida.' }, 400);

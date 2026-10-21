@@ -2,6 +2,8 @@ import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Solo lo envía dream-api a la cuenta administradora. Ocultar el enlace no es la seguridad. */
+  admin_panel?: { path: string };
 }
 export interface Conversation {
   id: string;
