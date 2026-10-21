@@ -20,6 +20,8 @@ import {
   useQuestionEnter,
   type Direction,
 } from "./test-motion";
+/** Same cap as dream-api (MAX_ANSWER_CHARS): a longer answer gets a 413. */
+const MAX_ANSWER_CHARS = 4000;
 export function hasAnswer(q: DreamQuestion, a: AnswerValue | undefined) {
   if (a === undefined) return false;
   if (q.type === "matching")
@@ -163,6 +165,7 @@ export function AnswerInput({
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}
           autoComplete="off"
+          maxLength={MAX_ANSWER_CHARS}
         />
       ) : (
         <textarea
@@ -170,6 +173,7 @@ export function AnswerInput({
           rows={5}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => onChange(e.target.value)}
+          maxLength={MAX_ANSWER_CHARS}
           placeholder="Tómate tu tiempo…"
         />
       )}
