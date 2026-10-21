@@ -1,7 +1,7 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
 import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
-import { moderationGate } from './moderation.mjs';
+import { moderationEntry, moderationGate } from './moderation.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
@@ -239,25 +239,29 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const blocked = consentBlock(row);
     if (blocked) return json({ error: blocked.message, code: blocked.code }, blocked.status);
   }
-  // Antiabuso por tasa (docs/MODERACION.md): solo las acciones que gastan IA,
-  // nunca el inicio de sesión, las páginas legales ni «Reclamar». MOD_MODE=off
-  // por defecto: sin activarlo no hace nada. Falla abierta.
+  // Antiabuso (docs/MODERACION.md): solo las acciones que gastan IA, nunca el
+  // inicio de sesión, las páginas legales ni «Reclamar». MOD_MODE=off por
+  // defecto: sin activarlo no hace nada. Falla abierta.
+  const modRpc = async (fn: string, args: Record<string, unknown>) => {
+    const result = await admin.rpc(fn, args);
+    if (result.error) throw new Error(fn);
+    return result.data;
+  };
+  const modEnv = {
+    MOD_MODE: Deno.env.get('MOD_MODE'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER'),
+    MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'),
+    MOD_AUTO_BAN_ENABLED: Deno.env.get('MOD_AUTO_BAN_ENABLED'), MOD_OBS_MIN_ENTRIES: Deno.env.get('MOD_OBS_MIN_ENTRIES'),
+  };
   if (consuming) {
     const limited = await moderationGate({
-      rpc: async (fn: string, args: Record<string, unknown>) => {
-        const result = await admin.rpc(fn, args);
-        if (result.error) throw new Error(fn);
-        return result.data;
-      },
-      headers: req.headers,
-      userId: user.id,
+      rpc: modRpc, headers: req.headers, userId: user.id, env: modEnv,
       ageBand: typeof consentRow?.age_band === 'string' ? consentRow.age_band : null,
-      env: {
-        MOD_MODE: Deno.env.get('MOD_MODE'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER'),
-        MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'),
-      },
     });
     if (limited) return json({ error: limited.message, code: limited.code, retry_after: limited.retryAfter }, limited.status, { 'Retry-After': String(limited.retryAfter) });
+  }
+  // Cuentas nuevas desde la IP de una cuenta baneada (B3): sin efecto visible.
+  if (!examInternal && (consuming || body.action === 'profile')) {
+    await moderationEntry({ rpc: modRpc, headers: req.headers, userId: user.id, env: modEnv });
   }
   try {
     if (consuming) { await admission.admit(String(body.action)); admitted = true; }

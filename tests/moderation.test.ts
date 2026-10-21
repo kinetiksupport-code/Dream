@@ -8,7 +8,10 @@ import {
   THRESHOLDS,
   decideAbuse,
   ipFingerprint,
+  autoBanEnabled,
+  minEntriesFrom,
   modMode,
+  moderationEntry,
   moderationGate,
   normalizeIp,
   trustedClientIp,
@@ -240,4 +243,78 @@ test("the gate runs only for actions that consume AI, never for login, legal pag
   assert.ok(THRESHOLDS.ipBlockMs === 86400_000);
   const admission = readFileSync("supabase/functions/dream-api/admission.mjs", "utf8");
   assert.ok(!/reclam|appeal|login/i.test(admission.slice(admission.indexOf("consumingActions"), admission.indexOf("]);"))));
+});
+
+// ── B3: cuentas nuevas desde la IP de una cuenta baneada ─────────────────────
+
+function entryDb(observation: Record<string, unknown> | null) {
+  const calls: Call[] = [];
+  const rpc = async (fn: string, args: Record<string, unknown>) => {
+    calls.push({ fn, args });
+    return fn === "mod_entry" ? observation : null;
+  };
+  return { calls, rpc };
+}
+const NOW = Date.parse("2026-10-24T12:00:00Z");
+const due = { id: "obs-1", status: "observando", shared: false, entries: 5, ends_at: "2026-10-24T11:00:00Z" };
+const notDue = { ...due, ends_at: "2026-10-25T11:00:00Z" };
+
+test("B3 is off with MOD_MODE off and only records in observe mode", async () => {
+  const off = entryDb(due);
+  await moderationEntry({ rpc: off.rpc, headers: ROUTED, userId: USER, env: { ...ENV, MOD_MODE: "off" }, now: NOW, log });
+  assert.equal(off.calls.length, 0);
+  const observe = entryDb(due);
+  await moderationEntry({ rpc: observe.rpc, headers: ROUTED, userId: USER, env: { ...ENV, MOD_MODE: "observe", MOD_AUTO_BAN_ENABLED: "true" }, now: NOW, log });
+  assert.deepEqual(observe.calls.map((c) => c.fn), ["mod_entry"], "observe nunca resuelve ni banea");
+});
+
+test("the automatic ban switch is off by default and needs enforce plus an explicit 'true'", async () => {
+  assert.equal(autoBanEnabled({ MOD_MODE: "enforce" }), false);
+  assert.equal(autoBanEnabled({ MOD_MODE: "enforce", MOD_AUTO_BAN_ENABLED: "false" }), false);
+  assert.equal(autoBanEnabled({ MOD_MODE: "enforce", MOD_AUTO_BAN_ENABLED: "1" }), false);
+  assert.equal(autoBanEnabled({ MOD_MODE: "observe", MOD_AUTO_BAN_ENABLED: "true" }), false);
+  assert.equal(autoBanEnabled({ MOD_MODE: "enforce", MOD_AUTO_BAN_ENABLED: "true" }), true);
+  const proposeOnly = entryDb(due);
+  await moderationEntry({ rpc: proposeOnly.rpc, headers: ROUTED, userId: USER, env: ENV, now: NOW, log });
+  assert.equal(proposeOnly.calls[1].fn, "mod_observation_resolve");
+  assert.equal(proposeOnly.calls[1].args.p_auto, false, "sin el interruptor solo propone");
+  const auto = entryDb(due);
+  await moderationEntry({ rpc: auto.rpc, headers: ROUTED, userId: USER, env: { ...ENV, MOD_AUTO_BAN_ENABLED: "true" }, now: NOW, log });
+  assert.equal(auto.calls[1].args.p_auto, true);
+  assert.equal(auto.calls[1].args.p_home_max, THRESHOLDS.homeMaxAccounts);
+});
+
+test("the observation is only resolved after its 2 days, and only when it is still 'observando'", async () => {
+  const early = entryDb(notDue);
+  await moderationEntry({ rpc: early.rpc, headers: ROUTED, userId: USER, env: ENV, now: NOW, log });
+  assert.deepEqual(early.calls.map((c) => c.fn), ["mod_entry"]);
+  const school = entryDb({ ...due, status: "revision_pendiente", shared: true });
+  await moderationEntry({ rpc: school.rpc, headers: ROUTED, userId: USER, env: { ...ENV, MOD_AUTO_BAN_ENABLED: "true" }, now: NOW, log });
+  assert.deepEqual(school.calls.map((c) => c.fn), ["mod_entry"], "la red compartida va al panel, no se resuelve sola");
+  const none = entryDb(null);
+  await moderationEntry({ rpc: none.rpc, headers: ROUTED, userId: USER, env: ENV, now: NOW, log });
+  assert.deepEqual(none.calls.map((c) => c.fn), ["mod_entry"]);
+  assert.equal(THRESHOLDS.observationDays, 2);
+  assert.equal(THRESHOLDS.homeMaxAccounts, 4);
+});
+
+test("the minimum number of entries is configurable but always between 4 and 7", () => {
+  assert.equal(minEntriesFrom(undefined), 4);
+  assert.equal(minEntriesFrom("1"), 4);
+  assert.equal(minEntriesFrom("5"), 5);
+  assert.equal(minEntriesFrom("99"), 7);
+  assert.equal(minEntriesFrom("abc"), 4);
+});
+
+test("B3 sends only IP fingerprints, shows nothing to the student and fails open", async () => {
+  const db = entryDb(due);
+  const out = await moderationEntry({ rpc: db.rpc, headers: ROUTED, userId: USER, env: ENV, now: NOW, log });
+  assert.equal(out, null, "no devuelve nada que el alumno pueda ver");
+  assert.ok(!JSON.stringify(db.calls).includes("198.51.100.7"));
+  assert.match(String(db.calls[0].args.p_ip_hash), /^[0-9a-f]{64}$/);
+  const broken = async () => {
+    throw new Error("db down");
+  };
+  assert.equal(await moderationEntry({ rpc: broken, headers: ROUTED, userId: USER, env: ENV, now: NOW, log }), null);
+  assert.equal(await moderationEntry({ rpc: db.rpc, headers: h({ "x-forwarded-for": "203.0.113.99" }), userId: USER, env: ENV, now: NOW, log }), null);
 });
