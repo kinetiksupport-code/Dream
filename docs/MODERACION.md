@@ -36,6 +36,34 @@ Regla de Carlos: no se banea en el primer momento, **se espera 2 días y se obse
 
 Como `mod_ip_signals` solo se rellena con `MOD_MODE` distinto de `off`, **las cuentas baneadas antes de activarlo no se relacionan con nada**: la observación empieza a funcionar desde el momento en que se activa.
 
+## B4 · Moderación de contenido con IA
+
+Se ejecuta dentro de la acción `chat`, **antes** de llamar al modelo normal. Solo con `MOD_MODE` distinto de `off` **y** `MOD_AI_ENABLED=true`. Falla hacia permitir.
+
+**Tres pasos, de menos a más caro** (`supabase/functions/dream-api/content-moderation.mjs`):
+1. **Filtro barato** (patrones): insultos evidentes, trucos conocidos de «jailbreak», enlaces o repeticiones, datos personales (teléfono, correo, DNI), contenido ilegal o violento, intentos de hackeo, uso en un examen en curso y frases de riesgo en primera persona. **El filtro nunca sanciona**: solo decide qué mensajes miran el clasificador. Un mensaje que no marca, no llega al clasificador.
+2. **Clasificador**: una llamada corta a Groq con el modelo ya usado, por el mismo camino de admisión que el resto (reserva de tokens, claves y pausas). El mensaje entra como **dato**: un JSON `{"texto": ...}` en el turno del usuario, recortado a 1.500 caracteres y sin caracteres invisibles; el sistema no contiene nunca texto del alumno. La salida debe ser exactamente `{"categoria": <lista cerrada>, "confianza": 0..1}`; cualquier otra cosa (texto, claves de más como un usuario o una acción, categorías fuera de la lista) cuenta como «sin veredicto» y se permite. **El clasificador solo puede elegir entre las categorías que el filtro ya había marcado**, así que un mensaje marcado como insulto no puede subirse a «ilegal». Como mucho puede aplicarse a la cuenta que escribió.
+3. **Resultado, nunca una sanción dura automática:**
+
+| Categoría (fila de la tabla G) | Qué ve el alumno | Qué se registra |
+|---|---|---|
+| Insultos, acoso (`G-INSULT`), trucos de IA (`G-JAILBREAK`), datos de otras personas (`G-DATOS`), examen oficial (`G-EXAMEN`) | Aviso amable que dice qué norma, sin acusar. El mensaje sigue su camino | 1.ª vez: aviso. Si reincide en 7 días: limitación de 24 h. A la 3.ª: **propuesta** de baneo de 7 días (`revision_pendiente`) |
+| Spam (`G-SPAM`) | Aviso y limitación de 1 h (24 h si reincide) | Limitación automática de minutos u horas, como dice la tabla |
+| Contenido ilegal, violento, sexual, discriminatorio (`G-ILEGAL`) o hackeo (`G-HACK`) | Aviso fijo; **el mensaje no se manda al modelo** | Aviso y **propuesta** de baneo permanente. Lo confirma una persona |
+| Derechos de autor (`G-COPYRIGHT`) | Nada | Solo un evento marcado para revisión (no se puede automatizar) |
+| **Autolesiones o riesgo para el alumno** | Respuesta fija de apoyo (024, 112, hablar con una persona adulta). **El mensaje no se manda al modelo** | **Nada**: ni sanción, ni evento. No es una infracción |
+
+- La respuesta de apoyo se activa con confianza ≥ 0,7; el resto de categorías, con ≥ 0,8.
+- Hablar de literatura o historia («el suicidio en la obra de Larra») no es una frase de riesgo: el clasificador lo distingue y, si no responde, no pasa nada. Si el clasificador falla pero el alumno escribió una frase explícita en primera persona, se añade una **línea de apoyo** al final de la respuesta normal, sin sanción.
+- La fila «Contenido ilegal… o que incite a hacerse daño» de la tabla G trata de incitar a otros; expresar riesgo propio se trata como apoyo. Conviene que Carlos lo confirme.
+- **Qué se guarda.** En `mod_events` solo un código de regla, la confianza y el id de la conversación (`conv:<id>`); **nunca el texto del mensaje, ni un fragmento**. Decisión consciente: la privacidad pesa más que tener la prueba. Para los mensajes que se corta (apoyo, bloqueo) el historial guarda «Mensaje no enviado a la IA.» en lugar del texto, y así no vuelve a entrar en el contexto del modelo.
+- **Si el clasificador falla o no responde**, o la base de datos da un error, no se sanciona y el chat sigue. El límite de tasa (B2) es la red de seguridad.
+- **Coste.** Una llamada solo para mensajes marcados. Estimación de la admisión (conservadora, ≈ 1 token por byte): ≈ 1.360 tokens de entrada para un mensaje corto y ≈ 2.800 para uno de 1.500 caracteres, más 120 de salida como tope. El uso real será bastante menor (≈ 400 tokens de entrada) y `dream_reconcile` corrige los contadores con el uso real. En la evaluación solo 1 de 21 mensajes legítimos llega al clasificador.
+
+**Evaluación** (`evals/moderacion.json`, 61 casos: claros, límite y que no deben marcarse; `node scripts/eval-moderacion.mjs`):
+- Filtro barato, medido sin red: **34 de 34 casos claros marcados (100 %)**; **1 de 21 mensajes legítimos (4,8 %)** llega al clasificador («el suicidio en la obra de Larra») y ninguno se sanciona por el filtro. Ojo: los casos los escribí viendo los patrones, así que el 100 % es optimista; hay que ampliar el conjunto con mensajes reales anonimizados.
+- **Clasificador: no medido.** Aquí no hay `GROQ_API_KEY` ni red. El script lo evalúa cuando se le da la clave. No he podido comprobar si Groq ofrece un modelo de moderación dedicado; se usa el mismo modelo del chat con un prompt muy corto y salida JSON validada.
+
 ## Cómo se activa (todo apagado por defecto)
 
 Secretos de la función `dream-api` (Supabase):
@@ -48,6 +76,7 @@ Secretos de la función `dream-api` (Supabase):
 | `MOD_IP_XFF_HOPS` | Solo si la cabecera es `x-forwarded-for`: qué salto desde la derecha |
 | `MOD_AUTO_BAN_ENABLED` | `true` para el baneo automático por evasión (B3). Apagado por defecto |
 | `MOD_OBS_MIN_ENTRIES` | Entradas mínimas para confirmar, entre 4 y 7 (por defecto 4) |
+| `MOD_AI_ENABLED` | `true` para la moderación de contenido con IA (B4). Apagado por defecto |
 
 Orden recomendado: aplicar la migración → crear `MOD_IP_PEPPER` → **verificar la cabecera de IP (ver abajo)** → `MOD_MODE=observe` unos días → revisar los eventos → `enforce`.
 
