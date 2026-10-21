@@ -41,6 +41,13 @@ const json = (data: unknown, status = 200, extra: Record<string,string> = {}) =>
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_PROMPT = 12000;
 const MAX_BODY_CHARS = 12_000_000;
+/**
+ * Una respuesta de test va entera al modelo y la admisión reserva sus tokens
+ * aunque el proveedor la rechace: sin tope, dos peticiones llenaban el cupo
+ * diario de una cuenta y cuatro cuentas el de todos (auditoría SEC-05).
+ */
+const MAX_ANSWER_CHARS = 4000;
+const answerTooLong = (answer: unknown) => (typeof answer === 'string' ? answer : JSON.stringify(answer ?? '')).length > MAX_ANSWER_CHARS;
 /** Acciones de la bienvenida (docs/CONSENTIMIENTO.md). */
 const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent', 'consent_withdraw']);
 /**
@@ -515,6 +522,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
 
   if (body.action === 'test_check_answer') {
     if (!uuid.test(body.test_id || '') || !uuid.test(body.question_id || '')) return json({ error: 'Pregunta no válida.' }, 400);
+    if (answerTooLong(body.answer)) return json({ error: 'Respuesta demasiado larga.' }, 413);
     const testResult = await admin.from('dream_tests').select('id,mode').eq('id', body.test_id).eq('owner_id', user.id).maybeSingle();
     if (!testResult.data) return json({ error: 'Test no encontrado.' }, 404);
     if (testResult.data.mode !== 'practice') return json({ error: 'En modo examen las respuestas se corrigen al final.' }, 409);
@@ -546,7 +554,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (!uuid.test(body.test_id || '') || !Array.isArray(body.answers)) return json({ error: 'Entrega no válida.' }, 400);
     const testResult = await admin.from('dream_tests').select('*').eq('id', body.test_id).eq('owner_id', user.id).maybeSingle();
     if (!testResult.data) return json({ error: 'Test no encontrado.' }, 404);
-    if (body.answers.length > 10 || JSON.stringify(body.answers).length > 100000) return json({error:'Entrega demasiado grande.'},413);
+    if (body.answers.length > 10 || JSON.stringify(body.answers).length > 100000 || body.answers.some((a: any) => answerTooLong(a?.answer))) return json({error:'Entrega demasiado grande.'},413);
     const previous = await admin.from('dream_test_attempts').select('id,score,total').eq('test_id',body.test_id).eq('student_id',user.id).eq('status','completed').order('completed_at',{ascending:false}).limit(1).maybeSingle();
     if (previous.error) return json({error:'No se pudo consultar la entrega.'},503);
     if (previous.data) return json({error:'Este test ya fue entregado. Consulta el resultado guardado en tu examen o genera una práctica nueva.',code:'already_submitted'},409);
