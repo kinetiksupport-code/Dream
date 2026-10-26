@@ -4,6 +4,10 @@ export interface DreamProfile extends ConsentProfile {
   display_name: string | null;
   /** Cuentas de Fundación Loyola: mensaje de Dream que se enseña una vez. */
   special_welcome?: string | null;
+  /** dream-api has the memory switched on (features.mjs). */
+  memory_feature?: boolean;
+  memory_import_feature?: boolean;
+  memory_enabled?: boolean;
 }
 export interface Conversation {
   id: string;

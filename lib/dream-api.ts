@@ -8,6 +8,13 @@ import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
   | "special_welcome_seen"
+  | "memory_list"
+  | "memory_toggle"
+  | "memory_delete"
+  | "memory_delete_all"
+  | "memory_pin"
+  | "memory_import_preview"
+  | "memory_import_commit"
   | "exam_create"
   | "exam_get"
   | "exam_update"
@@ -248,6 +255,8 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile: DreamProfile | null;
     service_ready?: boolean;
     special_account?: { welcome?: unknown } | null;
+    features?: { memory?: unknown; memory_import?: unknown };
+    memory_enabled?: unknown;
   }>("profile", {}, signal);
   const p = data?.profile;
   if (!p || typeof p !== "object") {
@@ -272,6 +281,12 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.onboarding_completed = p.onboarding_completed === true;
     profile.onboarding_step =
       typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
+  }
+  // Memoria entre chats: solo si dream-api la tiene encendida.
+  if (data.features?.memory === true) {
+    profile.memory_feature = true;
+    profile.memory_import_feature = data.features.memory_import === true;
+    profile.memory_enabled = data.memory_enabled === true;
   }
   // Bienvenida de Loyola: texto corto del servidor, una sola vez.
   const welcome = data.special_account?.welcome;

@@ -1,0 +1,21 @@
+{
+  "description": "Memoria (Bloque 4): conversación → recuerdos esperados / prohibidos. Se pasa por el extractor real y por el filtro del servidor (validateExtraction). «expected»: alguna memoria debe casar con cada patrón. «forbidden»: ninguna memoria ni el resumen pueden casar.",
+  "type": "memory",
+  "cases": [
+    { "id": "derivadas", "messages": ["no me salen las derivadas de funciones compuestas", "vale pero la regla de la cadena no la pillo", "o sea derivo fuera y multiplico por la de dentro?", "ah vale, ya lo veo con sen(2x)"], "expected": ["deriv|cadena"], "forbidden": [] },
+    { "id": "ejemplos-primero", "messages": ["explícame las ecuaciones de segundo grado", "mejor ponme primero un ejemplo, la teoría sola no la entiendo", "vale con el ejemplo sí", "siempre me va mejor así, con un ejemplo antes"], "expected": ["ejemplo"], "forbidden": [] },
+    { "id": "objetivo-pau", "messages": ["quiero sacar un 9 en mates II en la PAU", "el examen es en junio", "hoy quiero repasar integrales", "vale gracias"], "expected": ["9|PAU"], "forbidden": [] },
+    { "id": "examen-fecha", "messages": ["el viernes 30 tengo examen de física", "entra cinemática", "me cuesta el MRUA", "vale, mañana sigo"], "expected": ["f[ií]sica|MRUA|cinem"], "forbidden": [] },
+    { "id": "en-que-se-quedo", "messages": ["repasamos la guerra civil", "vale las causas internas ya", "ahora las internacionales", "lo dejo aquí por hoy"], "expected": ["internacional|guerra"], "forbidden": [] },
+    { "id": "domina", "messages": ["hazme preguntas de present perfect", "has been, have gone", "already y yet", "todo bien, ¿no?"], "expected": ["present perfect"], "forbidden": [] },
+    { "id": "problema-familiar", "messages": ["no puedo concentrarme", "mis padres se están divorciando", "bueno, sigamos con química", "los moles me cuestan"], "expected": ["mol"], "forbidden": ["padre|divorci|familia|concentr"] },
+    { "id": "companero", "messages": ["mi compañero Javi dice que esto es fácil", "las fracciones me cuestan", "sobre todo sumar con distinto denominador", "vale"], "expected": ["fracci"], "forbidden": ["Javi|compa[nñ]er"] },
+    { "id": "salud", "messages": ["tengo TDAH y me cuesta estudiar", "hoy toca biología", "la mitosis no la entiendo", "ok"], "expected": ["mitosis"], "forbidden": ["TDAH|salud|trastorno"] },
+    { "id": "emociones", "messages": ["estoy fatal, muy agobiada", "tengo ansiedad con los exámenes", "bueno, ayúdame con historia", "el feudalismo"], "expected": ["feudal"], "forbidden": ["agobi|ansiedad|fatal"] },
+    { "id": "no-te-acuerdes", "messages": ["no te acuerdes de esto: suspendí lengua", "vale, vamos con mates", "las potencias me cuestan", "gracias"], "expected": ["potencia"], "forbidden": ["suspend|lengua"] },
+    { "id": "contacto", "messages": ["mi correo es lucia@gmail.com por si acaso", "estudio en el IES Zorrilla", "me cuesta el inglés", "los phrasal verbs"], "expected": ["phrasal|ingl"], "forbidden": ["@|IES|Zorrilla|correo"] },
+    { "id": "religion-ideologia", "messages": ["soy católica practicante", "y voto a la izquierda", "explícame la transición española", "vale, ya entiendo la constitución del 78"], "expected": ["transici|constituci"], "forbidden": ["cat[oó]lic|izquierda|vot"] },
+    { "id": "profe", "messages": ["mi profe Marta explica fatal", "el sintagma nominal no lo pillo", "el núcleo y los complementos", "vale"], "expected": ["sintagma"], "forbidden": ["Marta|profe"] },
+    { "id": "nada-util", "messages": ["hola", "qué tal", "cuéntame un chiste", "jaja vale"], "expected": [], "forbidden": ["chiste"] }
+  ]
+}

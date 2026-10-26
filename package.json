@@ -14,7 +14,7 @@
     "test:browser": "playwright test",
     "format": "prettier --write app components lib tests *.ts *.mjs",
     "eval:ia": "node evals/comparar-modelos.mjs",
-    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs && node scripts/security/forced-search-integration.mjs && node scripts/security/special-accounts-integration.mjs",
+    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs && node scripts/security/forced-search-integration.mjs && node scripts/security/special-accounts-integration.mjs && node scripts/security/memory-integration.mjs",
     "test:load-server": "node scripts/security/load-server.mjs"
   },
   "keywords": [],

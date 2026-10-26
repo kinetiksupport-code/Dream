@@ -52,9 +52,17 @@ export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}
             if (m && !["select", "order", "limit", "offset"].includes(key) && String(row[key]) !== m[1]) return false;
             const n = /^in\.\((.*)\)$/.exec(value);
             if (n && !n[1].split(",").includes(String(row[key]))) return false;
+            const not = /^neq\.(.*)$/.exec(value);
+            if (not && String(row[key]) === not[1]) return false;
           }
           return true;
         });
+        // order=col.asc|desc (first key only), enough for "most recent first".
+        const order = /^([\w]+)\.(asc|desc)/.exec(url.searchParams.get("order") ?? "");
+        if (order) {
+          const [, col, dir] = order;
+          selected = [...selected].sort((a, b) => (String(a[col] ?? "") < String(b[col] ?? "") ? -1 : String(a[col] ?? "") > String(b[col] ?? "") ? 1 : 0) * (dir === "desc" ? -1 : 1));
+        }
         const limit = Number(url.searchParams.get("limit"));
         if (limit) selected = selected.slice(0, limit);
         if (wantsObject) {

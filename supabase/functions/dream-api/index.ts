@@ -22,6 +22,8 @@ import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReason
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import { needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
 import { SPECIAL_WELCOME, specialDomain } from './special-accounts.mjs';
+import { FEATURE_FLAGS } from './features.mjs';
+import { MEMORY_ACTIONS, MEMORY_MODEL, extractPreviousConversation, handleMemoryAction, memoryOn, startConversationMemory } from './memory-actions.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
   extractAttachment, base64ByteLength, extensionOf,
@@ -167,6 +169,31 @@ async function groqJson(system: string, user: string, operation: string, signal?
   return JSON.parse(content);
 }
 
+// Memoria (memory-actions.mjs): JSON estricto con el modelo barato, con su
+// propia admisión (operación «chat») para respetar los topes de Dream. Si la
+// IA está ocupada, falla y se deja para otro momento.
+function memoryAI(admin: SupabaseClient, owner: string) {
+  return async (messages: unknown[], schema: unknown, operation: string) => {
+    const admission = createAdmission(admin, owner, crypto.randomUUID());
+    await admission.admit('chat');
+    try {
+      const response = await groqProvider.request({ operation, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
+        model: MEMORY_MODEL, stream: false, temperature: 0.2, max_tokens: 1500, ...reasoningParams(MEMORY_MODEL, { reasoningEffort: 'low' }),
+        response_format: { type: 'json_schema', json_schema: schema }, messages,
+      }});
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+      if (typeof content !== 'string') throw new Error('empty');
+      return JSON.parse(content);
+    } finally { await admission.release().catch(() => {}); }
+  };
+}
+// Trabajo después de responder (Supabase: EdgeRuntime.waitUntil).
+function inBackground(task: Promise<unknown>) {
+  const done = task.catch(() => console.error(JSON.stringify({ event: 'background_task_failed' })));
+  (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime?.waitUntil?.(done);
+}
+
 const normalizeAnswer = (value: unknown) => String(value ?? '').trim().toLocaleLowerCase('es');
 function objectiveAnswerIsCorrect(type: string, answer: unknown, expected: unknown) {
   if (answer == null || typeof answer === 'string' && !answer.trim()) return false;
@@ -294,7 +321,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   if (body.action === 'profile') {
     // Mensaje de Dream (no de la IA), una sola vez, para las cuentas de Loyola.
     const specialAccount = special.on ? { unlimited: true, welcome: special.welcomeShown ? null : SPECIAL_WELCOME } : null;
-    return json({ profile: publicProfile, service_ready: groqConfigured(), ...(specialAccount ? { special_account: specialAccount } : {}) });
+    // Memoria: solo si el interruptor del código está encendido.
+    const features = FEATURE_FLAGS.memory ? { features: { memory: true, memory_import: FEATURE_FLAGS.memoryImport === true }, memory_enabled: profile.memory_enabled === true } : {};
+    return json({ profile: publicProfile, service_ready: groqConfigured(), ...features, ...(specialAccount ? { special_account: specialAccount } : {}) });
+  }
+
+  if (MEMORY_ACTIONS.has(String(body.action))) {
+    const result = await handleMemoryAction({ admin, user, profile, body, ai: memoryAI(admin, user.id) });
+    return json(result.body, result.status);
   }
 
   if (body.action === 'special_welcome_seen') {
@@ -750,6 +784,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const upcoming = await admin.from('dream_exams').select('subject,exam_date').eq('owner_id', user.id)
     .neq('status', 'draft').gte('exam_date', today).order('exam_date', { ascending: true }).limit(1).maybeSingle();
   const personal = personalContext(profile, { interests: examples, nextExam: upcoming.error ? null : upcoming.data, today });
+  // Memoria entre conversaciones (memory-actions.mjs): al empezar se calcula y se
+  // guarda con la conversación; después se reutiliza tal cual. Si algo falla, sin memoria.
+  const memoryActive = memoryOn(profile);
+  let memoryText = '';
+  if (memoryActive) {
+    try {
+      memoryText = storedHistory.length
+        ? String((await admin.from('dream_conversations').select('memory_block').eq('id', conversation.data.id).eq('owner_id', user.id).maybeSingle()).data?.memory_block ?? '')
+        : await startConversationMemory({ admin, userId: user.id, conversationId: conversation.data.id, prompt });
+    } catch { memoryText = ''; }
+  }
   const contextParts = {
     academicMemory,
     personal,
@@ -757,6 +802,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     examContext: examStudyContext,
     attachmentFiles: attachmentRows,
     shortcut,
+    memory: memoryText,
   };
   const systemMessages = chatSystemMessages(mode.id, { ...contextParts, search: searchAvailable, attachmentChars: mode.attachmentChars });
   if (searchMissing) systemMessages.push({ role: 'system', content: SEARCH_UNAVAILABLE_PROMPT });
@@ -911,7 +957,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           if (!searchFailed) pendingNotice = sourcesMarker(result) + pendingNotice;
           // Segunda llamada con contexto corto: bloque común, estilo de
           // búsqueda, historial reciente y los resultados. Sin el prompt largo.
-          const answerMessages = [...searchAnswerMessages({ academicMemory, shortcut, personal }), ...searchHistory, { role: 'user', content: prompt },
+          const answerMessages = [...searchAnswerMessages({ academicMemory, shortcut, personal, memory: memoryText }), ...searchHistory, { role: 'user', content: prompt },
             // La llamada se reenvía con la consulta limpia, la misma que fue a Tavily.
             { role: 'assistant', content: provisional || null, tool_calls: [{ ...calls[0], function: { ...calls[0].function, arguments: JSON.stringify({ query }) } }] },
             { role: 'tool', tool_call_id: validated.id, content: result }];
@@ -965,6 +1011,10 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       } finally {
         await tracker.finish({ answered: Boolean(answer.trim()) }).catch(() => {});
         if (admitted) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'})));
+        // Al abrir una conversación nueva, se extrae la memoria de la anterior
+        // después de responder (prioridad baja; no cuenta en la ventana de 5 h).
+        if (memoryActive && !storedHistory.length && answer.trim())
+          inBackground(extractPreviousConversation({ admin, userId: user.id, currentConversationId: body.conversation_id, ai: memoryAI(admin, user.id) }));
         if (chunkCount) console.log(JSON.stringify({
           event: 'dream_stream_metrics', generation_id: generationId,
           mode: mode.id, fallback: servedByFallback,

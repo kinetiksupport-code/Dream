@@ -38,6 +38,8 @@ import {
 import { Orb } from "../orb";
 import { Sticker } from "../sticker";
 import { AlertIcon, CheckIcon } from "../icons";
+import { ImportFromAI } from "../memory-import";
+import { loadMemory, setMemoryEnabled, type MemoryState } from "@/lib/memory";
 import { useDream } from "../providers";
 import { checkAge, errorMessage, saveConsent, saveOnboarding } from "@/lib/dream-api";
 import { useOnline } from "@/lib/use-online";
@@ -100,7 +102,13 @@ const SPARKS = [
   [-98, -4],
   [94, -12],
 ];
-const ORDER: WelcomeStep[] = [...WELCOME_STEPS.map((x) => x.key), "listo"];
+const ORDER: WelcomeStep[] = [
+  ...WELCOME_STEPS.slice(0, 4).map((x) => x.key),
+  "memoria",
+  "otraia",
+  ...WELCOME_STEPS.slice(4).map((x) => x.key),
+  "listo",
+];
 
 function StepTitle({ children, id }: { children: ReactNode; id?: string }) {
   return (
@@ -169,6 +177,10 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
   const [checks, setChecks] = useState({ ai: false, terms: false });
   const [consentErrors, setConsentErrors] = useState<ConsentErrors>({});
   const [consentTried, setConsentTried] = useState(false);
+  const memoryFeature = profile?.memory_feature === true;
+  const importFeature = profile?.memory_import_feature === true;
+  const [memoryChoice, setMemoryChoice] = useState<boolean | null>(null);
+  const [usedOtherAI, setUsedOtherAI] = useState<boolean | null>(null);
   const customInput = useRef<HTMLInputElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
 
@@ -213,9 +225,14 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
     }
   }
 
+  // Steps that exist now: the memory ones only with the server switch on, and
+  // «otra IA» only after saying yes to the memory.
+  const active = (x: WelcomeStep) =>
+    x === "memoria" ? memoryFeature : x === "otraia" ? memoryFeature && importFeature && memoryChoice === true : true;
   const back = () => {
-    const i = ORDER.indexOf(step);
-    if (i > 0) go(ORDER[i - 1]);
+    let i = ORDER.indexOf(step) - 1;
+    while (i > 0 && !active(ORDER[i])) i--;
+    if (i >= 0) go(ORDER[i]);
   };
 
   const toName = () =>
@@ -248,9 +265,16 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
       const value = nicknameFor(nickname, name);
       await saveOnboarding({ step: 4, nickname: value });
       setNickname(value);
-      go("edad");
+      go(memoryFeature ? "memoria" : "edad");
     });
   };
+  // Memoria: solo se guarda la elección (sin IA, antes del permiso).
+  const toAfterMemory = () =>
+    run(async () => {
+      if (memoryChoice === null) return;
+      await setMemoryEnabled(memoryChoice);
+      go(memoryChoice && importFeature ? "otraia" : "edad");
+    });
   const toConsent = () => {
     setBirthTried(true);
     const problem = birthCheck(birthDate, birthTouched);
@@ -304,12 +328,18 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
     }
   }
 
-  const index = stepIndex(step);
+  const index = step === "memoria" || step === "otraia" ? stepIndex("apodo") : stepIndex(step);
   const total = WELCOME_STEPS.length;
   const done = step === "listo";
   const progress = done ? 1 : step === "menor" ? 0 : (index + 1) / total;
   const tone = done ? "yellow" : step === "edad" ? "warm" : "blue";
-  const label = done ? "Listo" : step === "menor" ? "" : WELCOME_STEPS[index]?.label;
+  const label = done
+    ? "Listo"
+    : step === "menor"
+      ? ""
+      : step === "memoria" || step === "otraia"
+        ? "Lo que Dream recuerda"
+        : WELCOME_STEPS[index]?.label;
   const showBack = !done && step !== "menor" && step !== first;
   const full = interests.length >= LIMITS.interests;
   const customs = interests.filter((x) => !(INTERESTS as readonly string[]).includes(x));
@@ -328,7 +358,7 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
         <StepTitle>
           ¡Hola! Soy <span className="marker marker-draw">Dream</span>
         </StepTitle>
-        <p className={w.lead}>Vamos a conocerte un poco. Son seis pasos cortos.</p>
+        <p className={w.lead}>Vamos a conocerte un poco. Son {memoryFeature ? "unos pocos" : "seis"} pasos cortos.</p>
       </div>
     );
     footer = (
@@ -519,6 +549,71 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
       </form>
     );
     footer = <Continue type="submit" form={`${id}-form`} busy={busy} disabled={!online} tone="yellow" />;
+  } else if (step === "memoria") {
+    const choice = (value: boolean, text: string) => (
+      <button
+        type="button"
+        className={`${s.chip} press`}
+        aria-pressed={memoryChoice === value}
+        onClick={() => setMemoryChoice(value)}
+      >
+        {text}
+        <span className={s.chipTick} aria-hidden="true">
+          <CheckIcon size={14} />
+        </span>
+      </button>
+    );
+    content = (
+      <div className={s.form}>
+        <StepTitle>
+          ¿Quieres que Dream <span className="marker">recuerde</span> cosas de ti entre chats?
+        </StepTitle>
+        <ul className={w.lead}>
+          <li>Recuerda cosas de estudio: qué te cuesta, cómo te gusta que te expliquen y tus exámenes.</li>
+          <li>Sirve para no empezar de cero cada vez que abres un chat.</li>
+          <li>Nunca guarda salud, familia ni datos de otras personas.</li>
+          <li>Lo ves y lo borras cuando quieras en Ajustes. Puedes decir que no.</li>
+        </ul>
+        <div className={s.chips} role="group" aria-label="¿Quieres que Dream recuerde?">
+          {choice(true, "Sí, que recuerde")}
+          {choice(false, "No, gracias")}
+        </div>
+      </div>
+    );
+    footer = (
+      <Continue onClick={() => void toAfterMemory()} busy={busy} disabled={!online || memoryChoice === null} tone="yellow" />
+    );
+  } else if (step === "otraia") {
+    const choice = (value: boolean, text: string) => (
+      <button
+        type="button"
+        className={`${s.chip} press`}
+        aria-pressed={usedOtherAI === value}
+        onClick={() => setUsedOtherAI(value)}
+      >
+        {text}
+        <span className={s.chipTick} aria-hidden="true">
+          <CheckIcon size={14} />
+        </span>
+      </button>
+    );
+    content = (
+      <div className={s.form}>
+        <StepTitle>
+          ¿Usabas antes <span className="marker">otra IA</span> para estudiar?
+        </StepTitle>
+        <p className={w.lead}>
+          Si dices que sí, al terminar te daremos un texto para copiar en tu otra IA y así Dream no empieza de cero.
+        </p>
+        <div className={s.chips} role="group" aria-label="¿Usabas otra IA?">
+          {choice(true, "Sí")}
+          {choice(false, "No")}
+        </div>
+      </div>
+    );
+    footer = (
+      <Continue onClick={() => go("edad")} busy={busy} disabled={!online || usedOtherAI === null} tone="yellow" />
+    );
   } else if (step === "edad") {
     const minor = birthProblem && "minor" in birthProblem;
     const problem = birthProblem && "error" in birthProblem ? birthProblem.error : null;
@@ -677,6 +772,8 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
           ¡Listo, <span className="marker marker-draw">{shownName || "ya estás"}</span>!
         </StepTitle>
         <p className={w.lead}>Ya puedes estudiar con Dream.</p>
+        {/* La importación llama a la IA: solo después del permiso, aquí. */}
+        {usedOtherAI && <ImportAfterConsent />}
       </div>
     );
     footer = (
@@ -772,5 +869,25 @@ export function WelcomeFlow({ gate }: { gate: "welcome" | "consent" }) {
         </div>
       </div>
     </main>
+  );
+}
+
+/** «Listo» con importación: el texto para copiar y el cuadro para pegar. */
+function ImportAfterConsent() {
+  const [memory, setMemory] = useState<MemoryState | null>(null);
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadMemory(controller.signal).then(setMemory, () => setMemory(null));
+    return () => controller.abort();
+  }, []);
+  if (hidden || !memory?.memory_enabled || !memory.import_available) return null;
+  return (
+    <ImportFromAI
+      exportPrompt={memory.export_prompt}
+      importsLeft={memory.imports_left}
+      onSaved={() => undefined}
+      onLater={() => setHidden(true)}
+    />
   );
 }
