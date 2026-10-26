@@ -8,6 +8,7 @@ import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
 import { AiPermission, WelcomeProfile } from "@/components/welcome/profile-settings";
 import { UsageLimits } from "@/components/usage-limits";
+import { MemorySettings } from "@/components/memory-settings";
 import { useDream } from "@/components/providers";
 import { Sticker } from "@/components/sticker";
 import { useConversations } from "@/components/shell";
@@ -258,6 +259,8 @@ export default function Settings() {
       </section>
 
       <UsageLimits />
+
+      <MemorySettings />
 
       <section className="group" aria-labelledby="privacy-title">
         <h2 className="section-title" id="privacy-title">

@@ -20,6 +20,7 @@ import { wantsWebSearch, webSearchTool, validateToolCall } from '../supabase/fun
 import { createTavilyManager } from '../supabase/functions/dream-api/tavily.mjs';
 import { SEARCH_UNAVAILABLE_PROMPT } from '../supabase/functions/dream-api/limit-messages.mjs';
 import { checkCase, expectationsFor, nicknameRate, wordCount } from './checks.mjs';
+import { MEMORY_JSON_SCHEMA, extractionMessages, validateExtraction } from '../supabase/functions/dream-api/memory.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) => {
@@ -116,6 +117,26 @@ for (const model of models) {
   let tokens = 0, words = 0, n = 0;
   for (const name of files) {
     const file = JSON.parse(fs.readFileSync(path.join(here, `${name}.json`), 'utf8'));
+    if (file.type === 'memory') {
+      // Memoria: extractor real + filtro del servidor; se mira qué recuerdos quedan.
+      for (const testCase of file.cases) {
+        const messages = testCase.messages.flatMap((content) => [{ role: 'user', content }, { role: 'assistant', content: 'Vale.' }]);
+        let out;
+        try {
+          const res = await call(model, { messages: extractionMessages(messages, []), response_format: { type: 'json_schema', json_schema: MEMORY_JSON_SCHEMA }, max_tokens: 1500 });
+          out = validateExtraction(JSON.parse(res.message.content ?? '{}'));
+        } catch (error) { failures.push({ id: `${name}/${testCase.id}`, error: String(error.message) }); continue; }
+        const text = [out.summary, ...out.memories.map((m) => m.content)].join('\n');
+        const result = {
+          expected: testCase.expected.every((p) => out.memories.some((m) => new RegExp(p, 'i').test(m.content))),
+          forbidden: !testCase.forbidden.some((p) => new RegExp(p, 'i').test(text)),
+        };
+        for (const [k, ok] of Object.entries(result)) { perCriterion[k] ??= { ok: 0, total: 0 }; perCriterion[k].total++; if (ok) perCriterion[k].ok++; }
+        if (!result.expected || !result.forbidden) failures.push({ id: `${name}/${testCase.id}`, failed: Object.keys(result).filter((k) => !result[k]), memories: out.memories.map((m) => m.content) });
+        n++;
+      }
+      continue;
+    }
     for (const testCase of file.cases) {
       let run;
       try { run = await runCase(model, testCase); }

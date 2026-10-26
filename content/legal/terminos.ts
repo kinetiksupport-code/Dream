@@ -1,6 +1,6 @@
 export const terminos = String.raw`# Términos y condiciones
 
-*Última actualización: 19 de octubre de 2026 (versión provisional).*
+*Última actualización: 26 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién ofrece Dream
 
@@ -22,13 +22,17 @@ Dream es una web (instalable como app) con un tutor de inteligencia artificial q
 
 Dream es **gratuito** y hoy no se cobra nada. El plan gratuito no tiene un número fijo de mensajes, pero sí **límites de uso razonable** para que el servicio funcione para todos. Cuando hay mucha demanda puedes tener que esperar en una **cola** o volver más tarde, y la IA puede dejar de estar disponible unas horas o hasta el día siguiente. Podemos cambiar estos límites.
 
-**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Cada modo tiene su propio límite de uso, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. Si agotas un modo, no podrás usarlo hasta que acabe la ventana, pero puedes seguir con otro modo que aún tenga uso disponible. Si nuestro proveedor principal de IA (Groq) no responde en «Rápido» o «Normal», la respuesta puede llegar de un proveedor de respaldo (Cloudflare), algo más corta; ese uso no cuenta en el límite del modo. En Ajustes, en «Límite de uso», ves qué parte has usado de cada modo y cuándo se reinicia.
+**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Los modos comparten **un mismo límite de uso**, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. «Rápido» gasta menos y «Pensar más», más. Cuando se agota, todos los modos esperan al final de la ventana. También hay un **límite por minuto** y uno **por día** contra abusos. Los límites pueden cambiar según la demanda. Si nuestro proveedor principal de IA (Groq) no responde en «Rápido» o «Normal», la respuesta puede llegar de un proveedor de respaldo (Cloudflare), algo más corta; ese uso no cuenta en el límite del modo. En Ajustes, en «Límite de uso», ves qué parte has usado, cuántos mensajes te quedan más o menos y cuándo se reinicia.
+
+**Cuentas de Fundación Loyola.** Si entras con un correo de Google verificado de fundacionloyola.net o fundacionloyola.es, no tienes la ventana de 5 horas ni el límite diario, pero sí un límite por minuto contra abusos. Podemos ajustar ese límite si hay abuso, y sigues esperando en la cola como todos cuando hay mucha demanda.
 
 Si en el futuro se añade un plan de pago, te lo comunicaremos antes y no se te cobrará nada sin que lo aceptes expresamente.
 
 ## 5. Cómo ayuda la IA (y sus límites)
 
 - La IA **puede equivocarse, inventar datos o no estar actualizada.** Verifica siempre lo importante con tus apuntes, tu libro o tu profesor.
+- Si activas la memoria, Dream **puede recordar mal** algo de ti. Puedes corregírselo en el chat o borrar ese recuerdo en Ajustes. Los recuerdos y resúmenes se guardan hasta que los borres o pasen 12 meses sin usarse; después se eliminan solos.
+- **No pegues datos de otras personas ni información sensible** (salud, familia, contraseñas…) en el chat ni al importar tu perfil de otra IA.
 - Dream está pensado para que aprendas: **no te da los ejercicios resueltos**, te guía con pistas y preguntas.
 - Las notas de los tests y simulacros son orientativas. **No son notas oficiales** ni garantizan resultados en ningún examen real. Dream no te asegura una nota concreta.
 - Dream no ofrece asesoramiento médico, legal ni psicológico. Si te sientes mal, habla con un adulto de confianza o llama al 024 (atención a la conducta suicida) o al 112 en una emergencia.

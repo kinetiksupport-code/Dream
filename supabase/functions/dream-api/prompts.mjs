@@ -723,11 +723,11 @@ export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes bus
  * Mensajes de sistema del chat. Es el MISMO camino para los tres modos y para
  * el respaldo: solo cambia el prompt base y cuánto contexto entra.
  * @param {string} modeId
- * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null, personal?: string}} [parts]
+ * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null, personal?: string, memory?: string}} [parts]
  */
 export function chatSystemMessages(modeId, {
   fallback = false, search = false, academicMemory = [], skillPrompt = '',
-  examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null, personal = '',
+  examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null, personal = '', memory = '',
 } = {}) {
   const messages = [
     { role: 'system', content: systemPromptFor(modeId, { fallback }) },
@@ -735,6 +735,8 @@ export function chatSystemMessages(modeId, {
   ];
   if (search) messages.push({ role: 'system', content: SEARCH_TOOL_PROMPT });
   messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut, personal) });
+  // Memoria entre conversaciones (memory.mjs): fija durante toda la conversación.
+  if (memory) messages.push({ role: 'system', content: memory });
   if (skillPrompt) messages.push({ role: 'system', content: skillPrompt });
   if (examContext) messages.push({ role: 'system', content: examContext });
   // El material del alumno va siempre delimitado como datos y con la
@@ -773,13 +775,14 @@ export function searchPlannerMessages() {
 /**
  * Segunda llamada (con los resultados): reglas comunes, estilo de búsqueda,
  * política y contexto dinámico. Sin el prompt largo de Normal.
- * @param {{academicMemory?: any[], shortcut?: string|null, personal?: string}} [parts]
+ * @param {{academicMemory?: any[], shortcut?: string|null, personal?: string, memory?: string}} [parts]
  */
-export function searchAnswerMessages({ academicMemory = [], shortcut = null, personal = '' } = {}) {
+export function searchAnswerMessages({ academicMemory = [], shortcut = null, personal = '', memory = '' } = {}) {
   return [
     { role: 'system', content: `${COMMON_RULES}\n\n${SEARCH_ANSWER_STYLE}\n\n${TONE_LAYER}\n\n${NO_INVENT_LAYER}` },
     { role: 'system', content: CONVERSATION_POLICY },
     { role: 'system', content: dynamicContextFor(academicMemory, shortcut, personal) },
+    ...(memory ? [{ role: 'system', content: memory }] : []),
   ];
 }
 
