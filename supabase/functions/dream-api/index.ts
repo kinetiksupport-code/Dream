@@ -16,11 +16,12 @@ import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBloc
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
-import { CLOUDFLARE_FALLBACK, SEARCH_TURN, DEFAULT_MODE, aiContextFor, availableModes, reasoningParams, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
+import { AI_FLAGS, CLOUDFLARE_FALLBACK, SEARCH_TURN, DEFAULT_MODE, aiContextFor, availableModes, reasoningParams, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
 import { createWindowLimiter, promptBreakdown, studentWindowTokens, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
 import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReasoning } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
-import { needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
+import { isStemPrompt, needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
+import { checkEqualities, correctionNote } from './math-tools.mjs';
 import { SPECIAL_WELCOME, specialDomain } from './special-accounts.mjs';
 import { FEATURE_FLAGS } from './features.mjs';
 import { MEMORY_ACTIONS, MEMORY_MODEL, extractPreviousConversation, handleMemoryAction, memoryOn, startConversationMemory } from './memory-actions.mjs';
@@ -914,7 +915,10 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       };
       const flushNickname = () => { const rest = nickname.flush(); if (rest) send({ type: 'delta', text: rest }); };
       try {
-        const searchKey = searchAvailable;
+        // Ciencias con AI_FLAGS.mathCheck: la respuesta se guarda entera, se
+        // comprueban sus operaciones y, si no cuadran, se pide una vez que la rehaga.
+        const mathCheck = AI_FLAGS.mathCheck && isStemPrompt(prompt);
+        const searchKey = searchAvailable || mathCheck;
         let usage: any = null;
         const toolDeltas: any[] = [];
         let provisional = '';
@@ -972,7 +976,25 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
             if (answer.length > 32000) break;
           }
           logUsage('search_answer', usage);
-        } else if (searchKey && provisional) emit(provisional);
+        } else if (searchKey && provisional) {
+          let final = provisional;
+          const wrong = mathCheck ? checkEqualities(final) : [];
+          if (wrong.length && !servedByFallback) {
+            console.log(JSON.stringify({ event: 'math_check', generation_id: generationId, wrong: wrong.length }));
+            let retry = '';
+            for await (const chunk of providerStream(
+              { ...firstBody, messages: [...initialMessages, { role: 'assistant', content: final }, { role: 'system', content: correctionNote(wrong) }] },
+              { ...fallbackBase, messages: fallbackMessages })) {
+              const delta = chunk?.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') retry += delta;
+              if (retry.length > 32000) break;
+            }
+            // Si la segunda tampoco cuadra, no se enseñan números falsos.
+            final = retry && !checkEqualities(retry).length ? retry
+              : 'Uy, aquí me he liado con las cuentas y prefiero no darte un resultado que no he podido comprobar. ¿Lo vemos paso a paso juntos?';
+          }
+          emit(final);
+        }
         flushNickname();
         if (answer.trim()) {
           await admin.from('dream_messages').insert({

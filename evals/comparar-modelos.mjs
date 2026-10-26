@@ -5,7 +5,7 @@
 //
 //   GROQ_API_KEY=… [TAVILY_API_KEY_1=…] node evals/comparar-modelos.mjs \
 //     --models qwen/qwen3.8-27b,openai/gpt-oss-120b --files tono,tutor,no-inventar \
-//     [--reasoning none|low|medium] [--no-forced-search] [--temperature 0.5] [--out evals/resultados/x.json]
+//     [--reasoning none|low|medium] [--no-forced-search] [--temperature 0.5] [--compact] [--out evals/resultados/x.json]
 //
 // Proveedores: groq (GROQ_API_KEY), cloudflare (CLOUDFLARE_ACCOUNT_ID +
 // CLOUDFLAREAI_API_KEY, modelos «@cf/…»), openrouter (OPENROUTER_API_KEY,
@@ -14,7 +14,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chatSystemMessages, searchAnswerMessages, searchPlannerMessages } from '../supabase/functions/dream-api/prompts.mjs';
+import { DREAM_SYSTEM_PROMPT, chatSystemMessages, searchAnswerMessages, searchPlannerMessages } from '../supabase/functions/dream-api/prompts.mjs';
+import { DREAM_SYSTEM_PROMPT_COMPACT } from '../supabase/functions/dream-api/prompt-compact.mjs';
 import { needsVerification, sanitizeSearchQuery, copiesStatement } from '../supabase/functions/dream-api/fact-check.mjs';
 import { wantsWebSearch, webSearchTool, validateToolCall } from '../supabase/functions/dream-api/tools.mjs';
 import { createTavilyManager } from '../supabase/functions/dream-api/tavily.mjs';
@@ -32,6 +33,8 @@ const files = String(args.files ?? 'tono,tutor,no-inventar').split(',');
 const forced = !args['no-forced-search'];
 const reasoning = args.reasoning && args.reasoning !== true ? String(args.reasoning) : null;
 const temperature = args.temperature ? Number(args.temperature) : 0.5;
+// --compact: el prompt compacto (prompt-compact.mjs) en lugar de DREAM_SYSTEM_PROMPT.
+const compact = Boolean(args.compact);
 // Perfil de prueba: el apodo nunca llega al modelo (va como {{APODO}}).
 const PROFILE = { terms_version: 'x', nickname: 'Lucía', display_name: 'Lucía Pérez', interests: ['fútbol', 'música'] };
 const personal = '- Cuando te dirijas al alumno por su nombre, escribe exactamente {{APODO}} (Dream lo cambia por el nombre que eligió). No lo uses en cada frase.';
@@ -95,6 +98,7 @@ async function runCase(model, testCase) {
     searched = searched || Boolean(toolCall);
   } else {
     const system = chatSystemMessages('normal', { personal });
+    if (compact) system[0] = { ...system[0], content: system[0].content.replace(DREAM_SYSTEM_PROMPT, DREAM_SYSTEM_PROMPT_COMPACT) };
     if (verify && !tools) system.push({ role: 'system', content: SEARCH_UNAVAILABLE_PROMPT });
     const res = await call(model, { messages: [...system, ...history, { role: 'user', content: prompt }] });
     usage.push(res.usage);
@@ -109,7 +113,7 @@ if (missing.length) {
   process.exit(2);
 }
 
-const report = { date: new Date().toISOString(), options: { forced, reasoning, temperature }, models: {} };
+const report = { date: new Date().toISOString(), options: { forced, reasoning, temperature, compact }, models: {} };
 for (const model of models) {
   const perCriterion = {};
   const failures = [];
