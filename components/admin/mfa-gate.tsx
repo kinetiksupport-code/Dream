@@ -28,7 +28,9 @@ export function MfaGate({ fresh, onDone }: { fresh: boolean; onDone: () => void 
       if (verified) return setFactorId(verified.id);
       // Restos de una inscripción a medias: se quitan antes de empezar de nuevo.
       for (const f of data?.all ?? []) if (f.status === "unverified") await mfa.unenroll({ factorId: f.id });
-      const created = await mfa.enroll({ factorType: "totp", friendlyName: "Panel de Dream" });
+      // Con `issuer` propio, Supabase no lo saca de la Site URL (si está mal
+      // escrita, la inscripción falla con «site url is improperly formatted»).
+      const created = await mfa.enroll({ factorType: "totp", friendlyName: "Panel de Dream", issuer: "Dream" });
       if (!alive) return;
       if (created.error || !created.data) return setError("No se pudo crear el segundo factor.");
       setEnroll({ factorId: created.data.id, qr: created.data.totp.qr_code, secret: created.data.totp.secret });
