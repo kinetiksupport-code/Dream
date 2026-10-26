@@ -1,0 +1,199 @@
+{
+  "title": "Ecuaciones de segundo grado",
+  "subtitle": "Resolución y propiedades de las ecuaciones cuadráticas",
+  "subject": "Matemáticas",
+  "sections": [
+    {
+      "heading": "Forma general y fórmula",
+      "period": "",
+      "kind": "list",
+      "intro": "Definición básica y herramienta principal de resolución.",
+      "bullets": [
+        {
+          "text": "El coeficiente **a** debe ser distinto de cero.",
+          "quote": "con a distinto de 0"
+        },
+        {
+          "text": "Se resuelve con la **fórmula general**.",
+          "quote": "x = (-b ± √(b^2 - 4ac)) / 2a"
+        },
+        {
+          "text": "El **discriminante** es Δ = b^2 - 4ac.",
+          "quote": "Δ = b^2 - 4ac"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fórmula y discriminante",
+      "period": "",
+      "kind": "formula",
+      "intro": "Cálculo de las raíces según el valor de Δ.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [],
+      "formula": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Tipos de soluciones",
+      "period": "",
+      "kind": "list",
+      "intro": "Interpretación del resultado del discriminante.",
+      "bullets": [
+        {
+          "text": "Si **Δ > 0**, hay dos soluciones reales.",
+          "quote": "Si Δ > 0, hay dos soluciones reales distintas"
+        },
+        {
+          "text": "Si **Δ = 0**, hay una solución doble.",
+          "quote": "Si Δ = 0, hay una solución doble"
+        },
+        {
+          "text": "Si **Δ < 0**, no hay soluciones reales.",
+          "quote": "Si Δ < 0, no hay soluciones reales"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ecuaciones incompletas",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Métodos específicos cuando falta un término.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Sin término lineal",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Aplica cuando **b = 0**.",
+              "quote": "Si b = 0 (ax^2 + c = 0)"
+            }
+          ]
+        },
+        {
+          "title": "Sin término independiente",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Se saca **factor común** x.",
+              "quote": "x(ax + b) = 0"
+            },
+            {
+              "text": "Soluciones: **x = 0** o **x = -b/a**.",
+              "quote": "x = 0 o x = -b/a"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A clean mathematical diagram showing a quadratic equation splitting into two simpler paths, one with a square root and one with a factored expression, on a soft",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "period": "",
+      "kind": "examples",
+      "intro": "Aplicación paso a paso de la fórmula.",
+      "bullets": [
+        {
+          "text": "Ecuación: **x^2 - 5x + 6 = 0**.",
+          "quote": "x^2 - 5x + 6 = 0"
+        },
+        {
+          "text": "Coeficientes: **a=1, b=-5, c=6**.",
+          "quote": "a = 1, b = -5 y c = 6"
+        },
+        {
+          "text": "Discriminante: **Δ = 1**.",
+          "quote": "Δ = 25 - 24 = 1"
+        },
+        {
+          "text": "Soluciones: **x = 3** y **x = 2**.",
+          "quote": "Las soluciones son x = 3 y x = 2"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores típicos",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Fallos frecuentes a evitar en los exámenes.",
+      "bullets": [
+        {
+          "text": "Olvidar el **signo de b** al sustituir.",
+          "quote": "olvidar el signo de b al sustituir"
+        },
+        {
+          "text": "No dividir **todo el numerador** entre 2a.",
+          "quote": "no dividir todo el numerador entre 2a"
+        },
+        {
+          "text": "Dividir entre **x** en ecuaciones incompletas.",
+          "quote": "dividir entre x en ax^2 + bx = 0"
+        },
+        {
+          "text": "Se pierde la solución **x = 0**.",
+          "quote": "se pierde la solución x = 0"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Propiedades de las raíces",
+      "period": "",
+      "kind": "list",
+      "intro": "Relaciones entre coeficientes y soluciones.",
+      "bullets": [
+        {
+          "text": "Suma de raíces: **-b/a**.",
+          "quote": "la suma es -b/a y el producto es c/a"
+        },
+        {
+          "text": "Producto de raíces: **c/a**.",
+          "quote": "la suma es -b/a y el producto es c/a"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Permite verificar soluciones sin resolver la ecuación completa.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El discriminante determina el número de soluciones reales.",
+    "Las ecuaciones incompletas se resuelven por factorización o despeje directo.",
+    "La suma y el producto de las raíces siguen reglas fijas."
+  ],
+  "summary": "Las ecuaciones de segundo grado se resuelven mediante la fórmula general o métodos específicos para ecuaciones incompletas. El discriminante indica la naturaleza de las soluciones.",
+  "closing": "Dominar el discriminante y la fórmula general permite resolver cualquier ecuación de segundo grado con seguridad."
+}

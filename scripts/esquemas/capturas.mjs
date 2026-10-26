@@ -12,7 +12,7 @@ import { chromium } from 'playwright';
 const dir = process.argv[2];
 if (!dir || !fs.existsSync(dir)) { console.error('Uso: node scripts/esquemas/capturas.mjs <carpeta de resultados>'); process.exit(2); }
 const base = process.env.BASE_URL ?? 'http://localhost:3111';
-const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && !['resumen.json', 'render.json'].includes(f));
+const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('resumen') && f !== 'render.json');
 const shots = path.join(dir, 'capturas');
 fs.mkdirSync(shots, { recursive: true });
 

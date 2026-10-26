@@ -1,0 +1,203 @@
+{
+  "title": "Enlaces Químicos",
+  "subtitle": "Tipos de enlaces y sus propiedades",
+  "subject": "Química",
+  "sections": [
+    {
+      "heading": "Concepto y regla del octeto",
+      "period": "",
+      "kind": "list",
+      "intro": "Definición básica de la unión atómica y su objetivo energético.",
+      "bullets": [
+        {
+          "text": "Unión entre átomos para formar **sustancias más estables**.",
+          "quote": ""
+        },
+        {
+          "text": "Los átomos buscan completar su última capa con **8 electrones**.",
+          "quote": "Los átomos tienden a completar su última capa con 8 electrones"
+        },
+        {
+          "text": "Este principio se conoce como la **regla del octeto**.",
+          "quote": ""
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace iónico",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Formación por transferencia de electrones y propiedades de las redes cristalinas.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Formación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Se forma entre un **metal** y un **no metal**.",
+              "quote": "se da entre un metal y un no metal"
+            },
+            {
+              "text": "El metal cede electrones y genera un **catión**.",
+              "quote": "El metal cede electrones y forma un catión"
+            },
+            {
+              "text": "El no metal capta electrones y genera un **anión**.",
+              "quote": "el no metal los capta y forma un anión"
+            }
+          ]
+        },
+        {
+          "title": "Estructura",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Atracción por **fuerzas electrostáticas** entre iones.",
+              "quote": "Los iones se atraen por fuerzas electrostáticas"
+            },
+            {
+              "text": "Estructura organizada en **redes cristalinas**.",
+              "quote": "forman redes cristalinas"
+            },
+            {
+              "text": "Ejemplo clásico: **cloruro de sodio** (NaCl).",
+              "quote": "Ejemplo: el cloruro de sodio (NaCl)"
+            }
+          ]
+        },
+        {
+          "title": "Propiedades",
+          "period": "",
+          "bullets": [
+            {
+              "text": "**Sólidos** a temperatura ambiente con **puntos de fusión altos**.",
+              "quote": "sólidos a temperatura ambiente, puntos de fusión altos"
+            },
+            {
+              "text": "**Solubles en agua** y conducen electricidad disueltos o fundidos.",
+              "quote": "solubles en agua, conducen la electricidad disueltos o fundidos"
+            },
+            {
+              "text": "**No conducen** la electricidad en estado sólido.",
+              "quote": "pero no en estado sólido"
+            },
+            {
+              "text": "Materiales **duros** pero **frágiles**.",
+              "quote": "Son duros pero frágiles"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple, stylized 3D representation of a cubic crystal lattice structure made of alternating blue and red spheres, clean white background, educational diagram.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace covalente",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Compartimiento de electrones entre no metales y sus dos formas estructurales.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Formación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Se da entre **no metales** que **comparten pares de electrones**.",
+              "quote": "se da entre no metales, que comparten pares de electrones"
+            }
+          ]
+        },
+        {
+          "title": "Estructuras",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Forma **moléculas** como el **agua** (H2O).",
+              "quote": "Puede formar moléculas, como el agua (H2O)"
+            },
+            {
+              "text": "Forma **redes cristalinas** como el **diamante**.",
+              "quote": "o redes cristalinas covalentes, como el diamante"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A minimalist vector illustration of a water molecule with one large red circle and two smaller white circles connected by lines, next to a geometric diamond cut",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace metálico",
+      "period": "",
+      "kind": "list",
+      "intro": "Estructura de los metales y sus características físicas distintivas.",
+      "bullets": [
+        {
+          "text": "Cationes en red y **electrones libres** en movimiento.",
+          "quote": "Los cationes forman una red y los electrones se mueven libremente"
+        },
+        {
+          "text": "Los electrones constituyen una **nube electrónica**.",
+          "quote": "formando una nube electrónica"
+        },
+        {
+          "text": "**Buenos conductores** de calor y electricidad.",
+          "quote": "buenos conductores del calor y de la electricidad"
+        },
+        {
+          "text": "Presentan **brillo metálico**, son **dúctiles** y **maleables**.",
+          "quote": "brillo metálico, dúctiles y maleables"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A stylized abstract representation of a metallic surface with a soft golden glow and subtle grid lines suggesting atomic structure, no text",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores típicos",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Confusión frecuente sobre la conductividad eléctrica de los sólidos iónicos.",
+      "bullets": [
+        {
+          "text": "Afirmar que los **compuestos iónicos** conducen electricidad en **estado sólido**.",
+          "quote": "Error típico: decir que los compuestos iónicos conducen la electricidad en estado sólido"
+        },
+        {
+          "text": "La conducción iónica requiere **movilidad** de los iones.",
+          "quote": ""
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El enlace iónico implica transferencia de electrones entre metal y no metal.",
+    "El enlace covalente se basa en el compartimiento de pares de electrones.",
+    "El enlace metálico consiste en una red de cationes y una nube de electrones libres.",
+    "Las propiedades macroscópicas dependen directamente del tipo de enlace presente."
+  ],
+  "summary": "Los átomos se unen mediante enlaces iónicos, covalentes o metálicos para alcanzar estabilidad. Cada tipo de enlace determina propiedades físicas específicas como la conductividad o la dureza. Conocer la naturaleza del enlace permite predecir el comportamiento de la sustancia.",
+  "closing": "Comprender la naturaleza del enlace permite predecir las propiedades físicas y químicas de la materia."
+}

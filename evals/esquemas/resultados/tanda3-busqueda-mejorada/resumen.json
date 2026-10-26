@@ -1,0 +1,179 @@
+{
+  "model": "qwen/qwen3.8-27b",
+  "temperature": 0.25,
+  "reasoning": "none",
+  "strict": false,
+  "date": "2026-10-26T20-09-20",
+  "runs": 4,
+  "validFirstTry": 2,
+  "valid": 4,
+  "quotesFoundPct": 61,
+  "accentErrors": 2,
+  "avgTokens": 9367,
+  "rows": [
+    {
+      "name": "al-andalus-busqueda-sin-ejemplo",
+      "topic": "al-andalus",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": false,
+      "attempts": 2,
+      "errors": [],
+      "dropped": 4,
+      "droppedTexts": [
+        "1094 Unificación de las taifas por los almorávides.",
+        "1175 Llegada de los almohades a Al-Ándalus.",
+        "1212 Batalla de las Navas de Tolosa.",
+        "El poderío almohade se hundió tras la derrota en 1212."
+      ],
+      "facts": 13,
+      "factsWithQuote": 9,
+      "accentErrors": 0,
+      "firstErrors": [
+        "sections[1].period: la cifra 1000 no aparece en la fuente. Quítala."
+      ],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "2289"
+      },
+      "tokens": 12975,
+      "inputTokens": 8575,
+      "outputTokens": 4400,
+      "ms": 10867,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "ecuaciones-2-grado-busqueda-sin-ejemplo",
+      "topic": "ecuaciones-2-grado",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 2,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "997",
+        "tokens_minute": "2198"
+      },
+      "tokens": 6624,
+      "inputTokens": 5134,
+      "outputTokens": 1490,
+      "ms": 4036,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "guerra-civil-busqueda-sin-ejemplo",
+      "topic": "guerra-civil",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": false,
+      "attempts": 2,
+      "errors": [],
+      "dropped": 2,
+      "droppedTexts": [
+        "1936 Masacre de Badajoz por tropas sublevadas.",
+        "1937 Bombardeo de Guernica por la Legión Cóndor."
+      ],
+      "facts": 10,
+      "factsWithQuote": 8,
+      "accentErrors": 0,
+      "firstErrors": [
+        "sections[4].period: la cifra 1975 no aparece en la fuente. Quítala."
+      ],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "1857"
+      },
+      "tokens": 13437,
+      "inputTokens": 10155,
+      "outputTokens": 3282,
+      "ms": 9057,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "kant-busqueda-sin-ejemplo",
+      "topic": "kant",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 2,
+      "factsWithQuote": 2,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "996",
+        "tokens_minute": "4481"
+      },
+      "tokens": 4431,
+      "inputTokens": 2938,
+      "outputTokens": 1493,
+      "ms": 3875,
+      "manualWrongFacts": null
+    }
+  ],
+  "render": {
+    "al-andalus-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "ecuaciones-2-grado-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: 2a−b±Δ​"
+        ],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: 2a−b±Δ​"
+        ],
+        "pageOverflow": false
+      }
+    },
+    "guerra-civil-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "kant-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    }
+  }
+}

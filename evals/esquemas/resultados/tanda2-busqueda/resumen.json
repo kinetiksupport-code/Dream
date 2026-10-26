@@ -1,0 +1,394 @@
+{
+  "model": "qwen/qwen3.8-27b",
+  "temperature": 0.25,
+  "reasoning": "none",
+  "strict": false,
+  "date": "2026-10-26T19-55-37",
+  "runs": 10,
+  "validFirstTry": 9,
+  "valid": 10,
+  "quotesFoundPct": 63,
+  "accentErrors": 1,
+  "avgTokens": 4078,
+  "rows": [
+    {
+      "name": "al-andalus-busqueda-sin-ejemplo",
+      "topic": "al-andalus",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": false,
+      "attempts": 2,
+      "errors": [],
+      "dropped": 2,
+      "droppedTexts": [
+        "La batalla de **Alarcos en 1195** alertó a los cristianos.",
+        "1195 1195: Batalla de Alarcos."
+      ],
+      "facts": 2,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [
+        "sections[1].period: la cifra 1031 no aparece en la fuente. Quítala.",
+        "sections[2].period: la cifra 1212 no aparece en la fuente. Quítala."
+      ],
+      "groqRemaining": {
+        "requests_day": "997",
+        "tokens_minute": "4268"
+      },
+      "tokens": 7693,
+      "inputTokens": 5480,
+      "outputTokens": 2213,
+      "ms": 5944,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "revolucion-francesa-busqueda-sin-ejemplo",
+      "topic": "revolucion-francesa",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 1,
+      "droppedTexts": [
+        "**Consulado** (1799-1804): ascenso de Napoleón Bonaparte."
+      ],
+      "facts": 25,
+      "factsWithQuote": 24,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "5792"
+      },
+      "tokens": 4433,
+      "inputTokens": 2135,
+      "outputTokens": 2298,
+      "ms": 5856,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "oraciones-busqueda-sin-ejemplo",
+      "topic": "oraciones",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "996",
+        "tokens_minute": "5824"
+      },
+      "tokens": 2576,
+      "inputTokens": 1444,
+      "outputTokens": 1132,
+      "ms": 2741,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "fotosintesis-busqueda-sin-ejemplo",
+      "topic": "fotosintesis",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 2,
+      "factsWithQuote": 2,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "5008"
+      },
+      "tokens": 4543,
+      "inputTokens": 2143,
+      "outputTokens": 2400,
+      "ms": 5446,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "ecuaciones-2-grado-busqueda-sin-ejemplo",
+      "topic": "ecuaciones-2-grado",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 4,
+      "droppedTexts": [
+        "Ejemplo de ecuación incompleta: **x² - 36 = 13**.",
+        "Aislar el término cuadrático: **x² = 36 + 13**.",
+        "Resolver la suma: **x² = 49**.",
+        "Extraer la raíz cuadrada: **x = ± 7**."
+      ],
+      "facts": 5,
+      "factsWithQuote": 1,
+      "accentErrors": 1,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "993",
+        "tokens_minute": "5439"
+      },
+      "tokens": 3049,
+      "inputTokens": 1864,
+      "outputTokens": 1185,
+      "ms": 2830,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "celula-busqueda-sin-ejemplo",
+      "topic": "celula",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 1,
+      "factsWithQuote": 1,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "995",
+        "tokens_minute": "5102"
+      },
+      "tokens": 3933,
+      "inputTokens": 2201,
+      "outputTokens": 1732,
+      "ms": 4798,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "guerra-civil-busqueda-sin-ejemplo",
+      "topic": "guerra-civil",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 5,
+      "droppedTexts": [
+        "1936 Agosto 1936: Toma de Badajoz y represión.",
+        "1937 Feb-Mar 1937: Batallas de Jarama y Guadalajara.",
+        "Toma de **Badajoz** en agosto de 1936.",
+        "Batallas de **Jarama** y **Guadalajara** en 1937.",
+        "La producción industrial cayó un **30%**."
+      ],
+      "facts": 17,
+      "factsWithQuote": 12,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "994",
+        "tokens_minute": "5289"
+      },
+      "tokens": 4433,
+      "inputTokens": 2485,
+      "outputTokens": 1948,
+      "ms": 4894,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "enlaces-quimicos-busqueda-sin-ejemplo",
+      "topic": "enlaces-quimicos",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "993",
+        "tokens_minute": "4746"
+      },
+      "tokens": 3578,
+      "inputTokens": 2187,
+      "outputTokens": 1391,
+      "ms": 3704,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "kant-busqueda-sin-ejemplo",
+      "topic": "kant",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "5531"
+      },
+      "tokens": 3175,
+      "inputTokens": 1808,
+      "outputTokens": 1367,
+      "ms": 3690,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "ciclo-agua-busqueda-sin-ejemplo",
+      "topic": "ciclo-agua",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "993",
+        "tokens_minute": "5117"
+      },
+      "tokens": 3364,
+      "inputTokens": 2090,
+      "outputTokens": 1274,
+      "ms": 3239,
+      "manualWrongFacts": null
+    }
+  ],
+  "render": {
+    "al-andalus-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "celula-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "ciclo-agua-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "ecuaciones-2-grado-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​"
+        ],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​"
+        ],
+        "pageOverflow": false
+      }
+    },
+    "enlaces-quimicos-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "fotosintesis-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "guerra-civil-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "kant-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "oraciones-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "revolucion-francesa-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    }
+  }
+}

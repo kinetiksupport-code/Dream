@@ -43,8 +43,11 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 
 **Criterio de paso: ≥ 9 de 10 sin datos inventados y visualmente al nivel del ejemplo.** Si Qwen no llega, se para y se avisa a Carlos con los resultados y las alternativas (otro modelo, más fuentes o plantillas con datos revisados). Nada se despliega sin su OK.
 
+## Resultados del banco
+
+`docs/esquemas/RESULTADOS-BANCO.md`: desde apuntes, 10/10 válidos y 0 datos erróneos (pasa el criterio); solo con el tema, falta repetir los 10 temas con la búsqueda mejorada.
+
 ## Pendiente
 
-- Ejecutar el banco con las claves reales de Groq y Tavily (no están en esta sesión).
-- Ajustar la maqueta a la imagen de referencia de Carlos: `docs/esquemas/referencia-al-andalus.webp`.
+- Repetir los 10 temas «solo tema» con la búsqueda mejorada.
 - Bloques 1 (entrada), 3 (edición), 4 (exportar), 5 (ilustraciones FLUX), 6 (textos legales) y 7 (Dreams interactivos), cada uno en su PR.

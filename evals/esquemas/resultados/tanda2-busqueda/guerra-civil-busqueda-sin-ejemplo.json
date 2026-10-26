@@ -1,0 +1,199 @@
+{
+  "title": "Guerra Civil Española",
+  "subtitle": "1936-1939: Causas, desarrollo y consecuencias",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Inicio y duración del conflicto",
+      "period": "1936-1939",
+      "kind": "list",
+      "intro": "Contexto temporal y resultado general de la guerra.",
+      "bullets": [
+        {
+          "text": "El conflicto comenzó el **17 de julio de 1936** tras el fracaso del golpe.",
+          "quote": "17 de julio de 1936-1 de abril de 1939"
+        },
+        {
+          "text": "Duró **2 años, 8 meses y 15 días** hasta la victoria nacionalista.",
+          "quote": "2 años, 8 meses y 15 días"
+        },
+        {
+          "text": "El resultado fue la **victoria del bando sublevado** y la dictadura de Franco.",
+          "quote": "Victoria del bando sublevado e implantación de la dictadura"
+        },
+        {
+          "text": "El territorio republicano quedó **dividido en dos zonas** principales.",
+          "quote": "dividida en 2 zonas, con Cataluña aislada"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fechas clave de la guerra",
+      "period": "1936-1939",
+      "kind": "dates",
+      "intro": "Cronología de los principales eventos militares.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1936-1939",
+          "text": "1936-1939: Inicio y fin de la guerra.",
+          "quote": "17 de julio de 1936-1 de abril de 1939"
+        },
+        {
+          "year": "1937",
+          "text": "Mar-Nov 1937: Campaña del Norte.",
+          "quote": "Marzo-noviembre de 1937: la campaña del Norte"
+        },
+        {
+          "year": "1937-1938",
+          "text": "Dic 1937-Nov 1938: Batalla de Teruel.",
+          "quote": "Diciembre de 1937-noviembre de 1938: de la batalla de Teruel"
+        },
+        {
+          "year": "1938-1939",
+          "text": "Jul 1938-Feb 1939: Batalla del Ebro.",
+          "quote": "jul. 1938-feb. 1939"
+        },
+        {
+          "year": "1939",
+          "text": "Marzo 1939: Derrota final de la República.",
+          "quote": "Marzo de 1939: derrota de la República"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fases militares principales",
+      "period": "1936-1939",
+      "kind": "subcards",
+      "intro": "Evolución del frente y avances del ejército nacional.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Avance inicial y Jarama",
+          "period": "1936-1937",
+          "bullets": [
+            {
+              "text": "Brutal represión con **2.000 a 4.000 ejecuciones**.",
+              "quote": "2.000 a 4.000 ejecuciones"
+            }
+          ]
+        },
+        {
+          "title": "Campaña del Norte",
+          "period": "1937",
+          "bullets": [
+            {
+              "text": "Campaña del **Norte** entre marzo y noviembre de 1937.",
+              "quote": "Marzo-noviembre de 1937: la campaña del Norte"
+            },
+            {
+              "text": "Franco concentró fuerzas en el **centro** y Mediterráneo.",
+              "quote": "Franco pudo concentrar todas sus fuerzas en el centro"
+            },
+            {
+              "text": "Se benefició de una **industria no destruida**.",
+              "quote": "obtuvo el beneficio de una industria no destruida"
+            }
+          ]
+        },
+        {
+          "title": "Ebro y Cataluña",
+          "period": "1938-1939",
+          "bullets": [
+            {
+              "text": "Batalla del **Ebro** de julio de 1938 a febrero de 1939.",
+              "quote": "jul. 1938-feb. 1939"
+            },
+            {
+              "text": "Franco llegó al Mediterráneo en **Vinaroz** en abril.",
+              "quote": "Franco llegará al Mediterráneo en Vinaroz"
+            },
+            {
+              "text": "El territorio republicano quedó **dividido en dos zonas**.",
+              "quote": "territorio republicano quedaba dividido en 2 zonas"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A dusty battlefield with abandoned tanks and trenches under a grey sky, no people, historical military setting.",
+      "illustration_caption": "Batalla de Guadalajara, primera derrota del fascismo en el campo de batalla."
+    },
+    {
+      "heading": "Consecuencias demográficas y económicas",
+      "period": "1936-1939",
+      "kind": "list",
+      "intro": "Impacto humano y material del conflicto.",
+      "bullets": [
+        {
+          "text": "Se calculan **500.000 muertes**, 160.000 en combate.",
+          "quote": "500.000 muertes, de las cuales unas 160.000 lo fueron en combate"
+        },
+        {
+          "text": "La producción agraria descendió más de un **20%**.",
+          "quote": "producción agraria descendió en más de un 20%"
+        },
+        {
+          "text": "Se produjo una gran **pérdida de población activa**.",
+          "quote": "perdida de población activa"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A ruined city street with broken buildings and rubble, overcast sky, no people, desolate atmosphere.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Consecuencias políticas y sociales",
+      "period": "1939",
+      "kind": "legacy",
+      "intro": "Cambio de régimen y legado político.",
+      "bullets": [
+        {
+          "text": "Fin del **liberalismo político** en España.",
+          "quote": "final del liberalismo político en España"
+        },
+        {
+          "text": "Imposición de una **dictadura militar unipersonal**.",
+          "quote": "dictadura militar de carácter unipersonal"
+        },
+        {
+          "text": "**Prohibición absoluta** de las libertades.",
+          "quote": "absoluta prohibición de las libertades"
+        },
+        {
+          "text": "Involución de los **progresos culturales y sociales**.",
+          "quote": "progresos culturales y sociales... involucionaron"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La victoria nacionalista impuso una dictadura que prohibió las libertades y revirtió los avances sociales de la República.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La guerra duró tres años y terminó con la victoria del bando sublevado.",
+    "El conflicto causó 500.000 muertes y destruyó la economía española.",
+    "La victoria nacionalista impuso una dictadura unipersonal y prohibió las libertades."
+  ],
+  "summary": "La Guerra Civil española (1936-1939) terminó con la victoria del bando sublevado. Causó 500.000 muertes y una grave crisis económica. Su legado fue la instauración de una dictadura unipersonal.",
+  "closing": "La Guerra Civil marcó el inicio de una dictadura y una profunda fractura social que definió la España del siglo XX."
+}

@@ -68,8 +68,25 @@ const MARKDOWN_JUNK = /(^|\s)(#{1,6}\s|```)/;
 // Palabras muy frecuentes del inglés que casi nunca aparecen en un texto en español.
 const ENGLISH = new Set(['the', 'and', 'of', 'with', 'which', 'was', 'were', 'is', 'are', 'this', 'that', 'from', 'by', 'for', 'its', 'their']);
 const SPANISH = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'que', 'un', 'una', 'por', 'con', 'se', 'su', 'para', 'es', 'al']);
-const HAS_FACT = /\d/;
-const numbersIn = (text) => String(text ?? '').match(/\d+/g) ?? [];
+// Cifras sueltas: las pegadas a letras o a ^ y _ son parte de una fórmula
+// (CO2, H2O, x^2, 4ac) y no cuentan como dato.
+const NUMBER = /(?<![\p{L}\d^_])\d+(?![\p{L}\d])/gu;
+// Lo que va entre $…$ es matemática en línea (KaTeX): tampoco cuenta.
+const numbersIn = (text) => String(text ?? '').replace(/\$[^$\n]{1,200}\$/g, ' ').match(NUMBER) ?? [];
+/** «1936-1936» → «1936». */
+const tidyPeriod = (period) => { const m = period.match(/^\s*(\S+)\s*[-–]\s*(\S+)\s*$/); return m && m[1] === m[2] ? m[1] : period; };
+/** Quita el año repetido al principio del texto de una fecha («1085: 1085: Conquista…»). */
+const stripYear = (text, year) => {
+  let out = text;
+  for (let i = 0; i < 2; i++) {
+    const lower = out.toLowerCase();
+    const y = year.toLowerCase();
+    if (!lower.startsWith(y)) break;
+    out = out.slice(year.length).replace(/^[\s:.,–-]+/, '');
+  }
+  return out ? out[0].toUpperCase() + out.slice(1) : text;
+};
+const hasFact = (text) => numbersIn(text).length > 0;
 
 /** Minúsculas, sin tildes ni signos, espacios simples: para comparar citas. */
 export function normalizeForQuote(text) {
@@ -115,8 +132,8 @@ function languageLooksEnglish(text) {
  * - `dropped`: viñetas o fechas con cifras cuya cita no está en la fuente; se
  *   quitan sin reintentar (nunca se enseña un dato sin respaldo).
  * - Las cifras de los textos libres (título, periodos, introducciones,
- *   destacados, pies de foto, ideas, resumen, cierre) tienen que estar ya
- *   respaldadas por alguna viñeta o fecha con cita; si no, es un error grave.
+ *   destacados, pies de foto, ideas, resumen, cierre) tienen que aparecer en
+ *   la fuente; si no, es un error grave.
  * Si no hay fuente (`sources` vacío) no se comprueban citas: el que llama
  * decide si eso se permite (con apuntes o búsqueda siempre hay fuente).
  * @param {unknown} raw
@@ -127,6 +144,7 @@ export function validateScheme(raw, { sources = '' } = {}) {
   let dropped = 0;
   let checkedFacts = 0;
   let foundFacts = 0;
+  /** @type {string[]} */ const droppedTexts = [];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return { scheme: null, errors: ['La respuesta no es un objeto JSON.'], dropped, checkedFacts, foundFacts };
   const r = /** @type {Record<string, any>} */ (raw);
   const sourceNorm = sources ? normalizeForQuote(sources) : '';
@@ -145,7 +163,7 @@ export function validateScheme(raw, { sources = '' } = {}) {
   };
   // Un dato con cifras solo pasa si su cita está en la fuente y contiene todas sus cifras.
   const supported = (text, quote) => {
-    if (!sourceNorm || !HAS_FACT.test(text)) return true;
+    if (!sourceNorm || !hasFact(text)) return true;
     checkedFacts++;
     const quoted = new Set(numbersIn(quote));
     if (quoteFound(quote, sourceNorm) && numbersIn(text).every((n) => quoted.has(n))) {
@@ -154,6 +172,7 @@ export function validateScheme(raw, { sources = '' } = {}) {
       return true;
     }
     dropped++;
+    droppedTexts.push(String(text).slice(0, 160));
     return false;
   };
   const bullets = (list, max, where) => {
@@ -182,18 +201,18 @@ export function validateScheme(raw, { sources = '' } = {}) {
     const hk = normalizeForQuote(heading);
     if (hk && headings.has(hk)) errors.push(`${where}.heading: título de sección repetido.`);
     headings.add(hk);
-    const period = field(s?.period, L.period, `${where}.period`, { required: false, free: true });
+    const period = tidyPeriod(field(s?.period, L.period, `${where}.period`, { required: false, free: true }));
     const kind = SECTION_KINDS.includes(s?.kind) ? s.kind : (errors.push(`${where}.kind: «${clean(s?.kind).slice(0, 20)}» no es un tipo válido.`), 'list');
     const intro = field(s?.intro, L.intro, `${where}.intro`, { required: false, free: true });
     const sectionBullets = bullets(s?.bullets ?? [], L.bullets, `${where}.bullets`);
     const subcards = (Array.isArray(s?.subcards) ? s.subcards : []).slice(0, L.subcards).map((c, j) => ({
       title: field(c?.title, L.subcardTitle, `${where}.subcards[${j + 1}].title`, { free: true }),
-      period: field(c?.period, L.period, `${where}.subcards[${j + 1}].period`, { required: false, free: true }),
+      period: tidyPeriod(field(c?.period, L.period, `${where}.subcards[${j + 1}].period`, { required: false, free: true })),
       bullets: bullets(c?.bullets ?? [], L.subBullets, `${where}.subcards[${j + 1}].bullets`),
     })).filter((c) => c.title && c.bullets.length);
     const dates = (Array.isArray(s?.dates) ? s.dates : []).slice(0, L.dates).flatMap((d, j) => {
       const year = field(d?.year, L.year, `${where}.dates[${j + 1}].year`);
-      const text = field(d?.text, L.dateText, `${where}.dates[${j + 1}].text`);
+      const text = stripYear(field(d?.text, L.dateText, `${where}.dates[${j + 1}].text`), year);
       const quote = clean(d?.quote).slice(0, L.quote);
       return year && text && supported(`${year} ${text}`, quote) ? [{ year, text, quote }] : [];
     });
@@ -216,12 +235,14 @@ export function validateScheme(raw, { sources = '' } = {}) {
   const summary = field(r.summary, L.summary, 'summary', { required: false, free: true });
   const closing = field(r.closing, L.closing, 'closing', { required: false, free: true });
   if (sourceNorm) {
-    const unbacked = [...new Map(freeNumbers.filter(([n]) => !verified.has(n)).map(([n, where]) => [n, where])).entries()];
-    unbacked.slice(0, 6).forEach(([n, where]) => errors.push(`${where}: la cifra ${n} no está en ninguna viñeta o fecha con cita de la fuente. Quítala o añade esa viñeta con su cita.`));
+    // En los textos sin cita solo valen cifras ya respaldadas o que aparecen en la fuente.
+    const inSource = new Set(numbersIn(sources));
+    const unbacked = [...new Map(freeNumbers.filter(([n]) => !verified.has(n) && !inSource.has(n)).map(([n, where]) => [n, where])).entries()];
+    unbacked.slice(0, 6).forEach(([n, where]) => errors.push(`${where}: la cifra ${n} no aparece en la fuente. Quítala.`));
   }
   if (texts.some(languageLooksEnglish) || languageLooksEnglish(texts.join(' '))) errors.push('El texto debe estar en español de España, no en inglés.');
   const scheme = { title, subtitle, subject, sections: kept, key_ideas: keyIdeas, summary, closing };
-  return { scheme: errors.length ? null : scheme, errors: errors.slice(0, 20), dropped, checkedFacts, foundFacts };
+  return { scheme: errors.length ? null : scheme, errors: errors.slice(0, 20), dropped, droppedTexts, checkedFacts, foundFacts };
 }
 
 /**
@@ -235,16 +256,18 @@ export async function generateScheme({ call, messages, sources = '' }) {
   let attempts = 0;
   let last = { errors: ['Sin respuesta.'] };
   let history = messages;
+  /** @type {string[]} */ let firstErrors = [];
   while (attempts < 2) {
     attempts++;
     let raw;
     try { raw = await call(history); }
-    catch (error) { if (attempts >= 2 || error?.name === 'AdmissionError') throw error; last = { errors: ['La respuesta no era JSON válido.'] }; continue; }
+    catch (error) { if (attempts >= 2 || error?.name === 'AdmissionError') throw error; last = { errors: ['La respuesta no era JSON válido.'] }; firstErrors = last.errors; continue; }
     const result = validateScheme(raw, { sources });
-    if (result.scheme) return { ok: true, attempts, ...result };
+    if (result.scheme) return { ok: true, attempts, firstErrors, ...result };
     last = result;
+    if (attempts === 1) firstErrors = result.errors;
     history = [...messages, { role: 'assistant', content: JSON.stringify(raw).slice(0, 12000) },
       { role: 'user', content: `El JSON tiene estos errores. Corrígelos y devuelve el JSON completo otra vez:\n- ${result.errors.join('\n- ')}` }];
   }
-  return { ok: false, attempts, ...last, scheme: null };
+  return { ok: false, attempts, firstErrors, ...last, scheme: null };
 }

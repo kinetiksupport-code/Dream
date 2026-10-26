@@ -4,7 +4,7 @@ import { Baloo_2, Caveat } from "next/font/google";
 import katex from "katex";
 import { ArrowRight, BookOpen, Landmark, Lightbulb, PenLine, TriangleAlert } from "lucide-react";
 import { Fragment, useMemo, type ReactNode } from "react";
-import { layoutScheme, parseBold, PILL_TONES, SUBCARD_TONES, type Scheme, type SchemeBlock, type SchemeCard } from "@/lib/esquema";
+import { layoutScheme, parseInline, PILL_TONES, SUBCARD_TONES, type Scheme, type SchemeBlock, type SchemeCard } from "@/lib/esquema";
 import styles from "./esquema.module.css";
 
 // Autoalojadas por next/font en el build (no se pide nada a Google al ver la página).
@@ -13,10 +13,18 @@ const hand = Caveat({ subsets: ["latin", "latin-ext"], weight: ["500", "600", "7
 
 const KIND_ICON = { examples: PenLine, mistakes: TriangleAlert, legacy: Landmark } as const;
 
+function InlineMath({ tex }: { tex: string }) {
+  // KaTeX escapa el texto y con trust:false no admite \href ni HTML propio.
+  const html = useMemo(() => katex.renderToString(tex, { throwOnError: false, displayMode: false, trust: false, strict: "ignore" }), [tex]);
+  return <span dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 function Rich({ text }: { text: string }) {
   return (
     <>
-      {parseBold(text).map((part, i) => (part.bold ? <strong key={i}>{part.text}</strong> : <Fragment key={i}>{part.text}</Fragment>))}
+      {parseInline(text).map((part, i) =>
+        part.math ? <InlineMath key={i} tex={part.text} /> : part.bold ? <strong key={i}>{part.text}</strong> : <Fragment key={i}>{part.text}</Fragment>,
+      )}
     </>
   );
 }

@@ -816,8 +816,10 @@ CONTENIDO
   list (viñetas), subcards (2–3 subtarjetas con título, periodo y viñetas), dates (fechas clave en orden cronológico, 5–10), formula (una fórmula en LaTeX sin delimitadores, más viñetas que la expliquen), examples (ejemplos), mistakes (errores típicos), legacy (patrimonio, consecuencias o legado).
 - Elige los tipos según la materia: Historia suele llevar subcards, dates y legacy; Matemáticas o Física, formula, examples y mistakes; Lengua, examples y mistakes. No fuerces ningún tipo.
 - period: si la sección abarca una etapa con fechas, «inicio-fin» (por ejemplo «1031-1086»); si no, "".
-- intro: si hace falta, una frase que presente la sección antes de las viñetas; si no, "".
+- intro: casi siempre "". Solo si aporta un dato o una idea que no está en las viñetas (nunca frases de relleno como «Definición básica de…» o «Aplicación paso a paso de…»).
 - Viñetas cortas: una idea por viñeta, 6–20 palabras, sin punto y coma encadenados. Marca con **negrita** solo el concepto clave de la viñeta.
+- Matemáticas dentro del texto, entre $…$ en LaTeX: $b^2 - 4ac$, $x = \\frac{-b}{a}$. Nunca escribas «b^2» suelto.
+- En las fechas, "text" no repite el año: {"year": "1085", "text": "Alfonso VI conquista Toledo."}.
 - highlight: en la sección legacy, una frase destacada con ejemplos concretos; en las demás, "".
 - key_ideas: 2–4 ideas que el alumno debe recordar. summary: 2–3 frases. closing: una frase de cierre que resuma el sentido del tema.
 - Rellena con "" o [] lo que no aplique. Nunca escribas «no consta», «N/A» ni rellenos.

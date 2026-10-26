@@ -1,0 +1,119 @@
+{
+  "title": "Ecuaciones de segundo grado",
+  "subtitle": "Fórmula general, discriminante y ejemplos",
+  "subject": "Matemáticas",
+  "sections": [
+    {
+      "heading": "Forma general y tipos",
+      "period": "",
+      "kind": "list",
+      "intro": "Toda ecuación de segundo grado se ajusta a una estructura estándar.",
+      "bullets": [
+        {
+          "text": "El término **ax²** es obligatorio para que sea de segundo grado.",
+          "quote": "Lógicamente, el término ax2 no puede faltar pues entonces no sería una ecuación de segundo grado"
+        },
+        {
+          "text": "Los términos **bx** y **c** pueden faltar en ecuaciones incompletas.",
+          "quote": "aunque el término bx o el término c sí que pueden faltar en una ecuación concreta"
+        },
+        {
+          "text": "Si la ecuación está desordenada, el primer paso es **ordenarla**.",
+          "quote": "Si se nos presenta una ecuación de segundo grado completa pero desordenada, el primer paso que daremos será ordenarla"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A clean, minimalist diagram showing a balance scale with algebraic terms like ax squared, bx, and c on one side and zero on the other, using soft blue and white",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fórmula general",
+      "period": "",
+      "kind": "formula",
+      "intro": "Esta expresión permite hallar las raíces de cualquier ecuación completa.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [],
+      "formula": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "El discriminante",
+      "period": "",
+      "kind": "list",
+      "intro": "El valor de b² - 4ac indica cuántas soluciones reales existen.",
+      "bullets": [
+        {
+          "text": "Si el discriminante es **cero**, hay una única solución.",
+          "quote": "Si el valor final del discriminante es cero, la ecuación tiene una única solución"
+        },
+        {
+          "text": "Si el discriminante es **negativo**, no hay solución real.",
+          "quote": "Si el valor final del discriminante es negativo, la ecuación no tiene solución real"
+        },
+        {
+          "text": "Si el discriminante es **positivo**, hay dos soluciones reales.",
+          "quote": "la ecuación tiene dos soluciones"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple graph of a parabola intersecting the x-axis at two points, one point, or not at all, with clear labels for positive, zero, and negative discriminant",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ejemplo resuelto",
+      "period": "",
+      "kind": "examples",
+      "intro": "Veamos cómo resolver una ecuación incompleta paso a paso.",
+      "bullets": [
+        {
+          "text": "Las soluciones finales son **x = 7** y **x = -7**.",
+          "quote": "Soluciones : x = 7 y x = -7"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores comunes",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Estos fallos son frecuentes al aplicar la fórmula general.",
+      "bullets": [
+        {
+          "text": "No olvidar **ordenar** la ecuación antes de identificar a, b y c.",
+          "quote": "Si se nos presenta una ecuación de segundo grado completa pero desordenada, el primer paso que daremos será ordenarla de manera que se ajuste a la forma ax2 + bx + c = 0"
+        },
+        {
+          "text": "Verificar que los **coeficientes** sustituidos sean correctos.",
+          "quote": "Una vez identificados los valores numéricos correspondientes a los coeficientes a, b y c ya podemos sustituirlos en"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La fórmula general resuelve ecuaciones completas.",
+    "El discriminante determina el número de soluciones reales.",
+    "Las ecuaciones incompletas tienen métodos de resolución más simples."
+  ],
+  "summary": "Las ecuaciones de segundo grado se resuelven mediante la fórmula general o métodos específicos para ecuaciones incompletas. El discriminante determina si las soluciones son reales, iguales o inexistentes. Es crucial ordenar la ecuación antes de aplicar la fórmula.",
+  "closing": "Dominar la fórmula general y el discriminante permite resolver cualquier ecuación de segundo grado con seguridad."
+}

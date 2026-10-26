@@ -1,0 +1,69 @@
+// TEMPORAL (26/10/2026): banco de pruebas de los esquemas (docs/ESQUEMAS.md,
+// Bloque 0). Usa las claves de Groq y Tavily que ya tiene el proyecto sin
+// exponerlas. Solo hace dos cosas, con parámetros fijos: buscar en Tavily y
+// pedir a Groq un esquema con SCHEME_JSON_SCHEMA. Exige una llave de un solo
+// uso (aquí solo su SHA-256). No registra contenido. Se desactiva al terminar.
+// Copia de SCHEME_JSON_SCHEMA (schemes.mjs) en el commit del PR 85.
+const SCHEME_JSON_SCHEMA = {"type":"object","additionalProperties":false,"required":["title","subtitle","subject","sections","key_ideas","summary","closing"],"properties":{"title":{"type":"string","maxLength":70},"subtitle":{"type":"string","maxLength":150},"subject":{"type":"string","maxLength":40},"sections":{"type":"array","minItems":3,"maxItems":7,"items":{"type":"object","additionalProperties":false,"required":["heading","period","kind","intro","bullets","subcards","dates","formula","highlight","illustration_prompt","illustration_caption"],"properties":{"heading":{"type":"string","maxLength":56},"period":{"type":"string","maxLength":24},"kind":{"type":"string","enum":["list","subcards","dates","formula","examples","mistakes","legacy"]},"intro":{"type":"string","maxLength":260},"bullets":{"type":"array","maxItems":7,"items":{"type":"object","additionalProperties":false,"required":["text","quote"],"properties":{"text":{"type":"string","maxLength":150},"quote":{"type":"string","maxLength":200}}}},"subcards":{"type":"array","maxItems":3,"items":{"type":"object","additionalProperties":false,"required":["title","period","bullets"],"properties":{"title":{"type":"string","maxLength":40},"period":{"type":"string","maxLength":24},"bullets":{"type":"array","maxItems":7,"items":{"type":"object","additionalProperties":false,"required":["text","quote"],"properties":{"text":{"type":"string","maxLength":150},"quote":{"type":"string","maxLength":200}}}}}}},"dates":{"type":"array","maxItems":10,"items":{"type":"object","additionalProperties":false,"required":["year","text","quote"],"properties":{"year":{"type":"string","maxLength":24},"text":{"type":"string","maxLength":100},"quote":{"type":"string","maxLength":200}}}},"formula":{"type":"string","maxLength":200},"highlight":{"type":"string","maxLength":170},"illustration_prompt":{"type":["string","null"],"maxLength":160},"illustration_caption":{"type":"string","maxLength":90}}}},"key_ideas":{"type":"array","maxItems":4,"items":{"type":"string","maxLength":130}},"summary":{"type":"string","maxLength":360},"closing":{"type":"string","maxLength":170}}};
+
+const TOKEN_SHA256 = '<sha256 de la llave de un solo uso>';
+const MODEL = 'qwen/qwen3.8-27b';
+const KEY_NAMES = ['GROQ_API_KEY_1', 'GROQ_API_KEY_2', 'GROQ_API_KEY_3', 'GROQ_API_KEY_4', 'GROQ_API_KEY'];
+
+async function sha256(text: string) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+const keys = (names: string[]) => [...new Set(names.map((n) => Deno.env.get(n)?.trim()).filter((k): k is string => Boolean(k) && !/[\s"']/.test(k!)))];
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') return json({ error: 'not_found' }, 404);
+  if ((await sha256(req.headers.get('x-banco-token') ?? '')) !== TOKEN_SHA256) return json({ error: 'not_found' }, 404);
+  let body: any;
+  try { body = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
+
+  if (body.action === 'search') {
+    const query = String(body.query ?? '').trim();
+    if (!query || query.length > 300) return json({ error: 'bad_query' }, 400);
+    for (const key of keys(['TAVILY_API_KEY_1', 'TAVILY_API_KEY_2', 'TAVILY_API_KEY'])) {
+      const res = await fetch('https://api.tavily.com/search', {
+        method: 'POST', signal: AbortSignal.timeout(15000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ query, search_depth: body.depth === 'advanced' ? 'advanced' : 'basic', max_results: Math.min(6, Number(body.max_results) || 3), include_answer: false,
+          exclude_domains: ['youtube.com', 'facebook.com', 'instagram.com', 'tiktok.com', 'scribd.com', 'pinterest.com'] }),
+      });
+      if (!res.ok) { await res.body?.cancel(); continue; }
+      const data = await res.json();
+      const results = (Array.isArray(data.results) ? data.results : []).map((r: any) => ({ title: String(r.title ?? '').slice(0, 200), url: String(r.url ?? ''), content: String(r.content ?? '').slice(0, 2500) }));
+      return json({ results });
+    }
+    return json({ error: 'search_failed' }, 502);
+  }
+
+  if (body.action === 'groq') {
+    const messages = Array.isArray(body.messages) ? body.messages.slice(0, 6).map((m: any) => ({ role: ['system', 'user', 'assistant'].includes(m?.role) ? m.role : 'user', content: String(m?.content ?? '').slice(0, 20000) })) : [];
+    if (!messages.length) return json({ error: 'bad_messages' }, 400);
+    const started = Date.now();
+    let last = 0;
+    for (const key of keys(KEY_NAMES)) {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', signal: AbortSignal.timeout(90000),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify({
+          model: MODEL, messages, temperature: 0.25, stream: false, max_completion_tokens: 3000,
+          reasoning_format: 'hidden', reasoning_effort: 'none',
+          response_format: { type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema: SCHEME_JSON_SCHEMA } },
+        }),
+      });
+      last = res.status;
+      if (res.status === 429 || res.status >= 500 || res.status === 401) { await res.body?.cancel(); continue; }
+      const data = await res.json();
+      if (!res.ok) return json({ error: 'groq_error', status: res.status, message: String(data?.error?.message ?? '').slice(0, 300) }, 502);
+      return json({ content: data.choices?.[0]?.message?.content ?? '', usage: data.usage ?? null, ms: Date.now() - started,
+        remaining: { requests_day: res.headers.get('x-ratelimit-remaining-requests'), tokens_minute: res.headers.get('x-ratelimit-remaining-tokens') } });
+    }
+    return json({ error: 'groq_unavailable', status: last }, 503);
+  }
+  return json({ error: 'not_found' }, 404);
+});

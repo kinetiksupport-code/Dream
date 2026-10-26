@@ -12,7 +12,7 @@ import {
 } from "../supabase/functions/dream-api/schemes.mjs";
 import { SCHEME_PROMPT, schemeMessages } from "../supabase/functions/dream-api/prompts.mjs";
 import example from "../supabase/functions/dream-api/scheme-example.json" with { type: "json" };
-import { layoutScheme, PALETTE, parseBold } from "../lib/esquema";
+import { layoutScheme, PALETTE, parseBold, parseInline } from "../lib/esquema";
 
 const notes = fs.readFileSync(new URL("../evals/esquemas/apuntes/al-andalus.md", import.meta.url), "utf8");
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,13 +140,24 @@ test("maqueta determinista: tonos, números, columnas, ilustraciones y bloques f
   assert.deepEqual(layoutScheme(scheme, 1).columns, [[0, 1, 2, 3, 4, 5, 6]]);
 });
 
-test("las cifras de los textos libres deben estar respaldadas por una viñeta o fecha con cita", () => {
+test("las cifras de los textos libres deben aparecer en la fuente; las de fórmulas no cuentan", () => {
   const bad = clone(example);
   bad.summary = "En 1300 al-Ándalus vivió su mejor momento.";
   bad.sections[1].period = "1086-1269";
   const { errors } = validateScheme(bad, { sources: notes });
   assert.ok(errors.some((e: string) => e.startsWith("summary: la cifra 1300")));
   assert.ok(errors.some((e: string) => e.includes("period: la cifra 1269")));
+  // 1236 está en la fuente aunque ninguna viñeta lo cite: vale en un periodo.
+  const ok = clone(example);
+  ok.sections[2].period = "1236-1492";
+  assert.deepEqual(validateScheme(ok, { sources: notes }).errors, []);
+  // CO2, H2O o x^2 son fórmulas, no datos que citar.
+  const chem = clone(example);
+  chem.key_ideas.push("Las plantas toman CO2 y H2O; en x^2 el 2 es un exponente.");
+  chem.sections[0].bullets.push({ text: "El CO2 entra por los estomas.", quote: "" });
+  const chemResult = validateScheme(chem, { sources: notes });
+  assert.deepEqual(chemResult.errors, []);
+  assert.equal(chemResult.dropped, 0);
 });
 
 test("negritas: solo **texto**, nunca HTML", () => {
@@ -188,4 +199,23 @@ test("contraste AA de los tonos del esquema en claro y oscuro", async () => {
     }
     assert.deepEqual(failures, []);
   }
+});
+
+test("matemática en línea, años repetidos y periodos iguales", () => {
+  assert.deepEqual(parseInline("Si $b^2 - 4ac > 0$ hay **dos** soluciones").map((p) => [p.text, p.bold, p.math]), [
+    ["Si ", false, false],
+    ["b^2 - 4ac > 0", false, true],
+    [" hay ", false, false],
+    ["dos", true, false],
+    [" soluciones", false, false],
+  ]);
+  const messy = clone(example);
+  messy.sections[3].dates[2].text = "1085: Alfonso VI conquista Toledo.";
+  messy.sections[0].period = "1031-1031";
+  messy.sections[0].bullets.push({ text: "Ejemplo: $x^2 - 5x + 6 = 0$ tiene dos raíces.", quote: "" });
+  const { scheme, errors, dropped } = validateScheme(messy, { sources: notes });
+  assert.deepEqual(errors, []);
+  assert.equal(dropped, 0);
+  assert.equal(scheme!.sections[3].dates[2].text, "Alfonso VI conquista Toledo.");
+  assert.equal(scheme!.sections[0].period, "1031");
 });

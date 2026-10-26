@@ -45,6 +45,19 @@ const exampleModes = args.example === 'con' ? [true] : args.example === 'sin' ? 
 const temperature = args.temperature ? Number(args.temperature) : 0.25;
 const reasoning = args.reasoning && args.reasoning !== true ? String(args.reasoning) : 'none';
 const key = process.env.GROQ_API_KEY ?? process.env.GROQ_API_KEY_1;
+// Modo remoto: una función temporal de Supabase que usa las claves del
+// proyecto sin exponerlas (BANCO_URL y BANCO_TOKEN). Mismo modelo y formato.
+const remote = process.env.BANCO_URL && process.env.BANCO_TOKEN ? { url: process.env.BANCO_URL, token: process.env.BANCO_TOKEN } : null;
+async function viaRemote(body) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const res = await fetch(remote.url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-banco-token': remote.token }, body: JSON.stringify(body) });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 503) { await new Promise((r) => setTimeout(r, 30000)); continue; }
+    if (!res.ok) throw new Error(`remoto ${res.status}: ${data.error ?? ''} ${String(data.message ?? '').slice(0, 200)}`);
+    return data;
+  }
+  throw new Error('remoto: Groq sin cupo tras 4 intentos');
+}
 const tavily = createTavilyManager({ getEnv: (n) => process.env[n], logger: { log() {} } });
 
 // Palabras que siempre llevan tilde (su forma sin tilde no existe en
@@ -52,13 +65,26 @@ const tavily = createTavilyManager({ getEnv: (n) => process.env[n], logger: { lo
 // como esta/está, practica/práctica o periodo/período.
 const ACCENTED = ['también', 'después', 'según', 'además', 'célula', 'fórmula', 'ecuación', 'revolución', 'época', 'química', 'energía', 'razón', 'función', 'oración', 'teoría', 'política', 'económica', 'filosofía', 'fotosíntesis', 'histórico'];
 const strip = (w) => w.normalize('NFD').replace(/[̀-ͯ]/g, '');
-export function accentErrors(text) {
-  const words = String(text).toLowerCase().match(/[\p{L}]+/gu) ?? [];
+// Solo los textos del esquema, nunca los nombres de los campos (p. ej. «formula»).
+const valuesOf = (v) => (typeof v === 'string' ? [v] : Array.isArray(v) ? v.flatMap(valuesOf) : v && typeof v === 'object' ? Object.values(v).flatMap(valuesOf) : []);
+export function accentErrors(value) {
+  const text = typeof value === 'string' ? value : valuesOf(value).join(' ');
+  const words = text.toLowerCase().match(/[\p{L}]+/gu) ?? [];
   const wrong = new Set(ACCENTED.map(strip).filter((w, i) => w !== ACCENTED[i]));
   return words.filter((w) => wrong.has(w)).length;
 }
 
 async function groq(messages, usage) {
+  if (remote) {
+    const data = await viaRemote({ action: 'groq', messages });
+    usage.input += data.usage?.prompt_tokens ?? 0;
+    usage.output += data.usage?.completion_tokens ?? 0;
+    usage.ms += data.ms ?? 0;
+    usage.remaining = data.remaining;
+    // Respeta el límite por minuto de la clave (~8.000 tokens/min).
+    await new Promise((r) => setTimeout(r, Number(process.env.BANCO_PAUSE_MS ?? 20000)));
+    return JSON.parse(data.content);
+  }
   const started = Date.now();
   for (let attempt = 0; attempt < 4; attempt++) {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -87,13 +113,16 @@ async function sourcesFor(topic, mode) {
     const file = path.join(root, 'evals/esquemas/apuntes', `${topic.slug}.md`);
     return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
   }
-  if (!tavily.configured()) return '';
-  const results = JSON.parse(await tavily.search(topic.query));
+  let results;
+  // Búsqueda en español, para estudiantes, con resultados más completos.
+  if (remote) results = (await viaRemote({ action: 'search', query: `${topic.query} apuntes ${topic.level}`, max_results: 5, depth: 'advanced' })).results;
+  else if (!tavily.configured()) return '';
+  else results = JSON.parse(await tavily.search(topic.query));
   return results.map((r) => `[${r.title}] (${r.url})\n${r.content}`).join('\n\n');
 }
 
 async function main() {
-  if (!key) { console.error('Falta GROQ_API_KEY (o GROQ_API_KEY_1). El banco necesita las claves reales.'); process.exit(2); }
+  if (!key && !remote) { console.error('Falta GROQ_API_KEY (o GROQ_API_KEY_1). El banco necesita las claves reales.'); process.exit(2); }
   const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   const out = path.join(root, 'evals/esquemas/resultados', stamp);
   fs.mkdirSync(out, { recursive: true });
@@ -113,9 +142,10 @@ async function main() {
         fs.writeFileSync(path.join(out, `${name}.fuente.txt`), sources);
         const row = {
           name, topic: topic.slug, mode, example: withExample, ok: result.ok, firstTry: result.ok && result.attempts === 1,
-          attempts: result.attempts, errors: result.ok ? [] : result.errors, dropped: result.dropped ?? 0,
+          attempts: result.attempts, errors: result.ok ? [] : result.errors, dropped: result.dropped ?? 0, droppedTexts: result.droppedTexts ?? [],
           facts: result.checkedFacts ?? 0, factsWithQuote: result.foundFacts ?? 0,
-          accentErrors: result.scheme ? accentErrors(JSON.stringify(result.scheme)) : null,
+          accentErrors: result.scheme ? accentErrors(result.scheme) : null,
+          firstErrors: result.firstErrors ?? [], groqRemaining: usage.remaining ?? null,
           tokens: usage.input + usage.output, inputTokens: usage.input, outputTokens: usage.output, ms: usage.ms,
           // Se rellena a mano tras revisar cada esquema contra su fuente.
           manualWrongFacts: null,

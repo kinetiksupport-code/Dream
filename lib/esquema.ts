@@ -145,3 +145,12 @@ export function parseBold(text: string) {
   if (last < text.length) parts.push({ text: text.slice(last), bold: false });
   return parts;
 }
+
+/** Trozos de texto, negrita y matemática en línea ($…$, para KaTeX). */
+export function parseInline(text: string) {
+  return text.split(/(\$[^$\n]{1,200}\$)/g).flatMap((chunk) =>
+    /^\$[^$\n]{1,200}\$$/.test(chunk)
+      ? [{ text: chunk.slice(1, -1), bold: false, math: true }]
+      : parseBold(chunk).map((part) => ({ ...part, math: false })),
+  );
+}
