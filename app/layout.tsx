@@ -3,6 +3,11 @@ import { Inter, Lexend } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { THEME_COLORS } from "@/lib/theme";
 import { READING_BOOT } from "@/lib/reading";
+// KaTeX styles in the global stylesheet, on every page: without them each
+// formula shows twice and out of order ("246100100246" for 246/100), and a
+// stylesheet that only arrives with the chat's chunks can be late or missing
+// (a cached app shell after a deploy).
+import "katex/dist/katex.min.css";
 import "./globals.css";
 // Claude Design: the system stack (SF Pro on Apple) with Inter everywhere
 // else. The font variables live on <html> so --font-stack, defined on :root,

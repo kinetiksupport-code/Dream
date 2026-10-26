@@ -25,7 +25,7 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npx --yes deno@2.9.6 check --config supabase/functions/dream-api/deno.json supabase/functions/dream-api/index.ts
-      - run: npx --yes deno@2.9.6 test --config supabase/functions/dream-api/deno.json --allow-read --allow-env --allow-net=127.0.0.1 supabase/tests/security_deno.mjs supabase/tests/uploads_deno.mjs supabase/tests/exam_wizard_deno.mjs supabase/tests/exam_route_deno.mjs
+      - run: npx --yes deno@2.9.6 test --config supabase/functions/dream-api/deno.json --allow-read --allow-env --allow-net=127.0.0.1 supabase/tests/security_deno.mjs supabase/tests/uploads_deno.mjs supabase/tests/exam_wizard_deno.mjs supabase/tests/exam_route_deno.mjs supabase/tests/fact_check_deno.mjs
       - run: npm audit --omit=dev --audit-level=high
       - name: Bootstrap isolated database and admission migration
         env:

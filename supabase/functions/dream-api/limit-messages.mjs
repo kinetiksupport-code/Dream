@@ -14,7 +14,7 @@ const PROVIDERS = new Set(['GroqProviderError', 'CloudflareProviderError']);
 
 export const SEARCH_UNAVAILABLE_NOTICE = 'La búsqueda web no está disponible ahora mismo, así que te respondo sin buscar en internet.';
 // Para la IA cuando la búsqueda ha fallado o no está configurada.
-export const SEARCH_UNAVAILABLE_PROMPT = 'La búsqueda web no está disponible ahora. Responde sin buscar con lo que sepas, di que no has podido comprobarlo en internet y no inventes datos recientes.';
+export const SEARCH_UNAVAILABLE_PROMPT = 'La búsqueda web no está disponible ahora. Responde sin buscar solo con lo que sepas con seguridad, di que no has podido comprobarlo en internet y, si no estás seguro, di que no lo sabes con claridad. No inventes datos.';
 
 /** «20 segundos», «1 minuto», «3 minutos». */
 export function waitText(seconds) {

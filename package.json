@@ -13,7 +13,8 @@
     "design:check:browser": "playwright test tests/browser/design.spec.ts",
     "test:browser": "playwright test",
     "format": "prettier --write app components lib tests *.ts *.mjs",
-    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs",
+    "eval:ia": "node evals/comparar-modelos.mjs",
+    "test:security-db": "node scripts/security/integration.mjs && node scripts/security/grading-integration.mjs && node scripts/security/forced-search-integration.mjs",
     "test:load-server": "node scripts/security/load-server.mjs"
   },
   "keywords": [],
