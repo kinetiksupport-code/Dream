@@ -100,6 +100,10 @@ const components: Components = {
       {children}
     </a>
   ),
+  // Model text can carry ![](https://…) planted by a web page or an uploaded
+  // document; an <img> would load it with no click and send whatever the URL
+  // holds to that host (auditoría SEC-04). Only the alt text is shown.
+  img: ({ alt }) => (alt ? <span className="markdown-img-alt">{alt}</span> : null),
 };
 
 const Block = memo(function Block({
