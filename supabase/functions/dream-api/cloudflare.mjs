@@ -29,6 +29,8 @@ function validSecret(value, pattern) {
 
 // Segundos hasta la medianoche UTC: el cupo gratuito diario de Workers AI
 // («neuronas») se reinicia a las 00:00 UTC.
+export { validSecret };
+
 export function secondsToUtcMidnight(now = Date.now()) {
   const d = new Date(now);
   const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
@@ -39,17 +41,25 @@ const toProviderError = (error, emittedContent = false) =>
   error instanceof CloudflareProviderError ? error
     : new CloudflareProviderError(error?.code || 'network_or_timeout', { retryable: error?.retryable ?? true, emittedContent });
 
+/**
+ * Mismo cliente para cualquier proveedor compatible con OpenAI. Por defecto,
+ * Cloudflare; openrouter.mjs lo usa con otro nombre, endpoint, clave y cuerpo.
+ */
 export function createCloudflareProvider({
   getEnv = (name) => Deno.env.get(name), fetchImpl = fetch,
   now = () => Date.now(), logger = console,
+  name = 'cloudflare',
+  credentialsFrom = (env) => {
+    const key = validSecret(env(CLOUDFLARE_KEY_NAME), /^[^\s"']{20,200}$/);
+    const account = validSecret(env(CLOUDFLARE_ACCOUNT_NAME), /^[0-9a-f]{32}$/i);
+    return key && account ? { key, account } : null;
+  },
+  endpointFor = (creds) => cloudflareEndpoint(creds.account),
+  bodyFor = (body) => body,
 } = {}) {
   let health = { failures: 0, cooldownUntil: 0 };
-  const credentials = () => {
-    const key = validSecret(getEnv(CLOUDFLARE_KEY_NAME), /^[^\s"']{20,200}$/);
-    const account = validSecret(getEnv(CLOUDFLARE_ACCOUNT_NAME), /^[0-9a-f]{32}$/i);
-    return key && account ? { key, account } : null;
-  };
-  const log = (fields) => logger.log(JSON.stringify({ provider: 'cloudflare', ...fields }));
+  const credentials = () => credentialsFrom(getEnv);
+  const log = (fields) => logger.log(JSON.stringify({ provider: name, ...fields }));
   const fail = (kind) => {
     const failures = health.failures + 1;
     const cooldown = kind === 'auth' ? AUTH_COOLDOWN_MS : failures >= 2 ? TRANSIENT_COOLDOWN_MS : 0;
@@ -63,15 +73,15 @@ export function createCloudflareProvider({
       throw new CloudflareProviderError('provider_unavailable', { status: 503, retryable: true, retryAfter: Math.ceil((health.cooldownUntil - now()) / 1000) });
     }
     if (signal?.aborted) throw new CloudflareProviderError('aborted');
-    const reservation = await beforeAttempt?.('cloudflare', body);
+    const reservation = await beforeAttempt?.(name, body);
     const started = now();
     let response;
     try {
       const attempt = AbortSignal.timeout(timeoutMs);
-      response = await fetchImpl(cloudflareEndpoint(creds.account), {
+      response = await fetchImpl(endpointFor(creds), {
         method: 'POST', signal: signal ? AbortSignal.any([signal, attempt]) : attempt,
         headers: { Authorization: `Bearer ${creds.key}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify(bodyFor(body)),
       });
     } catch {
       if (signal?.aborted) throw new CloudflareProviderError('aborted');
@@ -87,7 +97,7 @@ export function createCloudflareProvider({
       const header = response.headers.get('retry-after');
       const retryAfter = header ? retryAfterSeconds(header, now()) : secondsToUtcMidnight(now());
       log({ generation: generationId, operation, result: 'rate_limit', retry_after: retryAfter });
-      await pause?.('cloudflare', retryAfter);
+      await pause?.(name, retryAfter);
       throw new CloudflareProviderError(retryAfter > 15 * 60 ? 'provider_daily_limit' : 'provider_rate_limit', { status: 429, retryAfter });
     }
     const kind = response.status === 401 || response.status === 403 ? 'auth'

@@ -7,6 +7,16 @@ import { readNDJSON, DreamStreamError } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
+  | "special_welcome_seen"
+  | "memory_list"
+  | "memory_toggle"
+  | "memory_delete"
+  | "memory_delete_all"
+  | "memory_pin"
+  | "memory_import_preview"
+  | "memory_import_commit"
+  | "memory_seen"
+  | "data_export"
   | "exam_create"
   | "exam_get"
   | "exam_update"
@@ -260,6 +270,10 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile: DreamProfile | null;
     service_ready?: boolean;
     ban?: { until?: string | null; permanent?: boolean; rule?: string | null } | null;
+    special_account?: { welcome?: unknown } | null;
+    features?: { memory?: unknown; memory_import?: unknown };
+    memory_enabled?: unknown;
+    memory_new?: unknown;
   }>("profile", {}, signal);
   const p = data?.profile;
   if (!p || typeof p !== "object") {
@@ -297,7 +311,26 @@ export async function getDreamProfile(signal?: AbortSignal) {
       permanent: data.ban.permanent === true,
       rule: typeof data.ban.rule === "string" ? data.ban.rule : null,
     };
+  // Memoria entre chats: solo si dream-api la tiene encendida.
+  if (data.features?.memory === true) {
+    profile.memory_feature = true;
+    profile.memory_import_feature = data.features.memory_import === true;
+    profile.memory_enabled = data.memory_enabled === true;
+    profile.memory_new =
+      typeof data.memory_new === "number" && data.memory_new > 0
+        ? Math.min(40, Math.floor(data.memory_new))
+        : 0;
+  }
+  // Bienvenida de Loyola: texto corto del servidor, una sola vez.
+  const welcome = data.special_account?.welcome;
+  if (typeof welcome === "string" && welcome.length <= 200)
+    profile.special_welcome = welcome;
   return { profile, service_ready: data.service_ready ?? true };
+}
+
+/** La bienvenida de Loyola ya se ha visto: no vuelve a salir. */
+export async function markSpecialWelcomeSeen() {
+  await callDream("special_welcome_seen", {});
 }
 
 /*

@@ -4,7 +4,7 @@
 //   alumno a la cola. Solo si el respaldo está activado.
 // - «Pensar más» va directo a Cloudflare, sin respaldo.
 // - Nada de esto reintenta cuando ya ha llegado texto al alumno.
-import { estimateWindowTokens, actualTokens } from './usage-window.mjs';
+import { actualTokens, estimateWindowTokens, studentActualTokens, studentWindowTokens } from './usage-window.mjs';
 
 const FALLBACK_CODES = new Set([
   'all_keys_cooling_down', 'provider_unavailable', 'network_or_timeout',
@@ -68,16 +68,19 @@ export function createAttemptTracker({ admission, limiter, mode }) {
   async function charge(provider, body) {
     await refundPending();
     const reservation = await admission.beforeAttempt(provider, body);
+    // Contra el límite del alumno solo cuenta su parte (usage-window.mjs ›
+    // studentInputTokens). El respaldo no cuenta: se registra entero, para medir.
+    const kind = provider === mode.provider ? 'mode' : 'fallback';
     const windowCharge = await limiter.charge({
-      mode: mode.id, kind: provider === mode.provider ? 'mode' : 'fallback', provider,
-      tokens: estimateWindowTokens(body),
+      mode: mode.id, kind, provider,
+      tokens: kind === 'mode' ? studentWindowTokens(body) : estimateWindowTokens(body),
     });
     pending.add(windowCharge);
     return {
       reconcile: async (usage) => {
         await reservation?.reconcile?.(usage).catch(() => {});
         pending.delete(windowCharge);
-        await windowCharge.settle(actualTokens(usage)).catch(() => {});
+        await windowCharge.settle(kind === 'mode' ? studentActualTokens(body, usage) : actualTokens(usage)).catch(() => {});
       },
     };
   }

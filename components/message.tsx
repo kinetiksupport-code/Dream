@@ -10,6 +10,7 @@ import {
   RotateCw,
 } from "lucide-react";
 import { Markdown } from "./markdown";
+import { plainMath } from "@/lib/math";
 import { AiStatus } from "./ai-status";
 import { WebSources } from "./web-sources";
 import { useReveal } from "./use-reveal";
@@ -155,7 +156,7 @@ export const MessageView = memo(function MessageView({
             aria-label={copied ? "Copiado" : "Copiar respuesta"}
             onClick={async () => {
               try {
-                await navigator.clipboard.writeText(parsed.text);
+                await navigator.clipboard.writeText(plainMath(parsed.text));
                 setError("");
                 setTouched(true);
                 setCopied(true);

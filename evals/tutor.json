@@ -1,0 +1,28 @@
+{
+  "description": "Casos fijos de tutor (un paso por mensaje, sin dar la solución). Ver evals/README.md.",
+  "defaults": { "forbidden": ["¿Te queda claro", "¿lo entiendes", "¿Lo entiendes", "Sin embargo"], "noLists": true, "noHeadings": true },
+  "cases": [
+    {
+      "id": "sintagmas-22-oct",
+      "category": "caso-real",
+      "note": "Caso real de Carlos (22/10/2026). En producción el alumno sube una foto; aquí va el texto de sus apuntes. Respuesta esperada: «Casi. *Libro* es el núcleo del grupo entero, sí. Pero fíjate en «de la biblioteca»: ahí dentro hay otro grupo nominal más pequeño. ¿Cuál sería su palabra central?»",
+      "messages": [{ "role": "user", "content": "Es un ejercicio de clase de análisis sintáctico. En mis apuntes tengo: «el libro de la biblioteca» = [SN [Det el] [N libro] [SPrep de la biblioteca]]. He puesto que libro es el núcleo (N) y ya está. ¿Está bien?" }],
+      "expect": { "maxWords": 60, "singleQuestion": true, "endsWithQuestion": true, "mustNotMatch": "n[uú]cleo[^.?!]*biblioteca|biblioteca[^.?!]*n[uú]cleo|Nc si tu profe|depende de tu profe" }
+    },
+    {
+      "id": "ecuacion-deberes",
+      "messages": [{ "role": "user", "content": "deberes: resuelve 2x + 6 = 14" }],
+      "expect": { "maxWords": 70, "endsWithQuestion": true, "mustNotMatch": "x\\s*=\\s*4" }
+    },
+    {
+      "id": "intento-mal",
+      "messages": [{ "role": "user", "content": "en mis deberes: 3x = 12, he puesto x = 9. ¿bien?" }],
+      "expect": { "maxWords": 70, "endsWithQuestion": true, "mustNotMatch": "x\\s*=\\s*4" }
+    },
+    {
+      "id": "concepto-normal",
+      "messages": [{ "role": "user", "content": "¿qué es la fotosíntesis?" }],
+      "expect": { "maxWords": 120 }
+    }
+  ]
+}

@@ -4603,3 +4603,64 @@ fieldset:disabled .test-option {
     opacity: 0;
   }
 }
+
+/* Ajustes › Lo que Dream recuerda (components/memory-settings.tsx). */
+.memory-group {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.memory-kind {
+  font-size: var(--text-small);
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 0 8px;
+}
+.memory-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.memory-actions .icon-action,
+.memory-import .icon-action {
+  min-width: 44px;
+  min-height: 44px;
+}
+.memory-import {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+.memory-prompt {
+  white-space: pre-wrap;
+  font: inherit;
+  font-size: var(--text-small);
+  line-height: 1.5;
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  max-height: 200px;
+  overflow-y: auto;
+}
+.memory-paste {
+  width: 100%;
+  font: inherit;
+  padding: 12px 16px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border, currentColor);
+  background: var(--surface);
+  color: inherit;
+  resize: vertical;
+}
+.memory-choice {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0 8px;
+}
+.memory-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}

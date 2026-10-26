@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { costSentence, formatResetIn } from "@/lib/ai-modes";
+import { costSentence, formatResetIn, messagesLeftText } from "@/lib/ai-modes";
 import { useAiUsage } from "@/lib/use-ai-usage";
 
 /**
@@ -18,6 +18,7 @@ export function UsageLimits() {
   const open = Number.isFinite(ends) && ends > now;
   const percent = open ? usage.percent : 0;
   const label = `Has usado el ${percent} % de tu IA.`;
+  const left = open ? messagesLeftText(usage.messages_left) : "";
   const costs = costSentence(usage.modes);
   return (
     <section className="group" aria-labelledby="usage-title">
@@ -56,7 +57,7 @@ export function UsageLimits() {
         {error
           ? "No se pudo consultar tu uso ahora."
           : open
-            ? `Se reinicia en ${formatResetIn(ends - now)}.`
+            ? `${left ? `${left} ` : ""}Se reinicia en ${formatResetIn(ends - now)}.`
             : "Aún no has empezado una ventana de uso."}
       </p>
       {costs && <p className="usage-reset">{costs}</p>}

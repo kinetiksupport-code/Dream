@@ -292,7 +292,8 @@ export async function moderationEntry({ rpc, headers, userId, env, now = Date.no
 
 export const BAN_MESSAGE = "Has sido baneado de la plataforma.";
 /** Lo único que puede hacer una cuenta baneada: ver su pantalla, apelar y borrar su cuenta. */
-export const BAN_ALLOWED_ACTIONS = new Set(["profile", "mod_ban_info", "mod_appeal_create", "account_delete"]);
+// «Descargar mis datos» también: el derecho de acceso no se pierde por un baneo.
+export const BAN_ALLOWED_ACTIONS = new Set(["profile", "mod_ban_info", "mod_appeal_create", "account_delete", "data_export"]);
 
 /**
  * Estado de baneo de una cuenta, leído de la base en cada petición (no hay

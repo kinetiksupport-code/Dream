@@ -13,7 +13,9 @@ export const WELCOME_STEPS = [
   { key: "edad", label: "Tu edad" },
   { key: "ia", label: "Vas a hablar con una IA" },
 ] as const;
-export type WelcomeStep = (typeof WELCOME_STEPS)[number]["key"] | "listo" | "menor";
+// "memoria" and "otraia" only exist when dream-api has the memory switched on
+// (profile.memory_feature); they sit between the nickname and the age.
+export type WelcomeStep = (typeof WELCOME_STEPS)[number]["key"] | "memoria" | "otraia" | "listo" | "menor";
 
 export const LIMITS = { name: 40, nickname: 20, interest: 30, interests: 8 } as const;
 

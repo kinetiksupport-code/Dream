@@ -138,7 +138,12 @@ export const CONSENT_WITHDRAWN = {
 
 export async function mock(
   page: Page,
-  opts: { pendingChat?: boolean; profile?: Record<string, unknown> } = {},
+  opts: {
+    pendingChat?: boolean;
+    profile?: Record<string, unknown>;
+    /** Extra top-level fields of the `profile` answer (e.g. `features`). */
+    extra?: Record<string, unknown>;
+  } = {},
 ) {
   let profile: Record<string, unknown> = {
     email: "alex@example.test",
@@ -197,7 +202,7 @@ export async function mock(
     }
     if (b.action === "consent_withdraw") profile = { ...profile, ai_consent_at: null };
     const data: Record<string, unknown> = {
-      profile: { profile, service_ready: true },
+      profile: { profile, service_ready: true, ...opts.extra },
       onboarding_age: { allowed },
       conversations: { items: conversations },
       messages: { items: messages, next_offset: null },

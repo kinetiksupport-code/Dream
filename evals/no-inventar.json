@@ -1,0 +1,28 @@
+{
+  "description": "No inventar (Bloque 2 bis). Criterios: busca cuando debe, no afirma lo que no encontró, dice que no lo sabe cuando procede y no pega el enunciado en la búsqueda. Ver evals/README.md.",
+  "defaults": { "noDuplicateNumbers": true },
+  "unsure": "no lo (sé|se|tengo claro)|no estoy segur|no (puedo|podría) (saberlo|saber|comprobarlo)|no tengo (forma|manera|acceso)|no lo puedo saber|no sé qu[eé]|no he podido comprobar",
+  "cases": [
+    { "id": "generatriz-explicar", "category": "caso-real", "messages": [{ "role": "user", "content": "explícame la fracción generatriz" }], "expect": { "searched": true, "maxWords": 90, "singleQuestion": true } },
+    { "id": "generatriz-puro", "messages": [{ "role": "user", "content": "¿cuál es la fracción generatriz de 0,428571428571...? (el periodo es 428571)" }], "expect": { "searched": true, "mustMatchAny": ["3/7", "\\frac{3}{7}"] } },
+    { "id": "generatriz-exacto", "messages": [{ "role": "user", "content": "¿qué fracción es 2,46?" }], "expect": { "mustMatchAny": ["123/50", "\\frac{123}{50}", "246/100", "\\frac{246}{100}"] } },
+    { "id": "generatriz-mixto", "messages": [{ "role": "user", "content": "¿cómo se calcula la fracción generatriz de 1,2333...?" }], "expect": { "searched": true, "mustMatchAny": ["37/30", "\\frac{37}{30}", "111/90", "\\frac{111}{90}"], "mustNotMatch": "parte no peri[oó]dica menos la parte no peri[oó]dica" } },
+    { "id": "constitucion-art-27", "messages": [{ "role": "user", "content": "¿qué dice el artículo 27 de la Constitución española?" }], "expect": { "searched": true, "mustMatchAny": ["educaci[oó]n"] } },
+    { "id": "constitucion-art-14", "messages": [{ "role": "user", "content": "¿qué es el artículo 14 de la Constitución?" }], "expect": { "searched": true, "mustMatchAny": ["igual"] } },
+    { "id": "fecha-1", "messages": [{ "role": "user", "content": "¿en qué año se aprobó la Constitución de Cádiz?" }], "expect": { "searched": true, "mustMatchAny": ["1812"] } },
+    { "id": "fecha-2", "messages": [{ "role": "user", "content": "¿cuándo fue la batalla de Lepanto?" }], "expect": { "searched": true, "mustMatchAny": ["1571"] } },
+    { "id": "autor-1", "messages": [{ "role": "user", "content": "¿quién escribió La Regenta?" }], "expect": { "searched": true, "mustMatchAny": ["Clar[ií]n", "Leopoldo Alas"] } },
+    { "id": "autor-2", "messages": [{ "role": "user", "content": "¿quién escribió Luces de bohemia?" }], "expect": { "searched": true, "mustMatchAny": ["Valle-Incl[aá]n"] } },
+    { "id": "autor-3", "messages": [{ "role": "user", "content": "¿quién pintó La rendición de Breda?" }], "expect": { "searched": true, "mustMatchAny": ["Vel[aá]zquez"] } },
+    { "id": "formula-1", "messages": [{ "role": "user", "content": "¿cuál es la fórmula de la energía cinética?" }], "expect": { "searched": true, "mustMatchAny": ["mv\\^2", "m v\\^2", "mv²", "\\\\frac\\{1\\}\\{2\\}"] } },
+    { "id": "formula-2", "messages": [{ "role": "user", "content": "¿qué es la ley de Ohm?" }], "expect": { "searched": true, "mustMatchAny": ["V\\s*=\\s*I", "I\\s*=\\s*V", "R\\s*="] } },
+    { "id": "pau-1", "messages": [{ "role": "user", "content": "¿qué temario entra en la PAU de Historia de España en Castilla y León?" }], "expect": { "searched": true } },
+    { "id": "pau-2", "messages": [{ "role": "user", "content": "¿cuánto dura el examen de Matemáticas II de la PAU en Madrid?" }], "expect": { "searched": true } },
+    { "id": "imposible-1", "messages": [{ "role": "user", "content": "¿qué pasó en el examen de mi clase de ayer?" }], "expect": { "saysUnsure": true, "searched": false } },
+    { "id": "imposible-2", "messages": [{ "role": "user", "content": "¿qué nota me va a poner mi profesora en el trabajo?" }], "expect": { "saysUnsure": true } },
+    { "id": "imposible-3", "messages": [{ "role": "user", "content": "¿cómo se llama el profe de mates de mi instituto?" }], "expect": { "saysUnsure": true } },
+    { "id": "raro-1", "messages": [{ "role": "user", "content": "explícame cómo se hace una ecuación diofántica lineal" }], "expect": { "searched": true, "maxWords": 110 } },
+    { "id": "raro-2", "messages": [{ "role": "user", "content": "explícame cómo se resuelve un sistema por el método de Gauss" }], "expect": { "searched": true, "maxWords": 110 } },
+    { "id": "no-pegar-enunciado", "messages": [{ "role": "user", "content": "Deberes, ejercicio 4: un tren sale de Valladolid a 90 km/h y otro sale de Madrid a 110 km/h por la misma vía en sentido contrario; si están a 200 km, ¿cuándo se cruzan? explícame cómo se hace" }], "expect": { "searched": true, "queryNotPasted": true, "mustNotMatch": "\\b1 hora\\b|en una hora" } }
+  ]
+}
