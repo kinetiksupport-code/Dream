@@ -73,16 +73,19 @@ async function mockApi(page: Page, opts: { admin: boolean; aal2?: boolean }) {
   return calls;
 }
 
-test("signed out, the panel path and the usual admin paths look exactly like a missing page", async ({ page, request }) => {
+test("signed out, the usual admin paths look exactly like a missing page and the panel path sends you to Inicio", async ({ page, request }) => {
   const texts: string[] = [];
   for (const path of ["/revision", "/admin", "/panel", "/administracion", "/panel-interno", "/no-existe-nada"]) {
     const res = await request.get(path);
     expect(res.status(), path).toBe(404);
+    if (path === "/revision") continue;
     await page.goto(path);
     await expect(page.getByRole("heading", { name: NOT_FOUND })).toBeVisible();
     texts.push(await page.locator("main").innerText());
   }
   expect(new Set(texts).size, "mismo contenido visible en todas").toBe(1);
+  await page.goto("/revision");
+  await expect(page).toHaveURL((url) => url.pathname === "/");
   // Cabeceras: solo la ruta del panel lleva la CSP estricta y no se puede encuadrar ni cachear.
   const panel = await request.get("/revision");
   expect(panel.headers()["content-security-policy"]).toMatch(/script-src 'self' 'nonce-[^']+' 'sha256-[^']+' 'strict-dynamic'/);
@@ -93,16 +96,16 @@ test("signed out, the panel path and the usual admin paths look exactly like a m
   expect((await request.get("/panel-interno")).headers()["content-security-policy"]).toBeUndefined();
 });
 
-test("a signed-in student sees the 404 page on the panel path and no menu entry", async ({ page }) => {
+test("a signed-in student with another email is sent to Inicio from the panel path and has no menu entry", async ({ page }) => {
   await signIn(page, STUDENT, "alumno@example.test");
   const calls = await mockApi(page, { admin: false });
   await page.goto("/chat");
   await expect(page.getByRole("navigation", { name: "Principal" })).toBeVisible();
   await expect(page.getByText("Panel de administración")).toHaveCount(0);
   await page.goto("/revision");
-  await expect(page.getByRole("heading", { name: NOT_FOUND })).toBeVisible();
   await expect.poll(() => calls.includes("admin_mfa_status")).toBe(true);
-  await expect(page.getByRole("heading", { name: NOT_FOUND })).toBeVisible();
+  await expect(page).toHaveURL((url) => url.pathname === "/chat");
+  expect(calls.filter((a) => a.startsWith("admin_") && a !== "admin_mfa_status")).toEqual([]);
   await expect(page.getByText("Panel de administración")).toHaveCount(0);
 });
 

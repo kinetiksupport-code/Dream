@@ -18,7 +18,7 @@ Nada de roles en `user_metadata`: el usuario puede editarlo, así que se ignora.
 
 ## Ruta
 
-El panel no está en `/admin`. Está en **`/revision`** (configurable con `ADMIN_PANEL_PATH`, en Vercel **y** en los secretos de `dream-api`, con el mismo valor). `/admin`, `/panel`, `/administracion` y la página interna dan el 404 de siempre. Quien no es el administrador ve la misma página 404 también en la ruta del panel. Una ruta oculta no es seguridad por sí sola: es una capa extra.
+El panel no está en `/admin`. Está en **`/revision`** (configurable con `ADMIN_PANEL_PATH`, en Vercel **y** en los secretos de `dream-api`, con el mismo valor). `/admin`, `/panel`, `/administracion` y la página interna dan el 404 de siempre. Quien entra en la ruta del panel con otro correo (o sin sesión) va directo a Inicio (`/chat`, o la portada si no ha entrado): solo `hellodream@edudream.es` lo ve. Una ruta oculta no es seguridad por sí sola: es una capa extra.
 
 ## Cómo se activa
 
