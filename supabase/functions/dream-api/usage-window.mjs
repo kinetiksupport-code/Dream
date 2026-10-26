@@ -13,7 +13,7 @@
 // La cuenta atómica vive en Postgres (dream_ai_window_charge); aquí solo hay
 // funciones puras y la llamada a las RPC.
 import { AdmissionError, checkedRPC } from './admission.mjs';
-import { MODES, SHARED_WINDOW_BUDGET, WINDOW_MS, availableModes, relativeCost, weightedTokens } from './models.mjs';
+import { MODES, SHARED_WINDOW_BUDGET, TYPICAL_MESSAGE_TOKENS, WINDOW_CONTEXT_SHARE, WINDOW_MS, availableModes, relativeCost, weightedTokens } from './models.mjs';
 
 export const WINDOW_LIMIT_CODE = 'dream_mode_limit';
 
@@ -56,6 +56,8 @@ export function usageSummary(data, { now = Date.now(), modes = availableModes(),
     percent,
     blocked,
     resets_at,
+    // «Te quedan unos N mensajes» (aproximado; nunca tokens).
+    messages_left: state.open ? messagesLeft(used, budget) : messagesLeft(0, budget),
     modes: modes.map((mode) => ({
       id: mode.id,
       label: mode.label,
@@ -76,6 +78,64 @@ export function estimateWindowTokens(body) {
   for (const m of messages) chars += typeof m?.content === 'string' ? m.content.length : JSON.stringify(m?.content ?? '').length;
   const output = Number(body?.max_tokens ?? body?.max_completion_tokens ?? 0) || 0;
   return Math.ceil(chars / 3.5) + messages.length * 4 + output;
+}
+
+const chars = (m) => (typeof m?.content === 'string' ? m.content.length : JSON.stringify(m?.content ?? '').length);
+// Los apuntes del alumno van en un mensaje de sistema (prompts.mjs): cuentan como contexto.
+const isStudentMaterial = (m) => m?.role === 'system' && typeof m.content === 'string' && m.content.startsWith('Contexto de archivos adjuntos');
+
+/**
+ * Tokens de ENTRADA que paga el alumno: su último mensaje entero y
+ * WINDOW_CONTEXT_SHARE del historial, sus apuntes y los resultados de
+ * herramientas. El resto de mensajes de sistema no cuenta (coste de Dream).
+ */
+export function studentInputTokens(body, share = WINDOW_CONTEXT_SHARE) {
+  const messages = Array.isArray(body?.messages) ? body.messages : [];
+  let lastUser = -1;
+  messages.forEach((m, i) => { if (m?.role === 'user') lastUser = i; });
+  let own = 0, context = 0;
+  messages.forEach((m, i) => {
+    if (i === lastUser) own += chars(m);
+    else if (m?.role !== 'system' || isStudentMaterial(m)) context += chars(m);
+  });
+  return Math.ceil(own / 3.5) + Math.ceil((context / 3.5) * share);
+}
+
+/**
+ * De qué se compone una petición, en tokens estimados (sin contenido): para
+ * los logs (dream_prompt_breakdown) y decidir con datos dónde se va el cupo.
+ */
+export function promptBreakdown(body) {
+  const messages = Array.isArray(body?.messages) ? body.messages : [];
+  let lastUser = -1;
+  messages.forEach((m, i) => { if (m?.role === 'user') lastUser = i; });
+  const out = { system: 0, material: 0, history: 0, tool: 0, prompt: 0 };
+  messages.forEach((m, i) => {
+    const t = Math.ceil(chars(m) / 3.5);
+    if (i === lastUser) out.prompt += t;
+    else if (isStudentMaterial(m)) out.material += t;
+    else if (m?.role === 'system') out.system += t;
+    else if (m?.role === 'tool') out.tool += t;
+    else out.history += t;
+  });
+  return out;
+}
+
+/** Lo que se carga al enviar: su entrada + el máximo de salida (se ajusta al terminar). */
+export function studentWindowTokens(body) {
+  const output = Number(body?.max_tokens ?? body?.max_completion_tokens ?? 0) || 0;
+  return studentInputTokens(body) + output;
+}
+
+/** Ajuste final: su entrada + la salida real. null si el proveedor no dio el uso. */
+export function studentActualTokens(body, usage) {
+  const output = Number.isInteger(usage?.completion_tokens) ? usage.completion_tokens : null;
+  return output === null ? null : studentInputTokens(body) + output;
+}
+
+/** Mensajes normales aproximados que quedan en la ventana (para la barra de uso). */
+export function messagesLeft(used, budget = SHARED_WINDOW_BUDGET) {
+  return Math.max(0, Math.floor((budget - Math.max(0, Number(used) || 0)) / TYPICAL_MESSAGE_TOKENS));
 }
 
 export function actualTokens(usage) {

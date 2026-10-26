@@ -41,3 +41,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def conversations():
+    """Bloque 8, punto 0: de qué se compone cada mensaje (5 conversaciones de prueba)."""
+    t = tokenizer(MODELS["qwen3.8 (tokenizador Qwen3)"])
+    out = subprocess.run(["node", "scripts/ia/conversations.mjs"], cwd=ROOT, capture_output=True, text=True, check=True)
+    count = lambda text: len(t.encode(text, add_special_tokens=False).ids) if text else 0
+    OUTPUT = 350  # salida media supuesta (visible + razonamiento oculto): medir con usage.completion_tokens
+    print("\n| Conversación (Qwen3) | Sistema | Historial | Apuntes | Mensaje | Salida* | **Antes contaba** | **Ahora cuenta** |")
+    print("|---|---:|---:|---:|---:|---:|---:|---:|")
+    for c in json.loads(out.stdout):
+        s, h, m, p = count(c["system"]), count(c["history"]), count(c["material"]), count(c["prompt"])
+        before = s + h + m + p + OUTPUT
+        now = p + round(0.25 * (h + m)) + OUTPUT
+        print(f"| {c['name']} | {s} | {h} | {m} | {p} | {OUTPUT} | {before} | {now} |")
+    print("\n*Salida supuesta de 350 tokens; la real sale en los logs (dream_call_usage).")
+
+
+if __name__ == "__main__" and "--conversaciones" in sys.argv:
+    conversations()

@@ -167,3 +167,34 @@ test("the copy button text turns every formula into plain text", async () => {
     "Es 246/100 y 37/30 pero `\\frac{a}{b}` no",
   );
 });
+
+test("only the student's share counts against their limit (block 8)", async () => {
+  const { studentInputTokens, studentWindowTokens, studentActualTokens, messagesLeft } =
+    await import("../supabase/functions/dream-api/usage-window.mjs");
+  const { chatSystemMessages } = await import("../supabase/functions/dream-api/prompts.mjs");
+  const system = chatSystemMessages("normal", {});
+  const history = [
+    { role: "user", content: "a".repeat(700) },
+    { role: "assistant", content: "b".repeat(700) },
+  ];
+  const body = { messages: [...system, ...history, { role: "user", content: "c".repeat(350) }], max_tokens: 1200 };
+  // 350 chars of the new message (100) + 25 % of 1,400 chars of history (100). The ~4,700-token system prompt: 0.
+  assert.equal(studentInputTokens(body), 200);
+  assert.equal(studentWindowTokens(body), 1400);
+  assert.equal(studentActualTokens(body, { prompt_tokens: 5200, completion_tokens: 300 }), 500);
+  assert.equal(studentActualTokens(body, {}), null);
+  // Notes count like history.
+  const withNotes = { messages: [...system, { role: "system", content: "Contexto de archivos adjuntos por el usuario:\n" + "d".repeat(3954) }, { role: "user", content: "" }] };
+  assert.equal(studentInputTokens(withNotes), 286);
+  assert.equal(messagesLeft(0, 60_000), 54);
+  assert.equal(messagesLeft(59_999, 60_000), 0);
+});
+
+test("the usage bar says roughly how many messages are left", async () => {
+  const { parseUsage, messagesLeftText } = await import("../lib/ai-modes");
+  const usage = parseUsage({ percent: 85, blocked: false, resets_at: "2026-10-26T12:00:00Z", messages_left: 7, modes: [{ id: "normal", percent: 85 }] });
+  assert.equal(usage.messages_left, 7);
+  assert.equal(messagesLeftText(7), "Te quedan unos 7 mensajes.");
+  assert.equal(messagesLeftText(null), "");
+  assert.equal(parseUsage({ percent: 1, modes: [{ id: "normal" }], messages_left: -3 }).messages_left, null);
+});
