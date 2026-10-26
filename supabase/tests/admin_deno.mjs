@@ -15,7 +15,7 @@ const NOW_S = () => BASE_S;
 
 const ADMIN_ACTIONS = [
   "admin_mfa_status", "admin_session_start", "admin_inbox", "admin_user", "admin_sanction_resolve",
-  "admin_ban_user", "admin_ban_lift", "admin_ip_block_user", "admin_ip_unblock", "admin_appeal_resolve",
+  "admin_ban_user", "admin_ban_lift", "admin_ip_block_user", "admin_ip_unblock", "admin_appeal_resolve", "admin_appeal_by_code",
 ];
 const tokenFor = (sub, { aal = "aal2", totpAgoS = 30 } = {}) =>
   makeToken({ sub, aal, amr: aal === "aal2" ? [{ method: "totp", timestamp: NOW_S() - totpAgoS }, { method: "oauth", timestamp: NOW_S() - 9000 }] : [{ method: "oauth", timestamp: NOW_S() - 30 }] });
@@ -65,6 +65,7 @@ async function setup({ extraUsers = {}, listed = [ADMIN_ID, OTHER_ADMIN_ID], ses
       mod_ip_block_user: (a) => (calls.push(["mod_ip_block_user", a]), "abcdef012345"),
       mod_ip_unblock: (a) => (calls.push(["mod_ip_unblock", a]), 1),
       admin_appeal_resolve: (a) => (calls.push(["admin_appeal_resolve", a]), { ok: true }),
+      admin_appeal_by_code: ({ p_code }) => (p_code === "DREAM-K7QM-2XPD" ? { id: "a1", user_id: STUDENT_ID, status: "abierta", body: "hola", due_at: "2099-01-01" } : null),
     },
   });
   return { h, audit, calls, adminToken: tokenFor(ADMIN_ID), aal1Token: tokenFor(ADMIN_ID, { aal: "aal1" }), staleToken: tokenFor(ADMIN_ID, { totpAgoS: 900 }) };
@@ -343,6 +344,26 @@ Deno.test("the profile shows the panel link only to the real administrator and c
     h.state.users[lookalike] = goodUser(OTHER_ADMIN_ID, ADMIN_EMAIL);
     h.state.rpc.admin_check = ({ p_user }) => p_user === ADMIN_ID;
     assertEquals("admin_panel" in (await h.call(lookalike, { action: "profile" })).json.profile, false);
+  } finally {
+    await h.stop();
+  }
+});
+
+Deno.test("the administrator finds an appeal by its code; bad codes are rejected and the email stays masked", async () => {
+  const { h, adminToken } = await setup();
+  try {
+    await start(h, adminToken);
+    const hit = await h.call(adminToken, { action: "admin_appeal_by_code", code: " dream-k7qm-2xpd " });
+    assertEquals(hit.status, 200, hit.text);
+    assertEquals(hit.json.appeal.user_short, STUDENT_ID.slice(0, 8));
+    assert(hit.json.appeal.user_email.startsWith("a***@"));
+    assert(!hit.text.includes("alumno@example.test"));
+    assertEquals((await h.call(adminToken, { action: "admin_appeal_by_code", code: "DREAM-AAAA-BBBB" })).json.appeal, null);
+    for (const bad of ["", "x", "DREAM-1111-1111", "DREAM-K7QM-2XPD; drop", { $ne: 1 }, ["DREAM-K7QM-2XPD"]])
+      assertEquals((await h.call(adminToken, { action: "admin_appeal_by_code", code: bad })).status, 400, JSON.stringify(bad));
+    // Un alumno no puede usarlo: mismo resultado que una acción inexistente.
+    const baseline = await h.call(tokenFor(STUDENT_ID), { action: "nope" });
+    assertEquals(shape(await h.call(tokenFor(STUDENT_ID), { action: "admin_appeal_by_code", code: "DREAM-K7QM-2XPD" })), shape(baseline));
   } finally {
     await h.stop();
   }

@@ -61,7 +61,7 @@ export interface UserRef {
   user_short?: string;
   user_email?: string;
 }
-export interface InboxAppeal extends UserRef { id: string; body: string; created_at: string; days_left: number }
+export interface InboxAppeal extends UserRef { id: string; body: string; created_at: string; days_left?: number; due_at?: string; status?: string }
 export interface InboxObservation extends UserRef { id: string; status: string; entries: number; shared: boolean; ends_at: string; ip_prefix: string }
 export interface InboxSanction extends UserRef { id: string; kind: string; rule: string; until: string | null; decided_by: string; created_at: string }
 export interface InboxIpBlock { ip_prefix: string; until: string; rule: string }

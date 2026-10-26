@@ -29,7 +29,7 @@ await pool.query(`
   grant usage on schema auth to anon, authenticated, service_role;
   grant usage on schema public to anon, authenticated, service_role;
 `);
-for (const file of ["20261022090000_moderation_data.sql", "20261023090000_moderation_evasion.sql", "20261024090000_moderation_ban.sql", "20261025100000_admin_panel.sql"])
+for (const file of ["20261022090000_moderation_data.sql", "20261023090000_moderation_evasion.sql", "20261024090000_moderation_ban.sql", "20261025100000_admin_panel.sql", "20261026090000_moderation_student.sql", "20261026100000_admin_appeal_code.sql"])
   await pool.query(readFileSync(new URL(`../../supabase/migrations/${file}`, import.meta.url), "utf8"));
 
 const one = async (sql, args = []) => (await pool.query(sql, args)).rows[0];
@@ -165,6 +165,16 @@ try {
   assert.equal((await rpc("admin_appeal_resolve", [appeal, "rechazada", "ok"])).code, "ya_resuelta");
   assert.equal((await rpc("admin_inbox", [])).appeals.length, 0);
   console.log("PASS resolver apelaciones: una sola vez y con estados válidos");
+
+  // 10. Buscar una apelación por su código (solo la función; el alumno no puede).
+  const created = await rpc("mod_appeal_create", [STUDENT, "Quiero apelar", null]);
+  assert.equal(created.ok, true);
+  const code = created.code;
+  const byCode = await rpc("admin_appeal_by_code", [` ${code.toLowerCase()} `]);
+  assert.equal(byCode.user_id, STUDENT);
+  assert.equal(await rpc("admin_appeal_by_code", ["DREAM-AAAA-BBBB"]), null);
+  await assert.rejects(as("authenticated", "select public.admin_appeal_by_code('DREAM-AAAA-BBBB')", [], STUDENT), /permission denied/);
+  console.log("PASS buscar una apelación por su código: insensible a mayúsculas y espacios; un alumno no puede");
 } finally {
   await pool.end();
   await admin.query("drop database if exists dream_mod_admin_test with (force)");

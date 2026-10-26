@@ -24,6 +24,7 @@ export const ADMIN_ACTIONS = new Set([
   "admin_ip_block_user",
   "admin_ip_unblock",
   "admin_appeal_resolve",
+  "admin_appeal_by_code",
 ]);
 
 export const ADMIN_LIMITS = Object.freeze({
@@ -301,6 +302,16 @@ export async function handleAdminAction({ action, body, user, token, origin, ori
       const prefix = typeof body.ip_prefix === "string" && /^[0-9a-f]{12}$/.test(body.ip_prefix) ? body.ip_prefix : null;
       if (!prefix) return fail(400, "invalid", "Datos no válidos.");
       return run(action, null, "desbloqueo_ip", async () => ok({ ok: true, removed: await rpc("mod_ip_unblock", { p_prefix: prefix }) }));
+    }
+    case "admin_appeal_by_code": {
+      const code = typeof body.code === "string" ? body.code.trim().toUpperCase() : "";
+      if (!/^DREAM-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(code)) return fail(400, "invalid", "Código no válido.");
+      return run(action, null, "apelacion_por_codigo", async () => {
+        const found = await rpc("admin_appeal_by_code", { p_code: code });
+        if (!found) return ok({ appeal: null });
+        const emails = await emailsFor(db, [found.user_id]);
+        return ok({ appeal: { ...found, user_short: String(found.user_id).slice(0, 8), user_email: emails.get(found.user_id) } });
+      });
     }
     case "admin_appeal_resolve": {
       const id = needUuid(body.id);

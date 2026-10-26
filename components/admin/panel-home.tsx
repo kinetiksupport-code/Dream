@@ -5,6 +5,7 @@ import {
   BAN_DURATIONS,
   adminCall,
   type Inbox,
+  type InboxAppeal,
   type InboxSanction,
   type UserCard,
   type UserRef,
@@ -59,6 +60,15 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const [found, setFound] = useState<InboxAppeal | null | undefined>(undefined);
+  async function searchAppeal(code: string) {
+    const reply = await call("admin_appeal_by_code", { code });
+    if (reply.status !== 200 || !reply.data) return setMessage("Código no válido.");
+    const appeal = (reply.data as { appeal: InboxAppeal | null }).appeal;
+    setFound(appeal);
+    setMessage(appeal ? "" : "No hay ninguna apelación con ese código.");
+  }
 
   async function openCard(id: string | undefined) {
     if (!id || !UUID.test(id)) return setMessage("Identificador no válido.");
@@ -118,18 +128,37 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
         className={styles.lookup}
         onSubmit={(e: FormEvent) => {
           e.preventDefault();
-          void openCard(lookup.trim());
+          const value = lookup.trim();
+          if (/^dream-/i.test(value)) void searchAppeal(value);
+          else void openCard(value);
         }}
       >
         <label className={styles.field}>
-          <span>Abrir la ficha de una cuenta por su identificador completo</span>
-          <input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="00000000-0000-0000-0000-000000000000" spellCheck={false} />
+          <span>Código de apelación (DREAM-XXXX-XXXX) o identificador completo de una cuenta</span>
+          <input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="DREAM-K7QM-2XPD" spellCheck={false} />
         </label>
         <button className={styles.secondary} type="submit">
           Abrir
         </button>
       </form>
 
+      {found && (
+        <section className={styles.section} aria-label="Apelación encontrada">
+          <h2>Apelación encontrada</h2>
+          <Card who={found} onOpen={() => void openCard(found.user_id)}>
+            <p className={styles.meta}>Estado: {found.status} · plazo hasta {when(found.due_at)}</p>
+            <blockquote className={styles.quote}>{found.body}</blockquote>
+            <Actions>
+              <button className={styles.secondary} type="button" onClick={() => void act("admin_appeal_resolve", { id: found.id, status: "aceptada", resolution: "Aceptada" }, "Apelación aceptada.", "Aceptar apelación")}>
+                Aceptar
+              </button>
+              <button className={styles.secondary} type="button" onClick={() => void act("admin_appeal_resolve", { id: found.id, status: "rechazada", resolution: "Rechazada" }, "Apelación rechazada.", "Rechazar apelación")}>
+                Rechazar
+              </button>
+            </Actions>
+          </Card>
+        </section>
+      )}
       {!inbox ? (
         <p>Cargando solicitudes…</p>
       ) : (
@@ -137,7 +166,7 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
           <Section title="Apelaciones y reclamaciones" count={inbox.appeals.length} empty="No hay apelaciones abiertas.">
             {inbox.appeals.map((a) => (
               <Card key={a.id} who={a} onOpen={() => void openCard(a.user_id)}>
-                <p className={styles.meta}>Plazo: {a.days_left} días de 30</p>
+                <p className={styles.meta}>Plazo: {a.days_left ?? "—"} días de 30</p>
                 <blockquote className={styles.quote}>{a.body}</blockquote>
                 <Actions>
                   <button className={styles.secondary} type="button" onClick={() => void act("admin_appeal_resolve", { id: a.id, status: "aceptada", resolution: "Aceptada" }, "Apelación aceptada.", "Aceptar apelación")}>
