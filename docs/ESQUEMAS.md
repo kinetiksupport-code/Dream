@@ -38,5 +38,5 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 ## Pendiente
 
 - Ejecutar el banco con las claves reales de Groq y Tavily (no están en esta sesión).
-- Comparar con la imagen de referencia de Carlos (`esquema-ejemplo-al-andalus.png`): no está en el repositorio.
+- Ajustar la maqueta a la imagen de referencia de Carlos: `docs/esquemas/referencia-al-andalus.webp`.
 - Bloques 1 (entrada), 3 (edición), 4 (exportar), 5 (ilustraciones FLUX), 6 (textos legales) y 7 (Dreams interactivos), cada uno en su PR.
