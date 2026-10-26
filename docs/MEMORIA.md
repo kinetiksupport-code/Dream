@@ -51,13 +51,16 @@ acciones de Ajustes fallarían.
   IA, porque importar envía el texto a la IA. El encargo la ponía antes de la edad;
   eso supondría tratar datos con IA antes del consentimiento.
 
+## Hecho después (26/10/2026)
+
+- Aviso «Dream ha recordado N cosas · Ver» en el chat (contador `memory_unseen`).
+- Extracción al volver a abrir Dream cuando la última conversación lleva 30 min quieta.
+- «Descargar mis datos» en Ajustes › Privacidad (incluye recuerdos y resúmenes).
+- Interruptor encendido (`FEATURE_FLAGS.memory`): cada alumno sigue con la
+  memoria apagada hasta que dice «Sí».
+- La tabla `dream_conversation_summaries` ya existía en producción (vacía, con
+  `owner_id`): la migración la reutiliza.
+
 ## Pendiente
 
-- El aviso «Dream ha recordado 2 cosas · Ver» al final del chat **no está hecho**:
-  la extracción ocurre después, en la conversación siguiente.
-- Extraer tras 30 minutos sin mensajes necesita una tarea programada; ahora solo
-  se extrae al abrir otra conversación.
-- «Descargar mis datos» no existe todavía en Dream; cuando exista, debe incluir
-  recuerdos y resúmenes.
-- `evals/memoria.json` (15 casos) no se ha ejecutado contra el modelo: no hay
-  clave de Groq en este entorno.
+- `evals/memoria.json` sin ejecutar contra el modelo (no hay clave de Groq aquí).

@@ -8,10 +8,11 @@
 // revisión y despliegue (igual que AI_FLAGS en models.mjs).
 /** @type {Readonly<Record<string, boolean>>} */
 export const FEATURE_FLAGS = Object.freeze({
-  // Memoria entre conversaciones (Bloque 4). Apagada hasta el OK de Carlos.
-  memory: false,
+  // Memoria entre conversaciones (Bloque 4). Encendida el 26/10/2026 («termina
+  // todo y despliégalo»): cada alumno la tiene APAGADA hasta que dice «Sí».
+  memory: true,
   // Importar el perfil de otra IA (Bloque 6). Depende de la memoria.
-  memoryImport: false,
+  memoryImport: true,
 });
 
 /**

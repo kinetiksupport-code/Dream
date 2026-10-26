@@ -30,6 +30,14 @@ await pool.query(`
   grant usage on schema public to anon, authenticated, service_role;
   create table public.dream_profiles(id uuid primary key references auth.users(id) on delete cascade);
   create table public.dream_conversations(id uuid primary key, owner_id uuid references auth.users(id) on delete cascade);
+  create table public.dream_messages(id uuid primary key);
+  -- Como en producción (26/10/2026): la tabla de resúmenes ya existe, vacía.
+  create table public.dream_conversation_summaries(
+    conversation_id uuid primary key references public.dream_conversations(id) on delete cascade,
+    owner_id uuid not null references auth.users(id) on delete cascade, summary text not null,
+    last_message_id uuid references public.dream_messages(id) on delete set null, updated_at timestamptz not null default now());
+  alter table public.dream_conversation_summaries enable row level security;
+  create policy dream_summaries_select_own on public.dream_conversation_summaries for select to authenticated using (owner_id = auth.uid());
 `);
 const sql = readFileSync(new URL("../../supabase/migrations/20261029090000_memory.sql", import.meta.url), "utf8");
 await pool.query(sql);
@@ -69,6 +77,8 @@ await pool.query("update public.dream_profiles set memory_enabled = true");
 assert.deepEqual(await apply(A, CA, [mem("Le cuestan las derivadas"), mem("Prefiere ejemplos", { kind: "preferencia", subject: null })]), { ok: true, added: 2, forgotten: 0 });
 assert.equal((await pool.query("select summary from public.dream_conversation_summaries where conversation_id = $1", [CA])).rows[0].summary, "Repasó derivadas");
 assert.ok((await pool.query("select memory_extracted_at from public.dream_conversations where id = $1", [CA])).rows[0].memory_extracted_at);
+// «Dream ha recordado 2 cosas»: se cuentan los nuevos de la conversación, no los importados.
+assert.equal((await pool.query("select memory_unseen from public.dream_profiles where id = $1", [A])).rows[0].memory_unseen, 2);
 
 // 3. No se puede usar la conversación de otro.
 await assert.rejects(apply(A, CB, [mem("x")]), /invalid_memory/);
@@ -103,7 +113,7 @@ assert.equal((await as("service_role", null, "select public.dream_memory_purge()
 // 8. Borrar la cuenta lo borra todo.
 await pool.query("delete from auth.users where id = $1", [A]);
 assert.equal((await pool.query("select count(*)::int as n from public.dream_memories where user_id = $1", [A])).rows[0].n, 0);
-assert.equal((await pool.query("select count(*)::int as n from public.dream_conversation_summaries where user_id = $1", [A])).rows[0].n, 0);
+assert.equal((await pool.query("select count(*)::int as n from public.dream_conversation_summaries where owner_id = $1", [A])).rows[0].n, 0);
 
 await pool.end();
 await admin.query("drop database dream_memory_test with (force)");

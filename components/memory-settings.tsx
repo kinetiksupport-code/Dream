@@ -60,7 +60,7 @@ export function MemorySettings() {
   if (!state) return null;
   const groups = groupMemories(state.items);
   return (
-    <section className="group" aria-labelledby={`${id}-title`}>
+    <section className="group" id="memoria" aria-labelledby={`${id}-title`}>
       <h2 className="section-title" id={`${id}-title`}>
         Lo que Dream recuerda
       </h2>

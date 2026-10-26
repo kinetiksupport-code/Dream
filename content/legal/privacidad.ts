@@ -96,7 +96,7 @@ En España, un menor puede dar su consentimiento para tratar sus datos a partir 
 
 ## 9. Tus derechos
 
-Puedes pedirnos **acceso, rectificación, supresión, oposición, limitación y portabilidad** de tus datos, y retirar tu consentimiento en cualquier momento (por ejemplo las estadísticas desde Ajustes). Escríbenos a **hellodream@edudream.es** y te responderemos en un máximo de un mes. Si no estás conforme, puedes reclamar ante la **Agencia Española de Protección de Datos** (www.aepd.es).
+Puedes **descargar una copia de todo lo que Dream guarda de ti** en Ajustes › Privacidad › «Descargar mis datos» (un archivo JSON). También puedes pedirnos **acceso, rectificación, supresión, oposición, limitación y portabilidad** de tus datos, y retirar tu consentimiento en cualquier momento (por ejemplo las estadísticas desde Ajustes). Escríbenos a **hellodream@edudream.es** y te responderemos en un máximo de un mes. Si no estás conforme, puedes reclamar ante la **Agencia Española de Protección de Datos** (www.aepd.es).
 
 ## 10. Seguridad
 

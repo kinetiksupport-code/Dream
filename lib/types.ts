@@ -8,6 +8,8 @@ export interface DreamProfile extends ConsentProfile {
   memory_feature?: boolean;
   memory_import_feature?: boolean;
   memory_enabled?: boolean;
+  /** Recuerdos nuevos aún no vistos («Dream ha recordado 2 cosas · Ver»). */
+  memory_new?: number;
 }
 export interface Conversation {
   id: string;
