@@ -21,6 +21,7 @@ import { createWindowLimiter, promptBreakdown, studentWindowTokens, usageSummary
 import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReasoning } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import { needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
+import { SPECIAL_WELCOME, specialDomain } from './special-accounts.mjs';
 import {
   MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
   extractAttachment, base64ByteLength, extensionOf,
@@ -237,6 +238,15 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const blocked = consentBlock(row);
     if (blocked) return json({ error: blocked.message, code: blocked.code }, blocked.status);
   }
+  // Fundación Loyola (special-accounts.mjs): la marca va antes de la admisión,
+  // que es la que aplica sus límites. Sin la migración no hay marca y la cuenta
+  // sigue como cualquier otra.
+  let special = { on: false, welcomeShown: true };
+  const loyola = !examInternal && (consuming || ['profile', 'ai_usage', 'special_welcome_seen'].includes(String(body.action))) ? specialDomain(user) : null;
+  if (loyola) {
+    const marked = await admin.rpc('dream_special_account_mark', { p_owner: user.id, p_domain: loyola });
+    if (!marked.error && marked.data?.special === true) special = { on: true, welcomeShown: Boolean(marked.data.welcome_shown_at) };
+  }
   try {
     if (consuming) { await admission.admit(String(body.action)); admitted = true; }
   const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
@@ -282,7 +292,15 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   if (body.action === 'profile') {
-    return json({ profile: publicProfile, service_ready: groqConfigured() });
+    // Mensaje de Dream (no de la IA), una sola vez, para las cuentas de Loyola.
+    const specialAccount = special.on ? { unlimited: true, welcome: special.welcomeShown ? null : SPECIAL_WELCOME } : null;
+    return json({ profile: publicProfile, service_ready: groqConfigured(), ...(specialAccount ? { special_account: specialAccount } : {}) });
+  }
+
+  if (body.action === 'special_welcome_seen') {
+    if (!special.on) return json({ error: 'Acción no válida.' }, 400);
+    const saved = await admin.from('dream_profiles').update({ special_welcome_shown_at: new Date().toISOString() }).eq('id', user.id).is('special_welcome_shown_at', null);
+    return saved.error ? json({ error: 'No se pudo guardar.' }, 503) : json({ ok: true });
   }
 
   // Bienvenida (prompt «bienvenida» §4.4, docs/CONSENTIMIENTO.md). Todo se
@@ -346,6 +364,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // cada modo en palabras. Ni tokens ni nombres de modelo.
   if (body.action === 'ai_usage') {
     try {
+      if (special.on) return json({ ...usageSummary({ window: null, usage: [] }, { modes: availableModes(aiContext()) }), messages_left: null, unlimited: true, default_mode: DEFAULT_MODE });
       const data = await createWindowLimiter(admin, user.id).read();
       return json({ ...usageSummary(data, { modes: availableModes(aiContext()) }), default_mode: DEFAULT_MODE });
     } catch (error) { return safeFailure(error); }
@@ -658,7 +677,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Límite conjunto por ventanas de 5 h: se comprueba ANTES de guardar nada y
   // de llamar al proveedor. La carga atómica (más abajo) lo vuelve a comprobar
   // sumando todos los modos en Postgres.
-  const limiter = createWindowLimiter(admin, user.id);
+  // Cuentas de Loyola: sin ventana de 5 h (su límite por minuto lo pone dream_admit).
+  const limiter = special.on ? unlimitedWindow() : createWindowLimiter(admin, user.id);
   const windowUsage = usageSummary(await limiter.read(), { modes: [mode] }).modes[0];
   if (windowUsage?.blocked) {
     const retryAfter = Math.max(1, Math.ceil((Date.parse(windowUsage.resets_at ?? '') - Date.now()) / 1000) || 1);
@@ -725,7 +745,11 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // las aficiones solo cuando el turno explica algo nuevo (ahí sirven para
   // los ejemplos; en el resto se ahorran los tokens).
   const examples = educationalSelection.skills.includes('EXPLICAR') && ['foundation', 'reframe', 'overview'].includes(educationalSelection.pacing);
-  const personal = personalContext(profile, { interests: examples });
+  // Próximo examen (de Exámenes) para el bloque de perfil: solo asignatura y fecha.
+  const today = madridToday();
+  const upcoming = await admin.from('dream_exams').select('subject,exam_date').eq('owner_id', user.id)
+    .neq('status', 'draft').gte('exam_date', today).order('exam_date', { ascending: true }).limit(1).maybeSingle();
+  const personal = personalContext(profile, { interests: examples, nextExam: upcoming.error ? null : upcoming.data, today });
   const contextParts = {
     academicMemory,
     personal,
@@ -963,6 +987,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   } catch (error) { captureEdgeFailure(String(body.action), error instanceof AdmissionError ? error.code : 'edge_failure'); return safeFailure(error); }
   finally { if (admitted && !streamOwnsLease) await admission.release().catch(() => console.error(JSON.stringify({event:'admission_release_failed'}))); }
 }
+// Ventana «sin límite» para las cuentas de Loyola: no lee ni carga nada.
+function unlimitedWindow() {
+  return {
+    read: async () => ({ window: null, usage: [] }),
+    charge: async () => ({ attempt: crypto.randomUUID(), settled: false, settle: async () => {} }),
+  };
+}
+
 // Cupo diario global de búsquedas que lanza el servidor para comprobar datos
 // (migración 20261027090000_forced_search_budget.sql). Sin la migración o si
 // falla la lectura, se permite: el tope por alumno de dream_reserve sigue ahí.

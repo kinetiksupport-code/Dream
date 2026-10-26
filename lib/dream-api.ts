@@ -7,6 +7,7 @@ import { readNDJSON, DreamStreamError } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
+  | "special_welcome_seen"
   | "exam_create"
   | "exam_get"
   | "exam_update"
@@ -246,6 +247,7 @@ export async function getDreamProfile(signal?: AbortSignal) {
   const data = await callDream<{
     profile: DreamProfile | null;
     service_ready?: boolean;
+    special_account?: { welcome?: unknown } | null;
   }>("profile", {}, signal);
   const p = data?.profile;
   if (!p || typeof p !== "object") {
@@ -271,7 +273,16 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.onboarding_step =
       typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
   }
+  // Bienvenida de Loyola: texto corto del servidor, una sola vez.
+  const welcome = data.special_account?.welcome;
+  if (typeof welcome === "string" && welcome.length <= 200)
+    profile.special_welcome = welcome;
   return { profile, service_ready: data.service_ready ?? true };
+}
+
+/** La bienvenida de Loyola ya se ha visto: no vuelve a salir. */
+export async function markSpecialWelcomeSeen() {
+  await callDream("special_welcome_seen", {});
 }
 
 /*
