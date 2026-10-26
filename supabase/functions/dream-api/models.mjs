@@ -9,8 +9,12 @@ import { answerTokenBudget } from './capacity.mjs';
 // despliegue. Encendidos no bastan: sin los secretos CLOUDFLAREAI_API_KEY y
 // CLOUDFLARE_ACCOUNT_ID (válidos), «Pensar más» no se ofrece y el respaldo
 // sigue apagado en silencio (modeAvailable, fallbackAvailable).
-/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean}>} */
+/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean, mathCheck: boolean}>} */
 export const AI_FLAGS = Object.freeze({
+  // Comprobar las operaciones de las respuestas de ciencias antes de enseñarlas
+  // (math-tools.mjs). APAGADO hasta medirlo con los evals: quita el «escribir
+  // poco a poco» en esas respuestas y puede gastar una llamada más.
+  mathCheck: false,
   // «Pensar más» visible y usable (necesita también los secretos de Cloudflare).
   thinkMode: true,
   // Respaldo con Cloudflare Workers AI cuando fallan todas las claves de Groq.
