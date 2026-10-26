@@ -2,6 +2,8 @@ import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Cuentas de Fundación Loyola: mensaje de Dream que se enseña una vez. */
+  special_welcome?: string | null;
 }
 export interface Conversation {
   id: string;

@@ -38,6 +38,7 @@ import {
   streamDreamChat,
   errorMessage,
   DreamApiError,
+  markSpecialWelcomeSeen,
 } from "@/lib/dream-api";
 import { DreamStreamError } from "@/lib/streaming";
 import {
@@ -89,7 +90,7 @@ export function ChatExperience({
 }) {
   const params = useSearchParams();
   const router = useRouter();
-  const { serviceReady } = useDream();
+  const { serviceReady, profile, setProfile } = useDream();
   const { refresh, add, setWorkspaceEmpty, autoTitle, setPageTitle } =
     useConversations();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -775,6 +776,23 @@ export function ChatExperience({
         ? modeLimit.resetAt
         : null;
   const alternative = alternativeMode(usage, mode);
+  // Cuentas de Fundación Loyola: un mensaje de Dream (no de la IA), una vez.
+  const specialWelcome = profile?.special_welcome ?? null;
+  const welcomeBanner = specialWelcome ? (
+    <div className="chat-limit" role="status">
+      <p>{specialWelcome}</p>
+      <button
+        type="button"
+        className="secondary press"
+        onClick={() => {
+          if (profile) setProfile({ ...profile, special_welcome: null });
+          void markSpecialWelcomeSeen().catch(() => {});
+        }}
+      >
+        Entendido
+      </button>
+    </div>
+  ) : null;
   const modeBanner = spentAt ? (
     <div className="chat-limit" role="alert">
       <p>
@@ -870,6 +888,7 @@ export function ChatExperience({
               ?.click();
           }}
         >
+          {welcomeBanner}
           {modeBanner}
           {errorBanner}
           {!analysisView && <NextStepCard />}
@@ -1039,6 +1058,7 @@ export function ChatExperience({
           </button>
         )}
         {waitBanner}
+        {welcomeBanner}
         {modeBanner}
         {errorBanner}
         {composer("dock")}

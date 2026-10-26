@@ -5,6 +5,7 @@
 // (b) la búsqueda web no está disponible: se responde sin buscar;
 // (c) el alumno ha llegado a su límite de uso de Dream.
 import { WINDOW_LIMIT_CODE } from './usage-window.mjs';
+import { SPECIAL_RPM_MESSAGE } from './special-accounts.mjs';
 
 // Límites propios del alumno en Dream.
 const DREAM_USER_LIMITS = new Set(['dream_rpm', 'dream_daily', 'dream_budget']);
@@ -27,13 +28,14 @@ export function waitText(seconds) {
 /**
  * ¿Qué tipo de límite es? null si el error no es un límite.
  * @param {any} error
- * @returns {'window'|'provider_daily'|'saturated'|'search'|'dream'|null}
+ * @returns {'window'|'provider_daily'|'saturated'|'search'|'dream'|'special_rpm'|null}
  */
 export function limitKind(error) {
   const code = error?.code;
   if (typeof code !== 'string') return null;
   if (error.name === 'TavilyError') return 'search';
   if (code === WINDOW_LIMIT_CODE) return 'window';
+  if (code === 'dream_special_rpm') return 'special_rpm';
   if (code === 'provider_daily_limit') return 'provider_daily';
   if (DREAM_USER_LIMITS.has(code)) return 'dream';
   if (SATURATED.has(code) || (PROVIDERS.has(error.name) && error.status === 429)) return 'saturated';
@@ -45,6 +47,7 @@ export function limitMessage(error) {
   const kind = limitKind(error);
   const wait = error?.retryAfter;
   switch (kind) {
+    case 'special_rpm': return SPECIAL_RPM_MESSAGE;
     case 'window': return 'Has usado toda tu IA por ahora. Se reinicia al acabar tu ventana de uso de 5 horas.';
     case 'provider_daily': return 'La IA gratis de hoy se ha agotado. Vuelve más tarde.';
     case 'saturated': return `La IA está saturada ahora mismo. Inténtalo de nuevo en ${waitText(wait)}.`;
