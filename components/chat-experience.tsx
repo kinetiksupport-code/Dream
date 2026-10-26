@@ -78,6 +78,9 @@ function sleep(ms: number, signal: AbortSignal) {
     signal.addEventListener("abort", stop, { once: true });
   });
 }
+/** A partir de aquí se ofrece empezar otro chat (Bloque 8 bis). */
+const LONG_CHAT_MESSAGES = 40;
+
 export function ChatExperience({
   study,
 }: {
@@ -793,6 +796,35 @@ export function ChatExperience({
       </button>
     </div>
   ) : null;
+  // Memoria: «Dream ha recordado 2 cosas · Ver» (una vez; al verlo se marca).
+  const memoryNew = profile?.memory_new ?? 0;
+  const memoryBanner =
+    memoryNew > 0 ? (
+      <p className="mode-notice" role="status">
+        Dream ha recordado {memoryNew === 1 ? "1 cosa" : `${memoryNew} cosas`} ·{" "}
+        <Link
+          className="text-link"
+          href="/settings#memoria"
+          onClick={() => {
+            if (profile) setProfile({ ...profile, memory_new: 0 });
+            void callDream("memory_seen", {}).catch(() => {});
+          }}
+        >
+          Ver
+        </Link>
+      </p>
+    ) : null;
+  // Chats muy largos gastan más por mensaje: se ofrece empezar otro.
+  const longChat =
+    messages.length >= LONG_CHAT_MESSAGES && !loading ? (
+      <p className="mode-notice" role="status">
+        Este chat ya es largo: en uno nuevo te responderé más rápido y
+        gastarás menos.{" "}
+        <Link className="text-link" href="/chat">
+          Empezar un chat nuevo
+        </Link>
+      </p>
+    ) : null;
   const modeBanner = spentAt ? (
     <div className="chat-limit" role="alert">
       <p>
@@ -889,6 +921,7 @@ export function ChatExperience({
           }}
         >
           {welcomeBanner}
+          {memoryBanner}
           {modeBanner}
           {errorBanner}
           {!analysisView && <NextStepCard />}
@@ -1059,6 +1092,8 @@ export function ChatExperience({
         )}
         {waitBanner}
         {welcomeBanner}
+        {memoryBanner}
+        {longChat}
         {modeBanner}
         {errorBanner}
         {composer("dock")}

@@ -154,3 +154,36 @@ test("with the server switch off, Ajustes has no memory section", async ({ page 
   await expect(page.getByRole("heading", { name: "Límite de uso" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Lo que Dream recuerda" })).toHaveCount(0);
 });
+
+test("chat: «Dream ha recordado 2 cosas · Ver» once, and a long chat offers a new one", async ({ page }) => {
+  await mock(page, { profile: DONE, extra: { ...FEATURES, memory_enabled: true, memory_new: 2 } });
+  const sent = await memoryServer(page);
+  const cid = "12345678-1234-4234-8234-123456789abc";
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const action = String((route.request().postDataJSON() as Record<string, unknown>).action);
+    if (action !== "messages") return route.fallback();
+    const items = Array.from({ length: 40 }, (_, i) => ({ id: `m${i}`, role: i % 2 ? "assistant" : "user", content: `mensaje ${i}` }));
+    return route.fulfill({ json: { items, next_offset: null } });
+  });
+  await page.goto(`/chat?c=${cid}`);
+  const notice = page.getByRole("status").filter({ hasText: "Dream ha recordado 2 cosas" });
+  await expect(notice).toBeVisible();
+  await expect(page.getByRole("link", { name: "Empezar un chat nuevo" })).toHaveAttribute("href", "/chat");
+  await notice.getByRole("link", { name: "Ver" }).click();
+  await expect(page).toHaveURL(/\/settings#memoria/);
+  expect(sent.some((x) => x.action === "memory_seen")).toBe(true);
+});
+
+test("Ajustes › Privacidad: «Descargar mis datos» downloads a JSON file", async ({ page }) => {
+  await mock(page, { profile: DONE });
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    const action = String((route.request().postDataJSON() as Record<string, unknown>).action);
+    if (action !== "data_export") return route.fallback();
+    return route.fulfill({ json: { data: { formato: "Dream · copia de tus datos", tablas: { dream_messages: [] } } } });
+  });
+  await page.goto("/settings");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Descargar mis datos" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^mis-datos-dream-\d{4}-\d{2}-\d{2}\.json$/);
+});

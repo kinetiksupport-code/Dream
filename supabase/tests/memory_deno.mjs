@@ -42,14 +42,21 @@ const harness = await startHarness({
 const db = createClient(Deno.env.get("SUPABASE_URL"), "service-test", { auth: { persistSession: false } });
 const flags = { memory: true, memoryImport: true };
 
-Deno.test("switch off (production): no memory actions, no memory in the profile or the prompt", async () => {
-  assertEquals((await harness.call(token, { action: "memory_list" })).status, 400);
-  const p = await harness.call(token, { action: "profile" });
-  assertEquals(p.json.features, undefined);
-  groqBodies.length = 0;
-  const res = await harness.call(token, { action: "chat", conversation_id: CONV, prompt: "hola" });
-  assertEquals(res.status, 200, res.text);
-  for (const body of groqBodies) assertNotMatch(JSON.stringify(body), /LO QUE RECUERDAS/);
+Deno.test("a student who has not said yes: no memory in the prompt; with the switch off, no actions", async () => {
+  const no = harness.state.tables.dream_profiles[0];
+  no.memory_enabled = false;
+  try {
+    groqBodies.length = 0;
+    const res = await harness.call(token, { action: "chat", conversation_id: CONV, prompt: "hola de nuevo" });
+    assertEquals(res.status, 200, res.text);
+    for (const body of groqBodies) assertNotMatch(JSON.stringify(body), /LO QUE RECUERDAS/);
+    assert(!harness.requests.some((r) => r.path === "/rest/v1/rpc/dream_memory_apply"));
+    const p = await harness.call(token, { action: "profile" });
+    assertEquals(p.json.features, { memory: true, memory_import: true });
+    assertEquals(p.json.memory_enabled, false);
+  } finally { no.memory_enabled = true; }
+  const off = await handleMemoryAction({ admin: db, user: { id: USER_ID }, profile, body: { action: "memory_list" }, ai: async () => ({}), flags: { memory: false } });
+  assertEquals(off.status, 400);
 });
 
 Deno.test("switch on: the memory block is built at the start, pinned first, and saved with the conversation", async () => {

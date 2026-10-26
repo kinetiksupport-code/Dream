@@ -13,15 +13,16 @@ import { FEATURE_FLAGS, selfKnowledge } from "../supabase/functions/dream-api/fe
 import { groupMemories, parseMemory } from "../lib/memory";
 import memoria from "../evals/memoria.json" with { type: "json" };
 
-test("the memory is off in the code until Carlos says so, and needs the student's yes", () => {
-  assert.equal(FEATURE_FLAGS.memory, false);
-  assert.equal(FEATURE_FLAGS.memoryImport, false);
-  assert.equal(memoryOn({ memory_enabled: true }), false);
+test("the memory needs the code switch AND the student's yes", () => {
+  assert.equal(FEATURE_FLAGS.memory, true);
+  assert.equal(FEATURE_FLAGS.memoryImport, true);
+  assert.equal(memoryOn({ memory_enabled: true }, { memory: false }), false);
   assert.equal(memoryOn({ memory_enabled: true }, { memory: true }), true);
   assert.equal(memoryOn({ memory_enabled: false }, { memory: true }), false);
   assert.equal(memoryOn({}, { memory: true }), false, "por defecto, no");
   // Dream only talks about its memory when the switch is on.
-  assert.doesNotMatch(selfKnowledge(), /Lo que Dream recuerda/);
+  assert.doesNotMatch(selfKnowledge({ memory: false }), /Lo que Dream recuerda/);
+  assert.match(selfKnowledge(), /Lo que Dream recuerda/);
 });
 
 test("the sensitive filter keeps study facts and drops the rest", () => {

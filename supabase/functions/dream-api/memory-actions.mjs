@@ -9,7 +9,7 @@ import {
 import { onboardingPatch } from './onboarding.mjs';
 
 export const MEMORY_ACTIONS = new Set([
-  'memory_list', 'memory_toggle', 'memory_delete', 'memory_delete_all', 'memory_pin', 'memory_import_preview', 'memory_import_commit',
+  'memory_list', 'memory_toggle', 'memory_delete', 'memory_delete_all', 'memory_pin', 'memory_import_preview', 'memory_import_commit', 'memory_seen',
 ]);
 // Modelo barato para extraer (el «Rápido» de Groq: gpt-oss-20b, con JSON estricto).
 export const MEMORY_MODEL = 'openai/gpt-oss-20b';
@@ -40,6 +40,10 @@ export async function handleMemoryAction({ admin, user, profile, body, ai, flags
         return { status: 200, body: { memory_enabled: profile.memory_enabled === true, items, export_prompt: MEMORY_EXPORT_PROMPT,
           imports_left: importsLeft(profile), import_available: flags.memoryImport === true } };
       }
+      case 'memory_seen': {
+        await admin.from('dream_profiles').update({ memory_unseen: 0 }).eq('id', user.id);
+        return { status: 200, body: { ok: true } };
+      }
       case 'memory_toggle': {
         if (typeof body.enabled !== 'boolean') throw new MemoryError('Elige sí o no.');
         const saved = await admin.from('dream_profiles').update({ memory_enabled: body.enabled, memory_choice_at: new Date().toISOString() }).eq('id', user.id);
@@ -55,7 +59,7 @@ export async function handleMemoryAction({ admin, user, profile, body, ai, flags
       case 'memory_delete_all': {
         if (body.confirm !== 'BORRAR') throw new MemoryError('Confirma que quieres borrarlo todo.');
         const a = await admin.from('dream_memories').delete().eq('user_id', user.id);
-        const b = await admin.from('dream_conversation_summaries').delete().eq('user_id', user.id);
+        const b = await admin.from('dream_conversation_summaries').delete().eq('owner_id', user.id);
         if (a.error || b.error) throw new MemoryError('No se pudo borrar.', 503, 'memory_save_failed');
         return { status: 200, body: { ok: true } };
       }
@@ -120,7 +124,7 @@ function importsLeft(profile) {
 export async function startConversationMemory({ admin, userId, conversationId, prompt }) {
   const [items, last] = await Promise.all([
     admin.from('dream_memories').select(ITEM_FIELDS).eq('user_id', userId).limit(MEMORY_LIMITS.perStudent),
-    admin.from('dream_conversation_summaries').select('summary').eq('user_id', userId).neq('conversation_id', conversationId)
+    admin.from('dream_conversation_summaries').select('summary').eq('owner_id', userId).neq('conversation_id', conversationId)
       .order('updated_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (items.error) return '';
@@ -131,15 +135,19 @@ export async function startConversationMemory({ admin, userId, conversationId, p
 }
 
 /**
- * Al abrir otra conversación: extrae la memoria de la anterior si tiene al
- * menos 4 mensajes del alumno y no se ha extraído después de su último
- * mensaje. Prioridad baja: si la IA está ocupada, se deja para la próxima.
+ * Al abrir otra conversación (o al volver a Dream con la última quieta 30 min):
+ * extrae la memoria de la anterior si tiene al menos 4 mensajes del alumno y no
+ * se ha extraído después de su último mensaje. Prioridad baja: si la IA está
+ * ocupada, se deja para la próxima.
  */
-export async function extractPreviousConversation({ admin, userId, currentConversationId, ai }) {
-  const previous = await admin.from('dream_conversations').select('id,updated_at,memory_extracted_at').eq('owner_id', userId)
-    .neq('id', currentConversationId).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+export async function extractPreviousConversation({ admin, userId, currentConversationId = null, ai, minIdleMinutes = 0, now = Date.now() }) {
+  let query = admin.from('dream_conversations').select('id,updated_at,memory_extracted_at').eq('owner_id', userId);
+  if (currentConversationId) query = query.neq('id', currentConversationId);
+  const previous = await query.order('updated_at', { ascending: false }).limit(1).maybeSingle();
   const conv = previous.data;
   if (!conv || (conv.memory_extracted_at && conv.memory_extracted_at >= conv.updated_at)) return { skipped: 'nothing_new' };
+  // Al volver a abrir Dream: solo si esa conversación lleva un rato quieta (30 min).
+  if (minIdleMinutes && now - Date.parse(conv.updated_at) < minIdleMinutes * 60_000) return { skipped: 'still_active' };
   const messages = (await admin.from('dream_messages').select('role,content').eq('conversation_id', conv.id).eq('owner_id', userId)
     .order('created_at', { ascending: true }).limit(60)).data ?? [];
   if (messages.filter((m) => m.role === 'user').length < MEMORY_LIMITS.minStudentMessages) return { skipped: 'too_short' };

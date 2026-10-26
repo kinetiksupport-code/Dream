@@ -26,20 +26,30 @@ create table if not exists public.dream_memories (
 );
 create index if not exists dream_memories_user_idx on public.dream_memories(user_id, pinned desc, last_used_at desc nulls last);
 
+-- Ya existe en producción (vacía y sin uso, con owner_id y last_message_id):
+-- se reutiliza y se le añaden los temas y el límite de tamaño.
 create table if not exists public.dream_conversation_summaries (
   conversation_id uuid primary key references public.dream_conversations(id) on delete cascade,
-  user_id uuid not null references auth.users(id) on delete cascade,
-  summary text not null check (char_length(summary) <= 400),
-  topics text[] not null default '{}',
+  owner_id uuid not null references auth.users(id) on delete cascade,
+  summary text not null,
+  last_message_id uuid,
   updated_at timestamptz not null default now()
 );
-create index if not exists dream_conversation_summaries_user_idx on public.dream_conversation_summaries(user_id, updated_at desc);
+alter table public.dream_conversation_summaries add column if not exists topics text[] not null default '{}';
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = 'dream_conversation_summaries_summary_len') then
+    alter table public.dream_conversation_summaries add constraint dream_conversation_summaries_summary_len check (char_length(summary) <= 400);
+  end if;
+end $$;
+create index if not exists dream_conversation_summaries_owner_idx on public.dream_conversation_summaries(owner_id, updated_at desc);
 
 alter table public.dream_profiles
   add column if not exists memory_enabled boolean not null default false,
   add column if not exists memory_choice_at timestamptz,
   add column if not exists memory_imports_day date,
-  add column if not exists memory_imports_count integer not null default 0 check (memory_imports_count >= 0);
+  add column if not exists memory_imports_count integer not null default 0 check (memory_imports_count >= 0),
+  -- Recuerdos nuevos que el alumno aún no ha visto («Dream ha recordado 2 cosas · Ver»).
+  add column if not exists memory_unseen integer not null default 0 check (memory_unseen >= 0);
 
 -- El bloque de memoria se calcula al empezar la conversación y se guarda con
 -- ella (prompt estable); memory_extracted_at evita extraer dos veces.
@@ -55,11 +65,12 @@ grant select, delete on table public.dream_memories, public.dream_conversation_s
 drop policy if exists dream_memories_own_select on public.dream_memories;
 drop policy if exists dream_memories_own_delete on public.dream_memories;
 drop policy if exists dream_summaries_own_select on public.dream_conversation_summaries;
+drop policy if exists dream_summaries_select_own on public.dream_conversation_summaries;
 drop policy if exists dream_summaries_own_delete on public.dream_conversation_summaries;
 create policy dream_memories_own_select on public.dream_memories for select to authenticated using (user_id = (select auth.uid()));
 create policy dream_memories_own_delete on public.dream_memories for delete to authenticated using (user_id = (select auth.uid()));
-create policy dream_summaries_own_select on public.dream_conversation_summaries for select to authenticated using (user_id = (select auth.uid()));
-create policy dream_summaries_own_delete on public.dream_conversation_summaries for delete to authenticated using (user_id = (select auth.uid()));
+create policy dream_summaries_own_select on public.dream_conversation_summaries for select to authenticated using (owner_id = (select auth.uid()));
+create policy dream_summaries_own_delete on public.dream_conversation_summaries for delete to authenticated using (owner_id = (select auth.uid()));
 
 -- Guarda lo que ha sacado el extractor (ya validado y filtrado en dream-api) y
 -- deja como mucho 40 recuerdos: sobran los no fijados más antiguos y menos usados.
@@ -94,11 +105,14 @@ begin
   );
   if p_conversation is not null then
     if coalesce(p_summary, '') <> '' then
-      insert into public.dream_conversation_summaries(conversation_id, user_id, summary, topics)
+      insert into public.dream_conversation_summaries(conversation_id, owner_id, summary, topics)
       values (p_conversation, p_owner, left(p_summary, 400), coalesce(p_topics[1:8], '{}'))
       on conflict (conversation_id) do update set summary = excluded.summary, topics = excluded.topics, updated_at = now();
     end if;
     update public.dream_conversations set memory_extracted_at = now() where id = p_conversation and owner_id = p_owner;
+  end if;
+  if p_source = 'chat' and v_added > 0 then
+    update public.dream_profiles set memory_unseen = least(memory_unseen + v_added, 40) where id = p_owner;
   end if;
   return jsonb_build_object('ok', true, 'added', v_added, 'forgotten', v_removed);
 end $$;

@@ -58,3 +58,21 @@ export function cardsAsSources(rows) {
       .filter(Boolean).join('\n').slice(0, 800),
   }));
 }
+
+// Comprobación barata (Bloque 2 ter, punto 6): gpt-oss-20b decide si lo que dice
+// la respuesta está respaldado por las fuentes. Solo en reglas, fórmulas y datos.
+export const CLAIM_CHECK_PROMPT = 'Comprueba si la RESPUESTA dice algo que las FUENTES no respaldan (datos, fechas, reglas, fórmulas). Ignora el tono, las preguntas y los ejemplos inventados con otros números. Responde solo JSON.';
+export const CLAIM_CHECK_SCHEMA = Object.freeze({
+  name: 'dream_comprobar', strict: true,
+  schema: { type: 'object', additionalProperties: false, required: ['supported'], properties: { supported: { type: 'boolean' } } },
+});
+export function claimCheckMessages(answer, sourcesText) {
+  return [
+    { role: 'system', content: CLAIM_CHECK_PROMPT },
+    { role: 'user', content: `<fuentes>\n${String(sourcesText).slice(0, 4000)}\n</fuentes>\n<respuesta>\n${String(answer).slice(0, 3000)}\n</respuesta>` },
+  ];
+}
+
+/** Palabras visibles de una respuesta (para el reintento de respuestas largas). */
+export const visibleWords = (text) => (String(text).replace(/<!--[\s\S]*?-->/g, ' ').match(/[\p{L}\p{N}]+/gu) ?? []).length;
+export const SHORTER_NOTE = 'Tu respuesta anterior es demasiado larga para lo que ha pedido. Rehazla en 75 palabras como mucho, un solo paso y, si hace falta, una pregunta al final. No menciones esta indicación.';

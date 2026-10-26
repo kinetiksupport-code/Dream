@@ -15,6 +15,8 @@ export type DreamAction =
   | "memory_pin"
   | "memory_import_preview"
   | "memory_import_commit"
+  | "memory_seen"
+  | "data_export"
   | "exam_create"
   | "exam_get"
   | "exam_update"
@@ -257,6 +259,7 @@ export async function getDreamProfile(signal?: AbortSignal) {
     special_account?: { welcome?: unknown } | null;
     features?: { memory?: unknown; memory_import?: unknown };
     memory_enabled?: unknown;
+    memory_new?: unknown;
   }>("profile", {}, signal);
   const p = data?.profile;
   if (!p || typeof p !== "object") {
@@ -287,6 +290,10 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.memory_feature = true;
     profile.memory_import_feature = data.features.memory_import === true;
     profile.memory_enabled = data.memory_enabled === true;
+    profile.memory_new =
+      typeof data.memory_new === "number" && data.memory_new > 0
+        ? Math.min(40, Math.floor(data.memory_new))
+        : 0;
   }
   // Bienvenida de Loyola: texto corto del servidor, una sola vez.
   const welcome = data.special_account?.welcome;

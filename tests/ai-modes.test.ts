@@ -100,7 +100,7 @@ async function collect(stream: AsyncIterable<Chunk>) {
 }
 
 // ---------------------------------------------------------------- Modos
-const OFF = { thinkMode: false, cloudflareFallback: false, mathCheck: false };
+const OFF = { thinkMode: false, cloudflareFallback: false, mathCheck: false, openrouterFallback: false, shortRetry: false, claimCheck: false };
 const cfOn = () => createCloudflareProvider({ getEnv: cfEnv, logger });
 const cfOff = () =>
   createCloudflareProvider({ getEnv: () => undefined, logger });

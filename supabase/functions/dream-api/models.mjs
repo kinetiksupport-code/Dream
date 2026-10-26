@@ -9,8 +9,17 @@ import { answerTokenBudget } from './capacity.mjs';
 // despliegue. Encendidos no bastan: sin los secretos CLOUDFLAREAI_API_KEY y
 // CLOUDFLARE_ACCOUNT_ID (válidos), «Pensar más» no se ofrece y el respaldo
 // sigue apagado en silencio (modeAvailable, fallbackAvailable).
-/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean, mathCheck: boolean}>} */
+/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean, mathCheck: boolean, openrouterFallback: boolean, shortRetry: boolean, claimCheck: boolean}>} */
 export const AI_FLAGS = Object.freeze({
+  // Respaldo gratuito con OpenRouter (openrouter.mjs) cuando Groq y Cloudflare
+  // no responden. APAGADO: antes hay que nombrarlo en la privacidad (duda 11).
+  openrouterFallback: false,
+  // Si una respuesta normal pasa de ~90 palabras sin pedir teoría, se pide una
+  // más corta (gasta una llamada más). APAGADO hasta medirlo con los evals.
+  shortRetry: false,
+  // Comprobación barata con gpt-oss-20b de que la respuesta con búsqueda está
+  // respaldada por las fuentes. APAGADO hasta medirlo con los evals.
+  claimCheck: false,
   // Comprobar las operaciones de las respuestas de ciencias antes de enseñarlas
   // (math-tools.mjs). APAGADO hasta medirlo con los evals: quita el «escribir
   // poco a poco» en esas respuestas y puede gastar una llamada más.
