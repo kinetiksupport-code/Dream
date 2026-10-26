@@ -5,10 +5,10 @@
 // Nunca se registra el contenido del alumno ni el del esquema.
 
 export const SCHEME_LIMITS = Object.freeze({
-  title: 70, subtitle: 140, subject: 40, heading: 48, bullet: 150, quote: 200,
-  subcardTitle: 40, year: 24, dateText: 100, formula: 200, illustration: 160,
+  title: 70, subtitle: 150, subject: 40, heading: 56, period: 24, intro: 260, bullet: 150, quote: 200,
+  subcardTitle: 40, year: 24, dateText: 100, formula: 200, highlight: 170, illustration: 160, caption: 90,
   keyIdea: 130, summary: 360, closing: 170,
-  sections: [3, 7], bullets: 6, subcards: 3, subBullets: 4, dates: 8, keyIdeas: 4,
+  sections: [3, 7], bullets: 7, subcards: 3, subBullets: 7, dates: 10, keyIdeas: 4,
 });
 
 export const SECTION_KINDS = Object.freeze(['list', 'subcards', 'dates', 'formula', 'examples', 'mistakes', 'legacy']);
@@ -20,7 +20,7 @@ const bullet = {
   properties: { text: str(L.bullet), quote: str(L.quote) },
 };
 
-/** Esquema para `response_format: {type: 'json_schema', strict: true}`. */
+/** Esquema para `response_format: {type: 'json_schema'}` (todas las propiedades obligatorias, sin extras). */
 export const SCHEME_JSON_SCHEMA = Object.freeze({
   type: 'object', additionalProperties: false,
   required: ['title', 'subtitle', 'subject', 'sections', 'key_ideas', 'summary', 'closing'],
@@ -30,16 +30,18 @@ export const SCHEME_JSON_SCHEMA = Object.freeze({
       type: 'array', minItems: L.sections[0], maxItems: L.sections[1],
       items: {
         type: 'object', additionalProperties: false,
-        required: ['heading', 'kind', 'bullets', 'subcards', 'dates', 'formula', 'illustration_prompt'],
+        required: ['heading', 'period', 'kind', 'intro', 'bullets', 'subcards', 'dates', 'formula', 'highlight', 'illustration_prompt', 'illustration_caption'],
         properties: {
           heading: str(L.heading),
+          period: str(L.period),
           kind: { type: 'string', enum: [...SECTION_KINDS] },
+          intro: str(L.intro),
           bullets: { type: 'array', maxItems: L.bullets, items: bullet },
           subcards: {
             type: 'array', maxItems: L.subcards,
             items: {
-              type: 'object', additionalProperties: false, required: ['title', 'bullets'],
-              properties: { title: str(L.subcardTitle), bullets: { type: 'array', maxItems: L.subBullets, items: bullet } },
+              type: 'object', additionalProperties: false, required: ['title', 'period', 'bullets'],
+              properties: { title: str(L.subcardTitle), period: str(L.period), bullets: { type: 'array', maxItems: L.subBullets, items: bullet } },
             },
           },
           dates: {
@@ -50,7 +52,9 @@ export const SCHEME_JSON_SCHEMA = Object.freeze({
             },
           },
           formula: str(L.formula),
+          highlight: str(L.highlight),
           illustration_prompt: { type: ['string', 'null'], maxLength: L.illustration },
+          illustration_caption: str(L.caption),
         },
       },
     },
@@ -65,6 +69,7 @@ const MARKDOWN_JUNK = /(^|\s)(#{1,6}\s|```)/;
 const ENGLISH = new Set(['the', 'and', 'of', 'with', 'which', 'was', 'were', 'is', 'are', 'this', 'that', 'from', 'by', 'for', 'its', 'their']);
 const SPANISH = new Set(['el', 'la', 'los', 'las', 'de', 'del', 'y', 'en', 'que', 'un', 'una', 'por', 'con', 'se', 'su', 'para', 'es', 'al']);
 const HAS_FACT = /\d/;
+const numbersIn = (text) => String(text ?? '').match(/\d+/g) ?? [];
 
 /** Minúsculas, sin tildes ni signos, espacios simples: para comparar citas. */
 export function normalizeForQuote(text) {
@@ -109,6 +114,9 @@ function languageLooksEnglish(text) {
  * - `errors`: fallos graves (se reintenta una vez pasándoselos a la IA).
  * - `dropped`: viñetas o fechas con cifras cuya cita no está en la fuente; se
  *   quitan sin reintentar (nunca se enseña un dato sin respaldo).
+ * - Las cifras de los textos libres (título, periodos, introducciones,
+ *   destacados, pies de foto, ideas, resumen, cierre) tienen que estar ya
+ *   respaldadas por alguna viñeta o fecha con cita; si no, es un error grave.
  * Si no hay fuente (`sources` vacío) no se comprueban citas: el que llama
  * decide si eso se permite (con apuntes o búsqueda siempre hay fuente).
  * @param {unknown} raw
@@ -123,23 +131,28 @@ export function validateScheme(raw, { sources = '' } = {}) {
   const r = /** @type {Record<string, any>} */ (raw);
   const sourceNorm = sources ? normalizeForQuote(sources) : '';
   const texts = [];
-  const field = (value, max, where, { required = true } = {}) => {
+  const verified = new Set();
+  const freeNumbers = [];
+  const field = (value, max, where, { required = true, free = false } = {}) => {
     const text = clean(value);
     if (required && !text) errors.push(`${where}: está vacío.`);
     if (text.length > max) errors.push(`${where}: tiene ${text.length} caracteres y el máximo es ${max}.`);
     if (HTML.test(text)) errors.push(`${where}: no puede llevar HTML.`);
     if (MARKDOWN_JUNK.test(text)) errors.push(`${where}: no puede llevar títulos Markdown ni bloques de código.`);
+    if (free) numbersIn(text).forEach((n) => freeNumbers.push([n, where]));
     texts.push(text);
     return text.slice(0, max);
   };
-  // Un dato con cifras solo pasa si su cita está en la fuente.
+  // Un dato con cifras solo pasa si su cita está en la fuente y contiene todas sus cifras.
   const supported = (text, quote) => {
     if (!sourceNorm || !HAS_FACT.test(text)) return true;
     checkedFacts++;
-    // La cita existe y además contiene todas las cifras del texto.
-    const numbers = String(text).match(/\d+/g) || [];
-    const quoted = new Set(String(quote).match(/\d+/g) || []);
-    if (quoteFound(quote, sourceNorm) && numbers.every((n) => quoted.has(n))) { foundFacts++; return true; }
+    const quoted = new Set(numbersIn(quote));
+    if (quoteFound(quote, sourceNorm) && numbersIn(text).every((n) => quoted.has(n))) {
+      foundFacts++;
+      numbersIn(text).forEach((n) => verified.add(n));
+      return true;
+    }
     dropped++;
     return false;
   };
@@ -157,22 +170,25 @@ export function validateScheme(raw, { sources = '' } = {}) {
     });
   };
 
-  const title = field(r.title, L.title, 'title');
-  const subtitle = field(r.subtitle, L.subtitle, 'subtitle', { required: false });
+  const title = field(r.title, L.title, 'title', { free: true });
+  const subtitle = field(r.subtitle, L.subtitle, 'subtitle', { required: false, free: true });
   const subject = field(r.subject, L.subject, 'subject', { required: false });
   const rawSections = Array.isArray(r.sections) ? r.sections : [];
   if (rawSections.length < L.sections[0] || rawSections.length > L.sections[1]) errors.push(`sections: tiene ${rawSections.length} secciones y deben ser entre ${L.sections[0]} y ${L.sections[1]}.`);
   const headings = new Set();
   const sections = rawSections.slice(0, L.sections[1]).map((s, i) => {
     const where = `sections[${i + 1}]`;
-    const heading = field(s?.heading, L.heading, `${where}.heading`);
+    const heading = field(s?.heading, L.heading, `${where}.heading`, { free: true });
     const hk = normalizeForQuote(heading);
     if (hk && headings.has(hk)) errors.push(`${where}.heading: título de sección repetido.`);
     headings.add(hk);
+    const period = field(s?.period, L.period, `${where}.period`, { required: false, free: true });
     const kind = SECTION_KINDS.includes(s?.kind) ? s.kind : (errors.push(`${where}.kind: «${clean(s?.kind).slice(0, 20)}» no es un tipo válido.`), 'list');
+    const intro = field(s?.intro, L.intro, `${where}.intro`, { required: false, free: true });
     const sectionBullets = bullets(s?.bullets ?? [], L.bullets, `${where}.bullets`);
     const subcards = (Array.isArray(s?.subcards) ? s.subcards : []).slice(0, L.subcards).map((c, j) => ({
-      title: field(c?.title, L.subcardTitle, `${where}.subcards[${j + 1}].title`),
+      title: field(c?.title, L.subcardTitle, `${where}.subcards[${j + 1}].title`, { free: true }),
+      period: field(c?.period, L.period, `${where}.subcards[${j + 1}].period`, { required: false, free: true }),
       bullets: bullets(c?.bullets ?? [], L.subBullets, `${where}.subcards[${j + 1}].bullets`),
     })).filter((c) => c.title && c.bullets.length);
     const dates = (Array.isArray(s?.dates) ? s.dates : []).slice(0, L.dates).flatMap((d, j) => {
@@ -184,19 +200,25 @@ export function validateScheme(raw, { sources = '' } = {}) {
     const values = dates.map((d) => yearValue(d.year));
     if (values.every((v) => v !== null) && values.some((v, k) => k > 0 && v < values[k - 1])) errors.push(`${where}.dates: las fechas deben ir en orden cronológico.`);
     const formula = field(s?.formula, L.formula, `${where}.formula`, { required: false });
+    const highlight = field(s?.highlight, L.highlight, `${where}.highlight`, { required: false, free: true });
     const illustration = s?.illustration_prompt == null ? null : clean(s.illustration_prompt).slice(0, L.illustration) || null;
+    const caption = illustration ? field(s?.illustration_caption, L.caption, `${where}.illustration_caption`, { required: false, free: true }) : '';
     if (kind === 'subcards' && !subcards.length && !sectionBullets.length) errors.push(`${where}: es de tipo subcards y no tiene subtarjetas.`);
     if (kind === 'dates' && !dates.length && !sectionBullets.length) errors.push(`${where}: es de tipo dates y no tiene fechas.`);
     if (kind === 'formula' && !formula) errors.push(`${where}: es de tipo formula y no tiene fórmula.`);
-    return { heading, kind, bullets: sectionBullets, subcards, dates, formula, illustration_prompt: illustration };
+    return { heading, period, kind, intro, bullets: sectionBullets, subcards, dates, formula, highlight, illustration_prompt: illustration, illustration_caption: caption };
   });
   // Si quitar datos sin respaldo deja una sección vacía, la sección se va.
-  const kept = sections.filter((s) => s.bullets.length || s.subcards.length || s.dates.length || s.formula);
+  const kept = sections.filter((s) => s.intro || s.bullets.length || s.subcards.length || s.dates.length || s.formula);
   if (rawSections.length >= L.sections[0] && kept.length < L.sections[0] && !errors.length) errors.push(`Tras quitar los datos sin cita en la fuente quedan ${kept.length} secciones: usa solo datos que aparezcan en la fuente.`);
   const keyIdeas = (Array.isArray(r.key_ideas) ? r.key_ideas : []).slice(0, L.keyIdeas)
-    .map((k, i) => field(k, L.keyIdea, `key_ideas[${i + 1}]`)).filter(Boolean);
-  const summary = field(r.summary, L.summary, 'summary', { required: false });
-  const closing = field(r.closing, L.closing, 'closing', { required: false });
+    .map((k, i) => field(k, L.keyIdea, `key_ideas[${i + 1}]`, { free: true })).filter(Boolean);
+  const summary = field(r.summary, L.summary, 'summary', { required: false, free: true });
+  const closing = field(r.closing, L.closing, 'closing', { required: false, free: true });
+  if (sourceNorm) {
+    const unbacked = [...new Map(freeNumbers.filter(([n]) => !verified.has(n)).map(([n, where]) => [n, where])).entries()];
+    unbacked.slice(0, 6).forEach(([n, where]) => errors.push(`${where}: la cifra ${n} no está en ninguna viñeta o fecha con cita de la fuente. Quítala o añade esa viñeta con su cita.`));
+  }
   if (texts.some(languageLooksEnglish) || languageLooksEnglish(texts.join(' '))) errors.push('El texto debe estar en español de España, no en inglés.');
   const scheme = { title, subtitle, subject, sections: kept, key_ideas: keyIdeas, summary, closing };
   return { scheme: errors.length ? null : scheme, errors: errors.slice(0, 20), dropped, checkedFacts, foundFacts };
@@ -213,7 +235,7 @@ export async function generateScheme({ call, messages, sources = '' }) {
   let attempts = 0;
   let last = { errors: ['Sin respuesta.'] };
   let history = messages;
-  for (; attempts < 2; ) {
+  while (attempts < 2) {
     attempts++;
     let raw;
     try { raw = await call(history); }

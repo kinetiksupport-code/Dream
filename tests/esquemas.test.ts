@@ -30,7 +30,7 @@ test("el ejemplo de al-Ándalus pasa el validador con sus apuntes y conserva tod
 test("un dato con cifras cuya cita no está en la fuente se quita sin reintentar", () => {
   const bad = clone(example);
   bad.sections[0].bullets.push({ text: "En **1050** se fundaron 40 taifas.", quote: "en 1050 se fundaron cuarenta taifas en total" });
-  bad.sections[2].dates.splice(1, 0, { year: "1086", text: "Batalla inventada", quote: "" });
+  bad.sections[3].dates.splice(1, 0, { year: "1086", text: "Batalla inventada", quote: "" });
   const result = validateScheme(bad, { sources: notes });
   assert.deepEqual(result.errors, []);
   assert.equal(result.dropped, 2);
@@ -48,8 +48,8 @@ test("errores graves: longitudes, HTML, inglés, fechas desordenadas, duplicados
   const bad = clone(example);
   bad.title = "x".repeat(SCHEME_LIMITS.title + 5);
   bad.sections[0].bullets[1].text = "<b>Reinos</b> pequeños";
-  bad.sections[2].dates.reverse();
-  bad.sections[3].heading = bad.sections[0].heading;
+  bad.sections[3].dates.reverse();
+  bad.sections[2].heading = bad.sections[0].heading;
   const { errors, scheme } = validateScheme(bad, { sources: notes });
   assert.equal(scheme, null);
   assert.ok(errors.some((e: string) => e.startsWith("title:")));
@@ -120,20 +120,33 @@ test("prompt: fuente como datos, ejemplo opcional, sin diseño", () => {
   assert.ok(!/css|html libre|color/i.test(SCHEME_PROMPT.replace("sin HTML", "")));
 });
 
-test("maqueta determinista: colores en ciclo, números, columnas equilibradas, 2–4 ilustraciones", () => {
+test("maqueta determinista: tonos, números, columnas, ilustraciones y bloques finales", () => {
   const scheme = validateScheme(example, { sources: notes }).scheme!;
   const a = layoutScheme(scheme, 3);
-  const b = layoutScheme(scheme, 3);
-  assert.deepEqual(a, b);
-  assert.deepEqual(a.cards.map((c) => c.number), [1, 2, 3, 4, 5]);
-  assert.deepEqual(a.cards.map((c) => c.tone), PALETTE.slice(0, 5).map((p) => p.id));
-  assert.equal(a.columns.length, 3);
-  assert.deepEqual(a.columns.flat().sort(), [0, 1, 2, 3, 4]);
-  const illustrated = a.cards.filter((c) => c.illustration).length;
-  assert.ok(illustrated >= 2 && illustrated <= 4);
-  assert.ok(a.cards.every((c) => !(c.kind === "dates" && c.illustration)));
-  const one = layoutScheme(scheme, 1);
-  assert.deepEqual(one.columns, [[0, 1, 2, 3, 4]]);
+  assert.deepEqual(a, layoutScheme(scheme, 3));
+  const sections = a.blocks.flatMap((b) => (b.type === "section" ? [b.card] : []));
+  assert.deepEqual(sections.map((c) => c.number), [1, 2, 3, 4, null]);
+  assert.deepEqual(sections.map((c) => c.tone), [...PALETTE.slice(0, 5)]);
+  // «Patrimonio» (legacy) cierra el esquema; ideas y resumen van en las columnas.
+  assert.deepEqual(a.blocks.map((b) => (b.type === "section" ? b.card.kind : b.type)), ["list", "subcards", "list", "dates", "ideas", "summary", "legacy"]);
+  assert.deepEqual(a.columns.map((c) => c[0]), [0, 1, 2]);
+  assert.deepEqual(a.columns.flat().sort((x, y) => x - y), [0, 1, 2, 3, 4, 5, 6]);
+  // La caja de cierre va en la primera tarjeta y solo ahí.
+  assert.equal(sections[0].closing, scheme.closing);
+  assert.ok(sections.slice(1).every((c) => !c.closing));
+  const illustrated = sections.filter((c) => c.illustration);
+  assert.ok(illustrated.length >= 2 && illustrated.length <= 4);
+  assert.ok(illustrated.every((c) => c.kind !== "dates" && c.kind !== "formula"));
+  assert.deepEqual(layoutScheme(scheme, 1).columns, [[0, 1, 2, 3, 4, 5, 6]]);
+});
+
+test("las cifras de los textos libres deben estar respaldadas por una viñeta o fecha con cita", () => {
+  const bad = clone(example);
+  bad.summary = "En 1300 al-Ándalus vivió su mejor momento.";
+  bad.sections[1].period = "1086-1269";
+  const { errors } = validateScheme(bad, { sources: notes });
+  assert.ok(errors.some((e: string) => e.startsWith("summary: la cifra 1300")));
+  assert.ok(errors.some((e: string) => e.includes("period: la cifra 1269")));
 });
 
 test("negritas: solo **texto**, nunca HTML", () => {
@@ -163,17 +176,15 @@ test("contraste AA de los tonos del esquema en claro y oscuro", async () => {
     };
     check("texto/papel", base["--esq-ink"], base["--esq-paper"], 4.5);
     check("texto suave/papel", base["--esq-ink-soft"], base["--esq-paper"], 4.5);
-    check("píldora A", base["--esq-pill-ink"], base["--esq-pill-a"], 4.5);
-    check("píldora B", base["--esq-pill-ink"], base["--esq-pill-b"], 4.5);
-    check("ideas", base["--esq-ideas-accent"], base["--esq-ideas-bg"], 4.5);
-    check("ideas texto", base["--esq-ink"], base["--esq-ideas-bg"], 4.5);
-    check("cierre", base["--esq-closing-ink"], base["--esq-closing-bg"], 4.5);
-    for (const { id } of PALETTE) {
+    check("título/franja", base["--esq-ink"], base["--esq-band"], 4.5);
+    for (const id of [...PALETTE, "verde", "lila"]) {
       const tone = block(`${theme} [data-tone="${id}"]`);
       check(`${id} texto`, base["--esq-ink"], tone["--bg"], 4.5);
-      check(`${id} título`, tone["--accent"], tone["--bg"], 4.5);
-      check(`${id} subtarjeta`, tone["--accent"], base["--esq-paper"], 4.5);
-      check(`${id} número`, base["--esq-paper"], tone["--accent"], 4.5);
+      check(`${id} cabecera, píldora, destacado`, base["--esq-ink"], tone["--head"], 4.5);
+      check(`${id} pie de foto`, base["--esq-ink-soft"], tone["--bg"], 4.5);
+      // Número de 28 px en negrita: texto grande, 3:1. Iconos: 3:1.
+      check(`${id} número`, base["--esq-on-accent"], tone["--accent"], 3);
+      check(`${id} icono`, tone["--accent"], tone["--head"], 3);
     }
     assert.deepEqual(failures, []);
   }

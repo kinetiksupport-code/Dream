@@ -15,9 +15,17 @@ Motivo: un modelo de 27.000 M de parámetros no puede diseñar y escribir 400 pa
 
 ## Maqueta
 
-Cabecera con materia, título redondeado (Nunito 900) y subtítulo entre líneas. Tarjetas pastel con borde del mismo tono, círculo numerado, subtarjetas, tabla de fechas con píldoras alternas, fórmula con KaTeX, «Ideas clave» con bombilla, «En resumen» a mano (Caveat) con subrayado, caja de cierre con flecha y el aviso «Contenido generado por IA, revísalo». Una columna en móvil (orden 1, 2, 3…) y tres desde 880 px; la última tarjeta de cada columna se estira para que acaben a la misma altura. Fuentes autoalojadas con `next/font`. Contraste AA de todos los tonos en claro y oscuro comprobado en `tests/esquemas.test.ts`.
+Calcada del ejemplo de Carlos (`docs/esquemas/referencia-al-andalus.webp`; comparación lado a lado en `docs/esquemas/comparacion-al-andalus.png`):
 
-Capturas del ejemplo de al-Ándalus: `docs/esquemas/`.
+- Franja lila con título grande (Baloo 2) y subtítulo a mano (Caveat) entre líneas.
+- Tarjetas con fondo muy claro, borde y cabecera del mismo tono (amarillo, azul, rojo, índigo, celeste, naranja), círculo numerado y periodo entre paréntesis («(1031-1086)»).
+- Subtarjetas en paralelo (verde y lila), introducción, tabla de fechas con píldoras de colores y separadores, fórmula con KaTeX.
+- La caja de cierre («→ Fue una época…») va dentro de la primera tarjeta, junto a su ilustración.
+- «Ideas clave» (verde, bombilla), «En resumen» (lila, libro, letra a mano, subrayado ondulado) y «Patrimonio/Legado» (celeste, icono, recuadro destacado) van en las columnas como una tarjeta más.
+- Ilustraciones grandes al pie de la tarjeta, con pie de foto opcional.
+- Reparto en 3 columnas desde 900 px: se prueban todas las combinaciones y gana la que deja las columnas más igualadas; la última tarjeta de cada columna se estira. Una columna en móvil, en orden.
+- Fuentes autoalojadas con `next/font`. Contraste AA de todos los tonos en claro y oscuro comprobado en `tests/esquemas.test.ts`.
+- Las cifras de los textos sin cita (título, periodos, introducciones, resumen…) tienen que estar en alguna viñeta o fecha con cita; si no, error y reintento.
 
 Muestra local: `DREAM_STYLE_LAB=1 npx next start` y abrir `/esquema-muestra` (en producción da 404).
 

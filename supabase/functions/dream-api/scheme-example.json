@@ -1,93 +1,128 @@
 {
-  "title": "Al-Ándalus tras el califato",
-  "subtitle": "De los reinos de taifas a la caída de Granada (1031–1492)",
+  "title": "La evolución de al-Ándalus tras el final del califato",
+  "subtitle": "Del califato a los reinos de taifas, pasando por los imperios norteafricanos, hasta el reino nazarí de Granada",
   "subject": "Historia de España",
   "sections": [
     {
-      "heading": "Los reinos de taifas",
+      "heading": "La fragmentación de al-Ándalus en taifas",
+      "period": "1031-1086",
       "kind": "list",
+      "intro": "",
       "bullets": [
-        { "text": "En **1031** desaparece el califato de Córdoba y al-Ándalus se divide en **taifas**.", "quote": "En 1031 desaparece el califato de Córdoba y al-Ándalus se divide en reinos de taifas" },
-        { "text": "Reinos pequeños e independientes: Sevilla, Toledo, Zaragoza, Badajoz, Granada.", "quote": "" },
-        { "text": "Débiles en lo militar, pagaban **parias** (tributos en oro o plata) a los cristianos.", "quote": "" }
+        { "text": "Tras la muerte de **Almanzor (1002)**, las luchas internas debilitaron el califato de Córdoba.", "quote": "Tras la muerte de Almanzor en 1002, las luchas internas debilitaron el califato de Córdoba" },
+        { "text": "En **1031** desaparece el califato y al-Ándalus se divide en **reinos de taifas**.", "quote": "En 1031 desaparece el califato de Córdoba y al-Ándalus se divide en reinos de taifas" },
+        { "text": "Taifas más poderosas: **Sevilla, Badajoz y Zaragoza**.", "quote": "" },
+        { "text": "Se enfrentaban entre ellas y eran débiles militarmente.", "quote": "" },
+        { "text": "Pagaban **parias** (tributos en oro o plata) a los reinos cristianos a cambio de protección.", "quote": "" }
       ],
       "subcards": [],
       "dates": [],
       "formula": "",
-      "illustration_prompt": "Andalusian palace courtyard with horseshoe arches and a fountain at sunset"
+      "highlight": "",
+      "illustration_prompt": "Medieval Andalusian fortress with crenellated towers on a hill among cypress trees, warm sunset",
+      "illustration_caption": ""
     },
     {
-      "heading": "Almorávides y almohades",
+      "heading": "Los imperios norteafricanos",
+      "period": "1086-1212",
       "kind": "subcards",
+      "intro": "Ante el avance cristiano, las taifas pidieron ayuda a pueblos **bereberes** del norte de África.",
       "bullets": [],
       "subcards": [
         {
-          "title": "Almorávides",
+          "title": "Los almorávides",
+          "period": "1086-1146",
           "bullets": [
-            { "text": "Bereberes del norte de África llamados por las taifas.", "quote": "" },
-            { "text": "Vencen en **Sagrajas (1086)** y unifican al-Ándalus.", "quote": "En 1086 los almorávides, dirigidos por Yusuf ibn Tasufin, vencen a Alfonso VI en la batalla de Sagrajas" }
+            { "text": "Pueblo bereber del norte de África con capital en **Marrakech**.", "quote": "" },
+            { "text": "Vencen a Alfonso VI en **Sagrajas (1086)**.", "quote": "En 1086 los almorávides, dirigidos por Yusuf ibn Tasufin, vencen a Alfonso VI en la batalla de Sagrajas" },
+            { "text": "Destronan a los reyes de taifas y **unifican al-Ándalus**.", "quote": "" },
+            { "text": "Impusieron una interpretación estricta del islam.", "quote": "" }
           ]
         },
         {
-          "title": "Almohades",
+          "title": "Los almohades",
+          "period": "1146-1212",
           "bullets": [
-            { "text": "Llegan a la península a partir de **1146**, con capital en Sevilla.", "quote": "llegan a la península a partir de 1146 y vuelven a unificar al-Ándalus, con capital en Sevilla" },
+            { "text": "Otro movimiento bereber; llegan a la península a partir de **1146**.", "quote": "llegan a la península a partir de 1146 y vuelven a unificar al-Ándalus" },
+            { "text": "Reunifican al-Ándalus con capital en **Sevilla**.", "quote": "" },
+            { "text": "Vencen a Alfonso VIII en **Alarcos (1195)**.", "quote": "En 1195 los almohades vencen a Alfonso VIII de Castilla en la batalla de Alarcos" },
             { "text": "Derrotados en las **Navas de Tolosa (1212)** por una coalición cristiana.", "quote": "En 1212 una coalición de reinos cristianos derrota a los almohades en la batalla de las Navas de Tolosa" }
           ]
         }
       ],
       "dates": [],
       "formula": "",
-      "illustration_prompt": "Medieval cavalry crossing a dry Iberian plain, silhouettes, warm dusk light"
-    },
-    {
-      "heading": "Fechas clave",
-      "kind": "dates",
-      "bullets": [],
-      "subcards": [],
-      "dates": [
-        { "year": "1031", "text": "Fin del califato de Córdoba", "quote": "En 1031 desaparece el califato de Córdoba" },
-        { "year": "1085", "text": "Alfonso VI conquista Toledo", "quote": "En 1085 Alfonso VI de Castilla conquista Toledo" },
-        { "year": "1212", "text": "Batalla de las Navas de Tolosa", "quote": "En 1212 una coalición de reinos cristianos derrota a los almohades en la batalla de las Navas de Tolosa" },
-        { "year": "1248", "text": "Fernando III conquista Sevilla", "quote": "Fernando III conquista Córdoba en 1236 y Sevilla en 1248" },
-        { "year": "1492", "text": "Los Reyes Católicos toman Granada", "quote": "El 2 de enero de 1492 los Reyes Católicos toman Granada" }
-      ],
-      "formula": "",
-      "illustration_prompt": null
+      "highlight": "",
+      "illustration_prompt": "North African walled city with a tall minaret and palm trees in golden light",
+      "illustration_caption": ""
     },
     {
       "heading": "El reino nazarí de Granada",
+      "period": "1238-1492",
       "kind": "list",
+      "intro": "Fundado por **Muhammad I**, fue el último territorio musulmán de la península.",
       "bullets": [
-        { "text": "Fundado por **Muhammad I** en **1238**: último territorio musulmán.", "quote": "En 1238 Muhammad I funda el reino nazarí de Granada, el último territorio musulmán de la península" },
-        { "text": "Vasallo de Castilla, a la que pagaba parias.", "quote": "" },
-        { "text": "Sobrevivió más de dos siglos gracias a la **diplomacia** y al **comercio**.", "quote": "" }
+        { "text": "Nace en **1238**, en pleno avance cristiano tras las Navas de Tolosa.", "quote": "En 1238 Muhammad I funda el reino nazarí de Granada" },
+        { "text": "Fue **vasallo de Castilla** y le pagaba parias.", "quote": "" },
+        { "text": "Sobrevivió más de dos siglos gracias a la **diplomacia** y al **comercio**.", "quote": "" },
+        { "text": "Alcanzó su máximo esplendor en el **siglo XIV**.", "quote": "alcanzó su máximo esplendor en el siglo XIV" },
+        { "text": "El **2 de enero de 1492** los Reyes Católicos toman Granada tras la rendición de Boabdil.", "quote": "El 2 de enero de 1492 los Reyes Católicos toman Granada tras la rendición de Boabdil" }
       ],
       "subcards": [],
       "dates": [],
       "formula": "",
-      "illustration_prompt": "The Alhambra palace on a hill above Granada with snowy mountains behind, golden hour"
+      "highlight": "",
+      "illustration_prompt": "The Alhambra palace on a wooded hill above Granada with snowy mountains behind, golden hour",
+      "illustration_caption": "La Alhambra de Granada, obra de los nazaríes."
     },
     {
-      "heading": "Legado de al-Ándalus",
+      "heading": "Fechas clave",
+      "period": "",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        { "year": "1002", "text": "Muerte de Almanzor.", "quote": "Tras la muerte de Almanzor en 1002" },
+        { "year": "1031", "text": "Fin del califato de Córdoba y comienzo de las taifas.", "quote": "En 1031 desaparece el califato de Córdoba y al-Ándalus se divide en reinos de taifas" },
+        { "year": "1085", "text": "Alfonso VI conquista Toledo.", "quote": "En 1085 Alfonso VI de Castilla conquista Toledo" },
+        { "year": "1086", "text": "Victoria almorávide en Sagrajas.", "quote": "En 1086 los almorávides, dirigidos por Yusuf ibn Tasufin, vencen a Alfonso VI en la batalla de Sagrajas" },
+        { "year": "1146", "text": "Llegada de los almohades a la península.", "quote": "llegan a la península a partir de 1146" },
+        { "year": "1212", "text": "Derrota almohade en las Navas de Tolosa.", "quote": "En 1212 una coalición de reinos cristianos derrota a los almohades en la batalla de las Navas de Tolosa" },
+        { "year": "1238", "text": "Nace el reino nazarí de Granada.", "quote": "En 1238 Muhammad I funda el reino nazarí de Granada" },
+        { "year": "1248", "text": "Fernando III conquista Sevilla.", "quote": "Fernando III conquista Córdoba en 1236 y Sevilla en 1248" },
+        { "year": "1492", "text": "Los Reyes Católicos toman Granada.", "quote": "El 2 de enero de 1492 los Reyes Católicos toman Granada" }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Patrimonio",
+      "period": "",
       "kind": "legacy",
+      "intro": "El arte y la cultura andalusí dejaron un gran legado:",
       "bullets": [
-        { "text": "**Arte:** la Alhambra y la Giralda, antiguo alminar almohade.", "quote": "" },
-        { "text": "**Agricultura:** regadío con acequias y norias.", "quote": "" },
-        { "text": "**Lengua:** palabras de origen árabe como aceite, azúcar o almohada.", "quote": "" },
-        { "text": "**Pensamiento:** Averroes, nacido en Córdoba en 1126.", "quote": "pensadores como Averroes, nacido en Córdoba en 1126" }
+        { "text": "Mezquitas, como la de **Córdoba**.", "quote": "" },
+        { "text": "Palacios, como la **Alhambra**.", "quote": "" },
+        { "text": "Regadío con **acequias y norias**.", "quote": "" },
+        { "text": "Palabras de origen árabe: **aceite, azúcar, almohada**.", "quote": "" },
+        { "text": "Pensadores como **Averroes**, nacido en Córdoba en 1126.", "quote": "pensadores como Averroes, nacido en Córdoba en 1126" }
       ],
       "subcards": [],
       "dates": [],
       "formula": "",
-      "illustration_prompt": "Old wooden water wheel beside an irrigation channel among orange trees"
+      "highlight": "La Alhambra, la Giralda y la Torre del Oro son algunos ejemplos del patrimonio de al-Ándalus.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
     }
   ],
   "key_ideas": [
-    "Sin el califato, al-Ándalus se fragmentó y se debilitó.",
+    "Sin el califato, al-Ándalus se fragmentó en taifas débiles.",
     "Almorávides y almohades frenaron el avance cristiano solo un tiempo.",
-    "Las Navas de Tolosa abrieron el camino a la conquista del sur."
+    "Las Navas de Tolosa abrieron el sur a los reinos cristianos."
   ],
-  "summary": "Tras 1031, al-Ándalus pasó de un califato unido a reinos de taifas débiles. Dos imperios del norte de África lo reunificaron, pero tras las Navas de Tolosa solo resistió el reino nazarí de Granada, hasta 1492.",
-  "closing": "Fue una época de división política y retroceso territorial, pero también de un gran esplendor cultural."
+  "summary": "Tras el califato, al-Ándalus pasó por una etapa de **fragmentación**, fue dominado por imperios norteafricanos y terminó con el reino nazarí de Granada, que cayó en 1492.",
+  "closing": "Fue una época de crisis política, pero también de gran brillantez cultural."
 }
