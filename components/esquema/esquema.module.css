@@ -1,0 +1,214 @@
+/* Esquema visual (docs/ESQUEMAS.md). Los tonos de cada tarjeta se eligen en
+   lib/esquema.ts (PALETTE); aquí sus valores en claro y oscuro. Contraste
+   comprobado en tests/esquemas.test.ts. */
+.esquema {
+  --esq-paper: #fffdf8;
+  --esq-ink: #1f2430;
+  --esq-ink-soft: #4a5161;
+  --esq-rule: #d9d3c6;
+  --esq-ideas-bg: #fff6d6;
+  --esq-ideas-border: #e9cf73;
+  --esq-ideas-accent: #7a5a00;
+  --esq-closing-bg: #1f2430;
+  --esq-closing-ink: #fffdf8;
+  --esq-pill-a: #2f5f8a;
+  --esq-pill-b: #8a3a52;
+  --esq-pill-ink: #ffffff;
+  background: var(--esq-paper);
+  color: var(--esq-ink);
+  border-radius: 28px;
+  padding: clamp(18px, 4vw, 44px);
+  font-family: var(--font-stack, system-ui), sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  max-width: 1200px;
+  margin-inline: auto;
+}
+.esquema [data-tone="verde"] { --bg: #ebf5e3; --border: #a8cf93; --accent: #3d6e2c; }
+.esquema [data-tone="azul"] { --bg: #e4eefa; --border: #9dc0e6; --accent: #2b5f93; }
+.esquema [data-tone="melocoton"] { --bg: #fdeddf; --border: #efb688; --accent: #9a4c17; }
+.esquema [data-tone="lila"] { --bg: #efe9f8; --border: #c0aee2; --accent: #5e4296; }
+.esquema [data-tone="amarillo"] { --bg: #fdf4d6; --border: #e5c867; --accent: #765600; }
+.esquema [data-tone="rosa"] { --bg: #fbe6ea; --border: #eaa6b3; --accent: #993449; }
+
+/* Oscuro: mismas tonalidades, fondos profundos y acentos claros. */
+:root[data-theme="dark"] .esquema {
+  --esq-paper: #15171c;
+  --esq-ink: #eef0f4;
+  --esq-ink-soft: #b9bfcb;
+  --esq-rule: #343842;
+  --esq-ideas-bg: #2a2410;
+  --esq-ideas-border: #6b5a1c;
+  --esq-ideas-accent: #f2d67a;
+  --esq-closing-bg: #eef0f4;
+  --esq-closing-ink: #15171c;
+  --esq-pill-a: #9cc4ec;
+  --esq-pill-b: #f0a9ba;
+  --esq-pill-ink: #15171c;
+}
+:root[data-theme="dark"] .esquema [data-tone="verde"] { --bg: #1b2a17; --border: #3f6232; --accent: #a8d892; }
+:root[data-theme="dark"] .esquema [data-tone="azul"] { --bg: #172334; --border: #36557a; --accent: #a3c7ef; }
+:root[data-theme="dark"] .esquema [data-tone="melocoton"] { --bg: #2e1f14; --border: #7a4a26; --accent: #f4be93; }
+:root[data-theme="dark"] .esquema [data-tone="lila"] { --bg: #241d33; --border: #574579; --accent: #c9b6ef; }
+:root[data-theme="dark"] .esquema [data-tone="amarillo"] { --bg: #2a2410; --border: #6b5a1c; --accent: #f2d67a; }
+:root[data-theme="dark"] .esquema [data-tone="rosa"] { --bg: #2f1a20; --border: #7a3b4b; --accent: #f3aebd; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .esquema {
+    --esq-paper: #15171c;
+    --esq-ink: #eef0f4;
+    --esq-ink-soft: #b9bfcb;
+    --esq-rule: #343842;
+    --esq-ideas-bg: #2a2410;
+    --esq-ideas-border: #6b5a1c;
+    --esq-ideas-accent: #f2d67a;
+    --esq-closing-bg: #eef0f4;
+    --esq-closing-ink: #15171c;
+    --esq-pill-a: #9cc4ec;
+    --esq-pill-b: #f0a9ba;
+    --esq-pill-ink: #15171c;
+  }
+  :root:not([data-theme]) .esquema [data-tone="verde"] { --bg: #1b2a17; --border: #3f6232; --accent: #a8d892; }
+  :root:not([data-theme]) .esquema [data-tone="azul"] { --bg: #172334; --border: #36557a; --accent: #a3c7ef; }
+  :root:not([data-theme]) .esquema [data-tone="melocoton"] { --bg: #2e1f14; --border: #7a4a26; --accent: #f4be93; }
+  :root:not([data-theme]) .esquema [data-tone="lila"] { --bg: #241d33; --border: #574579; --accent: #c9b6ef; }
+  :root:not([data-theme]) .esquema [data-tone="amarillo"] { --bg: #2a2410; --border: #6b5a1c; --accent: #f2d67a; }
+  :root:not([data-theme]) .esquema [data-tone="rosa"] { --bg: #2f1a20; --border: #7a3b4b; --accent: #f3aebd; }
+}
+
+.srOnly {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Cabecera: título grande redondeado, subtítulo entre líneas. */
+.head { text-align: center; margin-bottom: clamp(20px, 3vw, 32px); }
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 6px; margin: 0 0 6px;
+  font-size: 14px; font-weight: 700; color: var(--esq-ink-soft); letter-spacing: 0.02em;
+}
+.eyebrow svg { width: 16px; height: 16px; }
+.title {
+  font-family: var(--esq-rounded), var(--font-stack, system-ui), sans-serif;
+  font-weight: 900; font-size: clamp(30px, 5.4vw, 54px); line-height: 1.05;
+  letter-spacing: -0.01em; margin: 0; text-wrap: balance; overflow-wrap: anywhere;
+}
+.subtitle {
+  display: flex; align-items: center; gap: 14px; margin: 12px auto 0; max-width: 760px;
+  font-size: clamp(15px, 1.8vw, 18px); font-weight: 600; color: var(--esq-ink-soft); text-wrap: balance;
+}
+.subtitle::before, .subtitle::after { content: ""; flex: 1 1 24px; min-width: 16px; height: 2px; border-radius: 2px; background: var(--esq-rule); }
+
+/* Rejilla: una columna en móvil (en orden 1, 2, 3…) y tres columnas tipo
+   masonry desde 880 px con el reparto de layoutScheme. */
+.grid { display: flex; flex-direction: column; gap: 18px; }
+.column { display: contents; }
+@media (min-width: 880px) {
+  /* Las columnas acaban a la misma altura: la última tarjeta de cada una se
+     estira y su ilustración ocupa el hueco (como en el ejemplo de Carlos). */
+  .grid { flex-direction: row; align-items: stretch; }
+  .column { display: flex; flex-direction: column; gap: 18px; flex: 1 1 0; min-width: 0; }
+  .card { order: 0 !important; }
+  .column > .card:last-child { flex-grow: 1; }
+  .column > .card:last-child .illustration { flex-grow: 1; aspect-ratio: auto; min-height: 168px; }
+}
+
+.card {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 22px;
+  padding: 18px 18px 16px; min-width: 0; overflow-wrap: anywhere;
+  display: flex; flex-direction: column;
+}
+.cardHead { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.cardHead h3 {
+  flex: 1; margin: 0; font-family: var(--esq-rounded), var(--font-stack, system-ui), sans-serif;
+  font-weight: 800; font-size: 20px; line-height: 1.15; color: var(--accent);
+}
+.number {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: var(--accent); color: var(--esq-paper);
+  font-family: var(--esq-rounded), var(--font-stack, system-ui), sans-serif; font-weight: 900; font-size: 20px;
+}
+.kindIcon { flex: none; width: 22px; height: 22px; color: var(--accent); }
+
+.bullets { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.bullets li { position: relative; padding-left: 18px; }
+.bullets li::before {
+  content: ""; position: absolute; left: 3px; top: 0.6em; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--accent);
+}
+.bullets strong, .ideas strong, .summary strong, .closing strong { font-weight: 800; }
+
+.subcards { display: grid; gap: 10px; margin-top: 4px; }
+.subcard {
+  background: var(--esq-paper); border: 1.5px solid var(--border); border-radius: 16px; padding: 12px 14px;
+}
+.subcard h4 {
+  margin: 0 0 6px; font-family: var(--esq-rounded), var(--font-stack, system-ui), sans-serif;
+  font-weight: 800; font-size: 17px; color: var(--accent);
+}
+
+.dates { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin: -8px 0 0; }
+.dates th { width: 1%; padding: 0 12px 0 0; text-align: left; vertical-align: top; font-weight: 400; }
+.dates td { padding: 0; vertical-align: top; padding-top: 3px; }
+.pill {
+  display: inline-block; min-width: 64px; text-align: center; padding: 3px 12px; border-radius: 999px;
+  background: var(--esq-pill-a); color: var(--esq-pill-ink); font-weight: 800; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pill[data-alt] { background: var(--esq-pill-b); }
+
+.formula { margin: 2px 0 10px; padding: 10px 12px; border-radius: 14px; background: var(--esq-paper); overflow-x: auto; }
+.formula :global(.katex-display) { margin: 0; }
+
+.illustration { margin: 14px 0 0; position: relative; border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 9; }
+.illustration {
+  display: flex; align-items: flex-end;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--border) 45%, var(--esq-paper)), var(--esq-paper) 85%);
+}
+.illustration img { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* La escena local mantiene su proporción, apoyada abajo; si la tarjeta se
+   estira, el cielo (fondo papel) ocupa el resto. */
+.scene { display: block; width: 100%; height: auto; }
+.sceneSky { fill: transparent; }
+.sceneSun { fill: var(--border); }
+.sceneHillBack { fill: var(--border); opacity: 0.55; }
+.sceneHillFront { fill: var(--accent); opacity: 0.35; }
+.aiTag {
+  position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px;
+  background: rgb(0 0 0 / 0.62); color: #fff; font-size: 12px; font-weight: 600;
+}
+
+/* Abajo: «Ideas clave» con bombilla y «En resumen» a mano. */
+.bottom { display: grid; gap: 18px; margin-top: 18px; }
+@media (min-width: 880px) { .bottom { grid-template-columns: 1fr 1fr; } }
+.ideas { background: var(--esq-ideas-bg); border: 2px solid var(--esq-ideas-border); border-radius: 22px; padding: 18px; }
+.ideas h3, .summary h3 {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 10px;
+  font-family: var(--esq-rounded), var(--font-stack, system-ui), sans-serif; font-weight: 900; font-size: 21px;
+}
+.ideas h3 { color: var(--esq-ideas-accent); }
+.ideas h3 svg { width: 24px; height: 24px; }
+.ideas ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.ideas li { position: relative; padding-left: 18px; }
+.ideas li::before {
+  content: ""; position: absolute; left: 3px; top: 0.6em; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--esq-ideas-accent);
+}
+.summary { padding: 6px 4px; }
+.summary h3 {
+  position: relative; display: inline-block; font-family: var(--esq-hand), cursive; font-weight: 700;
+  font-size: 32px; line-height: 1;
+}
+.underline { position: absolute; left: 0; right: 0; bottom: -8px; width: 100%; height: 12px; }
+.underline path { fill: none; stroke: var(--esq-pill-b); stroke-width: 3.5; stroke-linecap: round; }
+.summary p { margin: 0; font-family: var(--esq-hand), cursive; font-weight: 600; font-size: 24px; line-height: 1.3; }
+
+.closing {
+  display: flex; gap: 12px; align-items: flex-start; margin: 22px 0 0; padding: 16px 20px; border-radius: 20px;
+  background: var(--esq-closing-bg); color: var(--esq-closing-ink); font-weight: 700; font-size: 18px;
+}
+.closing svg { flex: none; width: 24px; height: 24px; margin-top: 1px; }
+
+.foot {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 18px;
+  font-size: 13px; color: var(--esq-ink-soft);
+}
