@@ -2,6 +2,18 @@ import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Solo lo envía dream-api a la cuenta administradora. Ocultar el enlace no es la seguridad. */
+  admin_panel?: { path: string };
+  /** Present only while the account is banned: Dream then shows only the ban screen. */
+  ban?: { until: string | null; permanent: boolean; rule: string | null };
+  /** Cuentas de Fundación Loyola: mensaje de Dream que se enseña una vez. */
+  special_welcome?: string | null;
+  /** dream-api has the memory switched on (features.mjs). */
+  memory_feature?: boolean;
+  memory_import_feature?: boolean;
+  memory_enabled?: boolean;
+  /** Recuerdos nuevos aún no vistos («Dream ha recordado 2 cosas · Ver»). */
+  memory_new?: number;
 }
 export interface Conversation {
   id: string;

@@ -25,6 +25,7 @@ import {
   MoreIcon,
   NotesIcon,
   SettingsIcon,
+  ShieldIcon,
   TasksIcon,
 } from "./icons";
 import { callDream, errorMessage } from "@/lib/dream-api";
@@ -34,8 +35,10 @@ import { activeNav, isFocusRoute, type NavKey } from "@/lib/navigation";
 import { isDefaultTitle, titleFromPrompt } from "@/lib/conversation-title";
 /** Time to undo a deleted conversation before it is really deleted. */
 export const UNDO_MS = 5000;
-import { needsConsent } from "@/lib/consent";
-import { WelcomeConsent } from "./welcome-consent";
+import { consentGate } from "@/lib/consent";
+import { WelcomeFlow } from "./welcome/welcome-flow";
+import { BanScreen } from "./moderation/ban-screen";
+import { ModerationNotices } from "./moderation/notices";
 interface ConversationsContext {
   items: Conversation[];
   loaded: boolean;
@@ -102,9 +105,11 @@ export function Shell({ children }: { children: ReactNode }) {
     if (ready && !session) router.replace("/login");
   }, [ready, session, router]);
   const profileEmail = profile?.email;
+  const banned = !!profile?.ban;
   useEffect(() => {
-    if (profileEmail) void refresh();
-  }, [profileEmail, refresh]);
+    // Una cuenta baneada solo ve su pantalla: dream-api no le contesta lo demás.
+    if (profileEmail && !banned) void refresh();
+  }, [profileEmail, banned, refresh]);
   async function rename() {
     if (!editing || !title.trim() || busy) return;
     setBusy(true);
@@ -223,10 +228,14 @@ export function Shell({ children }: { children: ReactNode }) {
         )}
       </main>
     );
-  // Parte D: no chat, apuntes or exámenes until the sign-up consent is saved.
-  // Ajustes stays open so the student can sign out or delete their data.
-  if (needsConsent(profile) && !pathname.startsWith("/settings"))
-    return <WelcomeConsent />;
+  // Bienvenida: a new student sees only the welcome until it is done (it can
+  // just «Salir»). After a withdrawn permission or new terms, only the consent
+  // step, and Ajustes stays open to sign out or delete data.
+  // Baneo (B6): solo la pantalla de baneo, con apelación y borrar la cuenta.
+  if (profile.ban) return <BanScreen ban={profile.ban} />;
+  const gate = consentGate(profile);
+  if (gate === "welcome" || (gate === "consent" && !pathname.startsWith("/settings")))
+    return <WelcomeFlow key={gate} gate={gate} />;
   const conversationId = search.get("c");
   const view = search.get("view");
   const current = activeNav(pathname, {
@@ -314,6 +323,13 @@ export function Shell({ children }: { children: ReactNode }) {
               {nav.map((n) => link(n, current === n.key, "nav-link press"))}
             </div>
             {link(settings, current === "settings", "nav-link press")}
+            {profile.admin_panel && (
+              // Enlace normal (carga completa): la página del panel tiene sus propias cabeceras.
+              <a className="nav-link press" href={profile.admin_panel.path} title="Panel de administración">
+                <ShieldIcon size={22} />
+                <span className="nav-label">Panel de administración</span>
+              </a>
+            )}
           </nav>
         )}
         <div className="workspace">
@@ -335,6 +351,7 @@ export function Shell({ children }: { children: ReactNode }) {
             </header>
           )}
           <main id="main" className="workspace-main" tabIndex={-1}>
+            <ModerationNotices />
             {/* Page transition: a View Transition on link clicks, or this
                 CSS enter animation (data-enter) on Back/Forward and in
                 browsers without View Transitions. globals.css › «Transiciones

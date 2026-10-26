@@ -91,12 +91,11 @@ test("phone: the whole screen is blue and the texts keep AA ink", async ({
   await expect(
     page.getByRole("heading", { level: 1, name: "Entrar en Dream" }),
   ).toHaveCSS("font-style", "italic");
-  // The Google button is not part of the entry: it is usable at once.
-  expect(
-    await page
-      .getByRole("button", { name: "Continuar con Google" })
-      .evaluate((el) => getComputedStyle(el).animationName),
-  ).toBe("none");
+  // The Google button enters with the rest (prompt «bienvenida» §3.3), but
+  // only with opacity and a small rise: it can be pressed from the first frame.
+  const google = page.getByRole("button", { name: "Continuar con Google" });
+  expect(await google.evaluate((el) => getComputedStyle(el).animationName)).toMatch(/riseIn/);
+  await expect(google).toBeEnabled();
 });
 
 test("registration: mascot, italic heading and the 3D «Empezar»", async ({
@@ -105,7 +104,7 @@ test("registration: mascot, italic heading and the 3D «Empezar»", async ({
   const screen = SCREENS.find((s) => s.name === "login-registro")!;
   await mock(page, { profile: screen.profile });
   await page.goto("/chat");
-  const heading = page.getByRole("heading", { name: "Antes de empezar" });
+  const heading = page.getByRole("heading", { name: /Hola! Soy Dream/ });
   await expect(heading).toHaveCSS("font-style", "italic");
   const submit = page.getByRole("button", { name: "Empezar" });
   await expect(submit).toHaveClass(/button-3d/);
@@ -132,7 +131,7 @@ test("reduced motion: login and registration only fade", async ({ page }) => {
   const screen = SCREENS.find((s) => s.name === "login-registro")!;
   await mock(page, { profile: screen.profile });
   await page.goto("/chat");
-  await page.getByRole("heading", { name: "Antes de empezar" }).waitFor();
+  await page.getByRole("heading", { name: /Hola! Soy Dream/ }).waitFor();
   for (const a of await keyframeProps(page))
     if (!a.loop) expect(a.moves, a.name).toBe(false);
 });

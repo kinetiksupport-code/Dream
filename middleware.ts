@@ -6,6 +6,8 @@ import {
   verifyMaintenanceAccessToken,
 } from "@/lib/maintenance";
 import { canonicalRedirect } from "@/lib/auth-redirect";
+import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, panelPath } from "@/lib/admin-route";
+import { HEAD_BOOT } from "@/lib/theme";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -64,7 +66,7 @@ async function route(request: NextRequest): Promise<NextResponse> {
   if (canonical) return NextResponse.redirect(canonical, 308);
 
   if (!isMaintenanceMode()) {
-    return NextResponse.next();
+    return panel(request);
   }
 
   const { pathname } = request.nextUrl;
@@ -77,12 +79,12 @@ async function route(request: NextRequest): Promise<NextResponse> {
       (request.method === "GET" || request.method === "HEAD") &&
       STATIC_ASSET.test(pathname))
   ) {
-    return NextResponse.next();
+    return panel(request);
   }
 
   const token = request.cookies.get(MAINTENANCE_COOKIE_NAME)?.value;
   if (await verifyMaintenanceAccessToken(token)) {
-    return NextResponse.next();
+    return panel(request);
   }
 
   if (pathname.startsWith("/api/")) {
@@ -102,6 +104,45 @@ async function route(request: NextRequest): Promise<NextResponse> {
   url.pathname = "/maintenance";
   url.search = "";
   return NextResponse.redirect(url);
+}
+
+/**
+ * Panel de administración (docs/PANEL_ADMIN.md). La ruta configurada se sirve
+ * con la página interna, siempre con estado 404 y cabeceras estrictas (CSP con
+ * nonce, sin caché, sin indexar). La página interna pedida directamente da el
+ * 404 de siempre. El resto de rutas «de administración» no existen.
+ */
+let readingBootHash: Promise<string> | undefined;
+async function panel(request: NextRequest): Promise<NextResponse> {
+  const kind = classifyPanelRoute(request.nextUrl.pathname, panelPath(process.env.ADMIN_PANEL_PATH));
+  if (kind === "internal") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/no-existe-404";
+    url.search = "";
+    return NextResponse.rewrite(url);
+  }
+  if (kind !== "panel") return NextResponse.next();
+  const nonce = btoa(crypto.randomUUID());
+  // El único script en línea propio del diseño (tema y lectura fácil) no lleva nonce:
+  // se permite por su hash, y solo ese.
+  readingBootHash ??= cspHash(HEAD_BOOT);
+  const csp = panelCsp(
+    nonce,
+    { supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL, dreamApiUrl: process.env.NEXT_PUBLIC_DREAM_API_URL },
+    [await readingBootHash],
+  );
+  const headers = new Headers(request.headers);
+  headers.set("x-nonce", nonce);
+  headers.set("Content-Security-Policy", csp);
+  const url = request.nextUrl.clone();
+  url.pathname = PANEL_INTERNAL;
+  url.search = "";
+  // 404 también para el administrador: el navegador pinta la página igual, y
+  // quien no lo es no puede distinguir este camino de uno que no existe.
+  const response = NextResponse.rewrite(url, { request: { headers }, status: 404 });
+  response.headers.set("Content-Security-Policy", csp);
+  for (const [key, value] of Object.entries(PANEL_HEADERS)) response.headers.set(key, value);
+  return response;
 }
 
 export const config = {

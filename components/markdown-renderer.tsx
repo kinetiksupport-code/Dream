@@ -1,6 +1,6 @@
 "use client";
 import { MathBlock } from "./math-block";
-import { normalizeMath } from "@/lib/math";
+import { normalizeMath, plainCopyText } from "@/lib/math";
 import { memo, useState, type ReactNode } from "react";
 import { rehypeLearningSteps, rehypeRevealWords } from "@/lib/reveal-words";
 import type { Components } from "react-markdown";
@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { Copy, Check } from "lucide-react";
-// KaTeX styles are imported by ./markdown (see there), not by this chunk.
+// KaTeX styles are global (app/layout.tsx), not part of this chunk.
 import katex from "katex";
 
 // Warm KaTeX (its first render builds internal tables) and its fonts while the
@@ -144,6 +144,17 @@ export function splitBlocks(markdown: string): string[] {
   return blocks;
 }
 
+// Copying an answer gives each formula once and readable (246/100), not the
+// MathML and HTML copies KaTeX keeps in the page.
+function copyFormulas(e: React.ClipboardEvent<HTMLDivElement>) {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+  const text = plainCopyText(selection.getRangeAt(0).cloneContents());
+  if (text === null) return;
+  e.preventDefault();
+  e.clipboardData.setData("text/plain", text);
+}
+
 export default function MarkdownRenderer({
   content,
   streaming = false,
@@ -156,7 +167,7 @@ export default function MarkdownRenderer({
 }) {
   const normalized = normalizeMath(content);
   return (
-    <div className="markdown">
+    <div className="markdown" onCopy={copyFormulas}>
       {streaming ? (
         splitBlocks(normalized).map((block, i) => (
           <Block key={i} content={block} reveal={reveal} />

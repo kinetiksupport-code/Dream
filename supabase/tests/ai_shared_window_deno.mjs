@@ -83,7 +83,7 @@ function fakeDb() {
 Deno.test(
   "one shared budget; each mode charges tokens × its weight, and the settle uses the same weight",
   async () => {
-    assertEquals(SHARED_WINDOW_BUDGET, 40_000);
+    assertEquals(SHARED_WINDOW_BUDGET, 60_000);
     assertEquals({ ...MODE_WEIGHTS }, { fast: 0.5, normal: 1, think: 2 });
     const db = fakeDb();
     const limiter = createWindowLimiter(db, "owner");
@@ -121,15 +121,15 @@ Deno.test(
     assertEquals(db.rows.get("fast|mode"), 1501);
     assertEquals(db.rows.get("think|mode"), 6000);
     assertEquals(db.rows.get("normal|fallback"), 9000);
-    // Shared percent: (1501 + 6000) / 40000 → 18 %; the fallback does not count.
+    // Shared percent: (1501 + 6000) / 60000 → 12 %; the fallback does not count.
     const summary = usageSummary(await limiter.read(), {
       now: T0 + HOUR,
       modes: allModes,
     });
-    assertEquals([summary.percent, summary.blocked], [18, false]);
+    assertEquals([summary.percent, summary.blocked], [12, false]);
     assertEquals(
       summary.modes.map((m) => m.percent),
-      [18, 18, 18],
+      [12, 12, 12],
     );
   },
 );
@@ -143,7 +143,7 @@ Deno.test(
       mode: "think",
       kind: "mode",
       provider: "cloudflare",
-      tokens: 20_000,
+      tokens: 30_000,
     });
     for (const mode of ["fast", "normal", "think"]) {
       await assertRejects(
@@ -186,7 +186,7 @@ Deno.test(
     const text = JSON.stringify(body);
     assertNotMatch(
       text,
-      /token|40000|llama|qwen|mistral|gpt|groq|cloudflare|@cf/i,
+      /token|60000|llama|qwen|mistral|gpt|groq|cloudflare|@cf/i,
     );
     assertMatch(text, /"percent":100/);
   },

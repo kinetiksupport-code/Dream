@@ -1,218 +1,359 @@
 import { test, expect, type Page } from "@playwright/test";
-import { mock, CONSENT_PENDING } from "./design-fixture";
-// Login states and the sign-up consent step (Parte D). The `consent` action is
-// only designed (docs/CONSENTIMIENTO.md): here it is answered by the fixture.
+import { mock, atStep, CONSENT_PENDING, CONSENT_WITHDRAWN } from "./design-fixture";
+import { TERMS_VERSION } from "../../lib/consent";
+// Login states and the welcome for new students (prompt «bienvenida» §4).
+// The welcome actions are only designed (docs/CONSENTIMIENTO.md): here the
+// fixture answers them.
 test.use({ serviceWorkers: "block" });
 
 const AI = /Estoy de acuerdo en enviar mi información a proveedores de IA/;
-const GUARDIAN = /Mi padre, madre o tutor legal me ha dado permiso/;
+const TERMS = /He leído y acepto los Términos y la Política de privacidad/;
+const CHAT = { name: "Mensaje para Dream" };
 const birth = (years: number) => {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years, d.getMonth(), d.getDate() - 30);
   return d.toISOString().slice(0, 10);
 };
-async function welcome(page: Page, path = "/chat") {
-  await mock(page, { profile: CONSENT_PENDING });
+async function open(page: Page, profile: Record<string, unknown> = CONSENT_PENDING, path = "/chat") {
+  await mock(page, { profile });
   await page.goto(path);
-  await expect(
-    page.getByRole("heading", { name: "Antes de empezar" }),
-  ).toBeVisible();
 }
-const consentRequests = (page: Page) => {
+const requests = (page: Page) => {
   const sent: Record<string, unknown>[] = [];
   page.on("request", (r) => {
     if (r.url().includes("/functions/v1/dream-api")) {
       const body = r.postDataJSON();
-      if (body?.action === "consent") sent.push(body);
+      if (/^(onboarding_|consent)/.test(body?.action ?? "")) sent.push(body);
     }
   });
   return sent;
 };
+const title = (page: Page, name: RegExp | string) => page.getByRole("heading", { level: 1, name });
+/** Waits for one-off animations (loops like the breathing orb never end). */
+const settled = (page: Page) =>
+  page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.effect?.getTiming().iterations === Infinity),
+  );
+const next = (page: Page, name = "Continuar") => page.getByRole("button", { name }).click();
 
-test.describe("registro: casillas de consentimiento", () => {
-  test("nothing is ticked in advance and the guardian box waits for the age", async ({
-    page,
-  }) => {
-    await welcome(page);
-    await expect(page.getByRole("checkbox", { name: AI })).not.toBeChecked();
-    await expect(page.getByRole("checkbox", { name: GUARDIAN })).toHaveCount(0);
-    await expect(page.getByLabel("Fecha de nacimiento")).toHaveValue("");
-  });
-
-  test("it does not let you continue and focuses the first error, with its cause", async ({
-    page,
-  }) => {
-    const sent = consentRequests(page);
-    await welcome(page);
-    await page.getByRole("button", { name: "Empezar" }).click();
-    const date = page.getByLabel("Fecha de nacimiento");
-    await expect(date).toBeFocused();
-    await expect(date).toHaveAttribute("aria-invalid", "true");
-    await expect(date).toHaveAccessibleDescription(
-      /Escribe tu fecha de nacimiento/,
+test.describe("bienvenida: usuario nuevo", () => {
+  test("it replaces the whole app, Ajustes included; only «Salir»", async ({ page }) => {
+    await open(page);
+    await expect(title(page, /Hola! Soy Dream/)).toBeVisible();
+    await expect(page.getByRole("textbox", CHAT)).toHaveCount(0);
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Paso anterior" })).toHaveCount(0);
+    await expect(page.getByRole("progressbar", { name: "Progreso de la bienvenida" })).toHaveAttribute(
+      "aria-valuenow",
+      "1",
     );
-    const ai = page.getByRole("checkbox", { name: AI });
-    await expect(ai).toHaveAttribute("aria-invalid", "true");
-    await expect(ai).toHaveAccessibleDescription(/Dream no puede responderte/);
-    // Errors carry an icon next to the text, not colour alone.
-    await expect(
-      page.locator("p", { hasText: "Dream no puede responderte" }).locator("svg"),
-    ).toHaveCount(1);
-    expect(sent).toEqual([]);
-    // Still no chat behind it.
-    await expect(
-      page.getByRole("textbox", { name: "Mensaje para Dream" }),
-    ).toHaveCount(0);
+    for (const path of ["/notes", "/exams", "/settings"]) {
+      await page.goto(path);
+      await expect(title(page, /Hola! Soy Dream/)).toBeVisible();
+    }
+    await page.getByRole("button", { name: "Salir" }).click();
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test("under 14 sees the guardian box; 14 or older does not", async ({
-    page,
-  }) => {
-    await welcome(page);
-    const date = page.getByLabel("Fecha de nacimiento");
-    await date.fill(birth(12));
-    const guardian = page.getByRole("checkbox", { name: GUARDIAN });
-    await expect(guardian).toBeVisible();
-    await expect(guardian).not.toBeChecked();
-    await guardian.check();
-    await date.fill(birth(16));
-    await expect(guardian).toHaveCount(0);
-    // Back under 14: it comes back unticked, never pre-marked.
-    await date.fill(birth(13));
-    await expect(page.getByRole("checkbox", { name: GUARDIAN })).not.toBeChecked();
-  });
+  test("the whole flow saves each step and ends in the app", async ({ page }) => {
+    const sent = requests(page);
+    await open(page);
+    await next(page, "Empezar");
 
-  test("a minor without the guardian box is stopped at that box; then it saves", async ({
-    page,
-  }) => {
-    const sent = consentRequests(page);
-    await welcome(page);
-    await page.getByLabel("Fecha de nacimiento").fill(birth(12));
-    await page.getByRole("checkbox", { name: AI }).check();
-    await page.getByRole("button", { name: "Empezar" }).click();
-    const guardian = page.getByRole("checkbox", { name: GUARDIAN });
-    await expect(guardian).toBeFocused();
-    await expect(guardian).toHaveAccessibleDescription(/menos de 14 años/);
-    expect(sent).toEqual([]);
-    // Tapping the text ticks the box (the whole row is the label).
-    await page.getByText(GUARDIAN).click();
-    await expect(guardian).toBeChecked();
-    await expect(guardian).not.toHaveAttribute("aria-invalid", "true");
-    await page.getByRole("button", { name: "Empezar" }).click();
+    // Nombre: Google's name, editable; required with a kind error.
+    const name = page.getByRole("textbox", { name: "Tu nombre" });
+    await expect(title(page, /Cómo te llamas/)).toBeFocused();
+    await expect(name).toHaveValue("Alex");
+    await name.fill("  ");
+    await next(page);
+    await expect(name).toBeFocused();
+    await expect(name).toHaveAttribute("aria-invalid", "true");
+    await expect(name).toHaveAccessibleDescription(/Escribe cómo te llamas/);
+    await name.fill("Lucía");
+    await expect(name).not.toHaveAttribute("aria-invalid", "true");
+    await name.press("Enter");
+
+    // Gustos: chips and a custom one.
+    await expect(title(page, /Qué te gusta/)).toBeFocused();
+    await expect(page.getByRole("button", { name: "Saltar" })).toBeVisible();
+    await page.getByRole("button", { name: "Fútbol" }).click();
+    await page.getByRole("button", { name: "Música" }).click();
+    await expect(page.getByRole("button", { name: "Música" })).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Añadir otra" }).click();
+    const custom = page.getByRole("textbox", { name: "Otra cosa que te guste" });
+    await expect(custom).toBeFocused();
+    await custom.fill("Ajedrez");
+    await custom.press("Enter");
+    await expect(page.getByRole("button", { name: "Ajedrez" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByText("3 de 8")).toBeVisible();
+    await next(page);
+
+    // Apodo: suggestions from the name, free text.
+    await expect(title(page, /Cómo quieres que te llame la IA/)).toBeFocused();
+    await expect(page.getByRole("button", { name: "Lucía" })).toBeVisible();
+    await page.getByLabel("U otro nombre").fill("Lu");
+    await next(page);
+
+    // Edad: untouched wheels are not an answer.
+    await expect(title(page, /Cuántos años tienes/)).toBeFocused();
+    await expect(page.getByText("Sirve para saber si puedes usar Dream. No la usamos para nada más.")).toBeVisible();
+    await next(page);
+    await expect(page.locator("main").getByRole("alert")).toContainText("Mueve las ruedas");
+    await page.getByRole("button", { name: "Escribir la fecha" }).click();
+    await page.getByLabel("Fecha de nacimiento").fill(birth(16));
+    await next(page);
+
+    // Vas a hablar con una IA: nothing ticked; both needed.
+    await expect(title(page, /Vas a hablar con una IA/)).toBeFocused();
     await expect(
-      page.getByRole("textbox", { name: "Mensaje para Dream" }),
+      page.getByText("Dream funciona con inteligencia artificial. Estás hablando con una IA, no con una persona."),
     ).toBeVisible();
-    expect(sent).toHaveLength(1);
-    expect(sent[0]).toMatchObject({
+    const ai = page.getByRole("checkbox", { name: AI });
+    const terms = page.getByRole("checkbox", { name: TERMS });
+    await expect(ai).not.toBeChecked();
+    await expect(terms).not.toBeChecked();
+    await next(page, "Aceptar y seguir");
+    await expect(ai).toBeFocused();
+    await expect(ai).toHaveAccessibleDescription(/Dream no puede responderte/);
+    await expect(terms).toHaveAttribute("aria-invalid", "true");
+    await page.getByText(AI).click(); // the whole row is the label
+    await expect(ai).toBeChecked();
+    await expect(ai).not.toHaveAttribute("aria-invalid", "true");
+    await next(page, "Aceptar y seguir");
+    await expect(terms).toBeFocused();
+    await terms.check();
+    await next(page, "Aceptar y seguir");
+
+    // ¡Listo, Lu!
+    await expect(title(page, /Listo, Lu/)).toBeFocused();
+    await next(page, "Ir a Dream");
+    await expect(page.getByRole("textbox", CHAT)).toBeVisible();
+
+    expect(sent.map((x) => x.action)).toEqual([
+      "onboarding_save",
+      "onboarding_save",
+      "onboarding_save",
+      "onboarding_save",
+      "onboarding_age",
+      "consent",
+    ]);
+    expect(sent[1]).toMatchObject({ step: 2, display_name: "Lucía" });
+    expect(sent[2]).toMatchObject({ step: 3, interests: ["Fútbol", "Música", "Ajedrez"] });
+    expect(sent[3]).toMatchObject({ step: 4, nickname: "Lu" });
+    expect(sent[4]).toMatchObject({ action: "onboarding_age", birth_date: birth(16) });
+    expect(sent[5]).toMatchObject({
       action: "consent",
-      birth_date: birth(12),
-      guardian_confirmed: true,
+      birth_date: birth(16),
       ai_consent: true,
+      terms_accepted: true,
+      terms_version: TERMS_VERSION,
     });
   });
 
-  test("14 or older saves with the AI box only", async ({ page }) => {
-    const sent = consentRequests(page);
-    await welcome(page);
-    await page.getByLabel("Fecha de nacimiento").fill(birth(16));
-    await page.getByRole("checkbox", { name: AI }).check();
-    await page.getByRole("button", { name: "Empezar" }).click();
-    await expect(
-      page.getByRole("textbox", { name: "Mensaje para Dream" }),
-    ).toBeVisible();
-    expect(sent[0]).toMatchObject({ guardian_confirmed: false, ai_consent: true });
+  test("an empty nickname means the first name; back keeps what was written", async ({ page }) => {
+    const sent = requests(page);
+    await open(page, atStep(3, { display_name: "Javier Gómez" }));
+    await expect(title(page, /Cómo quieres que te llame la IA/)).toBeVisible();
+    await expect(page.getByText("Si lo dejas vacío, te llamaré Javier.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Javi", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Paso anterior" }).click();
+    await expect(title(page, /Qué te gusta/)).toBeVisible();
+    await page.getByRole("button", { name: "Paso anterior" }).click();
+    await expect(page.getByRole("textbox", { name: "Tu nombre" })).toHaveValue("Javier Gómez");
+    await next(page);
+    await next(page, "Saltar");
+    await expect(title(page, /Cómo quieres que te llame la IA/)).toBeVisible();
+    await next(page);
+    await expect(title(page, /Cuántos años tienes/)).toBeVisible();
+    expect(sent.at(-1)).toMatchObject({ action: "onboarding_save", step: 4, nickname: "Javier" });
   });
 
-  test("chat, apuntes and exámenes are closed; Ajustes stays open", async ({
-    page,
-  }) => {
-    await welcome(page, "/notes");
-    await page.goto("/exams");
-    await expect(
-      page.getByRole("heading", { name: "Antes de empezar" }),
-    ).toBeVisible();
-    await page.goto("/settings");
-    await expect(
-      page.getByRole("heading", { name: "Antes de empezar" }),
-    ).toHaveCount(0);
+  test("a reload resumes at the saved step", async ({ page }) => {
+    await open(page, atStep(2, { interests: ["Moda"] }));
+    await expect(title(page, /Qué te gusta/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Moda" })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "3");
   });
 
-  test("today's dream-api (no consent fields) keeps the app as it was", async ({
-    page,
-  }) => {
-    await mock(page);
-    await page.goto("/chat");
-    await expect(
-      page.getByRole("textbox", { name: "Mensaje para Dream" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Antes de empezar" }),
-    ).toHaveCount(0);
+  test("up to 8 hobbies: the rest wait, with the reason", async ({ page }) => {
+    await open(page, atStep(2));
+    for (const x of ["Fútbol", "Baloncesto", "Música", "Videojuegos", "Dibujo", "Leer", "Baile", "Cocina"])
+      await page.getByRole("button", { name: x, exact: true }).click();
+    await expect(page.getByText("Ya tienes 8. Quita una para elegir otra.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Moda" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Añadir otra" })).toBeDisabled();
+    await page.getByRole("button", { name: "Leer" }).click();
+    await expect(page.getByRole("button", { name: "Moda" })).toBeEnabled();
   });
 
-  test("boxes and links have 44 px targets; links go to Términos and Política", async ({
-    page,
-  }) => {
-    await welcome(page);
+  test("the birth wheels work with the keyboard and read their value", async ({ page }) => {
+    await open(page, atStep(4));
+    const year = page.getByRole("slider", { name: "Año" });
+    const month = page.getByRole("slider", { name: "Mes" });
+    await expect(month).toHaveAttribute("aria-valuetext", "enero");
+    await month.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(month).toHaveAttribute("aria-valuetext", "febrero");
+    const before = Number(await year.getAttribute("aria-valuenow"));
+    await year.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(year).toHaveAttribute("aria-valuenow", String(before - 1));
+    await expect(page.getByText(`1 de febrero de ${before - 1}`)).toBeVisible();
+    await next(page);
+    await expect(title(page, /Vas a hablar con una IA/)).toBeVisible();
+  });
+
+  test("under 14: a kind goodbye, nothing kept, the session closes", async ({ page }) => {
+    const sent = requests(page);
+    await open(page, atStep(4, { display_name: "Pablo", interests: ["Fútbol"], nickname: "Pablito" }));
+    await page.getByRole("button", { name: "Escribir la fecha" }).click();
     await page.getByLabel("Fecha de nacimiento").fill(birth(12));
-    // Measure the boxes at rest: mid-entrance (@starting-style rise) the
-    // transformed box can read 43.9999 px (float rounding of a fractional y).
-    await page.waitForFunction(() => document.getAnimations().length === 0);
-    for (const name of [AI, GUARDIAN]) {
-      const box = page.getByRole("checkbox", { name });
-      const input = await box.boundingBox();
-      expect(input!.width).toBeGreaterThanOrEqual(44);
-      expect(input!.height).toBeGreaterThanOrEqual(44);
-      const row = await box.locator("xpath=ancestor::label").boundingBox();
-      expect(row!.height).toBeGreaterThanOrEqual(44);
-    }
-    const terms = page.getByRole("link", { name: /Términos y condiciones/ });
-    const privacy = page.getByRole("link", { name: /Política de privacidad/ });
-    await expect(terms).toHaveAttribute("href", "/terminos");
-    await expect(privacy).toHaveAttribute("href", "/privacidad");
-    for (const link of [terms, privacy]) {
-      await expect(link).toHaveAttribute("target", "_blank");
-      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    }
+    await next(page);
+    await expect(title(page, /Dream es para mayores de 14 años/)).toBeFocused();
+    await expect(page.getByText("¡Te esperamos!")).toBeVisible();
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    expect(sent.map((x) => x.action)).toEqual(["onboarding_age"]);
+    await next(page, "Salir");
+    await expect(page).toHaveURL(/\/login/);
   });
 
-  test("a failed save says so and offers «Volver a intentarlo»", async ({
-    page,
-  }) => {
-    await welcome(page);
+  test("a failed save says so and keeps the step", async ({ page }) => {
+    await open(page, atStep(1));
     await page.route("**/functions/v1/dream-api", async (route) => {
-      if (route.request().postDataJSON()?.action !== "consent")
-        return route.fallback();
+      if (route.request().postDataJSON()?.action !== "onboarding_save") return route.fallback();
       await route.fulfill({
         status: 503,
         contentType: "application/json",
         body: JSON.stringify({ error: "No se pudo guardar tu respuesta." }),
       });
     });
-    await page.getByLabel("Fecha de nacimiento").fill(birth(16));
-    await page.getByRole("checkbox", { name: AI }).check();
-    await page.getByRole("button", { name: "Empezar" }).click();
-    const alert = page.locator("main").getByRole("alert");
-    await expect(alert).toContainText("No se pudo guardar tu respuesta.");
-    await expect(
-      alert.getByRole("button", { name: "Volver a intentarlo" }),
-    ).toBeVisible();
-    await expect(page.getByRole("checkbox", { name: AI })).toBeChecked();
+    await next(page);
+    await expect(page.locator("main").getByRole("alert")).toContainText("No se pudo guardar tu respuesta.");
+    await expect(page.getByRole("textbox", { name: "Tu nombre" })).toHaveValue("Alex");
   });
 
-  test("reduced motion: the guardian box fades in without moving", async ({
-    page,
-  }) => {
+  test("44 px targets: chips, boxes, links, back and «Salir»", async ({ page }) => {
+    await open(page, atStep(2));
+    await settled(page);
+    for (const el of [
+      page.getByRole("button", { name: "Fútbol" }),
+      page.getByRole("button", { name: "Añadir otra" }),
+      page.getByRole("button", { name: "Paso anterior" }),
+      page.getByRole("button", { name: "Salir" }),
+    ])
+      expect((await el.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await page.goto("about:blank");
+    await open(page, CONSENT_WITHDRAWN);
+    await settled(page);
+    for (const name of [AI, TERMS]) {
+      const box = (await page.getByRole("checkbox", { name }).boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    for (const [name, href] of [
+      ["Términos", "/terminos"],
+      ["Política de privacidad", "/privacidad"],
+    ]) {
+      const link = page.getByRole("link", { name, exact: true });
+      await expect(link).toHaveAttribute("href", href);
+      await expect(link).toHaveAttribute("target", "_blank");
+      expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("reduced motion: steps and the reward only fade", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await welcome(page);
-    await page.getByLabel("Fecha de nacimiento").fill(birth(12));
-    const props = await page
-      .getByRole("checkbox", { name: GUARDIAN })
-      .evaluate((el) => {
-        const wrap = el.closest("label")!.parentElement!;
-        return getComputedStyle(wrap).transitionProperty;
-      });
-    expect(props).not.toMatch(/transform/);
+    await open(page, CONSENT_WITHDRAWN);
+    await page.getByRole("checkbox", { name: AI }).check();
+    await page.getByRole("checkbox", { name: TERMS }).check();
+    await next(page, "Aceptar y seguir");
+    await expect(title(page, /Listo/)).toBeVisible();
+    const moving = await page.evaluate(() =>
+      document
+        .getAnimations()
+        .filter((a) => a instanceof CSSAnimation)
+        .filter((a) => (a.effect as KeyframeEffect).getTiming().iterations !== Infinity)
+        .filter((a) => (a.effect as KeyframeEffect).getKeyframes().some((k) => k.transform && k.transform !== "none"))
+        .map((a) => (a as CSSAnimation).animationName),
+    );
+    expect(moving).toEqual([]);
+  });
+});
+
+test.describe("bienvenida: después", () => {
+  test("today's dream-api (no welcome fields) keeps the app as it was", async ({ page }) => {
+    await mock(page);
+    await page.goto("/chat");
+    await expect(page.getByRole("textbox", CHAT)).toBeVisible();
+    await expect(title(page, /Hola! Soy Dream/)).toHaveCount(0);
+  });
+
+  test("a withdrawn permission asks only the consent; Ajustes stays open", async ({ page }) => {
+    await open(page, CONSENT_WITHDRAWN, "/notes");
+    await expect(title(page, /Vas a hablar con una IA/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Paso anterior" })).toHaveCount(0);
+    await page.goto("/settings");
+    await expect(page.getByRole("heading", { name: "Ajustes" })).toBeVisible();
+    await expect(page.getByText("Retirado. Dream no puede responderte.")).toBeVisible();
+  });
+
+  test("Ajustes › Perfil edits the name, nickname and hobbies", async ({ page }) => {
+    const sent = requests(page);
+    await open(page, { ...CONSENT_WITHDRAWN, ai_consent_at: "2026-10-20T10:00:00Z" }, "/settings");
+    await expect(page.getByText("Música")).toBeVisible();
+    await page.getByRole("button", { name: "Cambiar nombre, apodo y gustos" }).click();
+    const dialog = page.getByRole("dialog", { name: "Tu perfil en Dream" });
+    await dialog.getByLabel("Cómo quieres que te llame la IA").fill("Alexito");
+    await dialog.getByRole("button", { name: "Fútbol" }).click();
+    await dialog.getByRole("button", { name: "Guardar" }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByText("Alexito")).toBeVisible();
+    expect(sent.at(-1)).toMatchObject({
+      action: "onboarding_save",
+      display_name: "Alex",
+      nickname: "Alexito",
+      interests: ["Música", "Fútbol"],
+    });
+  });
+
+  test("a server «consent_required» brings the consent step back", async ({ page }) => {
+    await open(page, { ...CONSENT_WITHDRAWN, ai_consent_at: "2026-10-20T10:00:00Z" });
+    let withdrawn = false;
+    await page.route("**/functions/v1/dream-api", async (route) => {
+      const action = route.request().postDataJSON()?.action;
+      if (action === "conversation_create") {
+        withdrawn = true;
+        return route.fulfill({
+          status: 403,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "Para usar Dream, acepta antes enviar tu información a los proveedores de IA.", code: "consent_required" }),
+        });
+      }
+      if (action === "profile" && withdrawn)
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ profile: { email: "alex@example.test", display_name: "Alex", ...CONSENT_WITHDRAWN }, service_ready: true }),
+        });
+      return route.fallback();
+    });
+    const box = page.getByRole("textbox", CHAT);
+    await box.fill("Hola");
+    await box.press("Enter");
+    await expect(title(page, /Vas a hablar con una IA/)).toBeVisible();
+  });
+
+  test("Ajustes › Privacidad withdraws the AI permission after a warning", async ({ page }) => {
+    const sent = requests(page);
+    await open(page, { ...CONSENT_WITHDRAWN, ai_consent_at: "2026-10-20T10:00:00Z" }, "/settings");
+    await page.getByRole("button", { name: "Retirar", exact: true }).click();
+    const dialog = page.getByRole("alertdialog", { name: "¿Retirar el permiso?" });
+    await expect(dialog.getByRole("button", { name: "Cancelar" })).toBeFocused();
+    await dialog.getByRole("button", { name: "Retirar permiso" }).click();
+    await expect(page.getByText("Retirado. Dream no puede responderte.")).toBeVisible();
+    expect(sent.at(-1)).toMatchObject({ action: "consent_withdraw", kind: "ai" });
+    await page.goto("/chat");
+    await expect(title(page, /Vas a hablar con una IA/)).toBeVisible();
   });
 });
 
@@ -295,6 +436,12 @@ test.describe("login: estados del botón de Google y mensajes", () => {
   test("disabled look while Dream is not ready", async ({ page }) => {
     await page.goto("/login");
     const button = google(page);
+    // Measure after the entrance (the button rises in with the rest).
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .every((a) => a.playState !== "running" || a.effect?.getTiming().iterations === Infinity),
+    );
     // `ready` comes from the local session at once, so force the attribute
     // the page sets before that moment and check how it looks.
     const look = await button.evaluate((el) => {

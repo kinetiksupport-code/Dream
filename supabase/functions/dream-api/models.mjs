@@ -9,8 +9,21 @@ import { answerTokenBudget } from './capacity.mjs';
 // despliegue. Encendidos no bastan: sin los secretos CLOUDFLAREAI_API_KEY y
 // CLOUDFLARE_ACCOUNT_ID (válidos), «Pensar más» no se ofrece y el respaldo
 // sigue apagado en silencio (modeAvailable, fallbackAvailable).
-/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean}>} */
+/** @type {Readonly<{thinkMode: boolean, cloudflareFallback: boolean, mathCheck: boolean, openrouterFallback: boolean, shortRetry: boolean, claimCheck: boolean}>} */
 export const AI_FLAGS = Object.freeze({
+  // Respaldo gratuito con OpenRouter (openrouter.mjs) cuando Groq y Cloudflare
+  // no responden. APAGADO: antes hay que nombrarlo en la privacidad (duda 11).
+  openrouterFallback: false,
+  // Si una respuesta normal pasa de ~90 palabras sin pedir teoría, se pide una
+  // más corta (gasta una llamada más). APAGADO hasta medirlo con los evals.
+  shortRetry: false,
+  // Comprobación barata con gpt-oss-20b de que la respuesta con búsqueda está
+  // respaldada por las fuentes. APAGADO hasta medirlo con los evals.
+  claimCheck: false,
+  // Comprobar las operaciones de las respuestas de ciencias antes de enseñarlas
+  // (math-tools.mjs). APAGADO hasta medirlo con los evals: quita el «escribir
+  // poco a poco» en esas respuestas y puede gastar una llamada más.
+  mathCheck: false,
   // «Pensar más» visible y usable (necesita también los secretos de Cloudflare).
   thinkMode: true,
   // Respaldo con Cloudflare Workers AI cuando fallan todas las claves de Groq.
@@ -48,8 +61,19 @@ export const DEFAULT_MODE = 'normal';
 //   (settle) usa el mismo peso.
 // - El respaldo de Cloudflare (kind 'fallback') NO cuenta, como antes.
 // Para cambiar el límite o lo que gasta cada modo, toca SOLO estas dos líneas.
-export const SHARED_WINDOW_BUDGET = 40_000;
+export const SHARED_WINDOW_BUDGET = 60_000;
 export const MODE_WEIGHTS = Object.freeze({ fast: 0.5, normal: 1, think: 2 });
+// Qué cuenta contra el límite del alumno (Bloque 8, 26/10/2026). Antes contaba
+// TODO lo enviado: cada mensaje de Normal cargaba ~4.700 tokens de prompt de
+// sistema y el límite se acababa en 7 mensajes. Ahora el prompt de sistema y
+// la capa pedagógica son coste de Dream, no del alumno: cuenta su mensaje
+// nuevo, la respuesta (con el razonamiento oculto) y una fracción del
+// historial, de sus apuntes y de los resultados de búsqueda.
+export const WINDOW_CONTEXT_SHARE = 0.25;
+// Tokens que gasta un mensaje normal con esa cuenta (estimación hasta medir
+// una semana: ~40 del alumno + 25 % de ~1.800 de historial + ~600 de salida).
+// Solo sirve para decirle «te quedan unos N mensajes».
+export const TYPICAL_MESSAGE_TOKENS = 1_100;
 // ---------------------------------------------------------------------------
 
 export const MODES = Object.freeze({

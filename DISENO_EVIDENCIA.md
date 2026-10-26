@@ -145,6 +145,49 @@ Skills releídas. Detalle en `docs/diseno/estilo-login/README.md`. El login es p
   - `branding.md`: la identidad (azul, mascota y titular) va en la pantalla de entrada. El botón de Google y el formulario son los de siempre.
 - **`libraries-dev`:** la espera de «Abriendo Google…» ya tiene su anillo, y sin `border-beam` porque dura poco. No se instalan paquetes.
 
+## Bienvenida para usuarios nuevos (20/10/2026, entrega 1 del encargo «landing, login y bienvenida»)
+
+Skills cargadas de nuevo (`emil-design-eng`, `apple-design`). Detalle en `docs/diseno/bienvenida/README.md`. Sustituye a «Antes de empezar».
+
+| Pantalla | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|
+| Marco (todas) | *Should this animate at all? → Rare/first-time: can add delight*: se ve una vez, así que lleva entrada de paso y recompensa. Los pasos entran con `page-enter-*` (adelante desde la derecha, atrás desde la izquierda), 250 ms, `ease-out`. | `onboarding.md › design a brief, enjoyable experience`: seis pasos de una pregunta, barra de progreso y «Salir» siempre visible. | `components/welcome/welcome-flow.tsx`, reutiliza `components/exams/wizard/wizard.module.css` |
+| Nombre | *Buttons must feel responsive*: «Continuar» es el `button-3d` del asistente (la cara baja 3 px). | `entering-data.md › Get information from the system whenever possible`: el nombre viene de Google, editable. `› Dynamically validate field values`: tras el primer intento, el error cambia mientras escribe. | `welcome-flow.tsx`, `welcome.module.css › .bigInput` |
+| Gustos | *Animate enter states*: la marca del chip elegido entra desde 0,6 con opacidad, nunca desde 0. Hover solo con puntero fino. | `entering-data.md › offer choices instead of requiring text entry`: chips con icono y «Añadir otra». `accessibility.md › more than color alone`: el chip elegido se rellena y lleva una marca. | `welcome.module.css › .chip, .chipTick` |
+| Apodo | — | `entering-data.md › prefill fields with reasonable default values`: sugerencias del nombre; vacío = primer nombre, y se dice. | `lib/onboarding.ts › nicknameSuggestions` |
+| Edad | *Springs… elements that should feel alive*: cada rueda se asienta con el rebote corto de la ruedecita de la nota (`--ease-spring`, 250 ms). Solo `transform` y `opacity` escritos en cada fotograma. | `pickers.md › Use predictable and logically ordered values` y *Wheels*: día, mes y año en ruedas. `accessibility.md`: cada rueda es un slider con valor en texto; «Escribir la fecha» abre un campo nativo. | `components/welcome/birth-wheel.tsx` |
+| Vas a hablar con una IA | Errores con una subida de 4 px (fundido en movimiento reducido). | `generative-ai.md › disclosure` y `privacy.md`: aviso claro, sin letra pequeña, casillas sin marcar. El texto va sobre tarjeta (`--card`), no sobre el azul. | `welcome-flow.tsx`, `lib/consent.ts` |
+| ¡Listo! | *Never animate from scale(0)*: la pegatina cae desde 0,92 con giro y muelle; chispas del asistente. Reducido: solo fundido, sin chispas. | `design-principles.md › Delight… don't mistake delight for decoration`: una sola celebración breve. | `welcome.module.css › .drop` |
+| Menor de 14 | Sin animación propia. | `writing.md`: frase amable, sin culpa; un solo botón «Salir». | `welcome-flow.tsx` |
+| Ajustes › Perfil | La hoja usa el `Modal` de siempre (sale en 120 ms, más rápido que entra). | `settings.md`: lo elegido en la bienvenida se cambia aquí; retirar el permiso pide confirmación con «Cancelar» enfocado (`alerts.md`). | `components/welcome/profile-settings.tsx` |
+
+`libraries-dev`: no se instala nada; la espera de guardar es el orbe pequeño del botón, como en el asistente.
+## Login animado y transición desde la landing (20/10/2026, entrega 3 del encargo «landing, login y bienvenida»)
+
+Skills cargadas de nuevo. Detalle en `docs/diseno/login-animado/README.md`.
+
+| Qué | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|
+| El orbe viaja de la landing al login | *Spatial consistency* y *Use blur/crossfade… one transformation*: el mismo objeto continúa, no aparece otro. 280 ms, `ease-out` fuerte (`--ease`), dentro de 200–300 ms. | `motion.md`: movimiento con propósito, breve, y nunca el único portador de significado (sin la API se navega igual). | `lib/orb-transition.ts`, `components/orb-link.tsx`, `globals.css › dream-orb` |
+| Entrada escalonada del login | *Stagger 30–80 ms*: pegatina, titular, texto, botón y enlaces, 40 ms entre cada uno; `backwards` para no pisar el `scale(0.97)` de `.press`. *Stagger is decorative — never block interaction*: el botón se puede pulsar desde el primer fotograma. | `launching.md`: el login sale al instante; nada espera a la animación. | `app/login/login.module.css` |
+| El error no empuja de golpe | *Preventing jarring changes*: lo de debajo se desliza a su sitio (FLIP con `transform`, 200 ms). Reducido: sin deslizamiento. | `feedback.md`: el error dice qué pasó y ofrece «Volver a intentarlo» donde se mira. | `app/login/page.tsx` |
+| Movimiento reducido | Sin viaje ni deslizamiento; la entrada es un fundido de 120 ms. | `accessibility.md › Motion`. | `orb-transition.ts › canTravel`, `login.module.css` |
+
+## Landing con scroll cinematográfico (20/10/2026, entrega 4 del encargo «landing, login y bienvenida»)
+
+Skills cargadas: `cinematic-scroll` (primero el guion: `docs/diseno/landing-storyboard.md`), `apple-design` y `emil-design-eng`. Detalle en `docs/diseno/landing/README.md`.
+
+| Escena | `cinematic-scroll` | `emil-design-eng` | `apple-design` | Archivo |
+|---|---|---|---|---|
+| Todas | *Static composition first*: cada escena se lee completa sin animaciones (sin soporte, sin JS, con movimiento reducido). *One scroll clock*: el del navegador, sin suavizados. | Solo `transform` y `opacity`. | `accessibility.md`: un `h1`, un `h2` por escena, texto real y foco visible. `color.md`: tinta AA de cada `--pop-*`. | `app/page.tsx`, `app/landing.module.css` |
+| 1. Héroe | *Keep copy and the primary action accessible without waiting for spectacle*: «Probar Dream» desde el primer fotograma. | *Stagger 30–80 ms* al cargar (`.stagger`). Al salir, el héroe sube y se funde, ligado al scroll (lineal: *direct scrubbing stays direct*). | `branding.md`: la identidad (azul, titular, orbe) va en la entrada; el botón es el 3D de la app. | `.heroInner`, `.heroSticker` (`dream-orb`) |
+| 2. Apuntes → examen | *Signature moment*: la foto se convierte en examen. *Selective pinning*: solo escritorio con puntero fino, 180 vh (0,8 pantallas de recorrido), con pausa legible del 65 al 100 %. | *Spatial consistency*: la hoja sale del móvil y es la misma que llega a la tarjeta. | `layout.md`: en móvil, apilado y sin fijar. | `.notes`, `.notesStage`, `--notes` |
+| 3. Chat | *Use only the chapters the content needs*: una conversación corta que cuenta la regla de Dream. | Cada burbuja entra desde su lado (32 px), con fundido. | `generative-ai.md`: se ve que la IA da pistas, no respuestas. | `.bubbles` |
+| 4. Tests | *Compose midpoints*: el abanico de tarjetas se ve bien a mitad. | Rotación de la rueda ligada al scroll, sin muelles encima. | `pickers.md`: la rueda de la nota como en la app. | `.deck`, `.wheel` |
+| 5. Progreso | *Do not promise what the product does not do*: rótulo «Ejemplo». | El número rueda como un cuentakilómetros (`transform`), sin animar texto; un solo reloj para toda la tarjeta. | `accessibility.md`: el valor real «82 %» es texto oculto; las cifras animadas, `aria-hidden`. | `.odometer`, `--progress` |
+| 6. Gratis | Cierre con la acción. | *Never animate from scale(0)*: la pegatina cae desde 0,92. | `writing.md`: una frase clara y el botón. | `.freeSticker` |
+| Reducido | *Complete reduced motion*: sin fijar, sin parallax ni animaciones de scroll. | Solo fundidos de carga. | `accessibility.md › Motion`. | `@media (prefers-reduced-motion: no-preference)` |
+
 ## Criterio sobre «solo transform y opacity»
 
 emil-design-eng permite cambios de color en hover («Is it a hover/color change? → ease»). Por eso `design:check` hace esto:

@@ -1,12 +1,8 @@
 "use client";
 import { useEffect, useSyncExternalStore } from "react";
-// KaTeX styles go with the page that shows Markdown, not with the lazy chunk:
-// a stylesheet that arrives with a chunk is inserted by Next as a blocking
-// <link precedence>, and React holds every update until it loads, keystrokes
-// in the composer included (the chunk is warmed right after the chat opens,
-// so a student typing at once lost the Enter). Only @font-face rules and
-// classes: the fonts themselves still download on the first formula.
-import "katex/dist/katex.min.css";
+// KaTeX styles live in app/layout.tsx (global stylesheet): a stylesheet that
+// arrives with a chunk is inserted by Next as a blocking <link precedence>, and
+// React holds every update until it loads, keystrokes in the composer included.
 
 // react-markdown, remark/rehype and KaTeX load on demand, outside the initial
 // JS. Not React.lazy: a lazy component suspends on its first render even when

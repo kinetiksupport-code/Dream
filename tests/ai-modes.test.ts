@@ -100,7 +100,7 @@ async function collect(stream: AsyncIterable<Chunk>) {
 }
 
 // ---------------------------------------------------------------- Modos
-const OFF = { thinkMode: false, cloudflareFallback: false };
+const OFF = { thinkMode: false, cloudflareFallback: false, mathCheck: false, openrouterFallback: false, shortRetry: false, claimCheck: false };
 const cfOn = () => createCloudflareProvider({ getEnv: cfEnv, logger });
 const cfOff = () =>
   createCloudflareProvider({ getEnv: () => undefined, logger });
@@ -392,7 +392,7 @@ test("percentages are whole numbers and only reach 100 when the limit is spent",
 });
 
 test("ONE shared limit: Carlos's defaults live in one place and each mode spends it at its own rate", () => {
-  assert.equal(SHARED_WINDOW_BUDGET, 40_000);
+  assert.equal(SHARED_WINDOW_BUDGET, 60_000);
   assert.deepEqual({ ...MODE_WEIGHTS }, { fast: 0.5, normal: 1, think: 2 });
   assert.equal(weightedTokens(MODES.fast, 1001), 501);
   assert.equal(weightedTokens(MODES.normal, 1001), 1001);
@@ -433,11 +433,11 @@ test("the shared limit sums every mode; when spent, every mode waits; fallback u
     },
     { now: T0 + 2 * HOUR, modes },
   );
-  assert.equal(half.percent, 63);
+  assert.equal(half.percent, 42);
   assert.equal(half.blocked, false);
   assert.equal(half.resets_at, new Date(T0 + 5 * HOUR).toISOString());
   // Old web: every mode carries the shared values.
-  assert.ok(half.modes.every((m) => m.percent === 63 && !m.blocked));
+  assert.ok(half.modes.every((m) => m.percent === 42 && !m.blocked));
   assert.deepEqual(
     half.modes.map((m) => [m.id, m.cost, m.relative_cost]),
     [
@@ -450,13 +450,14 @@ test("the shared limit sums every mode; when spent, every mode waits; fallback u
     {
       window: row,
       usage: [
-        { mode: "normal", kind: "mode", tokens: 30_000 },
-        { mode: "think", kind: "mode", tokens: 10_000 },
+        { mode: "normal", kind: "mode", tokens: 45_000 },
+        { mode: "think", kind: "mode", tokens: 15_000 },
       ],
     },
     { now: T0 + 2 * HOUR, modes },
   );
   assert.equal(spent.percent, 100);
+  assert.equal(spent.messages_left, 0);
   assert.equal(spent.blocked, true);
   assert.ok(spent.modes.every((m) => m.percent === 100 && m.blocked));
   const web = parseUsage(JSON.parse(JSON.stringify(spent)));
@@ -467,7 +468,7 @@ test("the shared limit sums every mode; when spent, every mode waits; fallback u
   const text = JSON.stringify(spent);
   assert.doesNotMatch(
     text,
-    /token|30000|10000|llama|qwen|mistral|gpt|groq|cloudflare/i,
+    /token|45000|15000|llama|qwen|mistral|gpt|groq|cloudflare/i,
   );
   assert.equal(
     costSentence(parseUsage(JSON.parse(JSON.stringify(half))).modes),
@@ -488,9 +489,9 @@ test("Rápido stretches the shared limit: ≈ twice the messages of Normal and f
     }
     return n;
   };
-  assert.equal(messages(MODES.fast, 4000), 20);
-  assert.equal(messages(MODES.normal, 4000), 10);
-  assert.equal(messages(MODES.think, 4000), 5);
+  assert.equal(messages(MODES.fast, 4000), 30);
+  assert.equal(messages(MODES.normal, 4000), 15);
+  assert.equal(messages(MODES.think, 4000), 8);
 });
 
 test("window charges go through one atomic RPC and blocked modes surface as dream_mode_limit", async () => {

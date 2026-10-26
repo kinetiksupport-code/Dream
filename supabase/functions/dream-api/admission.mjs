@@ -94,12 +94,15 @@ export function createAdmission(db, owner, requestId) {
           }),
       };
     },
+    // A provider pause is shared by every student: a bad Retry-After from
+    // upstream must not park a provider for years (auditoría, endurecimiento).
     pause: (provider, seconds) =>
-      checkedRPC(db, "dream_provider_pause", { p_provider: provider, p_seconds: seconds }),
+      checkedRPC(db, "dream_provider_pause", { p_provider: provider, p_seconds: Math.min(MAX_PROVIDER_PAUSE_SECONDS, seconds) }),
     release: () => checkedRPC(db, "dream_release", ids),
   };
 }
 
+export const MAX_PROVIDER_PAUSE_SECONDS = 86400;
 export function retryAfterSeconds(value, now = Date.now()) {
   if (!value) return 60;
   const n = Number(value);

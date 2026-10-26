@@ -1,4 +1,5 @@
 import type { Page } from "@playwright/test";
+import { ageOn, MIN_AGE, TERMS_VERSION } from "../../lib/consent";
 // Contract fixtures for screenshots and design checks. Confined to tests:
 // never used by the application or the service worker.
 const eid = "11111111-1111-4111-8111-111111111111";
@@ -106,12 +107,43 @@ const messages = [
   },
 ];
 
-/** Profile of a first sign-in once dream-api sends the consent fields. */
-export const CONSENT_PENDING = { ai_consent_at: null, age_band: null };
+/** Profile of a first sign-in once dream-api sends the welcome fields. */
+export const CONSENT_PENDING = {
+  ai_consent_at: null,
+  terms_accepted_at: null,
+  terms_version: null,
+  age_band: null,
+  nickname: null,
+  interests: [],
+  onboarding_completed: false,
+  onboarding_step: 0,
+};
+/** Same student, already at a later step of the welcome (1 = name … 4 = age). */
+export const atStep = (onboarding_step: number, extra: Record<string, unknown> = {}) => ({
+  ...CONSENT_PENDING,
+  onboarding_step,
+  ...extra,
+});
+/** A student who finished the welcome and then withdrew the AI permission. */
+export const CONSENT_WITHDRAWN = {
+  ...CONSENT_PENDING,
+  terms_accepted_at: "2026-10-20T10:00:00Z",
+  terms_version: TERMS_VERSION,
+  age_band: "14_17",
+  nickname: "Alex",
+  interests: ["Música"],
+  onboarding_completed: true,
+  onboarding_step: 6,
+};
 
 export async function mock(
   page: Page,
-  opts: { pendingChat?: boolean; profile?: Record<string, unknown> } = {},
+  opts: {
+    pendingChat?: boolean;
+    profile?: Record<string, unknown>;
+    /** Extra top-level fields of the `profile` answer (e.g. `features`). */
+    extra?: Record<string, unknown>;
+  } = {},
 ) {
   let profile: Record<string, unknown> = {
     email: "alex@example.test",
@@ -142,15 +174,36 @@ export async function mock(
   await page.route("**/functions/v1/dream-api", async (route) => {
     const b = route.request().postDataJSON();
     if (b.action === "chat" && opts.pendingChat) return; // never answers: waiting state
-    if (b.action === "consent")
-      // Contract designed in docs/CONSENTIMIENTO.md (not deployed yet).
+    // Welcome contract designed in docs/CONSENTIMIENTO.md (not deployed yet).
+    let allowed = true;
+    if (b.action === "onboarding_save") {
+      const fields = { ...b };
+      delete fields.action;
+      delete fields.step;
+      profile = { ...profile, ...fields, ...(b.step === undefined ? {} : { onboarding_step: b.step }) };
+    }
+    if (b.action === "onboarding_age") {
+      const age = ageOn(b.birth_date);
+      allowed = age !== null && age >= MIN_AGE;
+      if (!allowed)
+        profile = { ...profile, ...CONSENT_PENDING, display_name: null };
+    }
+    if (b.action === "consent") {
+      const age = b.birth_date ? ageOn(b.birth_date) : 16;
       profile = {
         ...profile,
         ai_consent_at: new Date().toISOString(),
-        age_band: "14_17",
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: b.terms_version,
+        age_band: age !== null && age >= 18 ? "18_plus" : "14_17",
+        onboarding_completed: true,
+        onboarding_step: 6,
       };
+    }
+    if (b.action === "consent_withdraw") profile = { ...profile, ai_consent_at: null };
     const data: Record<string, unknown> = {
-      profile: { profile, service_ready: true },
+      profile: { profile, service_ready: true, ...opts.extra },
+      onboarding_age: { allowed },
       conversations: { items: conversations },
       messages: { items: messages, next_offset: null },
       exams: { exams: [exam] },
@@ -267,35 +320,77 @@ const birth = (years: number) => {
   return d.toISOString().slice(0, 10);
 };
 export const SCREENS: Screen[] = [
+  { name: "landing", path: "/", signedOut: true },
   { name: "login", path: "/login", signedOut: true },
   { name: "login-error", path: "/login?error=cancelled", signedOut: true },
   { name: "login-registro", path: "/chat", profile: CONSENT_PENDING },
+  { name: "bienvenida-nombre", path: "/chat", profile: atStep(1) },
   {
-    name: "login-registro-mayor",
+    name: "bienvenida-nombre-error",
     path: "/chat",
-    profile: CONSENT_PENDING,
+    profile: atStep(1, { display_name: "" }),
     ready: async (p) => {
-      await p.getByLabel("Fecha de nacimiento").fill(birth(16));
-      await p.getByRole("checkbox", { name: /proveedores de IA/ }).check();
-    },
-  },
-  {
-    name: "login-registro-menor",
-    path: "/chat",
-    profile: CONSENT_PENDING,
-    ready: async (p) => {
-      await p.getByLabel("Fecha de nacimiento").fill(birth(12));
-      await p.getByRole("checkbox", { name: /tutor legal/ }).waitFor();
-    },
-  },
-  {
-    name: "login-registro-error",
-    path: "/chat",
-    profile: CONSENT_PENDING,
-    ready: async (p) => {
-      await p.getByLabel("Fecha de nacimiento").fill(birth(12));
-      await p.getByRole("button", { name: "Empezar" }).click();
+      await p.getByRole("button", { name: "Continuar" }).click();
       await p.waitForTimeout(250);
+    },
+  },
+  {
+    name: "bienvenida-gustos",
+    path: "/chat",
+    profile: atStep(2, { interests: ["Música", "Videojuegos", "Ajedrez"] }),
+  },
+  { name: "bienvenida-apodo", path: "/chat", profile: atStep(3, { display_name: "Alejandro" }) },
+  {
+    name: "bienvenida-edad",
+    path: "/chat",
+    profile: atStep(4),
+    ready: async (p) => {
+      await p.getByRole("slider", { name: "Año" }).focus();
+      await p.keyboard.press("ArrowUp");
+      await p.waitForTimeout(300);
+    },
+  },
+  {
+    name: "bienvenida-ia",
+    path: "/chat",
+    profile: atStep(4),
+    ready: async (p) => {
+      await p.getByRole("button", { name: "Escribir la fecha" }).click();
+      await p.getByLabel("Fecha de nacimiento").fill(birth(16));
+      await p.getByRole("button", { name: "Continuar" }).click();
+      await p.getByRole("heading", { name: /Vas a hablar con una IA/ }).waitFor();
+    },
+  },
+  {
+    name: "bienvenida-ia-error",
+    path: "/chat",
+    profile: CONSENT_WITHDRAWN,
+    ready: async (p) => {
+      await p.getByRole("button", { name: "Aceptar y seguir" }).click();
+      await p.waitForTimeout(250);
+    },
+  },
+  {
+    name: "bienvenida-listo",
+    path: "/chat",
+    profile: CONSENT_WITHDRAWN,
+    ready: async (p) => {
+      await p.getByRole("checkbox", { name: /proveedores de IA/ }).check();
+      await p.getByRole("checkbox", { name: /He leído y acepto/ }).check();
+      await p.getByRole("button", { name: "Aceptar y seguir" }).click();
+      await p.getByRole("heading", { name: /Listo/ }).waitFor();
+      await p.waitForTimeout(500);
+    },
+  },
+  {
+    name: "bienvenida-menor",
+    path: "/chat",
+    profile: atStep(4),
+    ready: async (p) => {
+      await p.getByRole("button", { name: "Escribir la fecha" }).click();
+      await p.getByLabel("Fecha de nacimiento").fill(birth(12));
+      await p.getByRole("button", { name: "Continuar" }).click();
+      await p.getByRole("heading", { name: /mayores de 14/ }).waitFor();
     },
   },
   { name: "inicio", path: "/chat" },

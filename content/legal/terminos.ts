@@ -1,6 +1,6 @@
 export const terminos = String.raw`# Términos y condiciones
 
-*Última actualización: 19 de octubre de 2026 (versión provisional).*
+*Última actualización: 26 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién ofrece Dream
 
@@ -15,23 +15,24 @@ Dream es una web (instalable como app) con un tutor de inteligencia artificial q
 - Entras con tu cuenta de Google. Eres responsable de mantenerla segura.
 - Debes dar datos verdaderos, sobre todo tu fecha de nacimiento. Para usar el tutor debes marcar también una casilla aparte: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme" (ver Política de privacidad). Sin ella no podemos responderte, así que no podrás usar el chat.
 - Una cuenta es personal: no la compartas.
-- **Si tienes menos de 14 años,** para crear la cuenta debes marcar la casilla: "Mi padre, madre o tutor legal me ha dado permiso para usar Dream y acepta la Política de privacidad y los Términos y condiciones".
-- **Esa casilla es una declaración formal y vinculante.** Al marcarla confirmas que es verdad y que tu tutor ha leído y aceptado estos textos. Si no lo es, estarás incumpliendo estos términos: podremos cerrar la cuenta sin aviso y borrar sus datos, y la responsabilidad por el uso indebido será de quien haya dado la autorización falsa.
-- **Si eres tutor legal** de un menor de 14 años que use Dream, aceptas estos términos en su nombre, eres responsable de supervisar su uso y puedes pedir en cualquier momento que cerremos su cuenta y borremos sus datos escribiendo a hellodream@edudream.es.
-- **Menores de 14 años: normas más estrictas.** Su uso está pensado solo para estudiar, no pueden subir fotos de personas ni datos personales, y podemos aplicar límites o bloqueos con más rapidez si se incumple cualquier norma.
+- **Dream es solo para mayores de 14 años.** Si tienes menos de 14, no puedes crear una cuenta.
 - Si tienes 14 o 15 años puedes aceptar tú mismo; de todos modos te recomendamos hablarlo con tu familia.
 
 ## 4. Dream es gratis, con límites de uso
 
 Dream es **gratuito** y hoy no se cobra nada. El plan gratuito no tiene un número fijo de mensajes, pero sí **límites de uso razonable** para que el servicio funcione para todos. Cuando hay mucha demanda puedes tener que esperar en una **cola** o volver más tarde, y la IA puede dejar de estar disponible unas horas o hasta el día siguiente. Podemos cambiar estos límites.
 
-**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Cada modo tiene su propio límite de uso, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. Si agotas un modo, no podrás usarlo hasta que acabe la ventana, pero puedes seguir con otro modo que aún tenga uso disponible. Si nuestro proveedor principal de IA (Groq) no responde en «Rápido» o «Normal», la respuesta puede llegar de un proveedor de respaldo (Cloudflare), algo más corta; ese uso no cuenta en el límite del modo. En Ajustes, en «Límite de uso», ves qué parte has usado de cada modo y cuándo se reinicia.
+**Modos de la IA.** Puedes elegir cómo te responde el tutor: «Rápido» (respuestas cortas), «Normal» (el modo por defecto) y, cuando esté disponible, «Pensar más» (respuestas más cuidadosas). Los modos comparten **un mismo límite de uso**, que se cuenta en **ventanas de 5 horas**: la ventana empieza con el primer mensaje que envías cuando no tienes otra abierta y dura 5 horas. «Rápido» gasta menos y «Pensar más», más. Cuando se agota, todos los modos esperan al final de la ventana. También hay un **límite por minuto** y uno **por día** contra abusos. Los límites pueden cambiar según la demanda. Si nuestro proveedor principal de IA (Groq) no responde en «Rápido» o «Normal», la respuesta puede llegar de un proveedor de respaldo (Cloudflare), algo más corta; ese uso no cuenta en el límite del modo. En Ajustes, en «Límite de uso», ves qué parte has usado, cuántos mensajes te quedan más o menos y cuándo se reinicia.
+
+**Cuentas de Fundación Loyola.** Si entras con un correo de Google verificado de fundacionloyola.net o fundacionloyola.es, no tienes la ventana de 5 horas ni el límite diario, pero sí un límite por minuto contra abusos. Podemos ajustar ese límite si hay abuso, y sigues esperando en la cola como todos cuando hay mucha demanda.
 
 Si en el futuro se añade un plan de pago, te lo comunicaremos antes y no se te cobrará nada sin que lo aceptes expresamente.
 
 ## 5. Cómo ayuda la IA (y sus límites)
 
 - La IA **puede equivocarse, inventar datos o no estar actualizada.** Verifica siempre lo importante con tus apuntes, tu libro o tu profesor.
+- Si activas la memoria, Dream **puede recordar mal** algo de ti. Puedes corregírselo en el chat o borrar ese recuerdo en Ajustes. Los recuerdos y resúmenes se guardan hasta que los borres o pasen 12 meses sin usarse; después se eliminan solos.
+- **No pegues datos de otras personas ni información sensible** (salud, familia, contraseñas…) en el chat ni al importar tu perfil de otra IA.
 - Dream está pensado para que aprendas: **no te da los ejercicios resueltos**, te guía con pistas y preguntas.
 - Las notas de los tests y simulacros son orientativas. **No son notas oficiales** ni garantizan resultados en ningún examen real. Dream no te asegura una nota concreta.
 - Dream no ofrece asesoramiento médico, legal ni psicológico. Si te sientes mal, habla con un adulto de confianza o llama al 024 (atención a la conducta suicida) o al 112 en una emergencia.
@@ -51,7 +52,7 @@ Estas normas existen para que Dream siga siendo gratis, justo y seguro para todo
 - Una persona, una cuenta. No compartas tu acceso ni uses la cuenta de otra persona.
 - No crees varias cuentas para saltarte los límites de uso, la cola de espera o un bloqueo.
 - Mantén tu cuenta de Google segura. Lo que ocurra desde tu cuenta lo asumes tú.
-- Da una fecha de nacimiento real. Mentir sobre la edad para evitar la autorización de un tutor incumple estos términos.
+- Da una fecha de nacimiento real. Mentir sobre la edad para usar Dream con menos de 14 años incumple estos términos y supone el cierre de la cuenta.
 
 **C. Lo que escribes y subes**
 

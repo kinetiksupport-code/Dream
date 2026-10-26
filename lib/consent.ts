@@ -1,52 +1,80 @@
 /**
- * Sign-up consent (Parte D). Pure logic and fixed texts, shared by the welcome
- * screen and its tests. Server design: docs/CONSENTIMIENTO.md.
+ * Sign-up consent (bienvenida, paso «Vas a hablar con una IA»). Pure logic and
+ * fixed texts, shared by the welcome flow, its tests and dream-api (which
+ * stores the exact text shown). Server design: docs/CONSENTIMIENTO.md.
  *
  * The texts come from the legal drafts (Política de privacidad §6 y §7,
  * Términos §2). Do not reword them here without changing those documents.
  */
 
-/** Spanish age of digital consent (LOPDGDD art. 7). */
-export const GUARDIAN_AGE = 14;
+/**
+ * Minimum age to use Dream (Carlos, 18/10/2026; Spanish age of digital
+ * consent, LOPDGDD art. 7). Under it there is no guardian path: the welcome
+ * says goodbye and nothing is kept.
+ */
+export const MIN_AGE = 14;
+
+/**
+ * Version of the Términos and the Política that the student accepts. When the
+ * texts change in a way that needs a new acceptance, bump it here and in
+ * dream-api: the welcome comes back at the consent step.
+ */
+export const TERMS_VERSION = "2026-10-20";
 
 export const CONSENT_TEXT = {
-  guardian:
-    "Mi padre, madre o tutor legal me ha dado permiso para usar Dream y acepta la Política de privacidad y los Términos y condiciones",
   ai: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme",
+  terms: "He leído y acepto los Términos y la Política de privacidad",
 } as const;
 
 /** AI disclosure (EU AI Act, art. 50), fixed next to the chat composer. */
 export const AI_NOTICE =
   "Estás hablando con una IA. Puede equivocarse: contrasta lo importante.";
 
+/** The «Vas a hablar con una IA» screen, before the two boxes. */
+export const AI_DISCLOSURE =
+  "Dream funciona con inteligencia artificial. Estás hablando con una IA, no con una persona. Puede equivocarse: contrasta lo importante.";
+
 export const CONSENT_ERRORS = {
-  birthMissing:
-    "Escribe tu fecha de nacimiento. Sirve para saber si necesitas el permiso de tu familia.",
-  birthInvalid: "Revisa la fecha: tiene que ser un día real y anterior a hoy.",
-  guardian:
-    "Con menos de 14 años necesitas el permiso de tu padre, madre o tutor legal. Márcalo para continuar.",
   ai: "Sin este permiso Dream no puede responderte. Márcalo para continuar.",
+  terms: "Para usar Dream tienes que aceptar los Términos y la Política de privacidad.",
 } as const;
 
-/** Consent fields of the profile. Absent while dream-api does not send them. */
+/**
+ * Consent and welcome fields of the profile. All absent while dream-api does
+ * not send them (today): then the welcome never shows.
+ */
 export interface ConsentProfile {
-  age_band?: "under_14" | "14_17" | "18_plus" | null;
-  guardian_required?: boolean;
-  guardian_confirmed_at?: string | null;
+  age_band?: "14_17" | "18_plus" | null;
   ai_consent_at?: string | null;
+  terms_accepted_at?: string | null;
+  terms_version?: string | null;
+  nickname?: string | null;
+  interests?: string[];
+  onboarding_completed?: boolean;
+  onboarding_step?: number | null;
 }
 
 /**
- * True when the server says consent is missing. While dream-api does not
- * return `ai_consent_at` at all (today), the app keeps working as before: the
- * gate cannot be completed without the server action, so it stays off. The
- * real protection is on the server (docs/CONSENTIMIENTO.md).
+ * What the app must show before anything else:
+ * - "off": today's server (no consent fields) or everything in order.
+ * - "welcome": a new student; the whole welcome replaces the app.
+ * - "consent": the welcome was done but the AI permission was withdrawn or the
+ *   terms changed. Only the consent step; Ajustes stays open.
+ * The real protection is on the server (docs/CONSENTIMIENTO.md).
  */
-export function needsConsent(profile: ConsentProfile | null | undefined) {
-  if (!profile || profile.ai_consent_at === undefined) return false;
-  if (!profile.ai_consent_at) return true;
-  if (!profile.age_band) return true;
-  return !!profile.guardian_required && !profile.guardian_confirmed_at;
+export function consentGate(
+  profile: ConsentProfile | null | undefined,
+): "off" | "welcome" | "consent" {
+  if (!profile || profile.ai_consent_at === undefined) return "off";
+  if (!profile.onboarding_completed) return "welcome";
+  if (
+    !profile.ai_consent_at ||
+    !profile.terms_accepted_at ||
+    profile.terms_version !== TERMS_VERSION ||
+    !profile.age_band
+  )
+    return "consent";
+  return "off";
 }
 
 /** Local calendar date as YYYY-MM-DD (the student's day, not UTC). */
@@ -81,26 +109,19 @@ export function ageOn(birth: string, today = new Date()): number | null {
 }
 
 export interface ConsentInput {
-  birthDate: string;
-  guardian: boolean;
   ai: boolean;
+  terms: boolean;
 }
-export type ConsentField = "birthDate" | "guardian" | "ai";
+export type ConsentField = keyof ConsentInput;
 export type ConsentErrors = Partial<Record<ConsentField, string>>;
 
-/** Field order on screen: the first error gets the focus. */
-export const CONSENT_FIELDS: ConsentField[] = ["birthDate", "guardian", "ai"];
+/** Order on screen: the first error gets the focus. */
+export const CONSENT_FIELDS: ConsentField[] = ["ai", "terms"];
 
-export function validateConsent(
-  input: ConsentInput,
-  today = new Date(),
-): ConsentErrors {
+/** Nothing is accepted by default: both boxes must be ticked. */
+export function validateConsent(input: ConsentInput): ConsentErrors {
   const errors: ConsentErrors = {};
-  const age = input.birthDate ? ageOn(input.birthDate, today) : null;
-  if (!input.birthDate) errors.birthDate = CONSENT_ERRORS.birthMissing;
-  else if (age === null) errors.birthDate = CONSENT_ERRORS.birthInvalid;
-  if (age !== null && age < GUARDIAN_AGE && !input.guardian)
-    errors.guardian = CONSENT_ERRORS.guardian;
   if (!input.ai) errors.ai = CONSENT_ERRORS.ai;
+  if (!input.terms) errors.terms = CONSENT_ERRORS.terms;
   return errors;
 }

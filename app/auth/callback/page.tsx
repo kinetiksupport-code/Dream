@@ -65,7 +65,9 @@ export default function Callback() {
           | { allowed?: boolean }
           | null;
         if (result?.allowed !== true) {
-          await client.auth.signOut({ scope: "local" });
+          // Denied outright: revoke the refresh token too, so the session kept in
+          // the browser cannot be reused against dream-api (auditoría).
+          await client.auth.signOut({ scope: "global" });
           if (active) router.replace("/maintenance");
           return;
         }

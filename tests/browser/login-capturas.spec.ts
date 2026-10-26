@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 import { fullShot } from "./full-shot";
 import { mock, SCREENS } from "./design-fixture";
 // Visual evidence for docs/diseno/login (PR «estilo login»): sign-in and the
-// first-run registration (age and consent), phone (390) and desktop (1280),
+// first-run welcome (name, hobbies, nickname, age and consent), phone (390) and desktop (1280),
 // light and dark, plus a reduced-motion pass. Runs only with CAPTURAS_DIR.
 const OUT = process.env.CAPTURAS_DIR;
 test.skip(!OUT, "Set CAPTURAS_DIR to take screenshots");
@@ -16,9 +16,15 @@ const NAMES = [
   "login",
   "login-error",
   "login-registro",
-  "login-registro-mayor",
-  "login-registro-menor",
-  "login-registro-error",
+  "bienvenida-nombre",
+  "bienvenida-nombre-error",
+  "bienvenida-gustos",
+  "bienvenida-apodo",
+  "bienvenida-edad",
+  "bienvenida-ia",
+  "bienvenida-ia-error",
+  "bienvenida-listo",
+  "bienvenida-menor",
 ];
 
 for (const screen of SCREENS.filter((s) => NAMES.includes(s.name)))
@@ -93,10 +99,10 @@ for (const vp of VIEWPORTS)
       serviceWorkers: "block",
     });
     const reg = await second.newPage();
-    const welcome = SCREENS.find((s) => s.name === "login-registro-menor");
+    const welcome = SCREENS.find((s) => s.name === "bienvenida-menor");
     await mock(reg, { profile: welcome?.profile });
     await reg.goto("/chat");
-    await reg.getByRole("heading", { name: "Antes de empezar" }).waitFor();
+    await reg.locator("h1").first().waitFor();
     await reg.waitForTimeout(1200);
     if (welcome?.ready) await welcome.ready(reg).catch(() => {});
     await reg.waitForTimeout(1200);
