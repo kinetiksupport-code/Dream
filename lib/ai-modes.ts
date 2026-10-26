@@ -26,6 +26,8 @@ export interface AiSharedUsage {
   /** Agotado: todos los modos esperan al reinicio. */
   blocked: boolean;
   resets_at: string | null;
+  /** «Te quedan unos N mensajes» (aproximado). null con un servidor antiguo. */
+  messages_left: number | null;
 }
 export interface AiUsage extends AiSharedUsage {
   modes: AiModeUsage[];
@@ -80,6 +82,7 @@ export const FALLBACK_USAGE: AiUsage = {
   percent: 0,
   blocked: false,
   resets_at: null,
+  messages_left: null,
 };
 
 const isMode = (v: unknown): v is AiModeId =>
@@ -132,6 +135,7 @@ export function parseUsage(data: unknown): AiUsage {
     percent?: unknown;
     blocked?: unknown;
     resets_at?: unknown;
+    messages_left?: unknown;
   };
   // Servidor nuevo: el límite conjunto llega arriba. Servidor antiguo (un
   // límite por modo): se toma el modo más gastado, para no prometer de más.
@@ -141,6 +145,12 @@ export function parseUsage(data: unknown): AiUsage {
           percent: clampPercent(top.percent),
           blocked: top.blocked === true,
           resets_at: isoOrNull(top.resets_at) ?? window?.ends_at ?? null,
+          messages_left:
+            typeof top.messages_left === "number" &&
+            Number.isInteger(top.messages_left) &&
+            top.messages_left >= 0
+              ? Math.min(top.messages_left, 999)
+              : null,
         }
       : {
           percent: Math.max(...modes.map((m) => m.percent)),
@@ -149,6 +159,7 @@ export function parseUsage(data: unknown): AiUsage {
             modes.find((m) => m.resets_at)?.resets_at ??
             window?.ends_at ??
             null,
+          messages_left: null,
         };
   return {
     modes,
@@ -217,4 +228,12 @@ export function storeMode(mode: AiModeId) {
   } catch {
     /* sin almacenamiento: se usa el modo por defecto */
   }
+}
+
+/** «Te quedan unos 12 mensajes.» ('' si el servidor no lo dice). */
+export function messagesLeftText(left: number | null) {
+  if (left === null) return "";
+  if (left === 0) return "Ya casi no te quedan mensajes.";
+  if (left === 1) return "Te queda más o menos 1 mensaje.";
+  return `Te quedan unos ${left} mensajes.`;
 }

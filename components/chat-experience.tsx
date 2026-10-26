@@ -25,6 +25,7 @@ import {
   alternativeMode,
   clockTime,
   formatResetIn,
+  messagesLeftText,
   pickMode,
   readStoredMode,
   storeMode,
@@ -795,7 +796,8 @@ export function ChatExperience({
     </div>
   ) : usage.percent >= WARN_PERCENT && usage.resets_at ? (
     <p className="mode-notice" role="status">
-      Has usado el {usage.percent} % de tu IA. Se reinicia en{" "}
+      Has usado el {usage.percent} % de tu IA.{" "}
+      {messagesLeftText(usage.messages_left)} Se reinicia en{" "}
       {formatResetIn(Date.parse(usage.resets_at) - Date.now())}.
     </p>
   ) : null;

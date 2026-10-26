@@ -17,7 +17,7 @@ import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './gr
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
 import { CLOUDFLARE_FALLBACK, SEARCH_TURN, DEFAULT_MODE, aiContextFor, availableModes, reasoningParams, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
-import { createWindowLimiter, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
+import { createWindowLimiter, promptBreakdown, studentWindowTokens, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
 import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReasoning } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import { needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
@@ -761,6 +761,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     ? [...searchPlannerMessages(), ...searchHistory, { role: 'user', content: prompt }]
     : [...systemMessages, ...priorMessages, { role: 'user', content: prompt }];
   const firstBody = { ...baseBody, messages: initialMessages, ...(planSearch ? { max_tokens: SEARCH_TURN.plannerMaxTokens } : {}) };
+  // Contabilidad por partes (Bloque 8 bis): tamaños estimados, nunca texto.
+  console.log(JSON.stringify({ event: 'dream_prompt_breakdown', generation_mode: mode.id, search_plan: planSearch, forced_search: forcedSearch,
+    ...promptBreakdown({ messages: [...systemMessages, ...priorMessages, { role: 'user', content: prompt }] }), max_tokens: answerTokens, student_tokens: studentWindowTokens(firstBody) }));
   let startOnFallback = false;
   try { await tracker.reserveFirst(mode.provider, firstBody); }
   catch (error) {
