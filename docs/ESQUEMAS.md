@@ -59,3 +59,11 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 
 - Repetir los 10 temas «solo tema» con la búsqueda mejorada.
 - Bloques 1 (entrada), 3 (edición), 4 (exportar), 5 (ilustraciones FLUX), 6 (textos legales) y 7 (Dreams interactivos), cada uno en su PR.
+
+## Ilustraciones (tanda 2) y textos legales
+
+- `supabase/functions/dream-api/illustrations.mjs`: FLUX.2 [klein] 4B en Workers AI (`@cf/black-forest-labs/flux-2-klein-4b`, multipart `prompt`/`width`/`height`), 768×512. El prompt lo construye el servidor con un estilo fijo («sin texto, sin letras, sin caras realistas, apta para menores») a partir del `illustration_prompt` saneado (sin cifras ni comillas, temas sensibles fuera).
+- Caché compartida por hash del prompt en el bucket público `scheme-illustrations` (sin datos personales). Cupos: 12 nuevas por alumno y día y 300 en total al día (~9.000 Neurons); las de caché no cuentan. Interruptor: `DREAM_ILLUSTRATIONS=off`.
+- Si falta la clave, se agota el cupo o falla, se quedan los paisajes locales; el alumno ve «Hoy ya has usado tus ilustraciones; el esquema sigue funcionando sin ellas».
+- Etiqueta «Imagen generada con IA» en cada imagen y «Contenido generado por IA, revísalo» en el esquema (AI Act, art. 50).
+- Privacidad (`content/legal/privacidad.ts`): Cloudflare como proveedor de imágenes (solo la descripción corta en inglés), esquemas en la conservación y nota de transparencia. **Pendiente de revisar por Carlos:** región y conservación de Cloudflare para imágenes, y si hace falta subir `TERMS_VERSION`.

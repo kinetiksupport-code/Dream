@@ -15,6 +15,7 @@ import {
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { chatSystemMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { IMAGE_BUCKET, ILLUSTRATIONS_GLOBAL_PER_DAY, ILLUSTRATIONS_PER_DAY, generateImage, illustrationTargets, illustrationsEnabled, imageType, promptHash } from './illustrations.mjs';
 import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBlock, consentDecision, createNicknameReplacer, madridToday, nicknameFor, onboardingPatch, personalContext, replaceNickname, welcomeFields } from './onboarding.mjs';
@@ -787,11 +788,64 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ section });
   }
 
+  // Rutas guardadas → URL públicas del bucket de ilustraciones.
+  const illustrationUrls = (map: Record<string, string>) => Object.fromEntries(Object.entries(map || {})
+    .filter(([, path]) => typeof path === 'string' && /^v1\/[0-9a-f]{64}\.(jpg|png|webp)$/.test(path))
+    .map(([key, path]) => [key, admin.storage.from(IMAGE_BUCKET).getPublicUrl(path).data.publicUrl]));
+
   if (body.action === 'scheme_get') {
     if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
-    const row = await admin.from('dream_schemes').select('id,title,subject,content,created_at').eq('id', body.scheme_id).eq('owner_id', user.id).maybeSingle();
+    const row = await admin.from('dream_schemes').select('id,title,subject,content,illustrations,created_at').eq('id', body.scheme_id).eq('owner_id', user.id).maybeSingle();
     if (!row.data) return json({ error: 'Esquema no encontrado.' }, 404);
-    return json({ scheme: row.data });
+    const { illustrations, ...scheme } = row.data as any;
+    return json({ scheme: { ...scheme, illustrations: illustrationUrls(illustrations) } });
+  }
+
+  if (body.action === 'scheme_illustrate') {
+    // Ilustraciones con FLUX (illustrations.mjs): reutiliza las ya hechas para
+    // el mismo prompt y genera las que falten dentro de los cupos. Si algo
+    // falla, el esquema sigue con las locales: nunca es un error para el alumno.
+    if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
+    const row = await admin.from('dream_schemes').select('id,content,illustrations').eq('id', body.scheme_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Esquema no encontrado.' }, 404);
+    const targets = illustrationTargets(row.data.content);
+    const saved: Record<string, string> = (row.data.illustrations as Record<string, string>) || {};
+    const result: Record<string, string> = Object.fromEntries(targets.filter((t) => saved[t.key]).map((t) => [t.key, saved[t.key]]));
+    const getEnv = (name: string) => Deno.env.get(name);
+    const apiKey = String(getEnv('CLOUDFLAREAI_API_KEY') ?? '').trim();
+    const accountId = String(getEnv('CLOUDFLARE_ACCOUNT_ID') ?? '').trim();
+    const ready = illustrationsEnabled(getEnv) && /^[^\s"']{20,200}$/.test(apiKey) && /^[0-9a-f]{32}$/i.test(accountId);
+    let limited = false;
+    let generated = 0;
+    const today = new Date(new Date().toISOString().slice(0, 10) + 'T00:00:00Z').toISOString();
+    for (const target of targets) {
+      if (result[target.key]) continue;
+      const hash = await promptHash(target.prompt);
+      const cached = await admin.storage.from(IMAGE_BUCKET).list('v1', { search: hash, limit: 1 });
+      const hit = cached.data?.find((f: any) => f.name.startsWith(hash));
+      if (hit) { result[target.key] = `v1/${hit.name}`; continue; }
+      if (!ready || limited) continue;
+      const mine = await admin.from('dream_illustration_log').select('id', { count: 'exact', head: true }).eq('owner_id', user.id).gte('created_at', today);
+      const all = await admin.from('dream_illustration_log').select('id', { count: 'exact', head: true }).gte('created_at', today);
+      if ((mine.count ?? ILLUSTRATIONS_PER_DAY) >= ILLUSTRATIONS_PER_DAY || (all.count ?? ILLUSTRATIONS_GLOBAL_PER_DAY) >= ILLUSTRATIONS_GLOBAL_PER_DAY) { limited = true; continue; }
+      try {
+        const bytes = await generateImage({ accountId, apiKey, prompt: target.prompt, signal: req.signal });
+        const type = imageType(bytes)!;
+        const path = `v1/${hash}.${type.ext}`;
+        const up = await admin.storage.from(IMAGE_BUCKET).upload(path, bytes, { contentType: type.mime, upsert: true, cacheControl: '31536000' });
+        if (up.error) throw new Error('image_store');
+        await admin.from('dream_illustration_log').insert({ owner_id: user.id });
+        result[target.key] = path;
+        generated++;
+      } catch (error) {
+        // Sin el prompt ni contenido: solo el código del fallo.
+        console.error(JSON.stringify({ event: 'scheme_illustration_failed', code: error instanceof Error ? error.message.slice(0, 40) : 'unknown' }));
+        if (error instanceof Error && error.message === 'image_quota') limited = true;
+      }
+    }
+    await admin.from('dream_schemes').update({ illustrations: result }).eq('id', row.data.id).eq('owner_id', user.id);
+    console.log(JSON.stringify({ event: 'scheme_illustrated', targets: targets.length, generated, limited }));
+    return json({ illustrations: illustrationUrls(result), limited, enabled: ready });
   }
 
   if (body.action === 'test_get') {

@@ -14,6 +14,7 @@ const operations = new Set([
   "scheme_get",
   "scheme_update",
   "scheme_refine",
+  "scheme_illustrate",
   "test_check_answer",
   "test_submit",
   "exam_prepare",

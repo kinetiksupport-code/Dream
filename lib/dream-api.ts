@@ -57,6 +57,7 @@ export type DreamAction =
   | "scheme_get"
   | "scheme_update"
   | "scheme_refine"
+  | "scheme_illustrate"
   | "test_get"
   | "test_check_answer"
   | "test_submit"

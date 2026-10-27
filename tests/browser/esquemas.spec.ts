@@ -10,8 +10,14 @@ const sid = "55555555-5555-4555-8555-555555555555";
 const aid = "77777777-7777-4777-8777-777777777777";
 const example = JSON.parse(readFileSync("supabase/functions/dream-api/scheme-example.json", "utf8"));
 
-async function api(page: import("@playwright/test").Page, calls: Record<string, unknown>[] = []) {
+// PNG de 1×1 para las ilustraciones simuladas.
+const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==", "base64");
+
+async function api(page: import("@playwright/test").Page, calls: Record<string, unknown>[] = [], limited = false) {
   await mock(page);
+  await page.route("https://ilustraciones.example.test/**", (route) =>
+    route.fulfill({ body: PIXEL, contentType: "image/png", headers: { "Access-Control-Allow-Origin": "*" } }),
+  );
   await page.route("**/functions/v1/dream-api", async (route) => {
     const b = route.request().postDataJSON();
     calls.push(b);
@@ -27,6 +33,10 @@ async function api(page: import("@playwright/test").Page, calls: Record<string, 
       const section = structuredClone(example.sections[b.section_index]);
       section.bullets = [...section.bullets, { text: "Viñeta añadida por la IA desde los apuntes.", quote: "" }];
       return route.fulfill({ json: { section } });
+    }
+    if (b.action === "scheme_illustrate") {
+      const first = example.sections.find((x: { illustration_prompt: string | null }) => x.illustration_prompt);
+      return route.fulfill({ json: { illustrations: { [first.illustration_prompt]: "https://ilustraciones.example.test/v1/a.png" }, limited } });
     }
     if (b.action === "scheme_get")
       return route.fulfill({ json: { scheme: { id: sid, title: example.title, subject: example.subject, content: example, created_at: "2026-10-27T08:00:00Z" } } });
@@ -123,4 +133,14 @@ test("descargar: Markdown, HTML autónomo y PNG se generan en el navegador", asy
     await page.keyboard.press("Escape");
     await menu.evaluate((el) => (el.parentElement as HTMLDetailsElement).removeAttribute("open"));
   }
+});
+
+test("ilustraciones: se piden al abrir, llevan la etiqueta de IA y avisan si se acaba el cupo", async ({ page }) => {
+  const calls: Record<string, unknown>[] = [];
+  await api(page, calls, true);
+  await page.goto(`/esquemas/${sid}`);
+  await expect(page.locator('img[src^="https://ilustraciones.example.test/"]')).toHaveCount(1);
+  await expect(page.getByText("Imagen generada con IA")).toBeVisible();
+  await expect(page.getByRole("status")).toContainText("Hoy ya has usado tus ilustraciones");
+  expect(calls.filter((c) => c.action === "scheme_illustrate")).toHaveLength(1);
 });

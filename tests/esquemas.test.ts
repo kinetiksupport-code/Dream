@@ -319,3 +319,41 @@ test("Markdown y nombre de archivo del esquema", async () => {
   assert.match(md, /## Ideas clave/);
   assert.equal(fileNameFor("Al-Ándalus: ¿tras el califato?", "png"), "esquema-al-andalus-tras-el-califato.png");
 });
+
+test("ilustraciones: prompt saneado, estilo fijo sin texto y temas sensibles fuera", async () => {
+  const I = await import("../supabase/functions/dream-api/illustrations.mjs");
+  assert.equal(I.sanitizeIllustrationPrompt("The \"Alhambra\" palace in 1492, golden hour"), "The Alhambra palace in, golden hour");
+  assert.equal(I.sanitizeIllustrationPrompt("battlefield with blood and corpses"), null);
+  assert.equal(I.sanitizeIllustrationPrompt("close-up portrait of a woman"), null);
+  assert.equal(I.sanitizeIllustrationPrompt("sol"), null);
+  const prompt = I.buildImagePrompt("Old water wheel among orange trees");
+  assert.match(prompt, /^Old water wheel among orange trees\. /);
+  assert.match(prompt, /No text, no letters, no numbers/);
+  assert.match(prompt, /no realistic faces/);
+  const targets = I.illustrationTargets(example);
+  assert.ok(targets.length >= 2 && targets.length <= 4);
+  assert.ok(targets.every((t: { key: string }) => example.sections.some((s: { illustration_prompt: string | null }) => s.illustration_prompt === t.key)));
+  assert.equal(await I.promptHash("x"), await I.promptHash("x"));
+  assert.notEqual(await I.promptHash("x"), await I.promptHash("y"));
+  assert.deepEqual(I.imageType(new Uint8Array([0xff, 0xd8, 0xff])), { mime: "image/jpeg", ext: "jpg" });
+  assert.equal(I.imageType(new Uint8Array([1, 2, 3])), null);
+  assert.equal(I.illustrationsEnabled(() => "off"), false);
+  assert.equal(I.illustrationsEnabled(() => undefined), true);
+});
+
+test("ilustraciones: llamada a Workers AI en multipart (prompt, width, height) y errores claros", async () => {
+  const I = await import("../supabase/functions/dream-api/illustrations.mjs");
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]).toString("base64");
+  let sent: FormData | null = null;
+  let url = "";
+  const bytes = await I.generateImage({
+    accountId: "a".repeat(32), apiKey: "k".repeat(40), prompt: "p",
+    fetchImpl: (async (u: string, init: RequestInit) => { url = u; sent = init.body as FormData; return new Response(JSON.stringify({ result: { image: jpeg } })); }) as unknown as typeof fetch,
+  });
+  assert.equal(bytes[0], 0xff);
+  assert.match(url, /\/ai\/run\/@cf\/black-forest-labs\/flux-2-klein-4b$/);
+  assert.equal(sent!.get("prompt"), "p");
+  assert.equal(sent!.get("width"), "768");
+  await assert.rejects(I.generateImage({ accountId: "a", apiKey: "k", prompt: "p", fetchImpl: async () => new Response("", { status: 429 }) }), /image_quota/);
+  await assert.rejects(I.generateImage({ accountId: "a", apiKey: "k", prompt: "p", fetchImpl: async () => new Response(JSON.stringify({ result: { image: "aGVsbG8=" } })) }), /image_format/);
+});

@@ -379,7 +379,7 @@ function SectionCard({ card, illustration }: { card: SchemeCard; illustration?: 
 
 function Block({ block, illustrations }: { block: SchemeBlock; illustrations: Record<string, string> }) {
   const edit = useContext(EditContext);
-  if (block.type === "section") return <SectionCard card={block.card} illustration={illustrations[block.card.heading]} />;
+  if (block.type === "section") return <SectionCard card={block.card} illustration={block.card.illustration_prompt ? illustrations[block.card.illustration_prompt] : undefined} />;
   if (block.type === "ideas")
     return (
       <section className={styles.card} data-tone="verde" aria-labelledby="esq-ideas">
@@ -421,7 +421,7 @@ function Block({ block, illustrations }: { block: SchemeBlock; illustrations: Re
 
 /**
  * Esquema visual. `illustrations` lleva las URL de las ilustraciones por
- * título de sección; sin ellas se dibujan las locales. Con `edit`, cada texto
+ * `illustration_prompt` de la sección; sin ellas se dibujan las locales. Con `edit`, cada texto
  * se edita en su sitio y cada tarjeta lleva su barra de edición.
  */
 export function EsquemaView({

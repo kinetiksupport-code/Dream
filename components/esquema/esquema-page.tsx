@@ -12,7 +12,7 @@ import { DreamActivity } from "@/components/dream-mark";
 import { EsquemaView, type SchemeEditApi } from "./esquema-view";
 import styles from "./esquema-page.module.css";
 
-type Row = { id: string; title: string; content: Scheme };
+type Row = { id: string; title: string; content: Scheme; illustrations?: Record<string, string> };
 type Save = "idle" | "saving" | "saved" | "error";
 
 /**
@@ -32,6 +32,8 @@ export function EsquemaPage({ id }: { id: string }) {
   const [refining, setRefining] = useState<number | null>(null);
   const [save, setSave] = useState<Save>("idle");
   const [busy, setBusy] = useState("");
+  const [illustrations, setIllustrations] = useState<Record<string, string>>({});
+  const [drawing, setDrawing] = useState(false);
   const article = useRef<HTMLDivElement>(null);
   const saved = useRef<Scheme | null>(null);
 
@@ -44,6 +46,7 @@ export function EsquemaPage({ id }: { id: string }) {
         setHistory(historyOf(r.scheme.content));
         saved.current = r.scheme.content;
         setTitle(r.scheme.title);
+        setIllustrations(r.scheme.illustrations ?? {});
       })
       .catch((e) => {
         if (!controller.signal.aborted) setError(errorMessage(e));
@@ -55,6 +58,32 @@ export function EsquemaPage({ id }: { id: string }) {
   }, [id, retry]);
 
   const scheme = history?.present ?? null;
+
+  // Ilustraciones con IA: se piden las que falten, sin bloquear la pantalla. Si
+  // no hay cupo o fallan, se quedan los paisajes locales.
+  const missing = useMemo(
+    () =>
+      (scheme?.sections ?? [])
+        .filter((s) => s.illustration_prompt && s.kind !== "dates" && s.kind !== "formula")
+        .slice(0, 4)
+        .some((s) => !illustrations[s.illustration_prompt!]),
+    [scheme, illustrations],
+  );
+  const asked = useRef("");
+  useEffect(() => {
+    if (!missing || editing || !scheme) return;
+    const key = scheme.sections.map((s) => s.illustration_prompt ?? "").join("|");
+    if (asked.current === key) return;
+    asked.current = key;
+    setDrawing(true);
+    callDream<{ illustrations: Record<string, string>; limited?: boolean }>("scheme_illustrate", { scheme_id: id })
+      .then((r) => {
+        setIllustrations((current) => ({ ...current, ...r.illustrations }));
+        if (r.limited) setNotice("Hoy ya has usado tus ilustraciones; el esquema sigue funcionando sin ellas.");
+      })
+      .catch(() => {})
+      .finally(() => setDrawing(false));
+  }, [missing, editing, scheme, id]);
 
   // Guardado automático: 1 s después del último cambio.
   useEffect(() => {
@@ -227,10 +256,10 @@ export function EsquemaPage({ id }: { id: string }) {
         </div>
       </div>
       <p className={styles.status} role="status" aria-live="polite">
-        {notice || (save === "saving" ? "Guardando…" : save === "saved" ? "Cambios guardados" : save === "error" ? "No se ha guardado. Revisa la conexión." : editing ? "Toca cualquier texto para cambiarlo. **Así** es negrita." : "")}
+        {notice || (drawing ? "Dibujando las ilustraciones…" : save === "saving" ? "Guardando…" : save === "saved" ? "Cambios guardados" : save === "error" ? "No se ha guardado. Revisa la conexión." : editing ? "Toca cualquier texto para cambiarlo. **Así** es negrita." : "")}
       </p>
       <div className="esquema-print" ref={article}>
-        <EsquemaView scheme={scheme} edit={edit} />
+        <EsquemaView scheme={scheme} edit={edit} illustrations={illustrations} />
       </div>
     </main>
   );

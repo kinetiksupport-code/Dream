@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 26 de octubre de 2026 (versión provisional).*
+*Última actualización: 27 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -64,6 +64,7 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Google** (inicio de sesión con tu cuenta de Google).
 - **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder (incluidas, si ayudan para un ejemplo, tus aficiones, y, si activas la memoria, lo que Dream recuerda de ti). También hace, en segundo plano, la extracción de la memoria y la importación de otra IA. Tus mensajes **no incluyen tu correo, tu nombre ni tu apodo**.
 - **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo, así que puede tratar tus mensajes fuera de la Unión Europea. Según Cloudflare, no usa este contenido para entrenar modelos de IA y no lo guarda cuando ya no lo necesita para responder.
+- **Cloudflare** (Cloudflare Workers AI, ilustraciones de los esquemas). Para dibujar las imágenes de un esquema solo recibe una **descripción corta en inglés del tema** (por ejemplo, «un palacio andalusí al atardecer») que escribe la IA de Dream; **no recibe tus apuntes, tus mensajes, tu nombre ni tu correo**. Las imágenes no llevan datos personales, se guardan en Supabase y se reutilizan para otros esquemas del mismo tema. No conocemos la región en la que se generan las imágenes, así que esa descripción puede tratarse fuera de la Unión Europea.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
 - **Google** (iconos de webs). Cuando abres una respuesta con búsqueda, tu navegador pide a Google el logo de cada web consultada. Google recibe la dirección de esa web y la de tu conexión (IP), igual que al visitar cualquier página; no recibe tu pregunta, tu nombre ni tu correo.
 - **PostHog** y **Sentry** (estadísticas y errores), solo si tú lo activas en Ajustes. Funcionan de forma anónima: sin grabación de pantalla, sin contenido de tus mensajes y sin geolocalización por IP.
@@ -78,6 +79,8 @@ Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Goog
 
 Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras en Ajustes › Privacidad o escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
 
+Los **esquemas («Dreams»)** se hacen con tus apuntes: la IA de texto escribe el contenido a partir de ellos y Dream lo maqueta; las ilustraciones las genera un modelo de imágenes y llevan la etiqueta «Imagen generada con IA». Todo el esquema lleva el aviso «Contenido generado por IA, revísalo» (artículo 50 del Reglamento europeo de IA).
+
 Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. Con carácter general no se toman decisiones automáticas con efectos legales sobre ti; la única excepción posible es la de la sección 11 (cuentas nuevas para saltarse un baneo), que solo se aplica si está activada. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
 
 ## 7. Menores de edad
@@ -86,7 +89,7 @@ En España, un menor puede dar su consentimiento para tratar sus datos a partir 
 
 ## 8. Cuánto tiempo guardamos los datos
 
-- Tu cuenta, conversaciones, textos de archivos y exámenes se guardan **mientras tengas cuenta**.
+- Tu cuenta, conversaciones, textos de archivos, exámenes y esquemas se guardan **mientras tengas cuenta**. Los esquemas guardan solo su contenido (no tus apuntes) y se borran con la cuenta.
 - Puedes **borrar todo tu historial de conversaciones** desde Ajustes cuando quieras.
 - Puedes **cambiar o borrar tu apodo y tus aficiones** en Ajustes › Perfil. Si eliminas tu cuenta, se borran con ella.
 - **Lo que Dream recuerda** (recuerdos y resúmenes de conversación) se guarda hasta que lo borres o, si no se usa, **12 meses desde su último uso**; después se elimina solo. En Ajustes › Lo que Dream recuerda puedes verlo, fijarlo, borrarlo uno a uno o todo, y apagar la memoria. Si la apagas, deja de guardarse y de usarse.
