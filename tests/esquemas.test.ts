@@ -252,3 +252,70 @@ test("tarjeta «Dreams» del esquema en el chat; nada de HTML ni ids raros", asy
   const bad = parseDreamContent(`<!--DREAM_WIDGET:{"type":"scheme","schemeId":"../../x","title":"x"}-->`);
   assert.equal(bad.schemes.length, 0);
 });
+
+test("edición: cambiar, añadir, quitar, mover, color, deshacer y rehacer sin tocar el original", async () => {
+  const E = await import("../lib/esquema-edit");
+  const base = validateScheme(example, { sources: notes }).scheme!;
+  const a = E.setAt(base, ["sections", 0, "bullets", 0, "text"], "Nuevo texto");
+  assert.equal(a.sections[0].bullets[0].text, "Nuevo texto");
+  assert.notEqual(base.sections[0].bullets[0].text, "Nuevo texto");
+  const b = E.insertAt(a, ["key_ideas"], "Otra idea");
+  assert.equal(b.key_ideas.at(-1), "Otra idea");
+  const c = E.removeAt(b, ["sections", 0, "bullets", 1]);
+  assert.equal(c.sections[0].bullets.length, a.sections[0].bullets.length - 1);
+  const d = E.moveSection(c, 0, 1);
+  assert.equal(d.sections[1].heading, c.sections[0].heading);
+  assert.equal(E.moveSection(d, 0, -1), d); // la primera no sube más
+  const e = E.setTone(d, 2, "verde");
+  assert.equal(e.sections[2].tone, "verde");
+  const card = layoutScheme(e, 3).blocks.flatMap((x) => (x.type === "section" ? [x.card] : [])).find((x) => x.index === 2);
+  assert.equal(card?.tone, "verde");
+  let h = E.historyOf(base);
+  h = E.commit(h, a);
+  h = E.commit(h, b);
+  assert.equal(E.undo(h).present, a);
+  assert.equal(E.redo(E.undo(h)).present, b);
+  // Nunca se queda sin tarjetas.
+  let one = base;
+  while (one.sections.length > 1) one = E.removeAt(one, ["sections", 0]);
+  assert.equal(E.removeAt(one, ["sections", 0]).sections.length, 1);
+});
+
+test("texto editado por el alumno: se quitan etiquetas y vacíos; sin título no vale", async () => {
+  const { normalizeEditedScheme } = await import("../supabase/functions/dream-api/schemes.mjs");
+  const edited = clone(example);
+  edited.title = "<b>Mi</b> esquema";
+  edited.sections[0].bullets.push({ text: "   " }, { text: "<i>Viñeta</i> nueva" });
+  edited.sections[0].tone = "verde";
+  edited.sections[1].tone = "fucsia";
+  const out = normalizeEditedScheme(edited) as unknown as { title: string; sections: { tone?: string; bullets: { text: string }[] }[] };
+  assert.equal(out.title, "Mi esquema");
+  assert.ok(out.sections[0].bullets.every((b: { text: string }) => b.text && !b.text.includes("<")));
+  assert.ok(out.sections[0].bullets.some((b: { text: string }) => b.text === "Viñeta nueva"));
+  assert.equal(out.sections[0].tone, "verde");
+  assert.equal(out.sections[1].tone, undefined);
+  assert.equal(normalizeEditedScheme({ ...edited, title: "" }), null);
+  assert.equal(normalizeEditedScheme({ ...edited, sections: [] }), null);
+});
+
+test("«Pedir a la IA»: la tarjeta rehecha pasa por el mismo validador (cifras con cita)", async () => {
+  const { validateSection } = await import("../supabase/functions/dream-api/schemes.mjs");
+  const ctx = { title: example.title, subject: example.subject };
+  const good = validateSection(example.sections[0], { sources: notes, context: ctx });
+  assert.equal(good.section?.heading, example.sections[0].heading);
+  const invented = clone(example.sections[0]);
+  invented.bullets = [{ text: "En **1099** pasó algo.", quote: "esto no está en la fuente de ninguna manera" }, { text: "Una viñeta sin cifras.", quote: "" }];
+  const bad = validateSection(invented, { sources: notes, context: ctx });
+  assert.ok(bad.section);
+  assert.ok(bad.section!.bullets.every((b: { text: string }) => !b.text.includes("1099")));
+});
+
+test("Markdown y nombre de archivo del esquema", async () => {
+  const { toMarkdown, fileNameFor } = await import("../lib/esquema-export");
+  const md = toMarkdown(validateScheme(example, { sources: notes }).scheme!);
+  assert.match(md, /^# La evolución de al-Ándalus/);
+  assert.match(md, /## 1\. La fragmentación de al-Ándalus en taifas \(1031-1086\)/);
+  assert.match(md, /- \*\*1492\*\*: Los Reyes Católicos toman Granada\./);
+  assert.match(md, /## Ideas clave/);
+  assert.equal(fileNameFor("Al-Ándalus: ¿tras el califato?", "png"), "esquema-al-andalus-tras-el-califato.png");
+});

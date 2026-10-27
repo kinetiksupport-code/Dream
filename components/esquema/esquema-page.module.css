@@ -1,4 +1,24 @@
 .page { padding: 12px 16px 32px; max-width: 1360px; margin-inline: auto; }
-.bar { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
-.bar :global(.secondary) { display: inline-flex; align-items: center; gap: 6px; }
+.bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bar :global(.secondary), .bar :global(.primary) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+.status { min-height: 1.4em; margin: 4px 0 10px; font-size: 14px; color: var(--text-secondary); }
 
+/* Menú «Descargar»: <details> nativo (teclado y lector de pantalla gratis). */
+.menu { position: relative; }
+.menu > summary { list-style: none; cursor: pointer; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menuList {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + 6px); min-width: 220px; padding: 6px;
+  display: grid; background: var(--elevated); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-popover); transform-origin: top right;
+  animation: menuIn 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.menuList button {
+  min-height: 44px; padding: 0 12px; text-align: left; border: 0; border-radius: 10px;
+  background: transparent; color: var(--text); font: inherit; cursor: pointer;
+}
+.menuList button:focus-visible { outline: 2px solid var(--primary); }
+@media (hover: hover) and (pointer: fine) { .menuList button:hover { background: var(--nav-active); } }
+@keyframes menuIn { from { opacity: 0; transform: scale(0.96); } }
+@media (prefers-reduced-motion: reduce) { .menuList { animation: none; } }

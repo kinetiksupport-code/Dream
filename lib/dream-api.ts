@@ -55,6 +55,8 @@ export type DreamAction =
   | "test_generate"
   | "scheme_generate"
   | "scheme_get"
+  | "scheme_update"
+  | "scheme_refine"
   | "test_get"
   | "test_check_answer"
   | "test_submit"

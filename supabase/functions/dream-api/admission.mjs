@@ -14,6 +14,7 @@ export const consumingActions = new Set([
   "attachment_upload",
   "test_generate",
   "scheme_generate",
+  "scheme_refine",
   "test_check_answer",
   "test_submit",
   "exam_prepare",
@@ -24,7 +25,7 @@ export const consumingActions = new Set([
 ]);
 // Acciones que dream_admit cuenta con el nombre de otra (sin tocar la función
 // SQL): un esquema gasta como un test en el cupo diario.
-export const ADMISSION_OPERATION = Object.freeze({ scheme_generate: "test_generate" });
+export const ADMISSION_OPERATION = Object.freeze({ scheme_generate: "test_generate", scheme_refine: "chat" });
 export const admissionOperation = (action) => ADMISSION_OPERATION[action] ?? action;
 export const DEFAULT_GROQ_MODEL = GROQ_NORMAL_MODEL;
 // Proveedores de IA que se cuentan en tokens (mismo formato de petición).

@@ -14,8 +14,8 @@ import {
   desktopUploadAction, mobileUploadAction,
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
-import { chatSystemMessages, schemeMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
-import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, generateScheme, schemeSourceFrom } from './schemes.mjs';
+import { chatSystemMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBlock, consentDecision, createNicknameReplacer, madridToday, nicknameFor, onboardingPatch, personalContext, replaceNickname, welcomeFields } from './onboarding.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
@@ -191,11 +191,11 @@ async function groqJson(system: string, user: string, operation: string, signal?
 
 // Esquemas (schemes.mjs, docs/ESQUEMAS.md): JSON con el formato del esquema,
 // temperatura baja y sin razonamiento (lo que pasó el banco de pruebas).
-async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>) {
+async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>, schema: object = SCHEME_JSON_SCHEMA) {
   const response = await groqProvider.request({ operation: 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
     model: groqModel(), stream: false, temperature: 0.25, max_tokens: 3000,
     ...(/^qwen\//.test(groqModel()) ? { reasoning_format: 'hidden', reasoning_effort: 'none' } : {}),
-    response_format: { type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema: SCHEME_JSON_SCHEMA } }, messages,
+    response_format: { type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema } }, messages,
   }});
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content;
@@ -728,7 +728,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const inserted = await admin.from('dream_schemes').insert({
       owner_id: user.id, conversation_id: body.conversation_id,
       title: String(scheme.title).slice(0, 120), subject: String(scheme.subject || '').slice(0, 60),
-      content: scheme, source: 'notes',
+      content: scheme, source: 'notes', attachment_ids: files.map((f: any) => f.id),
     }).select('id,title,subject').single();
     if (inserted.error) return json({ error: 'No se pudo guardar el esquema.' }, 503);
     const widget = { type: 'scheme', schemeId: inserted.data.id, title: inserted.data.title, subject: inserted.data.subject, sections: scheme.sections.length };
@@ -742,6 +742,49 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
     await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
     return json({ scheme: { id: inserted.data.id, title: inserted.data.title }, assistant_message: assistantMessage, widget });
+  }
+
+  if (body.action === 'scheme_update') {
+    // Lo que edita el alumno (su texto: no se piden citas). Se limpia y se guarda.
+    if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
+    const content = normalizeEditedScheme(body.content);
+    if (!content) return json({ error: 'El esquema necesita un título y al menos una tarjeta con texto.' }, 400);
+    const saved = await admin.from('dream_schemes').update({ content, title: content.title.slice(0, 120), subject: content.subject.slice(0, 60), updated_at: new Date().toISOString() })
+      .eq('id', body.scheme_id).eq('owner_id', user.id).select('id,updated_at').maybeSingle();
+    if (saved.error) return json({ error: 'No se pudo guardar el esquema.' }, 503);
+    if (!saved.data) return json({ error: 'Esquema no encontrado.' }, 404);
+    return json({ scheme: saved.data, content });
+  }
+
+  if (body.action === 'scheme_refine') {
+    // «Pedir a la IA»: amplía o simplifica una tarjeta con los mismos apuntes.
+    if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
+    const mode = body.mode === 'simplificar' ? 'simplificar' : 'ampliar';
+    const index = Number(body.section_index);
+    const row = await admin.from('dream_schemes').select('id,content,attachment_ids').eq('id', body.scheme_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Esquema no encontrado.' }, 404);
+    const content = row.data.content as any;
+    if (!Number.isInteger(index) || index < 0 || index >= (content?.sections?.length ?? 0)) return json({ error: 'Tarjeta no válida.' }, 400);
+    const ids = (row.data.attachment_ids || []).filter((id: string) => uuid.test(id));
+    const found = ids.length ? await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', ids).eq('owner_id', user.id).eq('status', 'processed') : { data: [] };
+    const files = (found.data || []).filter((f: any) => String(f.extracted_text || '').trim());
+    if (!files.length) return json({ error: 'Ya no tengo los apuntes de este esquema (la conversación se borró), así que no puedo ampliarlo sin inventar. Puedes editarlo a mano.', code: 'scheme_sources_gone' }, 409);
+    const sources = schemeSourceFrom(files.map((f: any) => ({ name: String(f.file_name || ''), text: String(f.extracted_text || '') })), SCHEME_SOURCE_CHARS);
+    const current = content.sections[index];
+    if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    let section: any = null;
+    try {
+      for (let attempt = 0; attempt < 2 && !section; attempt++) {
+        const raw = await groqScheme(schemeRefineMessages({ mode, section: current, sources, title: String(content.title || '') }), req.signal, admission, SECTION_JSON_SCHEMA);
+        section = validateSection(raw, { sources, context: { title: content.title, subtitle: '', subject: content.subject } }).section;
+      }
+    } catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
+      return json({ error: 'No se pudo rehacer la tarjeta. Inténtalo de nuevo.' }, 502);
+    }
+    if (!section) return json({ error: 'No he podido rehacer esta tarjeta sin salirme de tus apuntes. Prueba de nuevo o edítala a mano.', code: 'scheme_invalid' }, 422);
+    if (current?.tone) section.tone = current.tone;
+    return json({ section });
   }
 
   if (body.action === 'scheme_get') {

@@ -296,3 +296,59 @@ export function schemeSourceFrom(files, max = SCHEME_SOURCE_CHARS) {
   });
   return list.map((f, i) => `[${f.name}]\n${f.text.slice(0, room[i])}`).join('\n\n');
 }
+
+// ── Edición del alumno y «Pedir a la IA» (tanda 1) ──────────────────────────
+
+const TONES = new Set(['amarillo', 'azul', 'rojo', 'indigo', 'celeste', 'naranja', 'verde', 'lila']);
+
+/**
+ * Esquema editado por el alumno: es su texto, así que no se le piden citas.
+ * Se limpia (longitudes, sin HTML, viñetas vacías fuera) y se rechaza solo si
+ * no queda un esquema con título y al menos una sección con algo dentro.
+ * @param {unknown} raw
+ */
+export function normalizeEditedScheme(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const r = /** @type {Record<string, any>} */ (raw);
+  const txt = (v, max) => clean(v).replace(/<[^>]*>|&[a-z]+;|javascript:/gi, '').trim().slice(0, max);
+  const bullets = (list, max) => (Array.isArray(list) ? list : []).slice(0, max)
+    .map((b) => ({ text: txt(b?.text, L.bullet), quote: txt(b?.quote, L.quote) })).filter((b) => b.text);
+  const sections = (Array.isArray(r.sections) ? r.sections : []).slice(0, 10).map((s) => {
+    const kind = SECTION_KINDS.includes(s?.kind) ? s.kind : 'list';
+    const section = {
+      heading: txt(s?.heading, L.heading), period: txt(s?.period, L.period), kind,
+      intro: txt(s?.intro, L.intro), bullets: bullets(s?.bullets, 12),
+      subcards: (Array.isArray(s?.subcards) ? s.subcards : []).slice(0, 4)
+        .map((c) => ({ title: txt(c?.title, L.subcardTitle), period: txt(c?.period, L.period), bullets: bullets(c?.bullets, 10) }))
+        .filter((c) => c.title || c.bullets.length),
+      dates: (Array.isArray(s?.dates) ? s.dates : []).slice(0, 14)
+        .map((d) => ({ year: txt(d?.year, L.year), text: txt(d?.text, L.dateText), quote: txt(d?.quote, L.quote) }))
+        .filter((d) => d.year || d.text),
+      formula: txt(s?.formula, L.formula), highlight: txt(s?.highlight, L.highlight),
+      illustration_prompt: s?.illustration_prompt == null ? null : txt(s.illustration_prompt, L.illustration) || null,
+      illustration_caption: txt(s?.illustration_caption, L.caption),
+    };
+    if (TONES.has(s?.tone)) section.tone = s.tone;
+    return section;
+  }).filter((s) => s.heading || s.intro || s.bullets.length || s.subcards.length || s.dates.length || s.formula);
+  const title = txt(r.title, L.title);
+  if (!title || !sections.length) return null;
+  return {
+    title, subtitle: txt(r.subtitle, L.subtitle), subject: txt(r.subject, L.subject), sections,
+    key_ideas: (Array.isArray(r.key_ideas) ? r.key_ideas : []).slice(0, 6).map((k) => txt(k, L.keyIdea)).filter(Boolean),
+    summary: txt(r.summary, L.summary), closing: txt(r.closing, L.closing),
+  };
+}
+
+/** Formato de una sola sección (para «Pedir a la IA»). */
+export const SECTION_JSON_SCHEMA = Object.freeze(SCHEME_JSON_SCHEMA.properties.sections.items);
+
+/**
+ * Valida una sección rehecha por la IA con las mismas reglas que el esquema:
+ * se monta un esquema mínimo alrededor y se usa validateScheme.
+ */
+export function validateSection(raw, { sources = '', context }) {
+  const filler = (h) => ({ heading: h, period: '', kind: 'list', intro: '', bullets: [{ text: 'relleno de validación', quote: '' }], subcards: [], dates: [], formula: '', highlight: '', illustration_prompt: null, illustration_caption: '' });
+  const result = validateScheme({ ...context, title: context.title || 'Esquema', sections: [raw, filler('Relleno A'), filler('Relleno B')], key_ideas: [], summary: '', closing: '' }, { sources });
+  return { section: result.scheme ? result.scheme.sections.find((s) => !s.heading.startsWith('Relleno')) ?? null : null, errors: result.errors, dropped: result.dropped };
+}

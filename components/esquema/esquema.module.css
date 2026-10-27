@@ -103,8 +103,9 @@
 
 /* Tarjeta: fondo muy claro, borde del tono y cabecera de color. */
 .card {
-  display: flex; flex-direction: column; min-width: 0; overflow: hidden; overflow-wrap: anywhere;
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden; overflow-wrap: break-word; hyphens: auto;
   background: var(--bg); border: 2px solid var(--border); border-radius: 16px;
+  container-type: inline-size;
 }
 .cardHead {
   display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--head);
@@ -113,7 +114,7 @@
   flex: 1; margin: 0; font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif;
   font-weight: 800; font-size: clamp(20px, 1.9vw, 25px); line-height: 1.12; color: var(--esq-ink);
 }
-.period { font-weight: 700; white-space: nowrap; }
+.period { font-weight: 700; white-space: nowrap; display: inline-block; }
 .number {
   flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent) 70%);
@@ -134,7 +135,7 @@
 
 /* Subtarjetas: dos en paralelo, cada una con su tono y su cabecera. */
 .subcards { display: grid; gap: 10px; }
-@media (min-width: 520px) { .subcards[data-count="2"], .subcards[data-count="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 380px) { .subcards[data-count="2"], .subcards[data-count="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .subcard { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 14.5px; }
 .subcard h4 {
   margin: 0; padding: 8px 12px; background: var(--head); color: var(--esq-ink);
@@ -169,7 +170,7 @@
 }
 .callout svg { flex: none; width: 20px; height: 20px; margin-top: 2px; }
 .calloutRow { display: grid; gap: 10px; align-items: end; margin-top: auto; }
-@media (min-width: 520px) { .calloutRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+@container (min-width: 420px) { .calloutRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .calloutRow .illustration { margin: 0; }
 
 /* Ilustraciones: grandes, al pie de la tarjeta, con pie de foto opcional. */
@@ -210,3 +211,46 @@
   display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 12px;
   font-size: 13px; color: var(--esq-ink-soft);
 }
+
+/* ── Edición (esquema-page.tsx) ───────────────────────────────────────────
+   Cada texto se toca y se escribe en su sitio; la barra de cada tarjeta
+   mueve, cambia el color, pide a la IA o borra. Áreas táctiles de 44 px. */
+.editable { border-radius: 6px; outline: 1.5px dashed transparent; outline-offset: 2px; cursor: text; min-width: 1ch; display: inline; }
+[data-editing] .editable { outline-color: color-mix(in srgb, var(--accent, var(--esq-ink)) 35%, transparent); }
+[data-editing] .editable:empty::before { content: "Escribe aquí"; color: var(--esq-ink-soft); }
+.editable:focus { outline: 2px solid var(--accent, var(--esq-ink)); background: color-mix(in srgb, var(--esq-paper) 70%, transparent); }
+[data-editing] .bullets li { display: flex; align-items: flex-start; gap: 4px; }
+[data-editing] .bullets li .editable { flex: 1; }
+.iconButton {
+  flex: none; display: inline-grid; place-items: center; width: 44px; height: 44px; margin: -10px -8px -10px 0;
+  border: 0; border-radius: 12px; background: transparent; color: var(--esq-ink-soft); cursor: pointer;
+}
+.iconButton:disabled { opacity: 0.35; cursor: default; }
+.iconButton:focus-visible, .addButton:focus-visible, .aiButton:focus-visible, .swatch:focus-visible { outline: 2px solid var(--accent, var(--esq-ink)); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .iconButton:not(:disabled):hover { background: var(--head, var(--esq-band)); color: var(--esq-ink); } }
+.addButton {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px;
+  border: 1.5px dashed var(--border, var(--esq-band-rule)); border-radius: 12px; background: transparent;
+  color: var(--esq-ink); font: inherit; font-weight: 650; cursor: pointer;
+}
+.cardTools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px;
+  background: var(--esq-paper); border-bottom: 1.5px solid var(--border);
+}
+.swatches { display: inline-flex; gap: 2px; margin-inline: 4px; }
+.swatch {
+  width: 28px; height: 28px; margin: 8px 0; border-radius: 50%; border: 2px solid var(--border);
+  background: var(--head); cursor: pointer; padding: 0;
+}
+.swatch[aria-checked="true"] { box-shadow: 0 0 0 2px var(--esq-paper), 0 0 0 4px var(--accent); }
+.aiButton {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 10px; border: 0; border-radius: 12px;
+  background: var(--head); color: var(--esq-ink); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.aiButton:disabled { opacity: 0.6; cursor: progress; }
+.card[aria-busy="true"] .cardBody { opacity: 0.55; transition: opacity 200ms ease-out; }
+.formulaEdit { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--esq-paper); font-family: ui-monospace, monospace; font-size: 14px; }
+.addCard { display: flex; justify-content: center; margin-top: 14px; }
+.dates td { position: relative; }
+[data-editing] .dates td { display: flex; align-items: center; gap: 4px; }
+[data-editing] .dates td .editable { flex: 1; }

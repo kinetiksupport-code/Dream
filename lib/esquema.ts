@@ -17,6 +17,8 @@ export type SchemeSection = {
   highlight: string;
   illustration_prompt: string | null;
   illustration_caption: string;
+  /** Color elegido por el alumno al editar; si no, el del ciclo. */
+  tone?: Tone;
 };
 export type Scheme = {
   title: string;
@@ -34,11 +36,14 @@ export const PALETTE = ["amarillo", "azul", "rojo", "indigo", "celeste", "naranj
 export const SUBCARD_TONES = ["verde", "lila", "naranja"] as const;
 export const PILL_TONES = ["lila", "verde", "azul", "amarillo", "verde", "lila", "amarillo", "azul", "naranja", "rojo"] as const;
 export type Tone = (typeof PALETTE)[number] | "verde" | "lila";
+export const ALL_TONES: Tone[] = [...PALETTE, "verde", "lila"];
 
 export type SchemeCard = SchemeSection & {
   /** Número del círculo; null en «Patrimonio/Legado», que lleva icono. */
   number: number | null;
   tone: Tone;
+  /** Posición en scheme.sections (el bloque «Legado» se mueve al final). */
+  index: number;
   illustration: boolean;
   /** La caja de cierre («→ Fue una época…») va dentro de la primera tarjeta. */
   closing: string;
@@ -80,7 +85,8 @@ export function layoutScheme(scheme: Scheme, columnCount: number): SchemeLayout 
     const card: SchemeCard = {
       ...section,
       number: section.kind === "legacy" ? null : ++numbered,
-      tone: PALETTE[index % PALETTE.length],
+      tone: section.tone ?? PALETTE[index % PALETTE.length],
+      index,
       illustration,
       closing: index === 0 ? scheme.closing : "",
     };

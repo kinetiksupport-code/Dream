@@ -590,6 +590,17 @@ export function ChatExperience({
         await generateTest(id, prompt, controller.signal, true, attachmentIds);
       } else if (attachmentIds.length && !study && wantsScheme(prompt)) {
         await generateScheme(id, prompt, controller.signal, attachmentIds);
+      } else if (!study && wantsScheme(prompt)) {
+        // Sin apuntes no hay esquema (8/10 en el banco): se piden, sin gastar cupo.
+        setMessages((s) => [
+          ...s,
+          {
+            id: assistantId,
+            role: "assistant",
+            content:
+              "Para hacerte un esquema fiable necesito tus apuntes: adjunta una foto de la página, el PDF o el documento con el botón del clip y vuelve a pedírmelo. Así cada dato sale de lo que estudias, no de memoria.",
+          },
+        ]);
       } else {
         setMessages((s) => [
           ...s,
