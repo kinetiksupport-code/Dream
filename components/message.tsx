@@ -6,6 +6,7 @@ import {
   Check,
   FileText,
   ArrowRight,
+  LayoutGrid,
   ListChecks,
   RotateCw,
 } from "lucide-react";
@@ -134,6 +135,33 @@ export const MessageView = memo(function MessageView({
             </span>
             <span className="quiz-start">
               Empezar
+              <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
+            </span>
+          </Link>
+        ))}
+      {!revealing &&
+        parsed.schemes.map((w) => (
+          <Link
+            className="quiz-widget press"
+            data-kind="scheme"
+            href={`/esquemas/${w.schemeId}`}
+            key={w.schemeId}
+          >
+            <span className="quiz-icon" aria-hidden="true">
+              <LayoutGrid size={22} />
+            </span>
+            <span className="quiz-text">
+              <small>Dreams · Esquema</small>
+              <strong>{w.title}</strong>
+              {w.sections ? (
+                <span>
+                  <span className="num">{w.sections}</span>{" "}
+                  {w.sections === 1 ? "apartado" : "apartados"}
+                </span>
+              ) : null}
+            </span>
+            <span className="quiz-start">
+              Ver esquema
               <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
             </span>
           </Link>

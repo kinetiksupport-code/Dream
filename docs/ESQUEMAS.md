@@ -47,6 +47,14 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 
 `docs/esquemas/RESULTADOS-BANCO.md`: desde apuntes, 10/10 válidos y 0 datos erróneos (pasa el criterio); solo con el tema, falta repetir los 10 temas con la búsqueda mejorada.
 
+## «Esquema de estos apuntes» (Bloque 1, en producción desde el 27/10/2026)
+
+- **Chat:** con apuntes adjuntos, «hazme un esquema…» (`wantsScheme` en `lib/esquema.ts`) llama a `scheme_generate` en vez del chat. En la tarjeta del archivo hay un botón «Esquema de estos apuntes». Sin apuntes, la petición va al chat normal (el modo «solo tema» no pasó el banco: 8/10).
+- **dream-api:** `scheme_generate` junta el texto de los adjuntos (máx. 10.000 caracteres, `schemeSourceFrom`), genera con el formato `json_schema`, valida y reintenta una vez (`generateScheme`), guarda en `dream_schemes` y responde con la tarjeta «Dreams» (`<!--DREAM_WIDGET:{"type":"scheme",…}-->`). Cuenta como un test en el cupo diario (`ADMISSION_OPERATION`). `scheme_get` lo devuelve solo a su dueño.
+- **Datos:** `supabase/migrations/20261031090000_schemes.sql`. Solo el esquema validado, no los apuntes; RLS sin políticas y sin permisos para anon/authenticated; se borra con la cuenta.
+- **Pantalla:** `/esquemas/[id]` con «Imprimir o guardar PDF».
+- **Pruebas:** `tests/esquemas.test.ts`, `tests/browser/esquemas.spec.ts`.
+
 ## Pendiente
 
 - Repetir los 10 temas «solo tema» con la búsqueda mejorada.

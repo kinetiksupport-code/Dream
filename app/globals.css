@@ -4664,3 +4664,12 @@ fieldset:disabled .test-option {
   gap: 8px;
   min-height: 44px;
 }
+
+/* Esquemas (components/esquema/esquema-page.tsx): al imprimir o guardar en
+   PDF sale solo el esquema, en color y sin el menú de Dream. */
+@media print {
+  body:has(.esquema-print) * { visibility: hidden; }
+  .esquema-print, .esquema-print * { visibility: visible; }
+  .esquema-print { position: absolute; inset: 0; }
+  .esquema-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

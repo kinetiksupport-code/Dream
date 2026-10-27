@@ -73,6 +73,14 @@ export interface WebSource {
   title: string;
   url: string;
 }
+/** Tarjeta «Dreams» de un esquema (docs/ESQUEMAS.md). */
+export interface SchemeWidget {
+  type: "scheme";
+  schemeId: string;
+  title: string;
+  subject?: string;
+  sections?: number;
+}
 export interface QuizWidget {
   type: "quiz";
   testId: string;

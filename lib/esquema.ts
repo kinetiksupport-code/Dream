@@ -154,3 +154,15 @@ export function parseInline(text: string) {
       : parseBold(chunk).map((part) => ({ ...part, math: false })),
   );
 }
+
+/**
+ * El alumno pide un esquema («hazme un esquema», «esquema de estos apuntes»,
+ * «resúmelo en un esquema»). No cuenta si pide imprimirlo o una explicación de
+ * qué es un esquema. Solo se usa cuando hay apuntes adjuntos.
+ */
+export function wantsScheme(prompt: string) {
+  const text = prompt.toLowerCase();
+  if (!/\besquemas?\b/.test(text)) return false;
+  if (/qu[eé] es un esquema|c[oó]mo (se )?hace(s|r)? un esquema|imprimir/.test(text)) return false;
+  return /\b(hazme|haz|hacer|crea|crear|genera|generar|quiero|necesito|pasa|p[aá]salo|convierte|convi[eé]rtelo|res[uú]melo|resume|ponlo|en (un )?esquema)\b|^\s*esquema\b/.test(text);
+}

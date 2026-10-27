@@ -271,3 +271,28 @@ export async function generateScheme({ call, messages, sources = '' }) {
   }
   return { ok: false, attempts, firstErrors, ...last, scheme: null };
 }
+
+/**
+ * Tope de la fuente: Groq admite ~7.000 tokens de entrada por minuto con esta
+ * cuenta; con más, rechaza la petición (visto en el banco nocturno).
+ */
+export const SCHEME_SOURCE_CHARS = 10000;
+
+/**
+ * Une el texto de los apuntes en una sola fuente, con el nombre de cada
+ * archivo y el mismo espacio para cada uno (el que sobra a uno pasa al resto).
+ * @param {{ name: string, text: string }[]} files
+ */
+export function schemeSourceFrom(files, max = SCHEME_SOURCE_CHARS) {
+  const list = files.map((f) => ({ name: clean(f.name).slice(0, 80) || 'Apuntes', text: String(f.text ?? '').trim() })).filter((f) => f.text);
+  // Primero los más cortos: lo que no usan pasa a los largos.
+  const room = new Array(list.length).fill(0);
+  let budget = max;
+  [...list.keys()].sort((a, b) => list[a].text.length - list[b].text.length).forEach((i, k) => {
+    const share = Math.floor(budget / (list.length - k));
+    const head = list[i].name.length + 4;
+    room[i] = Math.max(0, Math.min(list[i].text.length, share - head));
+    budget -= room[i] + head;
+  });
+  return list.map((f, i) => `[${f.name}]\n${f.text.slice(0, room[i])}`).join('\n\n');
+}

@@ -1,13 +1,29 @@
-import type { QuizWidget, WebSource } from "./types";
+import type { QuizWidget, SchemeWidget, WebSource } from "./types";
 export function parseDreamContent(content: string) {
   const widgets: QuizWidget[] = [];
+  const schemes: SchemeWidget[] = [];
   const sources: WebSource[] = [];
   const requestTest = content.includes("<!--DREAM_ACTION:TEST-->");
   const text = content
     .replace(/<!--DREAM_WIDGET:([\s\S]*?)-->/g, (_, raw: string) => {
       try {
         const value: unknown = JSON.parse(raw);
+        const v = value as Record<string, unknown> | null;
         if (
+          v &&
+          v.type === "scheme" &&
+          typeof v.schemeId === "string" &&
+          /^[0-9a-f-]{36}$/i.test(v.schemeId) &&
+          typeof v.title === "string"
+        )
+          schemes.push({
+            type: "scheme",
+            schemeId: v.schemeId,
+            title: v.title.slice(0, 120),
+            subject: typeof v.subject === "string" ? v.subject.slice(0, 60) : undefined,
+            sections: Number.isInteger(v.sections) ? (v.sections as number) : undefined,
+          });
+        else if (
           value &&
           typeof value === "object" &&
           "type" in value &&
@@ -29,7 +45,7 @@ export function parseDreamContent(content: string) {
     })
     .replace(/<!--DREAM_ACTION:TEST-->/g, "")
     .replace(/<!--DREAM_(?:WIDGET|ACTION|SOURCES):[\s\S]*$/g, "");
-  return { text, widgets, requestTest, sources: sources.slice(0, 5) };
+  return { text, widgets, schemes, requestTest, sources: sources.slice(0, 5) };
 }
 
 function parseSources(raw: string): WebSource[] {

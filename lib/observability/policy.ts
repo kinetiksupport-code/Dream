@@ -66,6 +66,8 @@ const actions = new Set([
   "chat",
   "attachment_upload",
   "test_generate",
+  "scheme_generate",
+  "scheme_get",
   "test_get",
   "test_check_answer",
   "test_submit",

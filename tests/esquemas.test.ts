@@ -219,3 +219,36 @@ test("matemática en línea, años repetidos y periodos iguales", () => {
   assert.equal(scheme!.sections[3].dates[2].text, "Alfonso VI conquista Toledo.");
   assert.equal(scheme!.sections[0].period, "1031");
 });
+
+test("intención: «hazme un esquema» sí; «qué es un esquema» o imprimir, no", async () => {
+  const { wantsScheme } = await import("../lib/esquema");
+  for (const yes of ["Hazme un esquema de estos apuntes.", "esquema del tema 3", "Pásalo a esquema", "¿Me haces un esquema? quiero un esquema", "Resúmelo en un esquema"])
+    assert.ok(wantsScheme(yes), yes);
+  for (const no of ["¿Qué es un esquema?", "Imprimir el esquema", "Explícame la fotosíntesis", "¿Cómo se hace un esquema?"])
+    assert.ok(!wantsScheme(no), no);
+});
+
+test("fuente de los apuntes: nombre de cada archivo y tope de 10.000 caracteres repartido", async () => {
+  const { schemeSourceFrom, SCHEME_SOURCE_CHARS } = await import("../supabase/functions/dream-api/schemes.mjs");
+  const out = schemeSourceFrom([
+    { name: "tema1.pdf", text: "a".repeat(20000) },
+    { name: "foto.jpg", text: "b".repeat(300) },
+    { name: "vacío.txt", text: "   " },
+  ]);
+  assert.ok(out.length <= SCHEME_SOURCE_CHARS);
+  assert.match(out, /^\[tema1\.pdf\]\n/);
+  assert.ok(out.includes("[foto.jpg]\n" + "b".repeat(300)));
+  assert.ok(!out.includes("vacío"));
+  assert.ok(out.split("a").length - 1 > 8000);
+});
+
+test("tarjeta «Dreams» del esquema en el chat; nada de HTML ni ids raros", async () => {
+  const { parseDreamContent } = await import("../lib/widgets");
+  const id = "0b5b3c3e-8f2a-4c1b-9a51-0c4d2a9f7e11";
+  const ok = parseDreamContent(`He preparado tu esquema.\n\n<!--DREAM_WIDGET:{"type":"scheme","schemeId":"${id}","title":"Al-Ándalus","sections":5}-->`);
+  assert.deepEqual(ok.schemes, [{ type: "scheme", schemeId: id, title: "Al-Ándalus", subject: undefined, sections: 5 }]);
+  assert.equal(ok.text.trim(), "He preparado tu esquema.");
+  assert.equal(ok.widgets.length, 0);
+  const bad = parseDreamContent(`<!--DREAM_WIDGET:{"type":"scheme","schemeId":"../../x","title":"x"}-->`);
+  assert.equal(bad.schemes.length, 0);
+});

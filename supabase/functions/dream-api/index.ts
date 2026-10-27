@@ -1,6 +1,6 @@
 import { validateEvaluations } from './grading.mjs';
 import { captureEdgeFailure } from './monitoring.ts';
-import { AdmissionError, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
+import { AdmissionError, admissionOperation, consumingActions, createAdmission, readBoundedBody } from './admission.mjs';
 import { ADMIN_ACTIONS, adminLink, handleAdminAction } from './admin.mjs';
 import { contentModerationEnabled, CONTENT_THRESHOLDS, moderateMessage } from './content-moderation.mjs';
 import { STUDENT_MOD_ACTIONS, handleStudentModeration } from './student-moderation.mjs';
@@ -14,7 +14,8 @@ import {
   desktopUploadAction, mobileUploadAction,
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
-import { chatSystemMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { chatSystemMessages, schemeMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, generateScheme, schemeSourceFrom } from './schemes.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBlock, consentDecision, createNicknameReplacer, madridToday, nicknameFor, onboardingPatch, personalContext, replaceNickname, welcomeFields } from './onboarding.mjs';
 import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './groq.mjs';
@@ -188,6 +189,20 @@ async function groqJson(system: string, user: string, operation: string, signal?
   return JSON.parse(content);
 }
 
+// Esquemas (schemes.mjs, docs/ESQUEMAS.md): JSON con el formato del esquema,
+// temperatura baja y sin razonamiento (lo que pasó el banco de pruebas).
+async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>) {
+  const response = await groqProvider.request({ operation: 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
+    model: groqModel(), stream: false, temperature: 0.25, max_tokens: 3000,
+    ...(/^qwen\//.test(groqModel()) ? { reasoning_format: 'hidden', reasoning_effort: 'none' } : {}),
+    response_format: { type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema: SCHEME_JSON_SCHEMA } }, messages,
+  }});
+  const data = await response.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string') throw new Error('empty');
+  return JSON.parse(content);
+}
+
 /**
  * Clasificador de moderación (B4): una llamada corta, sin razonamiento largo, por
  * el mismo camino de admisión que el resto. Devuelve el texto crudo; la validación
@@ -344,7 +359,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (!marked.error && marked.data?.special === true) special = { on: true, welcomeShown: Boolean(marked.data.welcome_shown_at) };
   }
   try {
-    if (consuming) { await admission.admit(String(body.action)); admitted = true; }
+    if (consuming) { await admission.admit(admissionOperation(String(body.action))); admitted = true; }
   const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
   const email = String(user.email || '').trim().toLowerCase();
 
@@ -681,6 +696,59 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', ownedConversationId);
     }
     return json({ test: testInsert.data, assistant_message: assistantMessage, widget });
+  }
+
+  if (body.action === 'scheme_generate') {
+    // Esquema de los apuntes del alumno (docs/ESQUEMAS.md). Solo con archivos:
+    // el banco de pruebas dio 10/10 sin datos erróneos desde apuntes y 8/10
+    // solo con el tema, así que sin apuntes no se genera.
+    if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
+    const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
+    if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
+    const ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    if (!ids.length) return json({ error: 'Sube tus apuntes o una foto del libro y te hago el esquema.', code: 'scheme_needs_notes' }, 400);
+    const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', ids)
+      .eq('conversation_id', body.conversation_id).eq('owner_id', user.id).eq('status', 'processed');
+    const files = (found.data || []).filter((f: any) => String(f.extracted_text || '').trim());
+    if (!files.length) return json({ error: 'No hemos podido leer texto en esos archivos. Prueba con otra foto o con el PDF.', code: 'scheme_needs_notes' }, 400);
+    const sources = schemeSourceFrom(files.map((f: any) => ({ name: String(f.file_name || ''), text: String(f.extracted_text || '') })), SCHEME_SOURCE_CHARS);
+    const request = typeof body.context === 'string' && body.context.trim() ? body.context.trim().slice(0, 600) : 'Hazme un esquema de estos apuntes.';
+    if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    let result: any;
+    try {
+      result = await generateScheme({ call: (messages) => groqScheme(messages, req.signal, admission), messages: schemeMessages({ request, sources }), sources });
+    } catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
+      return json({ error: 'No se pudo crear el esquema. Inténtalo de nuevo.' }, 502);
+    }
+    // Sin contenido del alumno en los registros: solo cifras.
+    console.log(JSON.stringify({ event: 'scheme_generated', ok: result.ok, attempts: result.attempts, dropped: result.dropped ?? 0, facts: result.checkedFacts ?? 0 }));
+    if (!result.ok || !result.scheme) return json({ error: 'No he podido hacer un esquema fiable con estos apuntes. Prueba con fotos más nítidas o con menos páginas.', code: 'scheme_invalid' }, 422);
+    const scheme = result.scheme;
+    const inserted = await admin.from('dream_schemes').insert({
+      owner_id: user.id, conversation_id: body.conversation_id,
+      title: String(scheme.title).slice(0, 120), subject: String(scheme.subject || '').slice(0, 60),
+      content: scheme, source: 'notes',
+    }).select('id,title,subject').single();
+    if (inserted.error) return json({ error: 'No se pudo guardar el esquema.' }, 503);
+    const widget = { type: 'scheme', schemeId: inserted.data.id, title: inserted.data.title, subject: inserted.data.subject, sections: scheme.sections.length };
+    const assistantMessage = `He preparado tu esquema de **${inserted.data.title}**.\n\n<!--DREAM_WIDGET:${JSON.stringify(widget)}-->`;
+    let userMessageId: string | null = null;
+    if (body.persist_user_message === true) {
+      const saved = await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: request }).select('id').single();
+      userMessageId = saved.data?.id || null;
+    }
+    if (userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', files.map((f: any) => f.id)).is('message_id', null);
+    await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
+    await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+    return json({ scheme: { id: inserted.data.id, title: inserted.data.title }, assistant_message: assistantMessage, widget });
+  }
+
+  if (body.action === 'scheme_get') {
+    if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
+    const row = await admin.from('dream_schemes').select('id,title,subject,content,created_at').eq('id', body.scheme_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Esquema no encontrado.' }, 404);
+    return json({ scheme: row.data });
   }
 
   if (body.action === 'test_get') {

@@ -49,6 +49,7 @@ import {
   type LimitState,
 } from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
+import { wantsScheme } from "@/lib/esquema";
 import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
@@ -476,6 +477,32 @@ export function ChatExperience({
       },
     ]);
   }
+  // Esquema de los apuntes adjuntos (docs/ESQUEMAS.md): dream-api lo crea y
+  // devuelve el mensaje con la tarjeta «Dreams».
+  async function generateScheme(
+    id: string,
+    prompt: string,
+    signal: AbortSignal,
+    attachmentIds: string[],
+  ) {
+    setState("shaping");
+    const r = await callDream<{ assistant_message: string }>(
+      "scheme_generate",
+      {
+        conversation_id: id,
+        context: prompt,
+        attachment_ids: attachmentIds,
+        persist_user_message: true,
+      },
+      signal,
+    );
+    const messageId = crypto.randomUUID();
+    fresh.current.add(messageId);
+    setMessages((s) => [
+      ...s,
+      { id: messageId, role: "assistant", content: r.assistant_message },
+    ]);
+  }
   async function send(
     promptOverride?: string,
     retryIds?: string[],
@@ -561,6 +588,8 @@ export function ChatExperience({
         ) && !/imprimir/i.test(prompt);
       if (directTest) {
         await generateTest(id, prompt, controller.signal, true, attachmentIds);
+      } else if (attachmentIds.length && !study && wantsScheme(prompt)) {
+        await generateScheme(id, prompt, controller.signal, attachmentIds);
       } else {
         setMessages((s) => [
           ...s,
@@ -940,6 +969,7 @@ export function ChatExperience({
                   "Analiza este archivo y ayúdame a entender sus ideas principales.",
                 )
               }
+              onScheme={() => void send("Hazme un esquema de estos apuntes.")}
               onRemove={() => removeFile(attachments[0].localId)}
               onRetry={() => enqueueUpload(attachments[0])}
             />
