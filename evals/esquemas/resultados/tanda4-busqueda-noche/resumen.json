@@ -1,0 +1,396 @@
+{
+  "model": "qwen/qwen3.8-27b",
+  "temperature": 0.25,
+  "reasoning": "none",
+  "strict": false,
+  "date": "2026-10-27T05-57-57",
+  "runs": 10,
+  "validFirstTry": 9,
+  "valid": 9,
+  "quotesFoundPct": 67,
+  "accentErrors": 1,
+  "avgTokens": 5514,
+  "rows": [
+    {
+      "name": "al-andalus-busqueda-sin-ejemplo",
+      "topic": "al-andalus",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 1,
+      "droppedTexts": [
+        "1085 Los cristianos toman Toledo y fijan la frontera en el Tajo."
+      ],
+      "facts": 6,
+      "factsWithQuote": 5,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "3303"
+      },
+      "tokens": 5839,
+      "inputTokens": 4000,
+      "outputTokens": 1839,
+      "ms": 4427,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "revolucion-francesa-busqueda-sin-ejemplo",
+      "topic": "revolucion-francesa",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 3,
+      "droppedTexts": [
+        "1789 Luis XVI convoca los **Estados Generales**.",
+        "1792 Proclamación de la **Primera República**.",
+        "1804 Napoleón se corona **Emperador**."
+      ],
+      "facts": 9,
+      "factsWithQuote": 6,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "4875"
+      },
+      "tokens": 4114,
+      "inputTokens": 2435,
+      "outputTokens": 1679,
+      "ms": 3822,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "oraciones-busqueda-sin-ejemplo",
+      "topic": "oraciones",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3590"
+      },
+      "tokens": 5382,
+      "inputTokens": 3720,
+      "outputTokens": 1662,
+      "ms": 3929,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "fotosintesis-busqueda-sin-ejemplo",
+      "topic": "fotosintesis",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 2,
+      "droppedTexts": [
+        "Se genera **G3P** (gliceraldehído-3-fosfato).",
+        "Se consumen **18 ATP** y **12 NADPH** por glucosa."
+      ],
+      "facts": 7,
+      "factsWithQuote": 5,
+      "accentErrors": 1,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "999",
+        "tokens_minute": "3475"
+      },
+      "tokens": 5677,
+      "inputTokens": 3673,
+      "outputTokens": 2004,
+      "ms": 5394,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "ecuaciones-2-grado-busqueda-sin-ejemplo",
+      "topic": "ecuaciones-2-grado",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 1,
+      "droppedTexts": [
+        "$x^2 - 4x - 5 = 0$ tiene soluciones **5** y **-1**."
+      ],
+      "facts": 3,
+      "factsWithQuote": 2,
+      "accentErrors": 2,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3266"
+      },
+      "tokens": 5331,
+      "inputTokens": 3961,
+      "outputTokens": 1370,
+      "ms": 3580,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "celula-busqueda-sin-ejemplo",
+      "topic": "celula",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 1,
+      "factsWithQuote": 1,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3419"
+      },
+      "tokens": 5904,
+      "inputTokens": 3873,
+      "outputTokens": 2031,
+      "ms": 5446,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "guerra-civil-busqueda-sin-ejemplo",
+      "topic": "guerra-civil",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 1,
+      "droppedTexts": [
+        "1936 Matanza de Badajoz."
+      ],
+      "facts": 11,
+      "factsWithQuote": 10,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3445"
+      },
+      "tokens": 5450,
+      "inputTokens": 3838,
+      "outputTokens": 1612,
+      "ms": 4048,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "enlaces-quimicos-busqueda-sin-ejemplo",
+      "topic": "enlaces-quimicos",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 1,
+      "factsWithQuote": 1,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3825"
+      },
+      "tokens": 5223,
+      "inputTokens": 3451,
+      "outputTokens": 1772,
+      "ms": 4611,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "kant-busqueda-sin-ejemplo",
+      "topic": "kant",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "3717"
+      },
+      "tokens": 5483,
+      "inputTokens": 3890,
+      "outputTokens": 1593,
+      "ms": 4100,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "ciclo-agua-busqueda-sin-ejemplo",
+      "topic": "ciclo-agua",
+      "mode": "busqueda",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "997",
+        "tokens_minute": "3910"
+      },
+      "tokens": 4548,
+      "inputTokens": 3222,
+      "outputTokens": 1326,
+      "ms": 5329,
+      "manualWrongFacts": null
+    }
+  ],
+  "render": {
+    "al-andalus-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "celula-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "ciclo-agua-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "ecuaciones-2-grado-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​"
+        ],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [
+          "span: 2a−b±b2−4ac​",
+          "span: −b±b2−4ac​",
+          "span: −b±b2−4ac​"
+        ],
+        "pageOverflow": false
+      }
+    },
+    "enlaces-quimicos-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "fotosintesis-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [
+          "span: 6CO2+6H2O+energıˊa lumıˊnica→C6H12O6+6O2",
+          "span: 6CO2+6H2O+energıˊa lumıˊnica→C6H12O6+6O2",
+          "span: 6CO2​+6H2​O+energıˊa lumıˊnica→C6​H12​O6"
+        ],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [
+          "span: 6CO2+6H2O+energıˊa lumıˊnica→C6H12O6+6O2",
+          "span: 6CO2+6H2O+energıˊa lumıˊnica→C6H12O6+6O2",
+          "span: 6CO2​+6H2​O+energıˊa lumıˊnica→C6​H12​O6"
+        ],
+        "pageOverflow": false
+      }
+    },
+    "guerra-civil-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "kant-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "oraciones-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    },
+    "revolucion-francesa-busqueda-sin-ejemplo": {
+      "escritorio": {
+        "overflow": [],
+        "pageOverflow": false
+      },
+      "movil": {
+        "overflow": [],
+        "pageOverflow": false
+      }
+    }
+  }
+}

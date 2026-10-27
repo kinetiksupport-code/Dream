@@ -1,0 +1,177 @@
+{
+  "title": "Evolución de al-Ándalus",
+  "subtitle": "De las taifas a la caída de Granada",
+  "subject": "Historia de España",
+  "sections": [
+    {
+      "heading": "Fragmentación en taifas",
+      "period": "1031-1085",
+      "kind": "list",
+      "intro": "Tras la muerte de Almanzor, la inestabilidad política divide el territorio.",
+      "bullets": [
+        {
+          "text": "En **1031** desaparece el califato de Córdoba.",
+          "quote": "En 1031 desaparece el califato de Córdoba y al-Ándalus se divide en reinos de taifas"
+        },
+        {
+          "text": "Surgen los **reinos de taifas**, pequeños estados independientes.",
+          "quote": "al-Ándalus se divide en reinos de taifas, pequeños reinos independientes como Sevilla, Toledo, Zaragoza, Badajoz o Granada"
+        },
+        {
+          "text": "Debilidad militar obligó a pagar **parias** a los cristianos.",
+          "quote": "Las taifas competían entre sí y eran débiles militarmente, por lo que pagaban parias a los reinos cristianos"
+        },
+        {
+          "text": "**Sevilla**, **Badajoz** y **Zaragoza** fueron las taifas más poderosas.",
+          "quote": "Las taifas más poderosas fueron Sevilla, Badajoz y Zaragoza, y se enfrentaban entre ellas"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Almorávides y Almohades",
+      "period": "1085-1212",
+      "kind": "dates",
+      "intro": "La intervención bereber unifica al-Ándalus frente al avance cristiano.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1085",
+          "text": "1085: Conquista de Toledo por Alfonso VI.",
+          "quote": "En 1085 Alfonso VI de Castilla conquista Toledo"
+        },
+        {
+          "year": "1086",
+          "text": "1086: Victoria almorávide en la batalla de Sagrajas.",
+          "quote": "En 1086 los almorávides, dirigidos por Yusuf ibn Tasufin, vencen a Alfonso VI en la batalla de Sagrajas"
+        },
+        {
+          "year": "1118",
+          "text": "1118: Conquista de Zaragoza por Alfonso I.",
+          "quote": "En 1118 Alfonso I el Batallador conquista Zaragoza"
+        },
+        {
+          "year": "1195",
+          "text": "1195: Victoria almohade en la batalla de Alarcos.",
+          "quote": "En 1195 los almohades vencen a Alfonso VIII de Castilla en la batalla de Alarcos"
+        },
+        {
+          "year": "1212",
+          "text": "1212: Derrota almohade en las Navas de Tolosa.",
+          "quote": "En 1212 una coalición de reinos cristianos derrota a los almohades en la batalla de las Navas de Tolosa"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Aerial view of a fortified medieval city with minarets and defensive walls, surrounded by arid landscape and distant mountains, golden hour lighting.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Avance cristiano",
+      "period": "1212-1248",
+      "kind": "list",
+      "intro": "La derrota almohade acelera la reconquista cristiana.",
+      "bullets": [
+        {
+          "text": "Aparecen las **terceras taifas** tras las Navas de Tolosa.",
+          "quote": "Tras las Navas de Tolosa aparecen las terceras taifas y los cristianos avanzan con rapidez"
+        },
+        {
+          "text": "**Fernando III** conquista Córdoba en **1236** y Sevilla en **1248**.",
+          "quote": "Fernando III conquista Córdoba en 1236 y Sevilla en 1248"
+        },
+        {
+          "text": "**Jaime I** conquista Mallorca en **1229** y Valencia en **1238**.",
+          "quote": "Jaime I de Aragón conquista Mallorca en 1229 y Valencia en 1238"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Reino nazarí",
+      "period": "1238-1492",
+      "kind": "list",
+      "intro": "El último reino musulmán resiste mediante la diplomacia.",
+      "bullets": [
+        {
+          "text": "En **1238** Muhammad I funda el **reino nazarí** de Granada.",
+          "quote": "En 1238 Muhammad I funda el reino nazarí de Granada, el último territorio musulmán de la península"
+        },
+        {
+          "text": "Granada fue **vasalla** de Castilla y pagaba parias.",
+          "quote": "Fue vasallo de Castilla y le pagaba parias"
+        },
+        {
+          "text": "Sobrevivió más de **dos siglos** gracias a la diplomacia.",
+          "quote": "Sobrevivió más de dos siglos gracias a la diplomacia y al comercio"
+        },
+        {
+          "text": "En **1492** los Reyes Católicos toman Granada.",
+          "quote": "El 2 de enero de 1492 los Reyes Católicos toman Granada tras la rendición de Boabdil"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Detailed view of intricate stucco work and geometric tile patterns on a palace wall, with a view of a lush garden and distant mountains, soft natural light.",
+      "illustration_caption": "La Alhambra de Granada, obra de los nazaríes."
+    },
+    {
+      "heading": "Legado cultural",
+      "period": "",
+      "kind": "legacy",
+      "intro": "A pesar de la crisis política, al-Ándalus dejó un patrimonio inmenso.",
+      "bullets": [
+        {
+          "text": "La **Alhambra** de Granada, construida por los nazaríes.",
+          "quote": "la Alhambra de Granada, construida por los nazaríes"
+        },
+        {
+          "text": "La **Giralda** de Sevilla, antiguo alminar almohade.",
+          "quote": "la Giralda de Sevilla, que fue el alminar de la mezquita almohade"
+        },
+        {
+          "text": "La **Torre del Oro** de Sevilla, de origen almohade.",
+          "quote": "la Torre del Oro de Sevilla, también almohade"
+        },
+        {
+          "text": "Sistemas de **regadío** con acequias y norias.",
+          "quote": "el regadío con acequias y norias"
+        },
+        {
+          "text": "Vocabulario castellano de origen árabe: **aceite**, **azúcar**.",
+          "quote": "miles de palabras del castellano de origen árabe, como aceite, azúcar o almohada"
+        },
+        {
+          "text": "Pensadores como **Averroes**, nacido en Córdoba en **1126**.",
+          "quote": "pensadores como Averroes, nacido en Córdoba en 1126"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La herencia andalusí perdura en la arquitectura, el lenguaje y la ciencia, como demuestra la Alhambra y el léxico castellano.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La fragmentación en taifas debilitó militarmente a al-Ándalus.",
+    "Los almorávides y almohades unificaron temporalmente el territorio.",
+    "El reino nazarí de Granada fue el último bastión musulmán."
+  ],
+  "summary": "La disolución del califato de Córdoba en 1031 provocó la fragmentación en taifas, seguida de la unificación almorávide y almohade. Tras la derrota en las Navas de Tolosa, el avance cristiano fue rápido, dejando solo el reino nazarí de Granada hasta 1492.",
+  "closing": "La caída del califato no supuso el fin de la cultura islámica, sino su transformación y legado duradero."
+}

@@ -1,0 +1,251 @@
+{
+  "title": "Oraciones compuestas",
+  "subtitle": "Yuxtapuestas, coordinadas y subordinadas",
+  "subject": "Lengua",
+  "sections": [
+    {
+      "heading": "Definición de oración compuesta",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Tiene **más de un predicado**.",
+          "quote": "La oración compuesta es aquella que tiene más de un predicado"
+        },
+        {
+          "text": "Se establecen **relaciones** entre predicados.",
+          "quote": "Entre los predicados se establecen varios tipos de relaciones"
+        },
+        {
+          "text": "Existen **diferentes tipos** según la relación.",
+          "quote": "Existen diferentes tipos de oraciones compuestas"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones yuxtapuestas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Se unen **sin nexo explícito**.",
+          "quote": "Se unen sin nexo explícito"
+        },
+        {
+          "text": "Se separan por **signos de puntuación**.",
+          "quote": "Se separan por (,), (;) o (:)"
+        },
+        {
+          "text": "Ejemplo: **Llegó cansado, se duchó**.",
+          "quote": "Llegó muy cansado, se dio una ducha"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple desk with two open notebooks separated by a comma symbol drawn in the air, clean and minimal style.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones coordinadas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Proposiciones del **mismo nivel**.",
+          "quote": "Proposiciones del mismo nivel unidas por una conjunción"
+        },
+        {
+          "text": "Unidas por **nexos coordinantes**.",
+          "quote": "Unidas por una conjunción o locución coordinante"
+        },
+        {
+          "text": "Son **independientes** al quitar el nexo.",
+          "quote": "Separables en oraciones simples independientes si quitamos el nexo"
+        },
+        {
+          "text": "**Ninguna depende** de otra.",
+          "quote": "En las coordinadas no hay proposición principal"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Two balanced scales with identical weights on each side, symbolizing equality and independence, soft pastel colors.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Tipos de coordinación",
+      "period": "",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Copulativas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Significa **adición**.",
+              "quote": "Adición y, e, ni"
+            },
+            {
+              "text": "Nexos: **y, e, ni**.",
+              "quote": "Nexos: y, e, ni"
+            },
+            {
+              "text": "Ejemplo: **Dolor y salida**.",
+              "quote": "Me duele mucho la cabeza y me he ido a casa"
+            }
+          ]
+        },
+        {
+          "title": "Disyuntivas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Significa **alternancia**.",
+              "quote": "Alternancia o, u, o bien"
+            },
+            {
+              "text": "Nexos: **o, u, o bien**.",
+              "quote": "Nexos: o, u, o bien"
+            },
+            {
+              "text": "Ejemplo: **O vienes o castigo**.",
+              "quote": "O vienes pronto a casa o estás castigado"
+            }
+          ]
+        },
+        {
+          "title": "Adversativas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Significa **contraposición**.",
+              "quote": "Contraposición pero, sino (que), mas, aunque"
+            },
+            {
+              "text": "Nexos: **pero, sino, mas**.",
+              "quote": "Nexos: pero, sino (que), mas"
+            },
+            {
+              "text": "Ejemplo: **Gusto pero odio**.",
+              "quote": "Me gusta mucho el cine, pero odio las películas de terror"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Distributivas y explicativas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Significa **sucesión de acciones**.",
+          "quote": "Sucesión de acciones bien...bien, ya..... ya, ora.... ora"
+        },
+        {
+          "text": "Nexos: **bien...bien, ya...ya**.",
+          "quote": "Nexos: bien...bien, ya...ya, ora...ora"
+        },
+        {
+          "text": "Ejemplo: **Ora quiere, ora no**.",
+          "quote": "Ora me quiere, ora no me quiere ni ver"
+        },
+        {
+          "text": "Explicativas: **aclaración o reformulación**.",
+          "quote": "Explicación/reformulación"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones subordinadas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Hay **dependencia sintáctica**.",
+          "quote": "Hay dependencia sintáctica y semántica de la proposición principal"
+        },
+        {
+          "text": "Desempeñan una **función sintáctica**.",
+          "quote": "Forman parte de ella, desempeñan en ella una función sintáctica"
+        },
+        {
+          "text": "**No se entienden** sin la principal.",
+          "quote": "Sin ella no pueden entenderse"
+        },
+        {
+          "text": "Ejemplo: **Quiero que vengas**.",
+          "quote": "Quiero que vengas (subordinada sustantiva)"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A large main branch of a tree with smaller dependent branches hanging from it, illustrating hierarchy and dependency.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Combinación de estructuras",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Pueden **combinarse** en una oración.",
+          "quote": "En una oración compuesta o compleja pueden aparecer combinadas coordinadas y subordinadas"
+        },
+        {
+          "text": "Las coordinadas **pueden incluir subordinadas**.",
+          "quote": "Las oraciones compuestas por coordinación pueden incluir subordinadas"
+        },
+        {
+          "text": "Coordinadas: **compuestas, no complejas**.",
+          "quote": "Se trata de oraciones compuestas, pero no complejas"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "Las yuxtapuestas se unen solo con signos de puntuación.",
+    "Las coordinadas usan nexos y sus proposiciones son independientes.",
+    "Las subordinadas dependen sintácticamente de una principal.",
+    "Cada tipo de coordinación tiene un significado lógico específico."
+  ],
+  "summary": "Las oraciones compuestas tienen varios predicados. Las yuxtapuestas y coordinadas son independientes, mientras que las subordinadas dependen de una principal.",
+  "closing": "Distinguir la independencia de las yuxtapuestas y coordinadas de la dependencia de las subordinadas es clave para el análisis sintáctico."
+}

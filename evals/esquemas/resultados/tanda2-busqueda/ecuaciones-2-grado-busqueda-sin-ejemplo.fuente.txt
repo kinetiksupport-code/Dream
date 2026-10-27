@@ -1,0 +1,51 @@
+[UNIDAD 10: ECUACIONES DE SEGUNDO GRADO] (https://matematicasiesoja.wordpress.com/wp-content/uploads/2018/10/ecuaciones-de-segundo-grado-2eso.pdf)
+o no algún término. Lógicamente, el término ax2 no puede faltar pues entonces no sería una ecuación de segundo grado, aunque el término bx o el término c sí que pueden faltar en una ecuación concreta. En el punto siguiente veremos la forma de resolver ecuaciones de segundo grado mediante la expresión de la fórmula general y algunos métodos particulares para ecuaciones incompletas. Realmente, una ecuación del tipo ax2 = 0 sólo puede tener una única solución y esa solución es x=0, [...] que vimos en el tema de álgebra, podemos escribir ese productos como diferencia de cuadrados: (x + 6) · (x – 6) = 13 Æ x2 – 36 = 13 De esta forma hemos obtenido una ecuación de segundo grado incompleta. A partir de esa expresión podemos proceder como en los ejemplos anteriores: x2 = 36 + 13 x2 = 49 x= 49= ± 7 Soluciones : x = 7 y x = -7 De forma general, podemos decir que las soluciones de una ecuación cuadrática del tipo ax2 + c = 0 vienen dadas por la fórmula: x= ± −c a Æ Observa que dentro [...] la ecuación tiene dos soluciones. Si el valor final del discriminante es cero, la ecuación tiene una única solución. Si el valor final del discriminante es negativo, la ecuación no tiene solución real. RECUERDA Si se nos presenta una ecuación de segundo grado completa pero desordenada, el primer paso que daremos será ordenarla de manera que se ajuste a la forma ax2 + bx + c = 0. Una vez identificados los valores numéricos correspondientes a los coeficientes a, b y c ya podemos sustituirlos en
+
+[Discriminante en Ecuaciones Cuadráticas | PDF | Ecuación cuadrática | Ecuaciones] (https://es.scribd.com/document/483248703/Sesion-N%C2%BA-2-Discriminante-en-ecuaciones-de-segundo-grado-pdf)
+Scribd
+
+# Discriminante en Ecuaciones Cuadráticas
+
+El documento explica el concepto de discriminante para ecuaciones de segundo grado y cómo se usa para calcular las raíces. En particular, se define el discriminante como b^2 - 4ac y se explica que cuando el discriminante es igual a cero, la ecuación tiene raíces iguales. También se presentan ejemplos para ilustrar cómo calcular el discriminante y resolver ecuaciones de segundo grado.
+
+# Discriminante en Ecuaciones Cuadráticas [...] Discriminante en Ecuaciones Cuadráticas
+
+Título y descripción mejorados con IA
+
+## Cargado por
+
+### Lee este documento en otros idiomas
+
+## Compartir este documento
+
+## Menú pie de pagina
+
+## Sobre Nosotros
+
+## Centro de Ayuda
+
+## Legal
+
+## Social
+
+## Obtén nuestras aplicaciones gratuitas
+
+Scribd - Descárgala desde App Store
+Scribd - Consíguela en Google Play
+
+## Sobre Nosotros
+
+## Legal
+
+## Centro de Ayuda
+
+## Social
+
+## Obtén nuestras aplicaciones gratuitas [...] Scribd - Descárgala desde App Store
+Scribd - Consíguela en Google Play
+
+[response] (https://www.sangakoo.com/es/temas/discriminante-de-una-ecuacion-de-segundo-grado)
+b7b0b3bd-f7f5-48e7-97cf-ac2704c80e9d 743d42b4-0f2d-43b2-bcfc-17ba5707da31 1.3.2.2[{"lang":"es","name":"Discriminante de una ecuación de segundo grado"},{"lang":"en","name":"Discriminant of a quadratic equation"},{"lang":"ca","name":"Discriminant d'una equació de segon grau"}]6 18/7/16 11:43 18/7/16 11:43
+
+[DISCRIMINANT and Number of SOLUTIONS  Second ...] (https://www.youtube.com/watch?v=R1yVaOv_x58)
+Ejercicios para hallar el discriminante y número de soluciones de ecuaciones de segundo grado. SERIE sobre ECUACIONES

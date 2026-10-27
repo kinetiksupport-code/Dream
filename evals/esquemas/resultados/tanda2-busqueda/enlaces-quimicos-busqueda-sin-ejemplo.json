@@ -1,0 +1,168 @@
+{
+  "title": "Enlaces Químicos",
+  "subtitle": "Tipos de enlace y sus propiedades",
+  "subject": "Química",
+  "sections": [
+    {
+      "heading": "Enlace iónico",
+      "period": "",
+      "kind": "list",
+      "intro": "Unión entre metales y no metales mediante intercambio de carga.",
+      "bullets": [
+        {
+          "text": "Atracción electrostática entre **iones** de signos contrarios.",
+          "quote": "El enlace iónico consiste en la atracción electrostática entre partículas con cargas eléctricas de signos contrarios llamadas iones"
+        },
+        {
+          "text": "Formación por **transferencia** de electrones entre átomos.",
+          "quote": "ocurre cuando existe una unión de átomos metálicos y no metálicos, transfiriéndose una carga de electrones entre ellos"
+        },
+        {
+          "text": "Se generan **cationes** y **aniones** estables.",
+          "quote": "se forman iones cargados tanto negativa (aniones) como positivamente (cationes)"
+        },
+        {
+          "text": "Presentan **altos** puntos de fusión y ebullición.",
+          "quote": "Los enlaces iónicos tienen altos puntos de fusión y ebullición"
+        },
+        {
+          "text": "Conducen electricidad al **disolverse** o fundirse.",
+          "quote": "los enlaces iónicos cuando se disuelven en agua o cuando se funden"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace covalente",
+      "period": "",
+      "kind": "list",
+      "intro": "Compartición de electrones entre átomos no metálicos.",
+      "bullets": [
+        {
+          "text": "Considerado un enlace **fuerte** y estable.",
+          "quote": "Tanto el enlace covalente como el iónico se consideran enlaces fuertes"
+        },
+        {
+          "text": "Solo los **ácidos** covalentes conducen en agua.",
+          "quote": "Son conductores de electricidad los enlaces covalentes ácidos en presencia de una solución acuosa"
+        },
+        {
+          "text": "Generalmente **no** son buenos conductores.",
+          "quote": "el resto de los enlaces covalentes no son buenos conductores de electricidad"
+        },
+        {
+          "text": "Los átomos cumplen la **ley del octeto**.",
+          "quote": "mientras el primero tiene siete electrones, el segundo tiene uno"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace metálico",
+      "period": "",
+      "kind": "list",
+      "intro": "Unión exclusiva entre átomos de metales.",
+      "bullets": [
+        {
+          "text": "Núcleos metálicos rodeados por una **nube** de electrones.",
+          "quote": "son aquellos que se forman entre átomos de metales, cuyos núcleos atómicos se reúnen y están rodeados por sus electrones como una nube"
+        },
+        {
+          "text": "Buenos **conductores** de calor y electricidad.",
+          "quote": "Los enlaces metálicos son buenos conductores de calor y electricidad"
+        },
+        {
+          "text": "Estado **sólido** y alta maleabilidad.",
+          "quote": "se presentan en estado sólido y son altamente maleables"
+        },
+        {
+          "text": "Estructura en **red** compacta y fuerte.",
+          "quote": "Es un tipo de enlace fuerte que se distribuye a manera de red"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A close-up view of a metallic lattice structure with shiny silver spheres arranged in a grid, surrounded by a soft blue glow representing electron clouds.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ejemplos de compuestos iónicos",
+      "period": "",
+      "kind": "examples",
+      "intro": "Compuestos comunes formados por transferencia de electrones.",
+      "bullets": [
+        {
+          "text": "Cloruro de sodio (**NaCl**).",
+          "quote": "el cloruro de sodio (NaCl), que combina un átomo de cloro y uno de sodio"
+        },
+        {
+          "text": "Óxido de magnesio (**MgO**).",
+          "quote": "Óxido de magnesio (MgO)"
+        },
+        {
+          "text": "Sulfato de cobre (**CuSO4**).",
+          "quote": "Sulfato de cobre (CuSO4)"
+        },
+        {
+          "text": "Ioduro de potasio (**KI**).",
+          "quote": "Ioduro de potasio (KI)"
+        },
+        {
+          "text": "Carbonato de calcio (**CaCO3**).",
+          "quote": "Carbonato de calcio (CaCO3)"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores frecuentes",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Mistipos comunes al estudiar y examinar los enlaces.",
+      "bullets": [
+        {
+          "text": "Confundir la configuración del **helio** con la del neón.",
+          "quote": "La configuración 1s2 corresponde al HELIO. NO al NEON!!"
+        },
+        {
+          "text": "Asumir que todos los covalentes **conducen** electricidad.",
+          "quote": "el resto de los enlaces covalentes no son buenos conductores de electricidad"
+        },
+        {
+          "text": "Ignorar los **altos** puntos de fusión iónicos.",
+          "quote": "Los enlaces iónicos tienen altos puntos de fusión y ebullición"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El enlace iónico implica transferencia de electrones entre metales y no metales.",
+    "El enlace covalente consiste en compartir pares de electrones entre no metales.",
+    "El enlace metálico une núcleos atómicos rodeados por una nube de electrones."
+  ],
+  "summary": "Los enlaces químicos unen átomos para formar compuestos estables. Existen tres tipos principales: iónico, covalente y metálico, cada uno con propiedades físicas y eléctricas distintas.",
+  "closing": "Dominar los tres tipos de enlace permite predecir las propiedades de la materia y entender reacciones químicas básicas."
+}

@@ -1,0 +1,218 @@
+{
+  "title": "La célula: tipos y estructura",
+  "subtitle": "Estructura y tipos de células",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Clasificación celular",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La **célula** es la unidad estructural y funcional básica de todo organismo vivo.",
+          "quote": "La célula es la unidad estructural y funcional básica de todo organismo vivo"
+        },
+        {
+          "text": "Se clasifican en **procariotas** y **eucariotas** según su organización interna.",
+          "quote": "Las células se clasifican en dos tipos principales: células procariotas y eucariotas"
+        },
+        {
+          "text": "Las **procariotas** son más simples, pequeñas y carecen de núcleo definido.",
+          "quote": "Las procariotas, características de las bacterias, son más simples y pequeñas"
+        },
+        {
+          "text": "Las **eucariotas** son más grandes, complejas y poseen un núcleo verdadero.",
+          "quote": "Las células eucariotas, presentes en animales, plantas y hongos, son más grandes y complejas"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A split view showing a simple, round bacterial cell on the left and a complex, multi-compartmentalized eukaryotic cell on the right, with a clear nucleus in the",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Célula procariota",
+      "period": "",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Membrana y pared",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Actúa como **barrera selectiva** regulando el intercambio de sustancias.",
+              "quote": "La membrana plasmática actúa como barrera selectiva"
+            },
+            {
+              "text": "Compuesta por **peptidoglicano**, da protección y forma a la célula.",
+              "quote": "La pared celular, compuesta principalmente por peptidoglicano, proporciona protección y forma"
+            }
+          ]
+        },
+        {
+          "title": "Material genético",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El **ADN circular** se localiza en una región llamada nucleoide.",
+              "quote": "carecen de núcleo definido y contienen su material genético en forma de ADN circular en una región llamada nucleoide"
+            },
+            {
+              "text": "Carecen de orgánulos membranosos, poseen solo **ribosomas**.",
+              "quote": "carecen de la mayoría de los orgánulos celulares, sólo poseen ribosomas"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A cross-section of a bacterial cell showing a circular DNA loop in the center, ribosomes scattered in the cytoplasm, and a thick outer cell wall.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Célula eucariota",
+      "period": "",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Núcleo",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Rodeado por una **doble membrana**, contiene el material genético.",
+              "quote": "El núcleo, rodeado por una doble membrana, contiene el material genético organizado en cromosomas"
+            },
+            {
+              "text": "El ADN está organizado en **cromosomas** lineales y hay un nucleolo.",
+              "quote": "contiene el material genético organizado en cromosomas y el nucleolo"
+            }
+          ]
+        },
+        {
+          "title": "Orgánulos",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Poseen **mitocondrias**, retículo endoplasmático y aparato de Golgi.",
+              "quote": "Las eucariotas poseen orgánulos membranosos como mitocondrias, retículo endoplasmático y aparato de Golgi"
+            },
+            {
+              "text": "Sus ribosomas son de tipo **80S**, a diferencia de los 70S procariotas.",
+              "quote": "Las eucariotas tienen ribosomas 80S, mientras que las procariotas tienen ribosomas 70S"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A detailed diagram of a eukaryotic cell highlighting the double-membrane nucleus, mitochondria shaped like rods, and the endoplasmic reticulum network.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Diferencias clave",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Las eucariotas tienen **orgánulos membranosos**; las procariotas carecen de ellos.",
+          "quote": "Las eucariotas poseen orgánulos membranosos como mitocondrias, retículo endoplasmático y aparato de Golgi, mientras que las procariotas carecen de estas estructuras"
+        },
+        {
+          "text": "Ribosomas **80S** en eucariotas frente a **70S** en procariotas.",
+          "quote": "Las eucariotas tienen ribosomas 80S, mientras que las procariotas tienen ribosomas 70S"
+        },
+        {
+          "text": "Comparten **membrana plasmática**, citoplasma y material genético.",
+          "quote": "ambos tipos comparten características fundamentales como la membrana plasmática, el citoplasma y el material genético"
+        },
+        {
+          "text": "El ADN procariota es **circular** y está en el nucleoide.",
+          "quote": "Su material genético es de carácter circular, y se halla en el nucleoide"
+        },
+        {
+          "text": "El ADN eucariota es **lineal** y está en el núcleo.",
+          "quote": "cuyo ADN es lineal"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A side-by-side comparison chart with simple icons representing a circular DNA loop versus a linear chromosome, and a 70S ribosome versus an 80S ribosome.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Orgánulos especializados",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "En los **cloroplastos** se realiza la fotosíntesis.",
+          "quote": "En los cloroplastos se va a realizar la fotosíntesis"
+        },
+        {
+          "text": "Las **mitocondrias** pueden llegar a ser hasta 2000 por célula.",
+          "quote": "El número de mitocondrias en una célula puede llegar a ser muy elevado (hasta 2000)"
+        },
+        {
+          "text": "Los **flagelos y cilios** están involucrados en la locomoción.",
+          "quote": "Los flagelos y los cilios son orgánulos involucrados en la locomoción"
+        },
+        {
+          "text": "El **citoesqueleto** da forma y permite el movimiento celular.",
+          "quote": "Un citoesqueleto está presente. Contiene microtúbulos, micofilamentos de actina y filamentos intermedios"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A close-up of a green chloroplast with internal thylakoid stacks and a red mitochondrion with inner folds, floating in a blue cytoplasm.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Origen evolutivo",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La **Teoría endosimbiótica** sugiere que los eucariotas surgieron de simbiosis.",
+          "quote": "Según la “Teoría endosimbiótica” los eucariotas serían organismos constituidos por simbiosis de varios organismos procariotas"
+        },
+        {
+          "text": "Los **plastos** provendrían de procariotas que sintetizaban compuestos orgánicos.",
+          "quote": "Los plastos serían por lo tanto procariotas que proporcionarían al organismo simbionte compuestos orgánicos"
+        },
+        {
+          "text": "Estos procariotas usaban la **luz solar** como fuente de energía.",
+          "quote": "usando como fuente de energía la luz solar"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La simbiosis entre procariotas dio lugar a la complejidad de la célula eucariota moderna.",
+      "illustration_prompt": "An abstract illustration of a large cell engulfing smaller, rod-shaped cells, representing the endosymbiotic theory, with soft, glowing colors.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La célula es la unidad estructural y funcional básica de todo organismo vivo.",
+    "Las eucariotas tienen núcleo definido y orgánulos membranosos; las procariotas no.",
+    "Los ribosomas eucariotas son 80S y los procariotas 70S."
+  ],
+  "summary": "La célula es la unidad básica de la vida, clasificada en procariotas y eucariotas. Las eucariotas son más complejas, con núcleo definido y orgánulos especializados. La teoría endosimbiótica explica el origen de estos orgánulos.",
+  "closing": "Entender la célula es comprender la base de la vida y su increíble complejidad."
+}

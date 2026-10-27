@@ -1,0 +1,122 @@
+{
+  "title": "Oraciones compuestas",
+  "subtitle": "Clasificación sintáctica de las oraciones compuestas",
+  "subject": "Lengua",
+  "sections": [
+    {
+      "heading": "Tipos de oraciones compuestas",
+      "period": "",
+      "kind": "list",
+      "intro": "Clasificación de las oraciones según su estructura interna y las relaciones entre sus partes.",
+      "bullets": [
+        {
+          "text": "Una oración **simple** tiene una sola relación sujeto-predicado.",
+          "quote": "Una oración puede ser simple, si está formada por una sola relación de su-jeto-predicado"
+        },
+        {
+          "text": "Una oración **compuesta** consta de varias oraciones relacionadas.",
+          "quote": "compuesta, si está constituida por varias oraciones, que —como su-cede con otras unidades lingüísticas menores— se relacionan entre sí me-diante coordinación o mediante subordinación"
+        },
+        {
+          "text": "Las oraciones **coordinadas** se mantienen en el mismo nivel sintáctico.",
+          "quote": "Las oraciones coordinadas se enla-zan sin que una complemente a otra, de manera que se mantienen en el mismo nivel sintáctico"
+        },
+        {
+          "text": "Las oraciones **subordinadas** dependen sintácticamente de otra oración.",
+          "quote": "Las oraciones compuestas pueden ser coordinadas, subordinadas o yuxtapuestas según la relación entre sus partes"
+        },
+        {
+          "text": "Las oraciones **yuxtapuestas** se enlazan mediante signos de puntuación.",
+          "quote": "Las oraciones compuestas pueden ser coordinadas, subordinadas o yuxtapuestas según la relación entre sus partes"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple diagram showing three distinct boxes connected by different types of lines, representing grammatical structures.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones coordinadas",
+      "period": "",
+      "kind": "list",
+      "intro": "Oraciones que se enlazan sin que una complemente a la otra.",
+      "bullets": [
+        {
+          "text": "Ejemplo: Han estrenado varias películas este mes, **pero** aún no he visto ninguna.",
+          "quote": "Han estrenado varias películas este mes, pero aún no he visto ninguna"
+        },
+        {
+          "text": "Las oraciones coordinadas no establecen una relación de dependencia.",
+          "quote": "Las oraciones coordinadas se enla-zan sin que una complemente a otra, de manera que se mantienen en el mismo nivel sintáctico"
+        },
+        {
+          "text": "La unidad formada por oraciones coordinadas es una oración compuesta.",
+          "quote": "La unidad formada por dos o más oraciones coordinadas constituye una oración compuesta por coordinación"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones subordinadas",
+      "period": "",
+      "kind": "list",
+      "intro": "Oraciones que dependen sintácticamente de otra oración principal.",
+      "bullets": [
+        {
+          "text": "Ejemplo: El edificio, **donde** estaba mi antigua casa, fue demolido.",
+          "quote": "El edificio, donde estaba mi antigua casa, fue demolido"
+        },
+        {
+          "text": "Ejemplo: Llegué a la estación **cuando** el tren ya se había ido.",
+          "quote": "Llegué a la estación cuando el tren ya se había"
+        },
+        {
+          "text": "La subordinación implica una relación de dependencia sintáctica.",
+          "quote": "Las oraciones compuestas pueden ser coordinadas, subordinadas o yuxtapuestas según la relación entre sus partes"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones yuxtapuestas",
+      "period": "",
+      "kind": "list",
+      "intro": "Oraciones que se relacionan mediante signos de puntuación.",
+      "bullets": [
+        {
+          "text": "Las oraciones yuxtapuestas se enlazan mediante signos de puntuación.",
+          "quote": "Las oraciones compuestas pueden ser coordinadas, subordinadas o yuxtapuestas según la relación entre sus partes"
+        },
+        {
+          "text": "No utilizan conectores gramaticales explícitos como en la coordinación.",
+          "quote": "Las oraciones compuestas pueden ser coordinadas, subordinadas o yuxtapuestas según la relación entre sus partes"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La coordinación mantiene las oraciones en el mismo nivel sintáctico.",
+    "La subordinación crea una relación de dependencia entre oraciones.",
+    "La yuxtaposición enlaza oraciones mediante signos de puntuación."
+  ],
+  "summary": "Las oraciones compuestas se clasifican en coordinadas, subordinadas y yuxtapuestas según la relación entre sus partes. La coordinación mantiene el mismo nivel sintáctico, mientras que la subordinación crea dependencia. La yuxtaposición utiliza signos de puntuación para enlazar las oraciones.",
+  "closing": "Distinguir la jerarquía sintáctica permite analizar con precisión la estructura de cualquier enunciado complejo."
+}

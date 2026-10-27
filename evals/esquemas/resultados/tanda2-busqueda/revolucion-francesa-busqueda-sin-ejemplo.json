@@ -1,0 +1,255 @@
+{
+  "title": "Revolución Francesa",
+  "subtitle": "Causas, etapas y consecuencias",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Etapas de la Revolución",
+      "period": "1789-1799",
+      "kind": "subcards",
+      "intro": "Proceso dividido en fases políticas sucesivas.",
+      "bullets": [
+        {
+          "text": "**Asamblea Nacional** (1789-1791): inicio de la crisis política.",
+          "quote": "La Asamblea Nacional (1789-1791), la Asamblea Legislativa (1791-1792)"
+        },
+        {
+          "text": "**Asamblea Legislativa** (1791-1792): transición hacia la república.",
+          "quote": "la Asamblea Legislativa (1791-1792), la República (1792-1795)"
+        },
+        {
+          "text": "**República** (1792-1795): abolición de la monarquía.",
+          "quote": "la República (1792-1795), el Directorio (1795-1799)"
+        },
+        {
+          "text": "**Directorio** (1795-1799): inestabilidad política y militar.",
+          "quote": "el Directorio (1795-1799) y el Consulado/Imperio (1799-1815)"
+        }
+      ],
+      "subcards": [
+        {
+          "title": "Fase inicial",
+          "period": "1789-1792",
+          "bullets": [
+            {
+              "text": "**Asamblea Nacional** (1789-1791): fin de los privilegios.",
+              "quote": "La Asamblea Nacional (1789-1791)"
+            },
+            {
+              "text": "**Asamblea Legislativa** (1791-1792): monarquía constitucional.",
+              "quote": "La Asamblea Legislativa (1791-1792)"
+            }
+          ]
+        },
+        {
+          "title": "República y Terror",
+          "period": "1792-1795",
+          "bullets": [
+            {
+              "text": "**República** (1792-1795): proclamación de la república.",
+              "quote": "la República (1792-1795)"
+            },
+            {
+              "text": "**Terror** (1793-1794): gobierno revolucionario.",
+              "quote": "1793-1794 Gobierno revolucionario y Terror"
+            }
+          ]
+        },
+        {
+          "title": "Estabilización",
+          "period": "1795-1804",
+          "bullets": [
+            {
+              "text": "**Directorio** (1795-1799): gobierno colegiado.",
+              "quote": "el Directorio (1795-1799)"
+            },
+            {
+              "text": "**Consulado** (1799-1804): fin de la revolución.",
+              "quote": "el Consulado (1799-1804)"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Causas principales",
+      "period": "",
+      "kind": "list",
+      "intro": "Factores que provocaron el estallido revolucionario.",
+      "bullets": [
+        {
+          "text": "**Crisis fiscal**: agotamiento de las arcas reales.",
+          "quote": "La crisis fiscal, la desigualdad jurídica, las subsistencias y la cultura ilustrada"
+        },
+        {
+          "text": "**Desigualdad jurídica**: privilegios de la nobleza y el clero.",
+          "quote": "la desigualdad jurídica, las subsistencias"
+        },
+        {
+          "text": "**Crisis de subsistencias**: carestía de alimentos.",
+          "quote": "las subsistencias y la cultura ilustrada"
+        },
+        {
+          "text": "**Cultura ilustrada**: ideas de libertad e igualdad.",
+          "quote": "la cultura ilustrada impulsaron un proceso"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A dim, 18th-century French town square with a bread market, showing empty baskets and worried expressions on generic, non-realistic figures, muted colors.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología clave",
+      "period": "1789-1794",
+      "kind": "dates",
+      "intro": "Hitos fundamentales del proceso revolucionario.",
+      "bullets": [
+        {
+          "text": "**5 de mayo de 1789**: reunión de los Estados Generales.",
+          "quote": "5 de mayo de 1789 Estados Generales"
+        },
+        {
+          "text": "**17-20 de junio de 1789**: Juramento del Juego de Pelota.",
+          "quote": "17-20 de junio de 1789 Asamblea Nacional y Juramento del Juego de Pelota"
+        },
+        {
+          "text": "**14 de julio de 1789**: Toma de la Bastilla.",
+          "quote": "14 de julio de 1789 Toma de la Bastilla"
+        },
+        {
+          "text": "**4-26 de agosto de 1789**: Fin de los privilegios feudales.",
+          "quote": "4-26 de agosto de 1789 Fin de privilegios y Declaración de Derechos"
+        },
+        {
+          "text": "**1791**: Aprobación de la primera Constitución.",
+          "quote": "1791 Primera Constitución francesa"
+        },
+        {
+          "text": "**21 de septiembre de 1792**: Proclamación de la República.",
+          "quote": "21 de septiembre de 1792 Proclamación de la República"
+        },
+        {
+          "text": "**1793-1794**: Etapa del Terror.",
+          "quote": "1793-1794 Gobierno revolucionario y Terror"
+        }
+      ],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1789",
+          "text": "5 de mayo de 1789: Convocatoria de los Estados Generales.",
+          "quote": "5 de mayo de 1789"
+        },
+        {
+          "year": "1789",
+          "text": "17-20 de junio de 1789: Creación de la Asamblea Nacional.",
+          "quote": "17-20 de junio de 1789"
+        },
+        {
+          "year": "1789",
+          "text": "14 de julio de 1789: Toma de la Bastilla.",
+          "quote": "14 de julio de 1789"
+        },
+        {
+          "year": "1789",
+          "text": "4-26 de agosto de 1789: Abolición de los privilegios.",
+          "quote": "4-26 de agosto de 1789"
+        },
+        {
+          "year": "1791",
+          "text": "1791: Establecimiento de la monarquía constitucional.",
+          "quote": "1791 Primera Constitución francesa"
+        },
+        {
+          "year": "1792",
+          "text": "21 de septiembre de 1792: Proclamación de la República.",
+          "quote": "21 de septiembre de 1792"
+        },
+        {
+          "year": "1793-1794",
+          "text": "1793-1794: Gobierno revolucionario y Terror.",
+          "quote": "1793-1794 Gobierno revolucionario y Terror"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Principios y cambios",
+      "period": "",
+      "kind": "list",
+      "intro": "Nuevos fundamentos políticos y sociales.",
+      "bullets": [
+        {
+          "text": "**Soberanía nacional**: el poder reside en la nación.",
+          "quote": "soberanía nacional, ciudadanía e igualdad jurídica transformaron Europa"
+        },
+        {
+          "text": "**Igualdad jurídica**: fin de los privilegios estamentales.",
+          "quote": "ciudadanía e igualdad jurídica transformaron Europa"
+        },
+        {
+          "text": "**Libertades**: prensa, religión y propiedad privada.",
+          "quote": "libertad de prensa, la libertad religiosa"
+        },
+        {
+          "text": "**División de poderes**: separación de funciones estatales.",
+          "quote": "división de poderes y se garantizaron los derechos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A symbolic balance scale with one side holding a crown and the other a book, set against a plain background, representing the shift from monarchy to law.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Consecuencias y legado",
+      "period": "",
+      "kind": "legacy",
+      "intro": "Impacto duradero en Francia y Europa.",
+      "bullets": [
+        {
+          "text": "**Transformación política**: fin del absolutismo monárquico.",
+          "quote": "transformó la política, la sociedad y la economía"
+        },
+        {
+          "text": "**Fin del estamentalismo**: abolición de privilegios nobiliarios.",
+          "quote": "disolvió los privilegios de la sociedad estamental"
+        },
+        {
+          "text": "**Modelo liberal**: primer gobierno republicano liberal en Europa.",
+          "quote": "establecimiento del primer gobierno republicano de tipo liberal"
+        },
+        {
+          "text": "**Influencia europea**: inspiración para otras revoluciones.",
+          "quote": "transformaron Europa, aunque su aplicación estuvo marcada por exclusiones"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La Revolución instauró la igualdad jurídica y la soberanía nacional, eliminando los privilegios del Antiguo Régimen.",
+      "illustration_prompt": "A wide view of the French countryside with a distant city skyline, symbolizing the spread of new political ideas across the nation.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La burguesía lideró el fin del absolutismo y los privilegios.",
+    "Se estableció la soberanía nacional y la igualdad jurídica.",
+    "El proceso transformó la política, la sociedad y la economía francesas."
+  ],
+  "summary": "La Revolución francesa (1789-1799) derrocó la monarquía absolutista y la sociedad estamental. Estableció principios liberales como la soberanía nacional y la igualdad jurídica. Su legado transformó la política europea y sentó las bases del Estado moderno.",
+  "closing": "La Revolución francesa sentó las bases del Estado moderno y los derechos ciudadanos."
+}
