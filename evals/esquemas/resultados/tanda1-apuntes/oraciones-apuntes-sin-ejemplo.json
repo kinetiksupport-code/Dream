@@ -1,0 +1,188 @@
+{
+  "title": "Oraciones compuestas",
+  "subtitle": "Clasificación de las oraciones compuestas",
+  "subject": "Lengua Castellana y Literatura",
+  "sections": [
+    {
+      "heading": "Definición básica",
+      "period": "",
+      "kind": "list",
+      "intro": "Concepto fundamental para identificar la estructura de la oración.",
+      "bullets": [
+        {
+          "text": "Tiene **dos o más verbos** en forma personal.",
+          "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+        },
+        {
+          "text": "Contiene **dos o más proposiciones**.",
+          "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones coordinadas",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Proposiciones con el mismo nivel sintáctico unidas por nexos.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Copulativas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Nexos: **y, e, ni**.",
+              "quote": "Nexos: y, e, ni. Ejemplo: Leí el libro y vi la película."
+            },
+            {
+              "text": "Ejemplo: **Leí el libro y vi la película**.",
+              "quote": "Nexos: y, e, ni. Ejemplo: Leí el libro y vi la película."
+            }
+          ]
+        },
+        {
+          "title": "Disyuntivas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Nexos: **o, u**.",
+              "quote": "Nexos: o, u. Ejemplo: ¿Vienes o te quedas?"
+            },
+            {
+              "text": "Ejemplo: **¿Vienes o te quedas?**",
+              "quote": "Nexos: o, u. Ejemplo: ¿Vienes o te quedas?"
+            }
+          ]
+        },
+        {
+          "title": "Adversativas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Nexos: **pero, mas, sino, sin embargo**.",
+              "quote": "Nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió."
+            },
+            {
+              "text": "Ejemplo: **Estudió mucho, pero suspendió**.",
+              "quote": "Nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió."
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A diagram showing two equal boxes connected by a horizontal line, representing equal syntactic levels.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones yuxtapuestas",
+      "period": "",
+      "kind": "list",
+      "intro": "Unión mediante puntuación en lugar de nexos gramaticales.",
+      "bullets": [
+        {
+          "text": "Se unen **sin nexo**, solo con signos de puntuación.",
+          "quote": "Yuxtapuestas: las proposiciones se unen sin nexo, solo con signos de puntuación. Ejemplo: Llegué tarde; no había nadie."
+        },
+        {
+          "text": "Ejemplo: **Llegué tarde; no había nadie**.",
+          "quote": "Yuxtapuestas: las proposiciones se unen sin nexo, solo con signos de puntuación. Ejemplo: Llegué tarde; no había nadie."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A close-up of a semicolon punctuation mark on a white background, simple and clean.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Oraciones subordinadas",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Una proposición depende de otra y cumple una función dentro de ella.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Sustantivas",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Funcionan como **sustantivo** (sujeto, CD…).",
+              "quote": "Sustantivas: funcionan como un sustantivo (sujeto, complemento directo…). Ejemplo: Quiero que vengas."
+            },
+            {
+              "text": "Ejemplo: **Quiero que vengas**.",
+              "quote": "Sustantivas: funcionan como un sustantivo (sujeto, complemento directo…). Ejemplo: Quiero que vengas."
+            }
+          ]
+        },
+        {
+          "title": "Adjetivas o de relativo",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Funcionan como **adjetivo** y complementan al antecedente.",
+              "quote": "Adjetivas o de relativo: funcionan como un adjetivo y complementan a un sustantivo, el antecedente. Ejemplo: El libro que me prestaste es genial."
+            },
+            {
+              "text": "Ejemplo: **El libro que me prestaste es genial**.",
+              "quote": "Adjetivas o de relativo: funcionan como un adjetivo y complementan a un sustantivo, el antecedente. Ejemplo: El libro que me prestaste es genial."
+            }
+          ]
+        },
+        {
+          "title": "Adverbiales",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Funcionan como **adverbio** (tiempo, causa, condición…).",
+              "quote": "Adverbiales: funcionan como un adverbio e indican tiempo, lugar, modo, causa, condición, finalidad, concesión o consecuencia. Ejemplo: Si llueve, no saldremos."
+            },
+            {
+              "text": "Ejemplo: **Si llueve, no saldremos**.",
+              "quote": "Adverbiales: funcionan como un adverbio e indican tiempo, lugar, modo, causa, condición, finalidad, concesión o consecuencia. Ejemplo: Si llueve, no saldremos."
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A tree diagram with a main branch and smaller dependent branches, illustrating hierarchy.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Error típico",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Distinción clave entre subordinadas adjetivas y sustantivas.",
+      "bullets": [
+        {
+          "text": "Confundir el **«que» relativo** (con antecedente) con la **conjunción «que»** (sin antecedente).",
+          "quote": "Error típico: confundir el «que» relativo, que tiene antecedente, con la conjunción «que» de las sustantivas, que no lo tiene."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "Las **coordinadas** unen proposiciones de igual rango sintáctico.",
+    "Las **subordinadas** dependen de otra y cumplen una función específica.",
+    "El **antecedente** diferencia a las adjetivas de las sustantivas."
+  ],
+  "summary": "Las oraciones compuestas se dividen en coordinadas, yuxtapuestas y subordinadas según la relación entre sus proposiciones. Cada tipo tiene nexos o funciones sintácticas específicas que permiten identificarlas. Conocer estas diferencias evita errores comunes en el análisis sintáctico.",
+  "closing": "Distinguir el tipo de nexo y la función sintáctica permite clasificar cualquier oración compuesta con precisión."
+}

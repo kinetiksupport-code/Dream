@@ -1,0 +1,190 @@
+{
+  "title": "Filosofía de Kant",
+  "subtitle": "Ética, razón práctica y conocimiento",
+  "subject": "Filosofía",
+  "sections": [
+    {
+      "heading": "Contexto y pensamiento kantiano",
+      "period": "1724-1804",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "**Immanuel Kant** (1724-1804) es el filósofo alemán central de este tema.",
+          "quote": "Immanuel Kant (1724-1804) fue un filósofo alemán"
+        },
+        {
+          "text": "Su obra cumbre es la **Crítica de la razón pura** (1781).",
+          "quote": "su obra cumbre, «Crítica de la razón pura» (1781)"
+        },
+        {
+          "text": "Defendió el **idealismo trascendental** sobre la naturaleza del conocimiento.",
+          "quote": "Defendió el idealismo trascendental"
+        },
+        {
+          "text": "La experiencia está mediada por las **estructuras cognitivas** de la mente.",
+          "quote": "estructuras cognitivas de la mente humana"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A classical German library interior with tall bookshelves and a desk, soft lighting, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Crítica de la razón pura",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La **sensibilidad** recibe los objetos de la experiencia.",
+          "quote": "La sensibilidad: en ella se dan los objetos"
+        },
+        {
+          "text": "El **entendimiento** piensa y organiza esos objetos.",
+          "quote": "El entendimiento: Los objetos son pensados"
+        },
+        {
+          "text": "Se estudian los **juicios sintéticos a priori** universales y necesarios.",
+          "quote": "juicios sintéticos a priori"
+        },
+        {
+          "text": "Es imposible el conocimiento objetivo de **alma, Dios y libertad**.",
+          "quote": "imposibilidad de un conocimiento objetivo acerca del alma, Dios, libertad"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "An abstract diagram showing two interconnected circles labeled with geometric shapes, representing mind structures.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ética y el imperativo categórico",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los **imperativos hipotéticos** buscan fines y no tienen valor moral.",
+          "quote": "Los imperativos hipotéticos... no tienen valor moral"
+        },
+        {
+          "text": "Solo el **imperativo categórico** aporta universalidad y necesidad moral.",
+          "quote": "sólo el categórico proporciona universalidad y necesidad"
+        },
+        {
+          "text": "La moral se basa en la **autonomía de la voluntad**.",
+          "quote": "la autonomía de la voluntad (Razón práctica)"
+        },
+        {
+          "text": "El **deber** proviene de la propia razón, no de fuera.",
+          "quote": "el deber no se impone desde fuera a la voluntad"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A balanced scale with abstract geometric weights, symbolizing rational decision making.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Formulaciones del imperativo",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Usa a la **humanidad** siempre como fin, nunca como medio.",
+          "quote": "Obra de tal manera que usas a la humanidad"
+        },
+        {
+          "text": "Obra según una norma que pueda ser **ley universal**.",
+          "quote": "la norma de tu conducta pueda erigirse en conducta universal"
+        },
+        {
+          "text": "La **buena voluntad** es lo único bueno en sí misma.",
+          "quote": "La buena voluntad: Es lo único bueno dentro y fuera"
+        },
+        {
+          "text": "El núcleo incluye **respeto, deber, constricción** y buena voluntad.",
+          "quote": "el respeto, el deber, la constricción y la buena voluntad"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A single glowing light source illuminating a dark room, symbolizing moral clarity.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Postulados de la razón práctica",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La metafísica se reubica en la **razón práctica**.",
+          "quote": "reubicarla en un lugar más adecuado: en la razón práctica"
+        },
+        {
+          "text": "El **bien supremo** une virtud y felicidad.",
+          "quote": "la de la virtud y la de la felicidad"
+        },
+        {
+          "text": "Se postula que los **virtuosos sean felices**.",
+          "quote": "las personas virtuosas sean felices"
+        },
+        {
+          "text": "Los **postulados** fundamentan la necesidad de Dios y la inmortalidad.",
+          "quote": "postulados de la razón práctica"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A serene landscape with a rising sun over a calm lake, symbolizing hope and virtue.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Legado filosófico",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Supera el **escepticismo de Hume** y el dogmatismo de Wolff.",
+          "quote": "superación del escepticismo de Hume y el dogmatismo de Wolff"
+        },
+        {
+          "text": "Influye en **Schopenhauer, Fichte, Schelling y Hegel**.",
+          "quote": "influencia de Kant es innegable en filósofos posteriores como Schopenhauer"
+        },
+        {
+          "text": "Vislumbra un **reino de los fines** con paz perpetua.",
+          "quote": "reino de los fines, donde se hará realidad la paz perpetua"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Kant transformó la ética al centrarla en la autonomía racional, influyendo en todo el idealismo alemán posterior.",
+      "illustration_prompt": "A path leading through a forest towards a bright horizon, symbolizing philosophical progress.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El imperativo categórico es la ley moral universal y necesaria.",
+    "La buena voluntad es el único bien absoluto.",
+    "Los postulados de la razón práctica fundamentan la fe moral."
+  ],
+  "summary": "Kant establece que la moral se basa en la razón práctica y el imperativo categórico. Demuestra los límites del conocimiento teórico para fundamentar la fe moral.",
+  "closing": "La ética kantiana establece que la dignidad humana reside en la autonomía de la voluntad guiada por la razón."
+}

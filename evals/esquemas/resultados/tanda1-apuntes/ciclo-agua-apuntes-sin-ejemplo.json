@@ -1,0 +1,155 @@
+{
+  "title": "El ciclo del agua",
+  "subtitle": "Fases, distribución y equilibrio del ciclo hidrológico",
+  "subject": "Ciencias de la Naturaleza",
+  "sections": [
+    {
+      "heading": "Concepto y motor",
+      "period": "",
+      "kind": "list",
+      "intro": "Definición básica y fuerzas que mueven el proceso.",
+      "bullets": [
+        {
+          "text": "El **Sol** y la **gravedad** impulsan el movimiento del agua.",
+          "quote": "El motor del ciclo es la energía del Sol y la gravedad."
+        },
+        {
+          "text": "Es un **movimiento continuo** entre la superficie terrestre y la atmósfera.",
+          "quote": "El ciclo del agua o ciclo hidrológico es el movimiento continuo del agua entre la superficie de la Tierra y la atmósfera."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A bright sun shining over a calm ocean and rolling green hills, with soft white clouds in the sky.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Evaporación y transpiración",
+      "period": "",
+      "kind": "list",
+      "intro": "Cómo el agua pasa del estado líquido al gaseoso.",
+      "bullets": [
+        {
+          "text": "El calor solar convierte el agua líquida en **vapor**.",
+          "quote": "El calor del Sol convierte en vapor el agua de mares, ríos y lagos."
+        },
+        {
+          "text": "Los **océanos** aportan la mayor parte del vapor de agua.",
+          "quote": "La mayor parte del vapor procede de los océanos."
+        },
+        {
+          "text": "Las plantas liberan vapor a través de sus **hojas**.",
+          "quote": "Las plantas pierden vapor de agua por sus hojas."
+        },
+        {
+          "text": "Evaporación y transpiración juntas se llaman **evapotranspiración**.",
+          "quote": "Junto con la evaporación se llama evapotranspiración."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Close-up of water droplets rising from a lake surface and green leaves releasing mist into the air.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Condensación y precipitación",
+      "period": "",
+      "kind": "list",
+      "intro": "Formación de nubes y retorno del agua a la superficie.",
+      "bullets": [
+        {
+          "text": "El vapor se enfría y forma **gotas** que crean nubes.",
+          "quote": "El vapor sube, se enfría y se condensa en pequeñas gotas que forman las nubes."
+        },
+        {
+          "text": "Las gotas crecen y caen como **lluvia**, nieve o granizo.",
+          "quote": "Las gotas se unen, pesan más y caen en forma de lluvia, nieve o granizo."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Fluffy white clouds in a blue sky with raindrops falling gently onto a green field.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Escorrentía e infiltración",
+      "period": "",
+      "kind": "list",
+      "intro": "El recorrido del agua una vez llega a la superficie.",
+      "bullets": [
+        {
+          "text": "El agua fluye por la superficie formando **ríos** hacia el mar.",
+          "quote": "El agua corre por la superficie y forma ríos que llegan al mar."
+        },
+        {
+          "text": "Parte del agua se filtra en el suelo creando **acuíferos**.",
+          "quote": "Parte del agua penetra en el suelo y forma acuíferos o aguas subterráneas."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A clear stream flowing over rocks into a larger body of water, with soil layers visible below showing water seeping down.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Distribución del agua",
+      "period": "",
+      "kind": "list",
+      "intro": "Proporción de agua salada frente a dulce en el planeta.",
+      "bullets": [
+        {
+          "text": "El **97 %** del agua total es salada y está en los océanos.",
+          "quote": "Alrededor del 97 % del agua de la Tierra es salada y está en los océanos."
+        },
+        {
+          "text": "Solo el **3 %** es dulce, mayormente helada en glaciares.",
+          "quote": "Solo cerca del 3 % es dulce, y la mayor parte de ella está helada en glaciares y casquetes polares."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A split view showing a vast blue ocean on one side and a small section of ice and fresh water on the other.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Importancia y acción humana",
+      "period": "",
+      "kind": "list",
+      "intro": "Rol ecológico del ciclo y amenazas actuales.",
+      "bullets": [
+        {
+          "text": "Reparte agua dulce, **regula el clima** y modela el relieve.",
+          "quote": "El ciclo reparte el agua dulce por el planeta, regula el clima y modela el relieve."
+        },
+        {
+          "text": "La **contaminación** y la deforestación alteran el equilibrio natural.",
+          "quote": "La contaminación, la sobreexplotación de acuíferos y la deforestación alteran el ciclo."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "El ciclo regula el clima y modela el relieve, pero la contaminación y la sobreexplotación de acuíferos lo alteran.",
+      "illustration_prompt": "A balanced scale with a water drop on one side and a factory emitting smoke on the other, set against a landscape background.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El Sol y la gravedad son los motores del ciclo hidrológico",
+    "El 97 % del agua es salada y solo el 3 % es dulce",
+    "La condensación forma nubes que generan precipitaciones",
+    "La acción humana altera el equilibrio natural del ciclo"
+  ],
+  "summary": "El ciclo del agua es un proceso continuo impulsado por el Sol y la gravedad. Incluye fases como evaporación, condensación y precipitación. La mayor parte del agua es salada, y el ciclo regula el clima y el relieve.",
+  "closing": "El ciclo del agua es un sistema continuo que conecta el clima, la geografía y la vida en la Tierra."
+}

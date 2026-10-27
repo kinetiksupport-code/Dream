@@ -1,0 +1,156 @@
+{
+  "title": "El ciclo del agua",
+  "subtitle": "Procesos y fases del movimiento del agua",
+  "subject": "Ciencias",
+  "sections": [
+    {
+      "heading": "Definición y motor del ciclo",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **ciclo del agua** es el movimiento cíclico del agua entre superficie y atmósfera.",
+          "quote": "El ciclo del agua es el movimiento cíclico que realiza el agua desde la superficie terrestre a la atmósfera en forma de vapor y su vuelta en forma líquida o sólida."
+        },
+        {
+          "text": "El agua experimenta **cambios de estado** para desplazarse.",
+          "quote": "El agua experimenta cambios de estado para pasar de un lugar a otro."
+        },
+        {
+          "text": "La subida a la atmósfera se debe a la **energía solar**.",
+          "quote": "El paso a la atmósfera se debe a la energía solar."
+        },
+        {
+          "text": "El retorno a la superficie se debe a la **gravedad**.",
+          "quote": "El paso de la atmósfera a la superficie terrestre se debe a la acción de la gravedad."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A stylized diagram of the water cycle showing arrows moving from ocean to sky and back to land, with a bright sun in the corner.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fases principales del ciclo",
+      "period": "",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Evaporación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El **Sol** calienta el agua de océanos y continentes.",
+              "quote": "La evaporación del agua se produce por la energía calorífica del Sol."
+            },
+            {
+              "text": "El agua pasa de **líquido a gaseoso**.",
+              "quote": "pasando el agua de estado líquido a estado gaseoso."
+            },
+            {
+              "text": "El vapor se eleva hacia la **atmósfera**.",
+              "quote": "De esta forma, el agua pasa a formar parte de la atmósfera en forma de vapor de agua."
+            }
+          ]
+        },
+        {
+          "title": "Condensación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Al enfriarse, el vapor se **condensa**.",
+              "quote": "Al disminuir la temperatura, el aire no puede contener tanta agua en estado gaseoso (vapor de agua) y se produce la condensación"
+            },
+            {
+              "text": "Se forman gotas que crean las **nubes**.",
+              "quote": "formándose pequeñas gotas de agua (líquida o incluso de hielo) que son las que forman las nubes."
+            }
+          ]
+        },
+        {
+          "title": "Precipitación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Las gotas caen como **lluvia**.",
+              "quote": "Cuando las gotitas que forman las nubes aumentan de tamaño, caen a la tierra en forma de lluvia."
+            },
+            {
+              "text": "Con frío, cae **nieve o granizo**.",
+              "quote": "Si la temperatura del aire es muy baja, el agua se enfría mucho, se solidifica y cae en forma de nieve o granizo."
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Retorno y circulación",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El agua fluye por **ríos y torrentes** hacia el mar.",
+          "quote": "una gran parte circula por la superficie como aguas salvajes y encauzándose en torrentes y ríos hasta llegar al mar por acción de la gravedad."
+        },
+        {
+          "text": "Las plantas absorben agua y la devuelven por **transpiración**.",
+          "quote": "Parte del agua que ha precipitado es absorbida por las raíces de las plantas y devuelta a la atmósfera por evaporación a través de sus hojas mediante la transpiración."
+        },
+        {
+          "text": "Parte del agua se **infiltra** en el suelo.",
+          "quote": "El agua penetra en el terreno."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A cross-section of a hill showing rain falling, water flowing into a river, and roots absorbing water from the soil.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Relación con la Tierra",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El agua modela los **relieves terrestres**.",
+          "quote": "El agua, junto con el resto de agentes geológicos externos, es fundamental en el modelado de relieves terrestres."
+        },
+        {
+          "text": "El agua es **imprescindible** para los seres vivos.",
+          "quote": "Los seres vivos están formados, en su mayor parte, por agua. Por tanto, el agua es imprescindible para ellos."
+        },
+        {
+          "text": "El vapor regula la **temperatura** atmosférica.",
+          "quote": "Si la atmósfera contiene gran cantidad de vapor de agua, no se producen grandes variaciones de temperatura, manteniéndose la temperatura bastante constante."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El Sol impulsa la evaporación y la gravedad provoca el retorno.",
+    "El agua cambia entre estados líquido, gaseoso y sólido.",
+    "La transpiración de las plantas aporta vapor a la atmósfera."
+  ],
+  "summary": "El ciclo del agua describe cómo el agua circula entre la superficie y la atmósfera impulsada por el Sol y la gravedad. Incluye fases como evaporación, condensación, precipitación y retorno. Este proceso es vital para el modelado del relieve y la vida en la Tierra.",
+  "closing": "El ciclo del agua es un proceso continuo e infinito que conecta la atmósfera, la geosfera y la biosfera mediante cambios de estado."
+}

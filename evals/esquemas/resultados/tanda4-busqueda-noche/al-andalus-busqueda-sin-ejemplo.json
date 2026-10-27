@@ -1,0 +1,184 @@
+{
+  "title": "Evolución de Al-Ándalus",
+  "subtitle": "Fragmentación, reunificación y caída del poder musulmán",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Primeras Taifas y fragmentación",
+      "period": "1031-1085",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El territorio se dividió en **Reinos de Taifas** tras la caída del Califato.",
+          "quote": "El territorio se dividió en Reinos de Taifas: estados débiles políticamente"
+        },
+        {
+          "text": "Estos reinos eran políticamente débiles y pagaban **tributos** a los cristianos.",
+          "quote": "estados débiles políticamente (pagaban parias o tributos a los cristianos)"
+        },
+        {
+          "text": "A pesar de la debilidad, hubo un gran **auge cultural** y artístico.",
+          "quote": "pero de gran auge cultural"
+        },
+        {
+          "text": "La fragmentación facilitó el avance de los **reinos cristianos** del norte.",
+          "quote": "los reinos cristianos del norte... comienzan a empujar la línea de la Reconquista"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A fragmented map of the Iberian Peninsula showing many small, distinct kingdoms with different colors, no text or labels.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología de la crisis",
+      "period": "1031-1212",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1031",
+          "text": "El Califato de Córdoba es abolido tras la Fitna.",
+          "quote": "Tras la muerte de Almanzor y la guerra civil (Fitna), el Califato fue abolido en 1031."
+        },
+        {
+          "year": "1086",
+          "text": "Los Almorávides frenan a los cristianos en Sagrajas.",
+          "quote": "Almorávides (1086-1145): Frenaron a los cristianos (Batalla de Sagrajas)"
+        },
+        {
+          "year": "1147",
+          "text": "Los Almohades unifican Al-Ándalus con capital en Sevilla.",
+          "quote": "Almohades (1147-1212): Unificaron de nuevo Al-Ándalus con capital en Sevilla."
+        },
+        {
+          "year": "1212",
+          "text": "Derrota decisiva de los Almohades en las Navas de Tolosa.",
+          "quote": "Su hegemonía terminó tras la derrota decisiva en la Batalla de Las Navas de Tolosa (1212)."
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Imperios norteafricanos",
+      "period": "1086-1212",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Almorávides",
+          "period": "1086-1145",
+          "bullets": [
+            {
+              "text": "Frenaron el avance cristiano tras la **Batalla de Sagrajas**.",
+              "quote": "Almorávides (1086-1145): Frenaron a los cristianos (Batalla de Sagrajas)"
+            },
+            {
+              "text": "Impusieron una doctrina islámica **rigorista** y ortodoxa.",
+              "quote": "e impusieron un islam rigorista"
+            },
+            {
+              "text": "Practicaban la **yihad** contra los reinos cristianos.",
+              "quote": "Los almorávides son musulmanes ortodoxos que practican la yihad"
+            }
+          ]
+        },
+        {
+          "title": "Almohades",
+          "period": "1147-1212",
+          "bullets": [
+            {
+              "text": "Unificaron Al-Ándalus estableciendo la capital en **Sevilla**.",
+              "quote": "Almohades (1147-1212): Unificaron de nuevo Al-Ándalus con capital en Sevilla."
+            },
+            {
+              "text": "Fueron aún más **radicales** religiosamente que los almorávides.",
+              "quote": "Los Almohades son aún más radicales en lo religioso que los almorávides."
+            },
+            {
+              "text": "Su poder terminó con la derrota en **Navas de Tolosa**.",
+              "quote": "En 1212 sufren la derrota en la Batalle de las Navas de Tolosa"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A fortified city gate with horseshoe arches and intricate stucco work, bathed in warm sunlight, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "El Reino Nazarí de Granada",
+      "period": "1238-1492",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **Reino Nazarí** fue el último estado musulmán peninsular.",
+          "quote": "El único reino que perdura hasta finales del siglo XV es el Reino Nazarí de Granada."
+        },
+        {
+          "text": "Desde 1246, Granada fue **vasalla** de Castilla pagando tributo.",
+          "quote": "Desde 1246 Granada se constituyó en reino vasallo y tenía que entregar un tributo anual."
+        },
+        {
+          "text": "Su obra arquitectónica principal es la **Alhambra**.",
+          "quote": "el edificio civil de mayor repercusión en Al-Andalus será el palacio, siendo el de mayor importancia la Alhambra de Granada"
+        },
+        {
+          "text": "Utilizaban **arcos de herradura** y alfices en sus construcciones.",
+          "quote": "como elementos constructivos, se servían de arcos de herradura enmarcados en alfices."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La Alhambra de Granada es el máximo exponente del arte nazarí y símbolo de la resistencia islámica.",
+      "illustration_prompt": "The Alhambra palace in Granada, featuring intricate geometric tile work and horseshoe arches, surrounded by lush gardens, no people.",
+      "illustration_caption": "La Alhambra de Granada, obra de los nazaríes."
+    },
+    {
+      "heading": "Legado cultural",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La cultura andalusí es **fundamental** para la identidad española.",
+          "quote": "La cultura andalusí es una parte muy importante de la cultura de nuestro país"
+        },
+        {
+          "text": "La historia medieval peninsular es **inseparable** de la presencia musulmana.",
+          "quote": "la Historia Medieval de la Península es inseparable de la presencia musulmana aquí"
+        },
+        {
+          "text": "Estos contenidos son clave para entender la **transición** medieval.",
+          "quote": "Nuestro alumnado se acercará a estos contenidos primero en la materia de Historia de 2º de Educación Secundaria"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La herencia andalusí define gran parte del patrimonio artístico y arquitectónico de España.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La caída del Califato provocó la atomización en Reinos de Taifas.",
+    "Los imperios norteafricanos intentaron reunificar Al-Ándalus sin éxito duradero.",
+    "Granada fue el último reducto musulmán hasta 1492."
+  ],
+  "summary": "Tras la caída del Califato, Al-Ándalus se fragmentó en Taifas, lo que aceleró la Reconquista. Los imperios norteafricanos intentaron reunificarlo, pero la derrota en Navas de Tolosa selló su fin, dejando solo Granada hasta 1492.",
+  "closing": "La fragmentación política de Al-Ándalus aceleró la Reconquista, pero su legado cultural perdura en la identidad española."
+}

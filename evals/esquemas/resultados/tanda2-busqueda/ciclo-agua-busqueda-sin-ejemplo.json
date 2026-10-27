@@ -1,0 +1,157 @@
+{
+  "title": "El ciclo del agua",
+  "subtitle": "Proceso continuo de circulación del agua",
+  "subject": "Ciencias Naturales",
+  "sections": [
+    {
+      "heading": "Definición y características",
+      "period": "",
+      "kind": "list",
+      "intro": "El ciclo del agua es un proceso natural continuo que mueve el agua por la Tierra.",
+      "bullets": [
+        {
+          "text": "El agua circula en estados **líquido, sólido y gaseoso**.",
+          "quote": ""
+        },
+        {
+          "text": "El proceso es **continuo e ilimitado**.",
+          "quote": "durante los cuales el agua circula en diferentes estados (líquido, sólido y gaseoso)"
+        },
+        {
+          "text": "No tiene un **punto de inicio** concreto.",
+          "quote": "No inicia en un punto determinado, sino que se trata de una continuidad de procesos"
+        },
+        {
+          "text": "Intervienen el **viento** y la **energía solar**.",
+          "quote": "intervienen elementos climáticos, como el viento y la energía solar"
+        },
+        {
+          "text": "Es **vital** para la estabilidad del planeta.",
+          "quote": "Es vital para el mantenimiento y la estabilidad del planeta"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Las cinco etapas",
+      "period": "",
+      "kind": "subcards",
+      "intro": "El ciclo se compone de cinco etapas principales que se repiten sucesivamente.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Evaporación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El líquido se convierte en **gas**.",
+              "quote": "Cuando un líquido se convierte en gas"
+            },
+            {
+              "text": "Impulsado por la **energía solar**.",
+              "quote": "El proceso se inicia cuando se supera la cantidad máxima de vapor de agua"
+            }
+          ]
+        },
+        {
+          "title": "Condensación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El vapor se convierte en **líquido**.",
+              "quote": "supone el paso del agua en estado gaseoso al estado líquido"
+            },
+            {
+              "text": "Se forman **nubes** con gotas de agua.",
+              "quote": "formar gotas de agua que se acumulan en las nubes"
+            }
+          ]
+        },
+        {
+          "title": "Precipitación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El agua cae por **gravedad**.",
+              "quote": "El agua en estado líquido se condensa por saturación y cae por efecto de la gravedad"
+            },
+            {
+              "text": "Puede caer como **lluvia** o nieve.",
+              "quote": "generalmente en estado líquido, aunque también puede caer en estado sólido"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A cross-section diagram showing water moving from ocean to sky and back to land, with arrows indicating evaporation, condensation, precipitation, infiltration,",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Destino del agua",
+      "period": "",
+      "kind": "list",
+      "intro": "Tras la precipitación, el agua sigue varios caminos hasta regresar a los mares.",
+      "bullets": [
+        {
+          "text": "Parte del agua vuelve a la **atmósfera**.",
+          "quote": "una determinada cantidad vuelve a la atmósfera por evaporación"
+        },
+        {
+          "text": "Las **hojas** interceptan y evaporan agua.",
+          "quote": "otra es interceptada y de nuevo evaporada por la superficie de las hojas"
+        },
+        {
+          "text": "Se **infiltra** en el suelo o fluye como escorrentía.",
+          "quote": "o bien se infiltra en el suelo o fluye como escorrentía hacia los mares"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A close-up of rainwater hitting soil and flowing into a small stream, with some water soaking into the ground and some running off the surface",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Importancia y contexto",
+      "period": "",
+      "kind": "list",
+      "intro": "El ciclo es fundamental para la vida y está siendo afectado por factores actuales.",
+      "bullets": [
+        {
+          "text": "El **cambio climático** modifica su intensidad.",
+          "quote": "El cambio climático está modificando su intensidad, distribución y extremos"
+        },
+        {
+          "text": "Ha existido durante **millones de años**.",
+          "quote": "Este proceso ha estado sucediendo continuamente durante millones de años"
+        },
+        {
+          "text": "Sin este ciclo **no habría vida**.",
+          "quote": "sin él, ¡no habría vida en la Tierra!"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Sin el ciclo del agua, que ha operado durante millones de años, no existiría vida en la Tierra.",
+      "illustration_prompt": "A vibrant, healthy landscape with lush green forests, clear blue rivers, and bright blue skies, symbolizing a stable and thriving planet",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El ciclo consta de cinco etapas: evaporación, condensación, precipitación, infiltración y escorrentía.",
+    "El agua circula en estados líquido, sólido y gaseoso impulsada por la energía solar.",
+    "No tiene un punto de inicio fijo, sino que es una continuidad de procesos.",
+    "Es vital para el mantenimiento y la estabilidad del planeta."
+  ],
+  "summary": "El ciclo del agua es un proceso continuo e ilimitado donde el agua cambia de estado entre líquido, sólido y gaseoso. Está formado por cinco etapas: evaporación, condensación, precipitación, infiltración y escorrentía. Es vital para la estabilidad del planeta y ha existido durante millones de años.",
+  "closing": "El ciclo del agua es un sistema continuo e ilimitado que mantiene la estabilidad del planeta mediante la transformación constante del agua entre sus distintos estados."
+}

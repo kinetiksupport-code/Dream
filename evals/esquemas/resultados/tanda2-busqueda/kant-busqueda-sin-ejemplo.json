@@ -1,0 +1,168 @@
+{
+  "title": "Filosofía de Kant",
+  "subtitle": "Ética y epistemología kantiana",
+  "subject": "Filosofía",
+  "sections": [
+    {
+      "heading": "El imperativo categórico",
+      "period": "",
+      "kind": "list",
+      "intro": "Principio central de la ética kantiana que guía la acción moral.",
+      "bullets": [
+        {
+          "text": "El **imperativo categórico** se basa en la autonomía moral.",
+          "quote": ""
+        },
+        {
+          "text": "La **autonomía** es la capacidad racional de darse leyes a sí mismo.",
+          "quote": "autonomía moral, es decir, en la capacidad racional del ser humano para darse a sí mismo leyes"
+        },
+        {
+          "text": "Es una orden de la **razón práctica** que indica qué hacer.",
+          "quote": "te dice qué hacer en la razón práctica por eso es un imperativo"
+        },
+        {
+          "text": "No es hipotético, ya que **no hay condicional**.",
+          "quote": "no hay condicional"
+        },
+        {
+          "text": "Se actúa por **deber**, sin buscar recompensa.",
+          "quote": "siempre se tratará del deber por el deber sin obtener nada a cambio"
+        },
+        {
+          "text": "El ser humano es un **fin en sí mismo**.",
+          "quote": "el ser humano es un fin en sí mismo"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Autonomía moral",
+      "period": "",
+      "kind": "list",
+      "intro": "La base racional que permite al individuo legislar su propia conducta.",
+      "bullets": [
+        {
+          "text": "La **autonomía** explica y justifica la filosofía crítica de Kant.",
+          "quote": "sólo el concepto de autonomía, en sentido práctico, explica o justifica su filosofía crítica"
+        },
+        {
+          "text": "Implica la capacidad de **autodeterminación** racional.",
+          "quote": "capacidad racional del ser humano para darse a sí mismo leyes"
+        },
+        {
+          "text": "Se fundamenta en que el humano es un **fin en sí mismo**.",
+          "quote": "el ser humano es un fin en sí mismo gracias a que es el único ser que posee"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Filosofía pura y empírica",
+      "period": "",
+      "kind": "list",
+      "intro": "Clasificación de los tipos de conocimiento filosófico según su origen.",
+      "bullets": [
+        {
+          "text": "La **filosofía de la naturaleza** estudia lo que es.",
+          "quote": "La filosofía de la naturaleza se refiere a todo lo que es; la filosofía moral, sólo a lo que debe ser"
+        },
+        {
+          "text": "La **filosofía moral** estudia lo que debe ser.",
+          "quote": "la filosofía moral, sólo a lo que debe ser"
+        },
+        {
+          "text": "Existe **filosofía pura** (razón) y **empírica** (principios empíricos).",
+          "quote": "toda filosofía es, o bien conocimiento que parte de la razón pura, o bien conocimiento racional que parte de principios empíricos"
+        },
+        {
+          "text": "La **filosofía de la razón pura** investiga la capacidad de la razón.",
+          "quote": "investiga la capacidad de la razón respecto de todo conocimiento puro a priori"
+        },
+        {
+          "text": "Se centra en el conocimiento **a priori**.",
+          "quote": "conocimiento puro a priori"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Contexto histórico",
+      "period": "",
+      "kind": "list",
+      "intro": "Relación de Kant con la monarquía prusiana y sus compromisos públicos.",
+      "bullets": [
+        {
+          "text": "Kant afirmó que su compromiso solo valía mientras viviera **Federico Guillermo II**.",
+          "quote": "La decep-ción no quedó enmendada, sino todo lo contrario, cuando Kant afirmó, tras la muerte del monarca"
+        },
+        {
+          "text": "La decepción se confirmó tras la **muerte del monarca**.",
+          "quote": "tras la muerte del monarca"
+        },
+        {
+          "text": "El compromiso era temporal, ligado a la vida del **rey**.",
+          "quote": "el mencionado compromiso sólo se refería al tiempo en que viviera Fede- rico Guillermo II"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Metafísica y razón pura",
+      "period": "",
+      "kind": "list",
+      "intro": "Definición de la metafísica como sistema de la razón pura.",
+      "bullets": [
+        {
+          "text": "La **metafísica** es el sistema global de la razón pura.",
+          "quote": "el sistema de la razón pura (ciencia), el conocimiento filosófico (tanto verdadero como aparente) global, sistemáticamente conjuntado"
+        },
+        {
+          "text": "Se deriva de la **razón pura**.",
+          "quote": "derivado de la razón pura, y que se denomina metafísica"
+        },
+        {
+          "text": "Incluye la investigación de lo que puede conocerse **a priori**.",
+          "quote": "incluida la crítica con vistas a unir tanto la investigación de todo cuanto puede conocerse a priori"
+        },
+        {
+          "text": "Es un sistema de **conocimientos filosóficos puros**.",
+          "quote": "exposición de lo que constituye un siste-ma de conocimientos filosóficos puros"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El imperativo categórico es la ley moral universal.",
+    "La autonomía es la capacidad de autodeterminación racional.",
+    "La razón pura investiga los límites del conocimiento a priori."
+  ],
+  "summary": "Kant establece la autonomía moral como base del imperativo categórico. Distingue entre filosofía pura y empírica, y define la metafísica como sistema de la razón pura.",
+  "closing": "La filosofía de Kant redefine la moralidad como un deber racional autónomo, superando las normas externas."
+}

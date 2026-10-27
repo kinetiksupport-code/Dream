@@ -1,0 +1,212 @@
+{
+  "title": "La célula",
+  "subtitle": "Estructura y tipos de células",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Teoría celular",
+      "period": "",
+      "kind": "list",
+      "intro": "Principios fundamentales que definen la naturaleza de los organismos vivos.",
+      "bullets": [
+        {
+          "text": "La **célula** es la unidad estructural y funcional de los seres vivos.",
+          "quote": ""
+        },
+        {
+          "text": "Todos los seres vivos están formados por **células**.",
+          "quote": "todos los seres vivos están formados por células"
+        },
+        {
+          "text": "Es la **unidad de vida** más pequeña.",
+          "quote": "la célula es la unidad de vida más pequeña"
+        },
+        {
+          "text": "Toda célula procede de **otra célula**.",
+          "quote": "toda célula procede de otra célula"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Tipos de células",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Diferencias estructurales básicas entre los dos grandes grupos celulares.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Célula procariota",
+          "period": "",
+          "bullets": [
+            {
+              "text": "No tiene **núcleo**; el ADN está en el **nucleoide**.",
+              "quote": "no tiene núcleo; el ADN está en una región llamada nucleoide"
+            },
+            {
+              "text": "Carece de **orgánulos membranosos**.",
+              "quote": "no tiene orgánulos membranosos"
+            },
+            {
+              "text": "Posee **ribosomas** y **pared celular**.",
+              "quote": "Tiene ribosomas y pared celular"
+            },
+            {
+              "text": "Ejemplo típico: las **bacterias**.",
+              "quote": "Ejemplo: las bacterias"
+            }
+          ]
+        },
+        {
+          "title": "Célula eucariota",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Tiene **núcleo** con envoltura nuclear.",
+              "quote": "tiene núcleo rodeado por una envoltura nuclear"
+            },
+            {
+              "text": "Posee **orgánulos membranosos**.",
+              "quote": "orgánulos membranosos"
+            },
+            {
+              "text": "Puede ser **animal** o **vegetal**.",
+              "quote": "Puede ser animal o vegetal"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A split view showing a simple bacterial cell on the left and a complex plant cell with a nucleus on the right, clean scientific illustration style.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Eucariotas: animal y vegetal",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Características específicas que distinguen a las células animales de las vegetales.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Célula animal",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Posee **centriolos**.",
+              "quote": "tiene centriolos"
+            },
+            {
+              "text": "No tiene **pared celular** ni **cloroplastos**.",
+              "quote": "no tiene pared celular ni cloroplastos"
+            },
+            {
+              "text": "Tiene **vacuolas** pequeñas.",
+              "quote": "Sus vacuolas son pequeñas"
+            }
+          ]
+        },
+        {
+          "title": "Célula vegetal",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Tiene **pared celular** de celulosa.",
+              "quote": "pared celular de celulosa"
+            },
+            {
+              "text": "Posee **cloroplastos**.",
+              "quote": "cloroplastos"
+            },
+            {
+              "text": "Tiene una **gran vacuola** central.",
+              "quote": "una gran vacuola central"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A side-by-side comparison of an animal cell and a plant cell, highlighting the cell wall and chloroplasts in the plant cell, simple educational diagram.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Orgánulos y funciones",
+      "period": "",
+      "kind": "list",
+      "intro": "Estructuras especializadas dentro de la célula eucariota y su función principal.",
+      "bullets": [
+        {
+          "text": "**Mitocondrias**: respiración celular y obtención de **ATP**.",
+          "quote": "respiración celular, obtienen energía (ATP)"
+        },
+        {
+          "text": "**Cloroplastos**: fotosíntesis, solo en células **vegetales**.",
+          "quote": "fotosíntesis, solo en células vegetales"
+        },
+        {
+          "text": "**Ribosomas**: síntesis de **proteínas**.",
+          "quote": "síntesis de proteínas"
+        },
+        {
+          "text": "**Retículo endoplasmático**: síntesis y transporte de **proteínas** y **lípidos**.",
+          "quote": "síntesis y transporte de proteínas y lípidos"
+        },
+        {
+          "text": "**Aparato de Golgi**: modifica, empaqueta y distribuye **sustancias**.",
+          "quote": "modifica, empaqueta y distribuye sustancias"
+        },
+        {
+          "text": "**Lisosomas**: digestión **celular**.",
+          "quote": "digestión celular"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Partes comunes",
+      "period": "",
+      "kind": "list",
+      "intro": "Estructuras presentes tanto en células procariotas como eucariotas.",
+      "bullets": [
+        {
+          "text": "Membrana **plasmática**.",
+          "quote": "membrana plasmática, citoplasma y material genético (ADN)"
+        },
+        {
+          "text": "**Citoplasma**.",
+          "quote": "membrana plasmática, citoplasma y material genético (ADN)"
+        },
+        {
+          "text": "Material **genético** (ADN).",
+          "quote": "membrana plasmática, citoplasma y material genético (ADN)"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La célula es la unidad estructural y funcional de los seres vivos.",
+    "Los procariotas carecen de núcleo, mientras que los eucariotas lo poseen.",
+    "Los orgánulos eucariotas tienen funciones especializadas como la respiración o la fotosíntesis."
+  ],
+  "summary": "La célula es la unidad básica de la vida, clasificada en procariota y eucariota. Las eucariotas poseen núcleo y orgánulos especializados que realizan funciones vitales como la respiración y la fotosíntesis.",
+  "closing": "Entender la célula es comprender la base de toda la vida en la Tierra."
+}

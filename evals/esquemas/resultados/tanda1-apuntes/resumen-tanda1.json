@@ -1,0 +1,67 @@
+{
+  "model": "qwen/qwen3.8-27b",
+  "temperature": 0.25,
+  "reasoning": "none",
+  "strict": false,
+  "date": "2026-10-26T19-54-36",
+  "runs": 2,
+  "validFirstTry": 2,
+  "valid": 2,
+  "quotesFoundPct": 80,
+  "accentErrors": 1,
+  "avgTokens": 2676,
+  "rows": [
+    {
+      "name": "revolucion-francesa-apuntes-sin-ejemplo",
+      "topic": "revolucion-francesa",
+      "mode": "apuntes",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 1,
+      "droppedTexts": [
+        "1789 Juramento del **Juego de Pelota** y creación de la Asamblea Nacional."
+      ],
+      "facts": 9,
+      "factsWithQuote": 8,
+      "accentErrors": 0,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "994",
+        "tokens_minute": "6661"
+      },
+      "tokens": 2880,
+      "inputTokens": 1243,
+      "outputTokens": 1637,
+      "ms": 3609,
+      "manualWrongFacts": null
+    },
+    {
+      "name": "fotosintesis-apuntes-sin-ejemplo",
+      "topic": "fotosintesis",
+      "mode": "apuntes",
+      "example": false,
+      "ok": true,
+      "firstTry": true,
+      "attempts": 1,
+      "errors": [],
+      "dropped": 0,
+      "droppedTexts": [],
+      "facts": 0,
+      "factsWithQuote": 0,
+      "accentErrors": 1,
+      "firstErrors": [],
+      "groqRemaining": {
+        "requests_day": "998",
+        "tokens_minute": "6626"
+      },
+      "tokens": 2471,
+      "inputTokens": 1176,
+      "outputTokens": 1295,
+      "ms": 3078,
+      "manualWrongFacts": null
+    }
+  ]
+}

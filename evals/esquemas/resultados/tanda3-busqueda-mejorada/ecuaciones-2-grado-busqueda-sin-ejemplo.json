@@ -1,0 +1,157 @@
+{
+  "title": "Ecuaciones de segundo grado",
+  "subtitle": "Clasificación, fórmula general y resolución de ecuaciones cuadráticas",
+  "subject": "Matemáticas",
+  "sections": [
+    {
+      "heading": "Clasificación de ecuaciones cuadráticas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Una ecuación es **completa** si $a$, $b$ y $c$ son distintos de cero.",
+          "quote": "Se llama ecuación de segundo grado completa a aquella que tiene valores distintos de cero para a, b y c."
+        },
+        {
+          "text": "Una ecuación es **incompleta** si falta el término $b$ o el término $c$.",
+          "quote": "Llamamos ecuación de 2º grado incompleta a aquella ecuación de segundo grado en la que el coeficiente b vale 0 (falta b), o el coeficiente c vale 0 (falta c)."
+        },
+        {
+          "text": "El coeficiente $a$ nunca puede ser cero, o no sería de segundo grado.",
+          "quote": "El término ax2 no puede faltar pues entonces no sería una ecuación de segundo grado"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fórmula general y discriminante",
+      "period": "",
+      "kind": "formula",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [],
+      "formula": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}",
+      "highlight": "",
+      "illustration_prompt": "A clean, minimalist mathematical diagram showing a quadratic equation formula with a highlighted square root section, using soft blue and white colors, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Número de soluciones",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Si $\\Delta > 0$, la ecuación tiene **dos soluciones reales** distintas.",
+          "quote": "Si Δ = b2 – 4ac > 0, tiene dos soluciones reales y distintas"
+        },
+        {
+          "text": "Si $\\Delta = 0$, la ecuación tiene **una solución doble**.",
+          "quote": "Si Δ = b2 – 4ac = 0, tiene una solución doble."
+        },
+        {
+          "text": "Si $\\Delta < 0$, la ecuación **no tiene solución real**.",
+          "quote": "Si Δ = b2 – 4ac < 0, la ecuación no tiene solución"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Resolución de ecuaciones incompletas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Si falta $b$, despejamos $x^2$ para obtener $x = \\pm\\sqrt{-\\frac{c}{a}}$.",
+          "quote": "Si b = 0, ax2 + c = 0, despejamos la incógnita: a c x − ± = ."
+        },
+        {
+          "text": "Si falta $c$, sacamos factor común $x$ para obtener $x=0$ y $x=-\\frac{b}{a}$.",
+          "quote": "Si c = 0, ax2 + bx = 0: x = 0 y a b x − = 2"
+        },
+        {
+          "text": "Siempre **ordena la ecuación** a la forma general antes de resolver.",
+          "quote": "El error que más puntos quita no es la fórmula: es no ordenar la ecuación antes de aplicarla."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A split-screen illustration showing two different algebraic steps: one with a square root symbol and one with a factored polynomial, clean vector style.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ejemplos resueltos",
+      "period": "",
+      "kind": "examples",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Ejemplo: $x^2 - 5x + 6 = 0$ tiene soluciones $x_1=2$ y $x_2=3$.",
+          "quote": "x2 − 5x + 6 = 0 ⇒ x1= 2; x2= 3"
+        },
+        {
+          "text": "Ejemplo: $x^2 - 2x + 1 = 0$ tiene una raíz doble $x=1$.",
+          "quote": "x2 − 2x + 1 = 0: Δ = 0, tiene una raíz doble: x = 1."
+        },
+        {
+          "text": "Ejemplo: $x^2 + 3x + 8 = 0$ no tiene solución real.",
+          "quote": "x2 + 3x + 8 = 0: Δ = −23. No tiene solución real"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores típicos",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Olvidar los **signos** de los coeficientes al calcular el discriminante.",
+          "quote": "Para calcular el discriminante, la ecuación tiene que estar en su forma general y no hay que olvidar los signos de los coeficientes."
+        },
+        {
+          "text": "Aplicar la fórmula sin **ordenar** la ecuación a la forma general.",
+          "quote": "El error que más puntos quita no es la fórmula: es no ordenar la ecuación antes de aplicarla."
+        },
+        {
+          "text": "Confundir el signo del **discriminante** al determinar las soluciones.",
+          "quote": "La raíz cuadrada solo existirá si el radicando es positive o cero."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El discriminante $\\Delta = b^2 - 4ac$ determina el número de soluciones reales.",
+    "La fórmula general $x = \\frac{-b \\pm \\sqrt{\\Delta}}{2a}$ resuelve ecuaciones completas.",
+    "Las ecuaciones incompletas se resuelven más rápido despejando o factorizando."
+  ],
+  "summary": "Las ecuaciones de segundo grado se clasifican en completas e incompletas. El discriminante determina si hay dos, una o ninguna solución real. La fórmula general permite resolver cualquier ecuación completa.",
+  "closing": "Dominar el discriminante y la fórmula general permite resolver cualquier ecuación de segundo grado con seguridad."
+}

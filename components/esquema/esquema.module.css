@@ -1,0 +1,212 @@
+/* Esquema visual (docs/ESQUEMAS.md), calcado del ejemplo de Carlos
+   (docs/esquemas/referencia-al-andalus.webp). Los tonos se reparten en
+   lib/esquema.ts; aquí sus valores en claro y oscuro. Contraste comprobado en
+   tests/esquemas.test.ts. Bloque de tonos generado: mantener los dos temas a la par. */
+.esquema {
+  --esq-paper: #ffffff;
+  --esq-ink: #1b2550;
+  --esq-ink-soft: #4a5275;
+  --esq-band: #e6e3fb;
+  --esq-band-rule: #8a86c2;
+  --esq-on-accent: #ffffff;
+  background: var(--esq-paper);
+  color: var(--esq-ink);
+  border-radius: 24px;
+  padding: clamp(12px, 2.4vw, 24px);
+  font-family: var(--font-stack, system-ui), sans-serif;
+  font-size: 15.5px;
+  line-height: 1.42;
+  max-width: 1320px;
+  margin-inline: auto;
+}
+.esquema [data-tone="amarillo"] { --bg: #fffbea; --head: #fcedb3; --border: #f0cd5a; --accent: #a86f00; }
+.esquema [data-tone="azul"] { --bg: #f2f8fe; --head: #dcebfb; --border: #8fc1ea; --accent: #1f66b0; }
+.esquema [data-tone="rojo"] { --bg: #fff5f5; --head: #fde0e0; --border: #eea3a6; --accent: #c2323f; }
+.esquema [data-tone="indigo"] { --bg: #f4f5fe; --head: #e2e5fb; --border: #a9b0ea; --accent: #3a46b0; }
+.esquema [data-tone="celeste"] { --bg: #f0f9fd; --head: #d6eff9; --border: #8ccde8; --accent: #176f93; }
+.esquema [data-tone="naranja"] { --bg: #fff6ee; --head: #fde2ca; --border: #f0b07c; --accent: #b0520c; }
+.esquema [data-tone="verde"] { --bg: #f2faf3; --head: #d8f0db; --border: #92cd99; --accent: #2b7a37; }
+.esquema [data-tone="lila"] { --bg: #f8f2fd; --head: #eadcfb; --border: #c3a3eb; --accent: #6c3cb6; }
+
+:root[data-theme="dark"] .esquema {
+  --esq-paper: #121319;
+  --esq-ink: #eceffa;
+  --esq-ink-soft: #b7bdd6;
+  --esq-band: #23213b;
+  --esq-band-rule: #7d78b8;
+  --esq-on-accent: #121319;
+}
+:root[data-theme="dark"] .esquema [data-tone="amarillo"] { --bg: #25210f; --head: #3a3114; --border: #7a6420; --accent: #f3d27a; }
+:root[data-theme="dark"] .esquema [data-tone="azul"] { --bg: #141f2c; --head: #1c3048; --border: #3a6a9a; --accent: #9fcaf3; }
+:root[data-theme="dark"] .esquema [data-tone="rojo"] { --bg: #2a1618; --head: #40202a; --border: #8a4049; --accent: #f5adb3; }
+:root[data-theme="dark"] .esquema [data-tone="indigo"] { --bg: #181a2c; --head: #252a48; --border: #4f58a0; --accent: #b5bcf5; }
+:root[data-theme="dark"] .esquema [data-tone="celeste"] { --bg: #122229; --head: #183340; --border: #33708a; --accent: #93d4ef; }
+:root[data-theme="dark"] .esquema [data-tone="naranja"] { --bg: #2a1c12; --head: #3f2a18; --border: #86522a; --accent: #f6bd8d; }
+:root[data-theme="dark"] .esquema [data-tone="verde"] { --bg: #15241a; --head: #1d3725; --border: #3e7a4a; --accent: #a2dcab; }
+:root[data-theme="dark"] .esquema [data-tone="lila"] { --bg: #211a2c; --head: #302447; --border: #62489a; --accent: #cfb5f5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .esquema {
+  --esq-paper: #121319;
+  --esq-ink: #eceffa;
+  --esq-ink-soft: #b7bdd6;
+  --esq-band: #23213b;
+  --esq-band-rule: #7d78b8;
+  --esq-on-accent: #121319;
+  }
+  :root:not([data-theme]) .esquema [data-tone="amarillo"] { --bg: #25210f; --head: #3a3114; --border: #7a6420; --accent: #f3d27a; }
+  :root:not([data-theme]) .esquema [data-tone="azul"] { --bg: #141f2c; --head: #1c3048; --border: #3a6a9a; --accent: #9fcaf3; }
+  :root:not([data-theme]) .esquema [data-tone="rojo"] { --bg: #2a1618; --head: #40202a; --border: #8a4049; --accent: #f5adb3; }
+  :root:not([data-theme]) .esquema [data-tone="indigo"] { --bg: #181a2c; --head: #252a48; --border: #4f58a0; --accent: #b5bcf5; }
+  :root:not([data-theme]) .esquema [data-tone="celeste"] { --bg: #122229; --head: #183340; --border: #33708a; --accent: #93d4ef; }
+  :root:not([data-theme]) .esquema [data-tone="naranja"] { --bg: #2a1c12; --head: #3f2a18; --border: #86522a; --accent: #f6bd8d; }
+  :root:not([data-theme]) .esquema [data-tone="verde"] { --bg: #15241a; --head: #1d3725; --border: #3e7a4a; --accent: #a2dcab; }
+  :root:not([data-theme]) .esquema [data-tone="lila"] { --bg: #211a2c; --head: #302447; --border: #62489a; --accent: #cfb5f5; }
+}
+
+.srOnly {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Cabecera: franja lila con título grande y subtítulo a mano entre líneas. */
+.head {
+  background: var(--esq-band); border-radius: 18px; text-align: center;
+  padding: clamp(14px, 2.4vw, 22px) clamp(12px, 3vw, 28px); margin-bottom: 16px;
+}
+.title {
+  font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif; font-weight: 800;
+  font-size: clamp(28px, 4.6vw, 50px); line-height: 1.05; letter-spacing: -0.01em;
+  margin: 0; text-wrap: balance; overflow-wrap: anywhere;
+}
+.subtitle {
+  display: flex; align-items: center; gap: 14px; margin: 6px auto 0; max-width: 1000px;
+  font-family: var(--esq-hand), cursive; font-weight: 600; font-size: clamp(19px, 2.2vw, 25px); line-height: 1.15;
+  color: var(--esq-ink); text-wrap: balance;
+}
+.subtitle::before, .subtitle::after {
+  content: ""; flex: 1 0 22px; max-width: 64px; height: 2px; border-radius: 2px; background: var(--esq-band-rule);
+}
+
+/* Rejilla: una columna en móvil (en orden) y tres columnas tipo masonry desde
+   900 px con el reparto de layoutScheme; las columnas acaban a la misma altura. */
+.grid { display: flex; flex-direction: column; gap: 16px; }
+.column { display: contents; }
+.slot { display: flex; flex-direction: column; min-width: 0; }
+.slot > * { flex: 1 1 auto; }
+@media (min-width: 900px) {
+  .grid { flex-direction: row; align-items: stretch; }
+  .column { display: flex; flex-direction: column; gap: 16px; flex: 1 1 0; min-width: 0; }
+  .slot { order: 0 !important; }
+  .column > .slot:last-child { flex-grow: 1; }
+  .column > .slot:last-child .illustration { flex-grow: 1; }
+}
+
+/* Tarjeta: fondo muy claro, borde del tono y cabecera de color. */
+.card {
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden; overflow-wrap: anywhere;
+  background: var(--bg); border: 2px solid var(--border); border-radius: 16px;
+}
+.cardHead {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--head);
+}
+.cardHead h3 {
+  flex: 1; margin: 0; font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif;
+  font-weight: 800; font-size: clamp(20px, 1.9vw, 25px); line-height: 1.12; color: var(--esq-ink);
+}
+.period { font-weight: 700; white-space: nowrap; }
+.number {
+  flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent) 70%);
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--accent) 70%, #000);
+  color: var(--esq-on-accent);
+  font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif; font-weight: 800; font-size: 28px; line-height: 1;
+}
+.headIcon { flex: none; width: 34px; height: 34px; color: var(--accent); stroke-width: 2.2; }
+.cardBody { display: flex; flex-direction: column; gap: 10px; flex: 1 1 auto; padding: 12px 16px 16px; }
+.intro { margin: 0; }
+
+.bullets { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; }
+.bullets li { position: relative; padding-left: 16px; }
+.bullets li::before {
+  content: ""; position: absolute; left: 2px; top: 0.62em; width: 6px; height: 6px; border-radius: 50%; background: var(--esq-ink);
+}
+.esquema strong { font-weight: 750; }
+
+/* Subtarjetas: dos en paralelo, cada una con su tono y su cabecera. */
+.subcards { display: grid; gap: 10px; }
+@media (min-width: 520px) { .subcards[data-count="2"], .subcards[data-count="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.subcard { background: var(--bg); border: 2px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 14.5px; }
+.subcard h4 {
+  margin: 0; padding: 8px 12px; background: var(--head); color: var(--esq-ink);
+  font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif; font-weight: 800; font-size: 19px; line-height: 1.12;
+}
+.subcard h4 .period { display: block; font-size: 16px; }
+.subcard .bullets { padding: 10px 12px 12px; gap: 5px; }
+
+/* Fechas: filas con píldora de color y separadores. */
+.dates { width: 100%; border-collapse: collapse; }
+.dates tr + tr th, .dates tr + tr td { border-top: 1px solid var(--border); }
+.dates th { width: 1%; padding: 7px 14px 7px 0; text-align: left; vertical-align: middle; font-weight: 400; }
+.dates td { padding: 7px 0; vertical-align: middle; }
+.pill {
+  display: inline-block; min-width: 70px; text-align: center; padding: 3px 12px; border-radius: 999px;
+  background: var(--head); color: var(--esq-ink); font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif;
+  font-weight: 800; font-size: 17px; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+.formula { padding: 10px 12px; border-radius: 12px; background: var(--esq-paper); overflow-x: auto; }
+.formula :global(.katex-display) { margin: 0; }
+
+/* Destacado (Patrimonio) y caja de cierre dentro de la primera tarjeta. */
+.highlight {
+  margin: 4px 0 0; padding: 12px 16px; border-radius: 14px; text-align: center;
+  background: var(--head); border: 1.5px solid var(--border); font-weight: 650;
+}
+.callout {
+  display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 14px; border-radius: 14px;
+  background: var(--head); font-family: var(--esq-display), var(--font-stack, system-ui), sans-serif;
+  font-weight: 700; font-size: 18px; line-height: 1.2;
+}
+.callout svg { flex: none; width: 20px; height: 20px; margin-top: 2px; }
+.calloutRow { display: grid; gap: 10px; align-items: end; margin-top: auto; }
+@media (min-width: 520px) { .calloutRow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.calloutRow .illustration { margin: 0; }
+
+/* Ilustraciones: grandes, al pie de la tarjeta, con pie de foto opcional. */
+.illustration { display: flex; flex-direction: column; gap: 6px; margin: auto 0 0; min-height: 0; }
+.illustrationFrame {
+  position: relative; flex: 1 1 auto; min-height: 150px; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden;
+  display: flex; align-items: flex-end;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--border) 45%, var(--esq-paper)), var(--esq-paper) 85%);
+}
+.column > .slot:last-child .illustrationFrame { aspect-ratio: auto; }
+.illustrationFrame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.illustration figcaption { font-size: 13.5px; color: var(--esq-ink-soft); }
+.scene { display: block; width: 100%; height: auto; }
+.sceneSun { fill: var(--border); }
+.sceneHillBack { fill: var(--border); opacity: 0.6; }
+.sceneHillFront { fill: var(--accent); opacity: 0.35; }
+.aiTag {
+  position: absolute; right: 8px; bottom: 8px; padding: 2px 8px; border-radius: 999px;
+  background: rgb(0 0 0 / 0.62); color: #fff; font-size: 12px; font-weight: 600;
+}
+
+/* «En resumen»: tarjeta lila con libro, letra a mano y subrayado ondulado. */
+.summary { padding: 14px 18px 12px; background: var(--head); }
+.summaryHead { display: flex; align-items: center; gap: 10px; }
+.summaryIcon { flex: none; width: 34px; height: 34px; color: var(--accent); }
+.summaryHead h3 {
+  margin: 0; transform: rotate(-4deg); transform-origin: left center;
+  font-family: var(--esq-hand), cursive; font-weight: 700; font-size: 28px; color: var(--esq-ink);
+}
+.summary p {
+  margin: 4px 0 0; padding-left: 8px; font-family: var(--esq-hand), cursive; font-weight: 600;
+  font-size: 23px; line-height: 1.25; transform: rotate(-1.2deg);
+}
+.squiggle { display: block; width: 46%; height: 14px; margin: 2px 0 0 auto; }
+.squiggle path { fill: none; stroke: var(--esq-ink); stroke-width: 2.5; stroke-linecap: round; }
+
+.foot {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 12px;
+  font-size: 13px; color: var(--esq-ink-soft);
+}

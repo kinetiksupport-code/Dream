@@ -1,0 +1,219 @@
+{
+  "title": "Filosofía de Kant",
+  "subtitle": "Idealismo trascendental y ética del deber",
+  "subject": "Filosofía",
+  "sections": [
+    {
+      "heading": "Introducción a Kant",
+      "period": "1724-1804",
+      "kind": "list",
+      "intro": "Contexto vital y preguntas fundamentales de la filosofía kantiana.",
+      "bullets": [
+        {
+          "text": "**Kant** (1724-1804) fue un filósofo alemán de la Ilustración.",
+          "quote": "Immanuel Kant (1724–1804) fue un filósofo alemán de la Ilustración"
+        },
+        {
+          "text": "Su sistema se denomina **idealismo trascendental** o filosofía crítica.",
+          "quote": "Su filosofía se llama idealismo trascendental o filosofía crítica"
+        },
+        {
+          "text": "Su obra cumbre es la **Crítica de la razón pura** (1781).",
+          "quote": "Su obra principal es la Crítica de la razón pura, publicada en 1781"
+        },
+        {
+          "text": "Sus preguntas clave son: ¿qué puedo **conocer**? ¿qué debo **hacer**? ¿qué me cabe **esperar**?",
+          "quote": "¿qué puedo conocer?, ¿qué debo hacer?, ¿qué me cabe esperar?"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A 18th-century study with a desk, quill, and open book, soft candlelight, no people, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Teoría del conocimiento",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Superación del racionalismo y el empirismo mediante el giro copernicano.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Giro copernicano",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Todo conocimiento **comienza** con la experiencia, pero no todo **procede** de ella.",
+              "quote": "Todo conocimiento comienza con la experiencia, pero no todo procede de ella"
+            },
+            {
+              "text": "El sujeto aporta **formas a priori**: espacio y tiempo en la sensibilidad.",
+              "quote": "El sujeto aporta formas a priori: el espacio y el tiempo en la sensibilidad"
+            },
+            {
+              "text": "El entendimiento aporta las **categorías** para organizar la experiencia.",
+              "quote": "y las categorías en el entendimiento"
+            }
+          ]
+        },
+        {
+          "title": "Sujeto y objeto",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Es el **objeto** el que se adapta al **sujeto** que conoce.",
+              "quote": "es el objeto el que se adapta al sujeto que conoce"
+            },
+            {
+              "text": "Kant denomina a este cambio **giro copernicano**.",
+              "quote": "Kant llama a este cambio «giro copernicano»"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "An abstract diagram showing a sphere (object) fitting into a mold (subject), clean lines, educational style, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fenómeno y noúmeno",
+      "period": "",
+      "kind": "list",
+      "intro": "La distinción fundamental entre lo que aparece y lo que es en sí mismo.",
+      "bullets": [
+        {
+          "text": "Solo conocemos los **fenómenos**, las cosas tal como se nos aparecen.",
+          "quote": "solo podemos conocer los fenómenos, las cosas tal como se nos aparecen"
+        },
+        {
+          "text": "El **noúmeno** o cosa en sí es **inconocible**.",
+          "quote": "El noúmeno, la cosa en sí, no se puede conocer"
+        },
+        {
+          "text": "La **metafísica** no puede ser ciencia por esta limitación.",
+          "quote": "Por eso la metafísica no puede ser ciencia"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A foggy landscape where a clear object stands in front, while a dark silhouette fades into mist behind it, symbolic, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ética kantiana",
+      "period": "",
+      "kind": "list",
+      "intro": "La moralidad basada en el deber y la universalidad de la norma.",
+      "bullets": [
+        {
+          "text": "Propone una **ética formal**: no dice qué hacer, sino cómo debe ser la **norma**.",
+          "quote": "Kant propone una ética formal, que no dice qué hacer en concreto sino cómo debe ser la norma"
+        },
+        {
+          "text": "El deber se expresa en el **imperativo categórico**.",
+          "quote": "El deber se expresa en el imperativo categórico"
+        },
+        {
+          "text": "Máxima: obra según aquella máxima que puedas querer como **ley universal**.",
+          "quote": "«obra solo según aquella máxima por la cual puedas querer al mismo tiempo que se convierta en ley universal»"
+        },
+        {
+          "text": "El valor moral exige actuar **por deber**, no solo conforme a él.",
+          "quote": "Una acción tiene valor moral si se hace por deber, no solo conforme al deber"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A balanced scale with a book on one side and a heart on the other, classical style, no text, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Postulados de la razón",
+      "period": "1788",
+      "kind": "list",
+      "intro": "Las condiciones necesarias para la validez de la moral práctica.",
+      "bullets": [
+        {
+          "text": "En la **Crítica de la razón práctica** (1788) defiende tres **postulados**.",
+          "quote": "En la Crítica de la razón práctica, de 1788, Kant defiende como postulados la libertad, la inmortalidad del alma y la existencia de Dios"
+        },
+        {
+          "text": "Estos son: **libertad**, **inmortalidad del alma** y **existencia de Dios**.",
+          "quote": "la libertad, la inmortalidad del alma y la existencia de Dios"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A starry sky above a mountain peak, symbolic of transcendence and hope, no text, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología clave",
+      "period": "1781-1788",
+      "kind": "dates",
+      "intro": "Fechas fundamentales de la obra kantiana.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1781",
+          "text": "Publicación de la **Crítica de la razón pura**.",
+          "quote": "Su obra principal es la Crítica de la razón pura, publicada en 1781"
+        },
+        {
+          "year": "1788",
+          "text": "Publicación de la **Crítica de la razón práctica**.",
+          "quote": "En la Crítica de la razón práctica, de 1788, Kant defiende como postulados"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Legado filosófico",
+      "period": "",
+      "kind": "legacy",
+      "intro": "Consecuencias de su pensamiento para la filosofía posterior.",
+      "bullets": [
+        {
+          "text": "Establece el **idealismo trascendental** como sistema filosófico.",
+          "quote": "Su filosofía se llama idealismo trascendental o filosofía crítica"
+        },
+        {
+          "text": "Demuestra los **límites de la metafísica** como ciencia.",
+          "quote": "Por eso la metafísica no puede ser ciencia"
+        },
+        {
+          "text": "Define la **moralidad** mediante el imperativo categórico.",
+          "quote": "El deber se expresa en el imperativo categórico"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Su influencia persiste en la ética deontológica y en la epistemología moderna, donde el sujeto es constitutivo del conocimiento.",
+      "illustration_prompt": "A library with classical columns and books, symbolizing enduring philosophical legacy, no text, no people.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El sujeto aporta formas a priori al conocimiento",
+    "Solo conocemos fenómenos, no la cosa en sí",
+    "El imperativo categórico exige actuar por deber",
+    "La libertad es un postulado necesario para la ética"
+  ],
+  "summary": "Kant supera el racionalismo y el empirismo mediante el giro copernicano, limitando el conocimiento a los fenómenos. Su ética se basa en el imperativo categórico y el deber, apoyada en postulados como la libertad.",
+  "closing": "Kant redefine los límites del saber y la moral, colocando al sujeto en el centro de la construcción de la realidad y el deber."
+}

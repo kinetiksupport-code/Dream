@@ -1,0 +1,217 @@
+{
+  "title": "Fotosíntesis: fases y ciclo",
+  "subtitle": "Fase luminosa y ciclo de Calvin",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Fase luminosa",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Ocurre en las **membranas tilacoidales** del cloroplasto.",
+          "quote": "La fase luminosa ocurre en las membranas tilacoidales y produce ATP, NADPH y O2."
+        },
+        {
+          "text": "La **clorofila** capta la energía lumínica solar.",
+          "quote": "La planta capta la luz solar por medio de la clorofila y la utiliza para producir moléculas que almacenan energía, llamadas ATP y NADPH."
+        },
+        {
+          "text": "Se rompe el agua (**fotolisis**) liberando oxígeno.",
+          "quote": "En este proceso se rompen moléculas de agua y se libera oxígeno."
+        },
+        {
+          "text": "Genera **ATP** y **NADPH** como productos energéticos.",
+          "quote": "La fase luminosa de la fotosíntesis produce ATP y NADPH."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Cross-section of a chloroplast showing thylakoid membranes with light rays hitting them, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ecuación global",
+      "period": "",
+      "kind": "formula",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [],
+      "formula": "6 CO_2 + 6 H_2O + \\text{energía lumínica} \\rightarrow C_6H_{12}O_6 + 6 O_2",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ciclo de Calvin",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Tiene lugar en el **estroma** del cloroplasto.",
+          "quote": "El ciclo de Calvin ocurre en el estroma y usa ese ATP y NADPH para fijar CO2 y fabricar glucosa."
+        },
+        {
+          "text": "Fija el **CO2** para formar carbohidratos.",
+          "quote": "En esta fase, se usan moléculas de alta energía producidas en la fase luminosa para formar carbohidratos a partir del dióxido de carbono (CO2)."
+        },
+        {
+          "text": "No requiere luz directa, pero depende de la fase luminosa.",
+          "quote": "No necesita luz. Es conocido como “fase oscura” porque no necesita energía lumínica."
+        },
+        {
+          "text": "La enzima clave es la **RuBisCo**.",
+          "quote": "Una enzima llamada RuBisCo (ribulosa-1,5-bifosfato carboxilasa/oxigenasa) tiene un rol fundamental en este proceso."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Interior of a chloroplast stroma with abstract molecules representing carbon fixation, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Etapas del ciclo",
+      "period": "",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Fijación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El **CO2** se une al RuBP.",
+              "quote": "En la primera etapa, el dióxido de carbono (CO2) se fija a la molécula RuBP con ayuda de la enzima RuBisCo"
+            },
+            {
+              "text": "Incorporación de carbono inorgánico a orgánico.",
+              "quote": "La principal función del ciclo de Calvin es capturar el dióxido de carbono (CO2) del aire e incorporarlo a moléculas orgánicas."
+            }
+          ]
+        },
+        {
+          "title": "Reducción",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Se usa **ATP** y **NADPH** para reducir el 3-PGA.",
+              "quote": "Usando el ATP y el NADPH de la fase luminosa, se reduce el 3-PGA (3-fosfoglicerato) para obtener G3P"
+            }
+          ]
+        },
+        {
+          "title": "Regeneración",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Parte del G3P regenera el **RuBP**.",
+              "quote": "Parte del G3P se usa para regenerar el RuBP y que el ciclo pueda continuar."
+            },
+            {
+              "text": "Este paso consume más **ATP**.",
+              "quote": "Esto también consume ATP."
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Balance y relación",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Cada vuelta fija **1 molécula** de CO2.",
+          "quote": "Cada vuelta del ciclo de Calvin implica la fijación de 1 CO2 (=1C), por tanto, para generar una molécula de glucosa (6C) se necesitan 6 vueltas."
+        },
+        {
+          "text": "Se necesitan **6 vueltas** para crear una glucosa.",
+          "quote": "para generar una molécula de glucosa (6C) se necesitan 6 vueltas."
+        },
+        {
+          "text": "Depende al **100 %** de la fase luminosa.",
+          "quote": "La fase oscura no necesita luz directamente, pero depende al 100 % de los productos de la fase luminosa."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Factores que influyen",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Más **CO2** aumenta la velocidad de fijación.",
+          "quote": "Concentración de CO2 en el medio. Si la iluminación es constante, la intensidad fotosintética aumenta con la concentración de dióxido de carbono en el medio."
+        },
+        {
+          "text": "Más **luz** aumenta la producción de ATP y NADPH.",
+          "quote": "Intensidad de la iluminación. En general la intensidad de la iluminación aumenta el rendimiento de la fotosíntesis."
+        },
+        {
+          "text": "Existen puntos de **compensación** y **saturación** lumínica.",
+          "quote": "fíjate en el punto de compensación (donde fotosíntesis = respiración) y el punto de saturación (a partir del cual más luz no mejora el rendimiento)."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Graph showing photosynthesis rate increasing with light intensity until saturation, no text labels.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores comunes",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Confundir la localización: tilacoides vs estroma.",
+          "quote": "En un examen, si te piden solo la ecuación global, con esta tienes suficiente. Si te piden diferenciar las dos fases, necesitas desgranarla como hemos visto arriba."
+        },
+        {
+          "text": "Creer que la fase oscura no depende de la luz.",
+          "quote": "La fase oscura no necesita luz directamente, pero depende al 100 % de los productos de la fase luminosa."
+        },
+        {
+          "text": "Olvidar que se necesitan 6 vueltas para una glucosa.",
+          "quote": "Cada vuelta del ciclo de Calvin implica la fijación de 1 CO2 (=1C), por tanto, para generar una molécula de glucosa (6C) se necesitan 6 vueltas."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La fase luminosa produce ATP y NADPH en los tilacoides.",
+    "El ciclo de Calvin fija el CO2 en el estroma.",
+    "Se necesitan 6 vueltas del ciclo para crear una glucosa."
+  ],
+  "summary": "La fotosíntesis consta de dos fases: la luminosa, que produce energía, y el ciclo de Calvin, que fija el carbono. Ambas ocurren en el cloroplasto pero en compartimentos distintos. El balance energético requiere múltiples vueltas del ciclo para sintetizar glucosa.",
+  "closing": "La fotosíntesis convierte la luz en energía química, permitiendo la vida en la Tierra."
+}

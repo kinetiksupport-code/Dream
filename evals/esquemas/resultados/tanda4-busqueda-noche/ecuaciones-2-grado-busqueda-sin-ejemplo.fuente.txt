@@ -1,0 +1,137 @@
+[Matemáticas 3º de ESO Capítulo 5: Ecuaciones y sistemas] (https://www.apuntesmareaverde.org.es/grupos/mat/LOMLOE/3ESO/05%20Ec%202%20grado%203.pdf)
++ 3x + 8 = 0 tiene como discriminante  = b2 – 4ac = (3)2  4∙1∙(8) = 9  32 = 23 < 0 Por lo tanto, la ecuación no tiene solución real. Ningún número real verifica la ecuación. Actividades propuestas 8. Averigua cuántas soluciones tienen las siguientes ecuaciones de 2º grado: a) x2 + x + 4 = 0 b) x2  6x + 9 = 0 c) x2  6x  7 = 0 d) x2  3x + 5 = 0 Matemáticas 3º ESO. Capítulo 5: Ecuaciones y sistemas Autora: Raquel Hernández www.apuntesmareaverde.org.es Ilustraciones: Raquel Hernández y Banco de Imágenes de INTEF 141 Ecuaciones y sistemas 3º ESO 2.4. Resolución de ecuaciones de 2º grado incompletas Llamamos ecuación de 2º grado incompleta a aquella ecuación de segundo grado en la que el coeficiente b vale 0 (falta b), o el coeficiente c vale 0 (falta c). Ejemplo: La ecuación de 2º [...] 8x2  9 = 0 e) 0 3 2 2  x x b) 3xy2  5 = 0 d) 8  7.3x = 0 f) 2𝑥ଶെ3√𝑥൅4 ൌ0 6. En las siguientes ecuaciones de segundo grado, indica quiénes son a, b y c. a) 3  4x2 + 9x = 0 b) 3x2 + 5x = 0 c) 2x2  3 = 0 d) x2  8x + 1 = 0 Matemáticas 3º ESO. Capítulo 5: Ecuaciones y sistemas Autora: Raquel Hernández www.apuntesmareaverde.org.es Ilustraciones: Raquel Hernández y Banco de Imágenes de INTEF 139 Ecuaciones y sistemas 3º ESO 2.2. Resolución de ecuaciones de 2º grado completas Se llama ecuación de segundo grado completa a aquella que tiene valores distintos de cero para a, b y c. Para resolver las ecuaciones de segundo grado completas, usaremos la fórmula: a ac b b x 2 4 2     Esta fórmula nos permite calcular las dos soluciones de nuestra ecuación. Llamaremos discriminante a la parte [...] = 0: 2 1 5 1 2 6 1 4 25 5         x x1 = 3, x2 = 2 Discriminante  = b2 – 4ac  = (5)2  4∙1∙6 = 25 24 =1 Número de soluciones de una ecuación de 2º grado Si  = b2 – 4ac > 0, tiene dos soluciones reales y distintas Si  = b2 – 4ac = 0, tiene una solución doble. Si  = b2 – 4ac < 0, la ecuación no tiene solución x2  4x  5 = 0:  = 36 > 0, tiene dos soluciones 5 y 1. x2  2x +
+
+[Ecuaciones 2.º grado 3 ESO: 12 resueltos | Modo Cheto] (https://www.modocheto.ai/blog/ecuaciones-segundo-grado-3-eso-ejercicios-resueltos)
+### 📋 Lo esencial
+
+|  |
+
+| El currículo de 1.º a 3.º de la ESO incluye resolver ecuaciones y sistemas lineales y ecuaciones cuadráticas (Real Decreto 217/2022, Anexo II, Matemáticas). |
+| Una ecuación de segundo grado tiene la forma ax² + bx + c = 0, con a distinto de cero. |
+| La fórmula general es x = (−b ± √(b² − 4ac)) / 2a, y el discriminante b² − 4ac te dice cuántas soluciones hay antes de calcularlas. |
+| Las incompletas (sin b o sin c) se resuelven más rápido sin la fórmula: despejando o sacando factor común. |
+| Los sistemas lineales de dos ecuaciones se resuelven por sustitución, igualación o reducción, y los tres dan el mismo resultado. |
+| El error que más puntos quita no es la fórmula: es no ordenar la ecuación antes de aplicarla. | [...] Se igualan a cero, se identifican los coeficientes a, b y c, se calcula el discriminante b² − 4ac y se aplica la fórmula x = (−b ± √(b² − 4ac)) / 2a. Las incompletas se resuelven más rápido despejando x² o sacando factor común.
+
+### ¿Qué es el discriminante de una ecuación de segundo grado?
+
+Es la expresión b² − 4ac, la parte de dentro de la raíz en la fórmula general. Si es positivo, la ecuación tiene dos soluciones; si es cero, una solución doble; si es negativo, no tiene solución real.
+
+### ¿Cuántas soluciones puede tener una ecuación de segundo grado?
+
+Dos, una (llamada solución doble) o ninguna en los números reales. El discriminante te dice cuál de los tres casos tienes antes de hacer las cuentas.
+
+### ¿Qué método es mejor para resolver un sistema de ecuaciones en 3.º? [...] 📋 Lo esencial
+ ❓ Qué son las ecuaciones de segundo grado y por qué se atascan en 3.º
+ Las tres letras que tienes que identificar
+ Por qué puede haber dos soluciones
+ Qué dice el currículo oficial
+ 💡 La fórmula general y el discriminante, explicados sin humo
+ El orden que no falla
+ Qué te dice el discriminante
+ El signo de b, la trampa de siempre
+ 🗺️ Los tipos de ecuaciones de segundo grado en 3 ESO y cómo atacar cada una
+ Completas: ax² + 
+
+[Ecuaciones de segundo grado: discriminante y número de soluciones (Nivel 2)] (https://www.ecuacionesresueltas.com/segundo-grado/nivel-2/ecuaciones-segundo-grado-cuadraticas-discriminante-numero-soluciones.html)
+# Ecuaciones de segundo grado o cuadráticas
+
+## Nivel 2: Discriminante y número de soluciones
+
+## Introducción
+
+En este nivel vamos a definir el discriminante de una ecuación cuadrática y a ver su relación el número de soluciones de la ecuación. En los problemas no vamos a resolver las ecuaciones, sólo a calcular su discriminante y el número de soluciones.
+
+Niveles en los que sí resolveremos ecuaciones:
+
+Nivel 3: Resolver ecuaciones incompletas
+
+Nivel 4: Resolver ecuaciones completas
+
+Nivel 5: Ecuaciones con soluciones complejas
+
+## A. Discriminante
+
+En el nivel 1 dijimos que la forma general de una ecuación cuadrática (o de segundo grado) es \(ax^2 +bx +c =0\), siendo \(a \neq 0\).
+
+[ECUACIONES] (https://www.matajove.es/wp-content/uploads/2019/01/S3_Acad_U3_Ecuaciones.pdf)
+0. Ecuaciones del tipo ax2 + bx = 0 Estas ecuaciones tienen dos soluciones: x1 = 0 and x2= a b  .  Caso 3. Si b = 0 y c = 0. Ecuaciones del tipo ax2 = 0 Estas ecuaciones tienen una única solución: x = 0. Ejemplos. 1. Resolver las siguientes ecuaciones cuadráticas incompletas. 2. Resolver las siguientes ecuaciones cuadráticas incompletas. I.E.S. Mata Jove Matemáticas Académicas 3ºESO Curso 2018/2019 Unidad 3. Ecuaciones 15 Número de soluciones de una ecuación cuadrática En la fórmula cuadrática aparece la expresión 4ac b2  . Esta raíz cuadrada solo existirá si el radicando es positive o cero. El número b2 – 4ac es llamado discriminante, y es representado con el (letra griega, “delta mayúscula“). El número de soluciones de la ecuación depende del signo de .  = b2 – 4ac > 0. La [...] Encuentra cuántas soluciones tienen estas ecuaciones, sin resolverlas. Ejercicio 25. Resuelve las siguientes ecuaciones de segundo grado incompletas. I.E.S. Mata Jove Matemáticas Académicas 3ºESO Curso 2018/2019 Unidad 3. Ecuaciones 17 Ejercicio 26. Resuelve. Ejercicio 27. Resuelve. Ejercicio 28. Resuelve. 18 Ejercicio 29. Escribe una ecuación cuadrática que tenga todos los coeficientes distintos de cero y una solución doble. Ejercicio 30. Resuelve. Resolver ecuaciones por factorización Para resolver la ecuación, podemos factorizas el polinomio P(x) = x2 + 3x y después igualar a 0. Esto es: x ( x+ 3) = 0. Las soluciones, por lo tanto, deben ser aquellos números que hacen que los factores valgan cero. x = 0 y x = -3 De la misma forma, para resolver la siguiente ecuación, debemos primeros [...] - Ecuaciones Ecuaciones Identidades y ecuaciones Solución. Ecuaciones equivalentes Ecuaciones lineales – (Actividad 1) Soluciones algebraicas de ecuaciones lineales La propiedad distributiva Ecuaciones racionales Ecuaciones de segundo grado – (Actividad 2) Ecuaciones cuadráticas completas Ecuaciones cuadráticas incompletas Número de soluciones de una ecuación cuadrática Resolver ecuaciones por 
+
+[Ecuaciones] (https://escueladelmarquesado.wordpress.com/4o-eso/matematicas/ecuaciones)
+Saltar al contenido.
+
+# Ecuaciones
+
+Una ecuación de segundo grado es toda expresión de la forma
+
+Se resuelve mediante la siguiente fórmula:
+
+## Fórmula general para ecuaciones de segundo grado
+
+La parte dentro del radical b^{2}-4ac es el discriminante, cuál nos brinda información acerca de la solución de nuestra ecuación.
+
+El discriminante permite averiguar en cada ecuación el número de soluciones. Podemos distinguir tres casos:
+
+1) b^{2}-4ac> 0
+
+Si el discriminante es positivo , es decir si  0″> la ecuación de segundo grado tiene 2 posibles soluciones que son números reales distintos..
+
+2) b^{2}-4ac= 0
+
+Si el discriminante es cero , es decir si b^{2}-4ac= 0, la ecuación de segundo grado tieneuna solución doble.
+
+3) b2 –4ac<0 [...] 1 Ejemplo 1 caso 2 ecuación segundo grado incompleta
+
+Sacamos el factor común x.
+
+Como tenemos un producto igualado a cero,  igualamos los factores a cero.
+
+Las soluciones son:
+
+2 Ejemplo 2 caso 2
+
+Sacamos el factor común 3x.
+
+Como tenemos un producto igualado a cero,  igualamos los factores a cero.
+
+Las soluciones son:
+
+## Tercer caso
+
+Cuando el coeficiente b es igual a cero, la ecuación de segundo grado incompleta es la siguiente:
+
+Si    b=0 entonces    ax² + c = 0(ecuación de segundo grado incompleta).
+
+Veamos como se extraen las soluciones:
+
+1Pasamos el término c al segundo miembro cambiando de signo.
+
+2Pasamos el coeficiente a al segundo miembro, dividiendo. [...] Se puede descomponer en factores como sigue:
+
+Ejemplo
+
+## Ejemplos de ecuaciones de segundo grado resueltas
+
+1 x^{2}-5x+6=0
+
+Para este caso observemos que:
+
+Aplicamos la formula
+
+2 2x^{2}-7x+3=0
+
+Para este caso observemos que:
+
+Aplicamos la formula
+
+3 -x^{2}+7x-10=0
+
+Si a < 0, multiplicamos los dos miembros por (−1).
+
+Observemos que:
+
+Aplicamos la formula
+
+## Concepto de la ecuación de segundo grado incompleta
+
+Una ecuación de segundo grado es incompleta cuando alguno de los coeficientes: b o c, o ambos, son iguales a cero, por tanto podemos encontrarnos con tres tipos de e

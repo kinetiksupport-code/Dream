@@ -1,0 +1,124 @@
+{
+  "al-andalus-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "celula-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "ciclo-agua-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "ecuaciones-2-grado-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [
+        "span: 2a−b±b2−4ac​",
+        "span: −b±b2−4ac​",
+        "span: −b±b2−4ac​"
+      ],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [
+        "span: 2a−b±b2−4ac​",
+        "span: −b±b2−4ac​",
+        "span: −b±b2−4ac​"
+      ],
+      "pageOverflow": false
+    }
+  },
+  "enlaces-quimicos-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "fotosintesis-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [
+        "span: 6CO2+6H2O+luz→C6H12O6+6O26 CO_2 + 6 H_2O",
+        "span: 6CO2+6H2O+luz→C6H12O6+6O26 CO_2 + 6 H_2O",
+        "span: 6CO2​+6H2​O+luz→C6​H12​O6​+6O2​"
+      ],
+      "pageOverflow": false
+    }
+  },
+  "guerra-civil-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "kant-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "oraciones-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "resumen-tanda1": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  },
+  "revolucion-francesa-apuntes-sin-ejemplo": {
+    "escritorio": {
+      "overflow": [],
+      "pageOverflow": false
+    },
+    "movil": {
+      "overflow": [],
+      "pageOverflow": false
+    }
+  }
+}
