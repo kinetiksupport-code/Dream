@@ -50,6 +50,7 @@ import {
 } from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
 import { wantsScheme } from "@/lib/esquema";
+import { gameKindFor, wantsGame } from "@/lib/dream-games";
 import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
@@ -114,6 +115,8 @@ export function ChatExperience({
     null,
   );
   const [dailyLimit, setDailyLimit] = useState(false);
+  // «Generando Dreams…» mientras se crea un esquema o un juego.
+  const [dreaming, setDreaming] = useState(false);
   // Modo de la IA: el elegido en este navegador si sigue disponible.
   const { usage, refresh: refreshUsage } = useAiUsage();
   const [preferredMode, setPreferredMode] = useState<string | null>(null);
@@ -485,12 +488,40 @@ export function ChatExperience({
     signal: AbortSignal,
     attachmentIds: string[],
   ) {
+    setDreaming(true);
     setState("shaping");
     const r = await callDream<{ assistant_message: string }>(
       "scheme_generate",
       {
         conversation_id: id,
         context: prompt,
+        attachment_ids: attachmentIds,
+        persist_user_message: true,
+      },
+      signal,
+    );
+    const messageId = crypto.randomUUID();
+    fresh.current.add(messageId);
+    setMessages((s) => [
+      ...s,
+      { id: messageId, role: "assistant", content: r.assistant_message },
+    ]);
+  }
+  // Juego interactivo de los apuntes adjuntos (docs/ESQUEMAS.md, Bloque 7).
+  async function generateGame(
+    id: string,
+    prompt: string,
+    signal: AbortSignal,
+    attachmentIds: string[],
+  ) {
+    setDreaming(true);
+    setState("shaping");
+    const r = await callDream<{ assistant_message: string }>(
+      "game_generate",
+      {
+        conversation_id: id,
+        context: prompt,
+        kind: gameKindFor(prompt),
         attachment_ids: attachmentIds,
         persist_user_message: true,
       },
@@ -521,6 +552,7 @@ export function ChatExperience({
     setError("");
     setDailyLimit(false);
     setRetry(null);
+    setDreaming(false);
     setWaitSince(Date.now());
     setState("thinking");
     pinned.current = true;
@@ -588,6 +620,19 @@ export function ChatExperience({
         ) && !/imprimir/i.test(prompt);
       if (directTest) {
         await generateTest(id, prompt, controller.signal, true, attachmentIds);
+      } else if (attachmentIds.length && !study && wantsGame(prompt)) {
+        await generateGame(id, prompt, controller.signal, attachmentIds);
+      } else if (!study && wantsGame(prompt)) {
+        // Igual que los esquemas: sin apuntes no hay juego fiable.
+        setMessages((s) => [
+          ...s,
+          {
+            id: assistantId,
+            role: "assistant",
+            content:
+              "Para prepararte un juego fiable necesito tus apuntes: adjunta una foto de la página, el PDF o el documento con el botón del clip y vuelve a pedírmelo. Así cada respuesta sale de lo que estudias.",
+          },
+        ]);
       } else if (attachmentIds.length && !study && wantsScheme(prompt)) {
         await generateScheme(id, prompt, controller.signal, attachmentIds);
       } else if (!study && wantsScheme(prompt)) {
@@ -1056,7 +1101,11 @@ export function ChatExperience({
               />
             ))}
             {busy && last?.role !== "assistant" && (
-              <AiStatus state={state} since={waitSince} />
+              <AiStatus
+                state={state}
+                since={waitSince}
+                label={dreaming && state === "shaping" ? "Generando Dreams…" : undefined}
+              />
             )}
             {busy && state === "shaping" && (
               <div

@@ -7,6 +7,7 @@ import {
   FileText,
   ArrowRight,
   LayoutGrid,
+  Puzzle,
   ListChecks,
   RotateCw,
 } from "lucide-react";
@@ -162,6 +163,33 @@ export const MessageView = memo(function MessageView({
             </span>
             <span className="quiz-start">
               Ver esquema
+              <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
+            </span>
+          </Link>
+        ))}
+      {!revealing &&
+        parsed.games.map((w) => (
+          <Link
+            className="quiz-widget press"
+            data-kind="game"
+            href={`/juegos/${w.gameId}`}
+            key={w.gameId}
+          >
+            <span className="quiz-icon" aria-hidden="true">
+              <Puzzle size={22} />
+            </span>
+            <span className="quiz-text">
+              <small>Dreams · {w.kind === "classify" ? "Clasificar" : "Emparejar"}</small>
+              <strong>{w.title}</strong>
+              {w.count ? (
+                <span>
+                  <span className="num">{w.count}</span>{" "}
+                  {w.kind === "classify" ? (w.count === 1 ? "elemento" : "elementos") : w.count === 1 ? "pareja" : "parejas"}
+                </span>
+              ) : null}
+            </span>
+            <span className="quiz-start">
+              Jugar
               <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
             </span>
           </Link>

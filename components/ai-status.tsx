@@ -58,14 +58,17 @@ export function AiStatus({
   state,
   since,
   detail,
+  label: override,
 }: {
   state: AiStatusState;
   /** Date.now() when the wait started (send). */
   since: number | null;
   /** Optional second line, e.g. the queue position. */
   detail?: string;
+  /** Replaces the state's label («Generando Dreams…»). */
+  label?: string;
 }) {
-  const label = AI_STATUS_LABELS[state];
+  const label = override ?? AI_STATUS_LABELS[state];
   const shown = useWaitLonger(since);
   if (!label || !shown) return null;
   return (

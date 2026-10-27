@@ -81,6 +81,14 @@ export interface SchemeWidget {
   subject?: string;
   sections?: number;
 }
+/** Tarjeta «Dreams» de un juego interactivo (docs/ESQUEMAS.md, Bloque 7). */
+export interface GameWidget {
+  type: "game";
+  gameId: string;
+  title: string;
+  kind: "classify" | "match";
+  count?: number;
+}
 export interface QuizWidget {
   type: "quiz";
   testId: string;

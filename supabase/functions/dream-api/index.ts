@@ -14,7 +14,8 @@ import {
   desktopUploadAction, mobileUploadAction,
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
-import { chatSystemMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { chatSystemMessages, gameMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { GAME_JSON_SCHEMAS, GAME_KINDS, gameKindFor, generateGame, validResult } from './games.mjs';
 import { IMAGE_BUCKET, ILLUSTRATIONS_GLOBAL_PER_DAY, ILLUSTRATIONS_PER_DAY, generateImage, illustrationTargets, illustrationsEnabled, imageType, promptHash } from './illustrations.mjs';
 import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
@@ -846,6 +847,88 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     await admin.from('dream_schemes').update({ illustrations: result }).eq('id', row.data.id).eq('owner_id', user.id);
     console.log(JSON.stringify({ event: 'scheme_illustrated', targets: targets.length, generated, limited }));
     return json({ illustrations: illustrationUrls(result), limited, enabled: ready });
+  }
+
+  if (body.action === 'game_generate') {
+    // Dreams interactivos (games.mjs): el contenido sale de los apuntes adjuntos
+    // y la lógica es una plantilla de Dream. Sin apuntes no se genera.
+    if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
+    const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
+    if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
+    const ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    if (!ids.length) return json({ error: 'Sube tus apuntes o una foto del libro y te preparo el juego.', code: 'game_needs_notes' }, 400);
+    const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', ids)
+      .eq('conversation_id', body.conversation_id).eq('owner_id', user.id).eq('status', 'processed');
+    const files = (found.data || []).filter((f: any) => String(f.extracted_text || '').trim());
+    if (!files.length) return json({ error: 'No hemos podido leer texto en esos archivos. Prueba con otra foto o con el PDF.', code: 'game_needs_notes' }, 400);
+    const sources = schemeSourceFrom(files.map((f: any) => ({ name: String(f.file_name || ''), text: String(f.extracted_text || '') })), SCHEME_SOURCE_CHARS);
+    const request = typeof body.context === 'string' && body.context.trim() ? body.context.trim().slice(0, 600) : 'Hazme un juego para practicar estos apuntes.';
+    const kind = GAME_KINDS.includes(body.kind) ? body.kind : gameKindFor(request);
+    if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    let result: any;
+    try {
+      result = await generateGame({ call: (messages) => groqScheme(messages, req.signal, admission, GAME_JSON_SCHEMAS[kind as 'classify' | 'match']), messages: gameMessages({ kind, request, sources }), kind, sources });
+    } catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
+      return json({ error: 'No se pudo crear el juego. Inténtalo de nuevo.' }, 502);
+    }
+    console.log(JSON.stringify({ event: 'game_generated', kind, ok: result.ok, attempts: result.attempts, dropped: result.dropped ?? 0 }));
+    if (!result.ok || !result.game) return json({ error: 'No he podido preparar un juego fiable con estos apuntes. Prueba con fotos más nítidas o pide un esquema.', code: 'game_invalid' }, 422);
+    const game = result.game;
+    const inserted = await admin.from('dream_games').insert({
+      owner_id: user.id, conversation_id: body.conversation_id, kind, title: String(game.title).slice(0, 120),
+      content: game, attachment_ids: files.map((f: any) => f.id),
+    }).select('id,title,kind').single();
+    if (inserted.error) return json({ error: 'No se pudo guardar el juego.' }, 503);
+    const count = kind === 'classify' ? game.items.length : game.pairs.length;
+    const widget = { type: 'game', gameId: inserted.data.id, title: inserted.data.title, kind, count };
+    const assistantMessage = `He preparado un juego para practicar **${inserted.data.title}**.\n\n<!--DREAM_WIDGET:${JSON.stringify(widget)}-->`;
+    let userMessageId: string | null = null;
+    if (body.persist_user_message === true) {
+      const saved = await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: request }).select('id').single();
+      userMessageId = saved.data?.id || null;
+    }
+    if (userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', files.map((f: any) => f.id)).is('message_id', null);
+    await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
+    await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+    return json({ game: { id: inserted.data.id, title: inserted.data.title, kind }, assistant_message: assistantMessage, widget });
+  }
+
+  if (body.action === 'game_get') {
+    if (!uuid.test(body.game_id || '')) return json({ error: 'Juego no válido.' }, 400);
+    const row = await admin.from('dream_games').select('id,kind,title,content,best_score,last_score,total,plays,created_at').eq('id', body.game_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Juego no encontrado.' }, 404);
+    return json({ game: row.data });
+  }
+
+  if (body.action === 'game_result') {
+    // Lo que manda la plantilla por postMessage (aciertos/total), ya validado
+    // por la página; aquí se vuelve a comprobar antes de guardarlo.
+    if (!uuid.test(body.game_id || '')) return json({ error: 'Juego no válido.' }, 400);
+    const aciertos = Number(body.aciertos);
+    const total = Number(body.total);
+    if (!validResult(aciertos, total)) return json({ error: 'Resultado no válido.' }, 400);
+    const row = await admin.from('dream_games').select('id,best_score,plays').eq('id', body.game_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Juego no encontrado.' }, 404);
+    const best = Math.max(aciertos, Number(row.data.best_score ?? 0));
+    const saved = await admin.from('dream_games').update({ last_score: aciertos, best_score: best, total, plays: Number(row.data.plays || 0) + 1, updated_at: new Date().toISOString() })
+      .eq('id', body.game_id).eq('owner_id', user.id).select('best_score,last_score,total,plays').maybeSingle();
+    if (saved.error || !saved.data) return json({ error: 'No se pudo guardar el resultado.' }, 503);
+    return json({ result: saved.data });
+  }
+
+  if (body.action === 'dreams_list') {
+    // Sección «Dreams»: esquemas y juegos del alumno, lo más reciente primero.
+    const [schemes, games] = await Promise.all([
+      admin.from('dream_schemes').select('id,title,subject,created_at,updated_at').eq('owner_id', user.id).order('updated_at', { ascending: false }).limit(100),
+      admin.from('dream_games').select('id,title,kind,best_score,total,created_at,updated_at').eq('owner_id', user.id).order('updated_at', { ascending: false }).limit(100),
+    ]);
+    if (schemes.error || games.error) return json({ error: 'No se pudieron cargar tus Dreams.' }, 503);
+    const items = [
+      ...(schemes.data || []).map((s: any) => ({ type: 'scheme', id: s.id, title: s.title, subject: s.subject || '', updated_at: s.updated_at })),
+      ...(games.data || []).map((g: any) => ({ type: 'game', id: g.id, title: g.title, kind: g.kind, best_score: g.best_score, total: g.total, updated_at: g.updated_at })),
+    ].sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
+    return json({ dreams: items });
   }
 
   if (body.action === 'test_get') {

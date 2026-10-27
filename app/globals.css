@@ -993,6 +993,10 @@ svg.lucide {
   .sidebar .brand {
     display: none;
   }
+  /* Con «Dreams» son 8 entradas: sin hueco entre ellas (siguen de 44 px). */
+  .sidebar-links {
+    gap: 0;
+  }
 }
 @media (max-width: 639.98px) {
   .tabbar {

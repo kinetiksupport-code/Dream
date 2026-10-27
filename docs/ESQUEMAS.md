@@ -57,8 +57,9 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 
 ## Pendiente
 
-- Repetir los 10 temas «solo tema» con la búsqueda mejorada.
-- Bloques 1 (entrada), 3 (edición), 4 (exportar), 5 (ilustraciones FLUX), 6 (textos legales) y 7 (Dreams interactivos), cada uno en su PR.
+- Repetir los 10 temas «solo tema» con la búsqueda mejorada (mientras tanto, sin apuntes el chat los pide).
+- Banco de pruebas de juegos con apuntes reales (clasificar y emparejar) antes de añadir más plantillas o dejar que Qwen escriba JS (Bloque 7: solo si supera el 90 % sin errores de lógica).
+- Plantillas de juego que faltan: ordenar, rellenar huecos y arrastrar a una imagen.
 
 ## Ilustraciones (tanda 2) y textos legales
 
@@ -67,3 +68,13 @@ Apuntes de ejemplo de los 10 temas: `evals/esquemas/apuntes/`. Opciones: `--mode
 - Si falta la clave, se agota el cupo o falla, se quedan los paisajes locales; el alumno ve «Hoy ya has usado tus ilustraciones; el esquema sigue funcionando sin ellas».
 - Etiqueta «Imagen generada con IA» en cada imagen y «Contenido generado por IA, revísalo» en el esquema (AI Act, art. 50).
 - Privacidad (`content/legal/privacidad.ts`): Cloudflare como proveedor de imágenes (solo la descripción corta en inglés), esquemas en la conservación y nota de transparencia. **Pendiente de revisar por Carlos:** región y conservación de Cloudflare para imágenes, y si hace falta subir `TERMS_VERSION`.
+
+## Dreams interactivos (tanda 3)
+
+- **Plantillas de Dream, contenido de Qwen.** `supabase/functions/dream-api/games.mjs` define el JSON de «clasificar» (categorías + elementos) y «emparejar» (concepto + definición). Cada elemento trae una cita literal de los apuntes; sin cita se quita y, si quedan pocos, se reintenta una vez con los errores y si no, `game_invalid`. La lógica está en `lib/dream-games.ts` (`gameDocument`).
+- **Aislamiento.** `<iframe sandbox="allow-scripts">` sin `allow-same-origin` (origen opaco: sin cookies, almacenamiento ni acceso a Dream), `srcdoc` con CSP `default-src 'none'` (sin red). El contenido entra como JSON escapado y se pinta con `textContent`. Dream solo acepta `{tipo:'resultado', aciertos, total}` y `{tipo:'altura', alto}` de ese iframe, con forma exacta (`parseGameMessage`), y `game_result` lo vuelve a validar. Test con un juego malicioso en `tests/browser/dreams.spec.ts`.
+- **Accesible.** Tocar/clic o arrastrar (pointer events, también táctil) y teclado (Tab + Intro), anuncios en `aria-live`, `prefers-reduced-motion`, modo oscuro.
+- **dream-api:** `game_generate` (con apuntes; gasta como un test: `ADMISSION_OPERATION`), `game_get`, `game_result` (mejor y último resultado) y `dreams_list`. Tabla `dream_games` (migración `20261031120000_dream_games.sql`, solo service_role).
+- **Chat:** «hazme un juego», «clasifica los sintagmas»… con apuntes crea la tarjeta «Dreams · Clasificar/Emparejar»; sin apuntes los pide sin gastar cupo. Mientras se crea un esquema o un juego el estado dice «Generando Dreams…».
+- **Sección «Dreams»** (`/dreams`, en la barra lateral y en «Más»): esquemas y juegos con filtro por tipo.
+- Aviso «Generado por IA a partir de tus apuntes. Revísalo» y párrafo en Privacidad.

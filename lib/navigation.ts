@@ -5,6 +5,7 @@ export type NavKey =
   | "tasks"
   | "notes"
   | "exams"
+  | "dreams"
   | "history"
   | "settings"
   | "more";
@@ -20,6 +21,8 @@ export function activeNav(
   if (pathname.startsWith("/tasks")) return "tasks";
   if (pathname.startsWith("/notes")) return "notes";
   if (pathname.startsWith("/exams")) return "exams";
+  // Sección «Dreams» y lo que contiene (esquemas y juegos).
+  if (/^\/(dreams|esquemas|juegos)(\/|$)/.test(pathname)) return "dreams";
   if (pathname.startsWith("/settings")) return "settings";
   if (pathname.startsWith("/more")) return "more";
   return null;

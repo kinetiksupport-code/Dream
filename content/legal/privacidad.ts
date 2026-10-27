@@ -79,7 +79,7 @@ Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Goog
 
 Para responderte, Dream envía tus mensajes y el texto de tus archivos a proveedores de IA y de búsqueda (Groq, Cloudflare y Tavily). Por eso, al registrarte te pedimos una casilla propia, sin marcar de antemano: "Estoy de acuerdo en enviar mi información a proveedores de IA para que Dream pueda responderme". Guardamos la fecha y hora. Puedes retirar este permiso cuando quieras en Ajustes › Privacidad o escribiendo a hellodream@edudream.es; sin él no podrás usar el tutor de IA.
 
-Los **esquemas («Dreams»)** se hacen con tus apuntes: la IA de texto escribe el contenido a partir de ellos y Dream lo maqueta; las ilustraciones las genera un modelo de imágenes y llevan la etiqueta «Imagen generada con IA». Todo el esquema lleva el aviso «Contenido generado por IA, revísalo» (artículo 50 del Reglamento europeo de IA).
+Los **esquemas («Dreams»)** se hacen con tus apuntes: la IA de texto escribe el contenido a partir de ellos y Dream lo maqueta; las ilustraciones las genera un modelo de imágenes y llevan la etiqueta «Imagen generada con IA». Todo el esquema lleva el aviso «Contenido generado por IA, revísalo» (artículo 50 del Reglamento europeo de IA). Los **juegos de práctica («Dreams» interactivos)** también salen de tus apuntes: la IA solo escribe las preguntas y las respuestas, y el juego lo pone Dream, aislado del resto de la web (no puede leer tu cuenta ni conectarse a internet). Llevan el aviso «Generado por IA a partir de tus apuntes. Revísalo» y guardamos solo tu mejor resultado y el último, para tu progreso.
 
 Las respuestas las genera un modelo de IA. **Puede equivocarse o inventar datos**: contrasta lo importante con tus apuntes, tu libro o tu profesor. Con carácter general no se toman decisiones automáticas con efectos legales sobre ti; la única excepción posible es la de la sección 11 (cuentas nuevas para saltarse un baneo), que solo se aplica si está activada. Los tests y simulacros se corrigen automáticamente solo como ayuda para estudiar; la nota que ves no es una nota oficial.
 
@@ -89,7 +89,7 @@ En España, un menor puede dar su consentimiento para tratar sus datos a partir 
 
 ## 8. Cuánto tiempo guardamos los datos
 
-- Tu cuenta, conversaciones, textos de archivos, exámenes y esquemas se guardan **mientras tengas cuenta**. Los esquemas guardan solo su contenido (no tus apuntes) y se borran con la cuenta.
+- Tu cuenta, conversaciones, textos de archivos, exámenes, esquemas y juegos se guardan **mientras tengas cuenta**. Los esquemas y los juegos guardan solo su contenido (no tus apuntes) y se borran con la cuenta.
 - Puedes **borrar todo tu historial de conversaciones** desde Ajustes cuando quieras.
 - Puedes **cambiar o borrar tu apodo y tus aficiones** en Ajustes › Perfil. Si eliminas tu cuenta, se borran con ella.
 - **Lo que Dream recuerda** (recuerdos y resúmenes de conversación) se guarda hasta que lo borres o, si no se usa, **12 meses desde su último uso**; después se elimina solo. En Ajustes › Lo que Dream recuerda puedes verlo, fijarlo, borrarlo uno a uno o todo, y apagar la memoria. Si la apagas, deja de guardarse y de usarse.
