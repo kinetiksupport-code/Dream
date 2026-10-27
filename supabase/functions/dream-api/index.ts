@@ -34,7 +34,7 @@ import { FEATURE_FLAGS } from './features.mjs';
 import { exportUserData } from './data-export.mjs';
 import { MEMORY_ACTIONS, MEMORY_MODEL, extractPreviousConversation, handleMemoryAction, memoryOn, startConversationMemory } from './memory-actions.mjs';
 import {
-  MAX_ATTACHMENT_CONTEXT_CHARS, isSupportedExtension, maxBytesFor,
+  MAX_ATTACHMENT_CONTEXT_CHARS, MAX_MESSAGE_ATTACHMENTS, isSupportedExtension, maxBytesFor,
   extractAttachment, base64ByteLength, extensionOf,
 } from './attachments.mjs';
 import { UploadError, sanitizeFileName, checkUploadQuota, actorTag, uploadRejectionLog, wrapStudentMaterial, MATERIAL_GUARD } from './file-guard.mjs';
@@ -622,7 +622,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
       ownedConversationId = owns.data?.id || null;
     }
-    const testAttachmentIds = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, 4) : [];
+    const testAttachmentIds = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
     let testAttachmentRows: any[] = [];
     if (ownedConversationId && testAttachmentIds.length) {
       const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', testAttachmentIds)
@@ -860,7 +860,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   }
 
   const attachmentIds = Array.isArray(body.attachment_ids)
-    ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, 4)
+    ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS)
     : [];
 
   let examStudyContext = '';

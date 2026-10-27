@@ -9,12 +9,12 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { AlertIcon } from "./icons";
-import { fileAccept, validateFile } from "@/lib/attachments";
+import { MAX_CHAT_FILES, fileAccept, validateFile } from "@/lib/attachments";
 import { setPendingFiles } from "@/lib/pending-files";
 import s from "./notes-view.module.css";
 
 /** Same limit the chat composer accepts in one go (lib/pending-files.ts). */
-const MAX_FILES = 4;
+const MAX_FILES = MAX_CHAT_FILES;
 
 type Phase =
   | { name: "idle" }
@@ -170,7 +170,7 @@ export function NotesUploadStatus({
             <UploadIcon />
             <span>
               <strong>Suelta para subir</strong>
-              <span className={s.zoneHint}>Hasta 4 archivos a la vez.</span>
+              <span className={s.zoneHint}>Hasta {MAX_FILES} archivos a la vez.</span>
             </span>
           </p>
         ) : phase.name === "uploading" ? (

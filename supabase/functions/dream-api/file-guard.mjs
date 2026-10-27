@@ -3,6 +3,11 @@
 // para poder probarlo también con Node.
 
 /** Mensajes para el alumno: cortos, en español y sin jerga técnica. */
+/** Archivos por mensaje (chat y tests). La web usa el mismo número (lib/attachments.ts). */
+export const MAX_MESSAGE_ATTACHMENTS = 8;
+/** Bytes de imagen que caben en 4 MB de base64 (límite de la IA de imágenes de Groq). */
+export const MAX_VISION_BYTES = 3 * 1024 * 1024 - 64 * 1024;
+
 export const UPLOAD_MESSAGES = {
   name_invalid: 'El nombre del archivo no es válido. Cámbiale el nombre (sin barras ni símbolos raros) y vuelve a subirlo.',
   unsupported: 'Formato no compatible. Usa imágenes, PDF, Word (.docx), PowerPoint (.pptx), Excel (.xlsx), texto, Markdown, código, CSV o JSON.',
@@ -21,6 +26,7 @@ export const UPLOAD_MESSAGES = {
   pdf_timeout: 'Este PDF tarda demasiado en leerse. Prueba a dividirlo o a exportarlo de nuevo como PDF.',
   pdf_empty: 'El PDF no contiene texto que se pueda leer. Prueba a subir sus páginas como imágenes.',
   image_dimensions: 'La imagen es demasiado grande. Usa una de 10.000 píxeles por lado como máximo.',
+  image_too_heavy: 'La foto pesa demasiado para que la IA la lea. Súbela desde Dream en el navegador (se reduce sola) o hazla con menos resolución.',
   image_invalid: 'No se pudo leer la imagen. Prueba a hacer otra foto o a guardarla como PNG o JPG.',
   text_encoding: 'El archivo de texto debe estar guardado en UTF-8 y no puede llevar datos binarios.',
   empty_content: 'No hemos encontrado texto en el archivo.',

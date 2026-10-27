@@ -49,7 +49,7 @@ import {
   type LimitState,
 } from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
-import { validateFile, toBase64 } from "@/lib/attachments";
+import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
 import estilo from "./chat-estilo.module.css";
@@ -353,20 +353,26 @@ export function ChatExperience({
         queued: false,
         error: undefined,
       });
-      const content = await toBase64(a.file);
+      // Las fotos del móvil se reducen antes de subirlas (lib/attachments.ts).
+      const ready = await prepareFile(a.file);
+      const content = await toBase64(ready);
       if (controller.signal.aborted) return;
       const id = await ensureConversation();
       if (controller.signal.aborted) return;
       patchAttachment(a.localId, { status: "processing" });
-      const r = await callDream<{ attachment: { id: string } }>(
-        "attachment_upload",
-        {
-          conversation_id: id,
-          file_name: a.file.name,
-          mime_type: a.file.type,
-          content_base64: content,
-        },
-        controller.signal,
+      const r = await withUploadRetry(
+        () =>
+          callDream<{ attachment: { id: string } }>(
+            "attachment_upload",
+            {
+              conversation_id: id,
+              file_name: ready.name,
+              mime_type: ready.type,
+              content_base64: content,
+            },
+            controller.signal,
+          ),
+        { signal: controller.signal },
       );
       patchAttachment(a.localId, { id: r.attachment.id, status: "ready" });
     } catch (e) {
@@ -382,7 +388,7 @@ export function ChatExperience({
       uploadQueue.current.some((f) => f.localId === file.localId)
     )
       return;
-    if (uploadQueue.current.length >= 4) return;
+    if (uploadQueue.current.length >= MAX_CHAT_FILES) return;
     patchAttachment(file.localId, {
       status: "uploading",
       queued: true,
@@ -405,9 +411,9 @@ export function ChatExperience({
   }
   function addFiles(files: File[]) {
     if (lock.current || loading) return;
-    const remaining = 4 - filesRef.current.length;
+    const remaining = MAX_CHAT_FILES - filesRef.current.length;
     if (files.length > remaining)
-      setError("Puedes adjuntar hasta cuatro archivos por mensaje.");
+      setError(`Puedes adjuntar hasta ${MAX_CHAT_FILES} archivos por mensaje.`);
     const next: Attachment[] = [];
     for (const file of files.slice(0, remaining)) {
       try {
