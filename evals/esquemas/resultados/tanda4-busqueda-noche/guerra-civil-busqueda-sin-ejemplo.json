@@ -1,0 +1,176 @@
+{
+  "title": "Guerra Civil Española",
+  "subtitle": "1936-1939",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Contexto y alcance",
+      "period": "1936-1939",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El conflicto comenzó tras el **fracaso del golpe de Estado** de julio de 1936.",
+          "quote": "La Guerra Civil Española (1936-1939) fue el conflicto bélico que empezó tras el fracaso del golpe de Estado de julio de 1936 contra la Segunda República."
+        },
+        {
+          "text": "El conflicto se desarrolló en **cuatro grandes fases** militares.",
+          "quote": "La Guerra Civil Española (1936-1939) se divide habitualmente en cuatro fases."
+        },
+        {
+          "text": "El conflicto duró **986 días** y causó más de 500.000 muertos.",
+          "quote": "La Guerra Civil Española (1936-1939) permiten entender un conflicto que duró 986 días, dejó más de 500.000 muertos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología clave",
+      "period": "1936-1939",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1936",
+          "text": "Sublevación militar y paso del Estrecho.",
+          "quote": "Julio 1936: Sublevación militar (17-18 julio)"
+        },
+        {
+          "year": "1936",
+          "text": "Batalla de Madrid y llegada de Brigadas Internacionales.",
+          "quote": "Noviembre 1936: Batalla de Madrid – Llegan las Brigadas Internacionales"
+        },
+        {
+          "year": "1937",
+          "text": "Batallas del Jarama y Guadalajara.",
+          "quote": "Febrero-marzo 1937: Batallas del Jarama y Guadalajara"
+        },
+        {
+          "year": "1937",
+          "text": "Bombardeo de Guernica.",
+          "quote": "Abril 1937: Bombardeo de Guernica (26 abril)"
+        },
+        {
+          "year": "1937",
+          "text": "Caída del frente Norte (Bilbao, Santander, Asturias).",
+          "quote": "Junio-octubre 1937: Caída del Norte (Bilbao, Santander, Asturias)"
+        },
+        {
+          "year": "1938",
+          "text": "Batalla del Ebro.",
+          "quote": "Julio-noviembre 1938: Batalla del Ebro"
+        },
+        {
+          "year": "1939",
+          "text": "Caída de Cataluña y La Retirada.",
+          "quote": "Diciembre 1938 – febrero 1939: Caída de Cataluña – «La Retirada»"
+        },
+        {
+          "year": "1939",
+          "text": "Fin de la guerra.",
+          "quote": "1 de abril de 1939: Fin de la guerra"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fases del conflicto",
+      "period": "1936-1939",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Sublevación y columnas",
+          "period": "1936",
+          "bullets": [
+            {
+              "text": "Avance del Ejército de África sobre Madrid.",
+              "quote": "la fase inicial de la sublevación y la guerra de columnas (julio-noviembre de 1936)"
+            },
+            {
+              "text": "Matanza de Badajoz en agosto.",
+              "quote": "Matanza de Badajoz (14 agosto)"
+            }
+          ]
+        },
+        {
+          "title": "Madrid y el Norte",
+          "period": "1936-1937",
+          "bullets": [
+            {
+              "text": "Defensa de Madrid y caída del Norte.",
+              "quote": "la batalla de Madrid y la conquista del Norte (noviembre 1936 – octubre 1937)"
+            },
+            {
+              "text": "Bombardeo de Guernica en abril.",
+              "quote": "Abril 1937: Bombardeo de Guernica (26 abril)"
+            }
+          ]
+        },
+        {
+          "title": "Ebro y Cataluña",
+          "period": "1938-1939",
+          "bullets": [
+            {
+              "text": "Ofensiva de Aragón y Batalla del Ebro.",
+              "quote": "la batalla del Ebro y la caída de Cataluña (1938 – febrero 1939)"
+            },
+            {
+              "text": "Caída de Cataluña y La Retirada.",
+              "quote": "Diciembre 1938 – febrero 1939: Caída de Cataluña – «La Retirada»"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Aerial view of a divided landscape with two distinct military zones, smoke rising from distant trenches, overcast sky, no people, no text.",
+      "illustration_caption": "Frentes de batalla durante la Guerra Civil Española."
+    },
+    {
+      "heading": "Consecuencias y legado",
+      "period": "1939",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Éxodo de población civil y militar al exilio.",
+          "quote": "se estima que en torno a medio millón"
+        },
+        {
+          "text": "Establecimiento de la **dictadura franquista** tras el triunfo nacional.",
+          "quote": "El triunfo “nacional” frustraría los intentos de crear una democracia estable en España y trajo como consecuencia el establecimiento de la dictadura franquista."
+        },
+        {
+          "text": "Reconfiguración de la historia de España y Europa.",
+          "quote": "La Guerra Civil Española (1936-1939) permiten entender un conflicto que duró 986 días, dejó más de 500.000 muertos y reconfiguró la historia de España"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La guerra dejó más de 500.000 muertos y un éxodo de medio millón de personas, instaurando la dictadura franquista.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El conflicto duró 986 días y dejó más de 500.000 muertos.",
+    "La guerra se dividió en cuatro fases militares claras.",
+    "El bando nacional impuso la dictadura tras su victoria."
+  ],
+  "summary": "La Guerra Civil Española (1936-1939) fue un conflicto bélico de 986 días que dividió al país. Terminó con la victoria del bando nacional y el inicio de la dictadura franquista.",
+  "closing": "La Guerra Civil no solo dividió a España, sino que sentó las bases de la dictadura franquista y marcó a generaciones enteras."
+}

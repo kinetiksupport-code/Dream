@@ -118,7 +118,10 @@ async function sourcesFor(topic, mode) {
   if (remote) results = (await viaRemote({ action: 'search', query: `${topic.query} apuntes ${topic.level}`, max_results: 5, depth: 'advanced' })).results;
   else if (!tavily.configured()) return '';
   else results = JSON.parse(await tavily.search(topic.query));
-  return results.map((r) => `[${r.title}] (${r.url})\n${r.content}`).join('\n\n');
+  // Groq limita la entrada a ~7.000 tokens por minuto con esta clave: la
+  // fuente no pasa de ~10.000 caracteres (repartidos entre los resultados).
+  const per = Math.floor(10000 / Math.max(1, results.length));
+  return results.map((r) => `[${r.title}] (${r.url})\n${String(r.content).slice(0, per)}`).join('\n\n');
 }
 
 async function main() {

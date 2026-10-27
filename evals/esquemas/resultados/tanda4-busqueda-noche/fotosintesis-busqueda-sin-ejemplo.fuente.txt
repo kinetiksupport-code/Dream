@@ -1,0 +1,73 @@
+[La fotosíntesis en la EVAU: fase luminosa y ciclo de Calvin] (https://destilify.com/blog/fotosintesis-fases-evau-biologia)
+### 2. Reducción
+
+Usando el ATP y el NADPH de la fase luminosa, se reduce el 3-PGA (3-fosfoglicerato) para obtener G3P (gliceraldehído-3-fosfato), que es la molécula a partir de la cual se sintetiza la glucosa.
+
+### 3. Regeneración del RuBP
+
+Parte del G3P se usa para regenerar el RuBP y que el ciclo pueda continuar. Esto también consume ATP.
+
+La ecuación global del ciclo de Calvin (para producir 1 molécula de glucosa) es: 6 CO₂ + 18 ATP + 12 NADPH → glucosa + 18 ADP + 12 NADP⁺
+
+## Por qué la fase oscura depende de la fase luminosa
+
+Y aquí viene lo que nadie te cuenta bien… [...] > Lo esencial
+>
+>  La fase luminosa ocurre en las membranas tilacoidales y produce ATP, NADPH y O₂.
+>  El ciclo de Calvin ocurre en el estroma y usa ese ATP y NADPH para fijar CO₂ y fabricar glucosa.
+>  La fase oscura no necesita luz directamente, pero depende al 100 % de los productos de la fase luminosa.
+>  En el examen te pueden pedir diferenciar las dos fases, localización, reactivos y productos.
+
+## Dónde ocurre cada fase de la fotosíntesis
+
+Aquí es donde la mayoría se pierde. La fotosíntesis no ocurre "en la hoja" y ya. Ocurre dentro del cloroplasto, y hay que saber exactamente en qué parte.
+
+El cloroplasto tiene dos zonas clave: [...] > Consejo de examen: Si te dan una gráfica con la tasa fotosintética frente a la intensidad lumínica, fíjate en el punto de compensación (donde fotosíntesis = respiración) y el punto de saturación (a partir del cual más luz no mejora el rendimiento). Esos son los datos que suelen pedir.
+
+## Ecuación global de la fotosíntesis
+
+Por si la necesitas aprendida de memoria (y conviene):
+
+6 CO₂ + 6 H₂O + energía lumínica → C₆H₁₂O₆ + 6 O₂
+
+Es la suma de la fase luminosa y el ciclo de Calvin juntos. En un examen, si te piden solo la ecuación global, con esta tienes suficiente. Si te piden diferenciar las dos fases, necesitas desgranarla como hemos visto arriba.
+
+## Pregunta tipo EVAU sobre fotosíntesis
+
+[TEMA 12: FOTOSÍNTESIS: fase luminosa y fase oscura. ...] (https://cepa-gabecquer.centros.castillalamancha.es/sites/cepa-gabecquer.centros.castillalamancha.es/files/descargas/tema_12._fotosintesis_fase_lum_y_oscura._quimiosintesis._otros_procesos_anabolicos._biologia.pdf)
+En este retorno se libera energía suficiente para sintetizar ATP (No se realiza la fotolisis del agua ni la fotorreducción del NADP, por tanto, no se desprende NADPH ni O2, sólo ATP). La finalidad de esta variante es ajustar la producción de ATP y NADPH a las necesidades de la fase oscura. En ella se requieren 3 ATP por cada 2 NADPH. Por tanto, cada vez que ocurran dos fotofosforilaciones acíclicas, tendrá lugar una cíclica. Al final de la fase lumínica tanto el ATP como el NADPH + H+ se encuentran en el estroma del cloroplasto. Ambas moléculas serán utilizadas para la reducción del CO2 en la fase oscura de la fotosíntesis. b. Ecuación global de la fase luminosa. 1.1.2. Fase oscura o ciclo de Calvin-Benson La fase oscura o biosintética agrupa todos los procesos y reacciones de la [...] o biosintética agrupa todos los procesos y reacciones de la fotosíntesis que pueden ser llevados a cabo por los cloroplastos sin necesidad de la luz. Tiene lugar en el estroma de los cloroplastos mediante una ruta metabólica llamada Ciclo de Calvin-Benson. En esta fase se produce la incorporación de la materia inorgánica (CO2) a materia orgánica (hexosas y otros hidratos de carbono), a partir de estas primeras sustancias es posible la síntesis de todo tipo de compuestos: aminoácidos, ácidos grasos y glúcidos. Como en todo proceso anabólico se requiere energía (3 ATP) y un potente reductor (2 NADPH) que en este caso proceden de la fase luminosa de la fotosíntesis. Podemos considerar tres fases en el proceso oscuro de la fotosíntesis: TEMA 12: FOTOSÍNTESIS: fase luminosa y fase oscura. [...] TEMA 12: FOTOSÍNTESIS: fase luminosa y fase oscura. QUIMIOSÍNTESIS. OTROS PROCESOS ANABÓLICOS. 1 ÍNDICE DE CONTENIDOS 1. Fotosíntesis. 1.1. Fases y localización. 1.1.1. Fase luminosa o Fotofosforilación. a. El proceso se desarrolla del siguiente modo: a.1. Captura de energía luminosa. a.2. Transporte de electrones. a.3. Fotolisis del agua. a.4. Fosforilación fotosintética. • Fotofosforilación acíclica • Fotofosforilación cíclica b. Ecuación global de la fase luminosa. 1.1.2. Fase oscura o ciclo de Calvin-Benson 1.2. Factores que influyen en la fotosíntesis 2. Quimiosíntesis. A) Concepto e importancia biológica B) Organismos quimiosintéticos 3. Otros procesos anabólicos. A) Anabolismo de los glúcidos B) Anabolismo de los lípidos C) Anabolismo de los aminoácidos D) Anabolismo de los
+
+[Ciclo de Calvin - Qué es, etapas e importancia] (https://concepto.de/ciclo-de-calvin)
+Las reacciones de este ciclo forman parte de la llamada “fase oscura” de la fotosíntesis (también conocida como “fase independiente de la luz”). En esta fase, se usan moléculas de alta energía producidas en la fase luminosa para formar carbohidratos a partir del dióxido de carbono (CO₂).
+
+El ciclo de Calvin ayuda a los organismos autótrofos, como las plantas, a transformar el dióxido de carbono en glucosa (C6H12O6). Luego, este azúcar es utilizado como alimento. Una enzima llamada RuBisCo (ribulosa-1,5-bifosfato carboxilasa/oxigenasa) tiene un rol fundamental en este proceso. [...] El ciclo de Calvin tiene las siguientes características:
+
+ Forma parte de las reacciones de fotosíntesis. El ciclo de Calvin constituye la segunda fase de la fotosíntesis.
+ No necesita luz. Es conocido como “fase oscura” porque no necesita energía lumínica. Por lo tanto, no requiere luz directa, pero en las plantas depende de las moléculas producidas en la fase luminosa.
+ Ocurre dentro de las células vegetales. Las reacciones del ciclo de Calvin suceden en compartimientos muy específicos dentro de las células de las plantas, llamados cloroplastos.
+ Fija el carbono. La principal función del ciclo de Calvin es capturar el dióxido de carbono (CO₂) del aire e incorporarlo a moléculas orgánicas.
+
+## Etapas del ciclo de Calvin
+
+Etapas del ciclo de Calvin [...] #### ¿Dónde y cuándo ocurre el ciclo de Calvin?
+
+El ciclo de Calvin ocurre dentro de los cloroplastos de las células vegetales, durante la fase oscura de la fotosíntesis. Aunque se llama “oscura”, esta fase puede suceder con o sin luz, y depende de las sustancias que se producen en la fase anterior.
+
+#### ¿Cuáles son las etapas del ciclo de Calvin?
+
+El ciclo de Calvin tiene tres etapas. En la primera etapa, el dióxido de carbono (CO₂) se fija a la molécula RuBP con ayuda de la enzima RuBisCo (fijación del carbono). En la segunda, se forma un azúcar (G3P) usando energía de ATP y NADPH (reducción). Por último, en la tercera, se regenera el RuBP para que el ciclo continúe (regeneración).
+
+## Características del ciclo de Calvin
+
+El ciclo de Calvin tiene las siguientes características:
+
+[Fotosíntesis - Qué es, proceso, fases e importancia] (https://concepto.de/fotosintesis)
+Etapa luminosa o fotoquímica.Durante esta fase, suceden las reacciones que dependen de la luz. La planta capta la luz solar por medio de la clorofila y la utiliza para producir moléculas que almacenan energía, llamadas ATP y NADPH. En este proceso se rompen moléculas de agua y se libera oxígeno.
+ Etapa oscura o sintética. Esta fase tiene lugar dentro de los cloroplastos de las células vegetales. En estas organelas, se fabrican carbohidratos utilizando dióxido de carbono del aire y las moléculas generadas durante la etapa luminosa (ATP y NADPH). Este proceso ocurre a través de una serie de reacciones químicas muy complejas, conocidas como el ciclo de Calvin-Benson.
+
+## Ecuación de la fotosíntesis
+
+La ecuación general de la fotosíntesis es la siguiente:
+
+[TEMA 7.- METABOLISMO CELULAR] (https://www.colegiosanbuenaventura.es/wp-content/uploads/2020/01/Tema-7-Metabolismo_compressed.pdf)
+puede determinarse experimentalmente midiendo el volumen de CO2 consumido o de O2 desprendido. Los factores ambientales que afectan a la fotosíntesis son: Concentración de CO2 en el medio. Si la iluminación es constante, la intensidad fotosintética aumenta con la concentración de dióxido de carbono en el medio. Esto es debido a que a mayor concentración de CO2 mayor será la velocidad a la que la ribulosa difosfato carboxilasa fijará el CO2 en el ciclo de Calvin. FASE LUMINOSA FASE OSCURA Intensidad de la iluminación. En general la intensidad de la iluminación aumenta el rendimiento de la fotosíntesis. Esto es debido a que cuantos más fotones de luz lleguen a los fotosistemas I y II, más cantidad de ATP y NADPH se obtendrán en la fase luminosa y en consecuencia más CO2 se podrá fijar en la [...] y síntesis de biomoléculas: Estos dos fosfatos de triosa son utilizados en parte para regenerar la ribulosa-difosfato mediante una serie de reacciones que implican gasto de ATP, y en parte son desviados hacia el anabolismo heterótrofo para servir de precursores a distintos tipos de biomoléculas. Cada vuelta del ciclo de Calvin implica la fijación de 1 CO2 (=1C), por tanto, para generar una molécula de glucosa (6C) se necesitan 6 vueltas. En este caso, la ecuación global del ciclo sería: 6CO2 + 12 NADPH + 12H+ + 18 ATP → C6H12O6 + 12 NADP+ + 18 ADP + 18 Pi Figura 18. Fases del ciclo de Calvin. Balance energético de la fotosíntesis (figura 19): La fase luminosa de la fotosíntesis produce ATP y NADPH. Si se sintetiza una molécula de glucosa (C6H12O6) se necesitan 6 CO2 y 12 de Agua. El agua

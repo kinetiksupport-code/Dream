@@ -1,0 +1,156 @@
+{
+  "title": "Filosofía de Kant",
+  "subtitle": "Teoría del conocimiento y ética",
+  "subject": "Filosofía",
+  "sections": [
+    {
+      "heading": "Teoría del conocimiento",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La **Crítica de la Razón Pura** examina las posibilidades y límites del conocimiento humano.",
+          "quote": "La Crítica de la Razón Pura de Kant establece un sistema filosófico que examina las posibilidades y límites del conocimiento humano a través de tres facultades principales: sensibilidad, entendimiento"
+        },
+        {
+          "text": "El sistema se estructura en torno a tres facultades: **sensibilidad**, **entendimiento** y **razón**.",
+          "quote": "La filosofía de Kant se estructura en torno a tres facultades fundamentales del conocimiento: la sensibilidad, el entendimiento y la razón."
+        },
+        {
+          "text": "Los juicios científicos son posibles gracias a la aplicación de las **categorías**.",
+          "quote": "Kant explica que los juicios sintéticos a priori en la física son posibles gracias a la aplicación de las categorías, especialmente la de causa-efecto."
+        },
+        {
+          "text": "La síntesis entre sensibilidad y entendimiento produce el **conocimiento científico**.",
+          "quote": "La síntesis entre la sensibilidad y el entendimiento produce el conocimiento científico, según la filosofía de Kant para tontos."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A diagrammatic illustration of three interconnected geometric shapes representing faculties of the mind, abstract and clean, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Postulados de la razón",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Es imposible un conocimiento objetivo científico sobre el **alma**, **Dios** y la **libertad**.",
+          "quote": "En la Crítica de la Razón P ciencia y por tanto, la imposibilidad de un conocimiento objetivo acerca del alma, Dios, libertad y mundo."
+        },
+        {
+          "text": "Kant no niega su existencia, pero no pueden ser objeto de **conocimiento teórico**.",
+          "quote": "Sin embargo tampoco niega su existencia. E objetiva podrá ser establecida por el uso p fundamenta a la metafísica y no al rev"
+        },
+        {
+          "text": "Estas realidades son **postulados** necesarios para la razón práctica.",
+          "quote": "Las realidades [...] GUAPA Predicado contenido en el sujeto independientes de la experiencia Posteriores y dependientes de la experiencia"
+        },
+        {
+          "text": "La metafísica no es ciencia porque sus objetos escapan a la **experiencia**.",
+          "quote": "En su Crítica de la razón pura Kant había llegado a la conclusión de que es imposible que la Metafísica sea una ciencia, pues realidades como la inmortalidad del alma o la existencia de Dios no son"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "El imperativo categórico",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **imperativo categórico** es una ley práctica válida incondicionalmente.",
+          "quote": "La exigencia de obrar moralmente se concreta en un imperativo categórico. Los imperativos son mandatos o deberes que expresan la necesidad objetiva de la acción."
+        },
+        {
+          "text": "No tiene contenido material, solo prescribe la **forma universal** de la acción.",
+          "quote": "Los imperativos no tienen contenido, sino que es únicamente la forma que debemos dar a nuestros actos. Tienen un carácter universal y necesario."
+        },
+        {
+          "text": "A diferencia de las leyes naturales, las leyes morales **pueden ser desobedecidas**.",
+          "quote": "Ahora bien, no son universales y necesarias de la misma forma que las leyes naturales, que no pueden no cumplirse; sino que, las leyes morales pueden no cumplirse, esto es, es posible desobedecerlas."
+        },
+        {
+          "text": "La voluntad debe seguirse aunque vaya contra las **inclinaciones sensibles**.",
+          "quote": "Dichos imperativos categóricos son la guía de la voluntad y deben seguirse siempre, aunque vaya en contra de nuestra inclinaciones; pero, como ya hemos visto, se pueden desobedecer, ya que la voluntad"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A symbolic representation of a balance scale with one side holding a book and the other a heart, abstract style, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "El bien supremo",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **bien supremo** reúne las aspiraciones de **virtud** y **felicidad**.",
+          "quote": "La crítica de la razón práctica tiene como meta el bien supremo. Este bien supremo reúne las dos aspiraciones humanas fundamentales: la de la virtud y la de la felicidad."
+        },
+        {
+          "text": "Para que la moral tenga sentido, los virtuosos deben ser **felices**.",
+          "quote": "La síntesis de ambas aspiraciones, es decir, el que las personas virtuosas sean felices, tiene que realizarse de alguna manera, para que tenga sentido la propia experiencia moral."
+        },
+        {
+          "text": "La razón práctica fundamenta la metafísica, no al revés.",
+          "quote": "Para alcanzar este bien supremo, la"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Legado ético",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "La ética kantiana se basa en la idea de **deber**.",
+          "quote": "La ética de Kant se basa en la idea de deber y en el concepto de imperativo categórico."
+        },
+        {
+          "text": "Ha tenido un **impacto duradero** en el pensamiento ético y político.",
+          "quote": "La ética y la filosofía práctica de Kant son componentes esenciales de su sistema filosófico y han tenido un impacto duradero en el pensamiento ético y político, siendo fundamentales para comprender"
+        },
+        {
+          "text": "No da normas de conducta, sino **criterios racionales** para obrar.",
+          "quote": "Kant no da normas de conducta que nos permitan vivir honestamente, sino criterios racionales para ón que realiza Kant del imperativo categórico en la"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "El imperativo categórico sigue siendo la base de la ética deontológica moderna.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El conocimiento científico requiere la síntesis de sensibilidad y entendimiento.",
+    "La razón práctica postula Dios, alma y libertad como condiciones del deber.",
+    "El imperativo categórico exige actuar por deber, no por inclinación."
+  ],
+  "summary": "Kant limita el conocimiento a la experiencia sensible pero postula la libertad, Dios y el alma para la moral. Su ética se basa en el deber y el imperativo categórico.",
+  "closing": "Kant redefine los límites del saber humano y establece la autonomía moral como fundamento de la ética moderna."
+}

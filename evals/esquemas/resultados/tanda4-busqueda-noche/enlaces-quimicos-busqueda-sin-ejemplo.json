@@ -1,0 +1,176 @@
+{
+  "title": "Enlaces Químicos",
+  "subtitle": "Tipos de enlace y propiedades de la materia",
+  "subject": "Física y Química",
+  "sections": [
+    {
+      "heading": "Enlace iónico",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Se forma por **transferencia de electrones** de un metal a un no metal.",
+          "quote": "Los enlaces iónicos se forman cuando un metal transfiere electrones a un no metal, creando iones positivos (cationes) y negativos (aniones)."
+        },
+        {
+          "text": "Ejemplo clásico: **NaCl** (cloruro de sodio).",
+          "quote": "El cloruro de sodio (NaCl) es un ejemplo clásico de compuesto iónico."
+        },
+        {
+          "text": "Presentan **altos puntos de fusión** y ebullición.",
+          "quote": "Los enlaces iónicos incluyen altos puntos de fusión y ebullición, dureza, fragilidad y conductividad eléctrica en estado fundido o disuelto."
+        },
+        {
+          "text": "Son **duros pero frágiles**.",
+          "quote": "Los enlaces iónicos incluyen altos puntos de fusión y ebullición, dureza, fragilidad y conductividad eléctrica en estado fundido o disuelto."
+        },
+        {
+          "text": "Conducen la electricidad solo **fundidos o disueltos**.",
+          "quote": "Los enlaces iónicos incluyen altos puntos de fusión y ebullición, dureza, fragilidad y conductividad eléctrica en estado fundido o disuelto."
+        },
+        {
+          "text": "Forman una **red cristalina** tridimensional.",
+          "quote": "iones positivos y negativos que se mantienen unidos por atracciones electrostáticas, formando los iones una red cristalina que se repite en la tres direcciones del espacio"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace covalente",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los átomos **comparten electrones** para alcanzar estabilidad.",
+          "quote": "Los enlaces covalentes ocurren cuando los átomos comparten electrones para alcanzar una configuración estable."
+        },
+        {
+          "text": "Ejemplos: **H2O**, **NH3** y **HF**.",
+          "quote": "Los enlaces covalentes ejemplos incluyen moléculas como H2O, NH3 y HF."
+        },
+        {
+          "text": "Son más **débiles que los iónicos**.",
+          "quote": "Los enlaces covalentes son más débiles que los enlaces iónicos, pero más fuertes que los enlaces de hidrógeno."
+        },
+        {
+          "text": "Pueden ser **polares o no polares**.",
+          "quote": "Los enlaces covalentes pueden ser polares o no polares, y tienen varias propiedades importantes que determinan las propiedades físicas y químicas de las sustancias covalentes."
+        },
+        {
+          "text": "Determinan **solubilidad** y conductividad.",
+          "quote": "Los enlaces covalentes son responsables de muchas de las propiedades físicas y químicas de las sustancias covalentes, como la solubilidad y la conductividad eléctrica."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple, clean diagram showing two spheres sharing a pair of small dots between them, representing electron sharing, on a white background.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Enlace metálico",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Cationes metálicos rodeados por una **nube de electrones**.",
+          "quote": "El enlace metálico se forma cuando los iones positivos metálicos comparten una nube de electrones móviles."
+        },
+        {
+          "text": "Alta **conductividad** térmica y eléctrica.",
+          "quote": "Las propiedades de las sustancias metálicas incluyen conductividad térmica y eléctrica, ductilidad y maleabilidad."
+        },
+        {
+          "text": "Son **ductiles** (hilos) y **maleables** (láminas).",
+          "quote": "las propiedades más características de los metales, tales como su facilidad para conducir la electricidad y el calor (conductividad), la capacidad para extenderse en hilos muy finos (ductilidad), la"
+        },
+        {
+          "text": "Sólidos a temperatura ambiente (salvo **mercurio**).",
+          "quote": "Son sólidos a temperatura ambiente (a excepción del mercurio) de densidad elevada."
+        },
+        {
+          "text": "Tienen **puntos de fusión altos**.",
+          "quote": "Temperaturas de fusión y ebullición altas, síntoma de que el enlace entre"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A stylized, abstract representation of a metallic lattice with positive ions arranged in a grid and a flowing, translucent blue cloud representing mobile valenc",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fuerzas intermoleculares",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los **puentes de hidrógeno** son cruciales en el agua.",
+          "quote": "Las fuerzas intermoleculares, especialmente los puentes de hidrógeno, son cruciales en compuestos como el agua."
+        },
+        {
+          "text": "Existen **fuerzas de Van der Waals**.",
+          "quote": "Fuerzas de Van de Waals"
+        },
+        {
+          "text": "Son más **débiles que el enlace covalente**.",
+          "quote": "Los enlaces covalentes son más débiles que los enlaces iónicos, pero más fuertes que los enlaces de hidrógeno."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple, colorful illustration of water molecules (H2O) connected by dashed lines representing hydrogen bonds, floating in a clear blue space.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fullerenos y grafeno",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **C60** tiene forma de balón de fútbol.",
+          "quote": "El más carac-terístico es el C60 (en la imagen, semejante a un balón de fútbol) con anillos hexagonales y pen-tagonales de átomos de carbo-no."
+        },
+        {
+          "text": "Existen fullerenos de cerca de **1000 átomos**.",
+          "quote": "Se conocen fullerenos de cerca de 1000 átomos."
+        },
+        {
+          "text": "Dopados, pueden ser **semiconductores** o superconductores.",
+          "quote": "Los fullerenos, dopados con átomos de metales alcalinos, se convierten en semiconductores o, incluso, en superconductores a bajas temperaturas."
+        },
+        {
+          "text": "Presentan enorme **resistencia** y elasticidad.",
+          "quote": "orden de 10-9 m) y presentan una enorme resistencia, una increíble elasticidad y propiedades eléctricas sorprendentes."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A geometric, cage-like structure made of hexagons and pentagons, resembling a soccer ball, rendered in a clean, scientific style with soft lighting.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El enlace iónico implica transferencia de electrones y formación de redes cristalinas.",
+    "El enlace covalente se basa en el compartimiento de electrones para alcanzar el octeto.",
+    "El enlace metálico consiste en una nube de electrones deslocalizados entre cationes."
+  ],
+  "summary": "Los enlaces químicos unen átomos mediante transferencia o compartición de electrones. Cada tipo de enlace determina propiedades físicas y químicas específicas de la sustancia.",
+  "closing": "Comprender la naturaleza del enlace químico permite predecir el comportamiento físico y químico de la materia en estado sólido, líquido o gaseoso."
+}
