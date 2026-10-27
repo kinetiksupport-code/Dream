@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { mock } from "./design-fixture";
+import { emptyBoard, routeByRules, updateBoard } from "../../supabase/functions/dream-api/conversation-memory.mjs";
 // Esquemas (docs/ESQUEMAS.md): del chat con apuntes adjuntos a la tarjeta
 // «Dreams» y a la pantalla del esquema. API simulada; el esquema es el ejemplo
 // de al-Ándalus que pasa el validador.
@@ -13,14 +14,30 @@ const example = JSON.parse(readFileSync("supabase/functions/dream-api/scheme-exa
 // PNG de 1×1 para las ilustraciones simuladas.
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==", "base64");
 
+// Router de dream-api simulado con la lógica real (conversation-memory.mjs) y
+// su pizarra, para que el navegador pruebe el flujo de verdad.
+function routeMock() {
+  let board = emptyBoard();
+  let files: string[] = [];
+  return (b: { prompt: string; attachment_ids: string[] }) => {
+    files = [...files, ...b.attachment_ids];
+    const r = routeByRules({ prompt: b.prompt, board, hasFiles: files.length > 0, attached: b.attachment_ids.length });
+    board = updateBoard(board, { prompt: b.prompt, route: r });
+    if (["dreams_game", "dreams_scheme", "test"].includes(r.intent)) board = updateBoard(board, { prompt: b.prompt, delivered: { type: r.intent, title: "x" } });
+    return { route: { intent: r.intent, kind: r.kind ?? null, topic: r.topic ?? "", ask: r.ask ?? null, attachment_ids: r.intent === "chat" ? [] : files.slice(-1) } };
+  };
+}
+
 async function api(page: import("@playwright/test").Page, calls: Record<string, unknown>[] = [], limited = false) {
   await mock(page);
   await page.route("https://ilustraciones.example.test/**", (route) =>
     route.fulfill({ body: PIXEL, contentType: "image/png", headers: { "Access-Control-Allow-Origin": "*" } }),
   );
+  const router = routeMock();
   await page.route("**/functions/v1/dream-api", async (route) => {
     const b = route.request().postDataJSON();
     calls.push(b);
+    if (b.action === "chat_route") return route.fulfill({ json: router(b) });
     if (b.action === "attachment_upload")
       return route.fulfill({ json: { attachment: { id: aid, file_name: b.file_name, status: "processed" } } });
     if (b.action === "scheme_generate") {

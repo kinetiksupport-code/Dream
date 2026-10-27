@@ -25,6 +25,7 @@ export const DREAM_FEATURES = Object.freeze([
   { id: 'notes', name: 'Apuntes', where: 'Apuntes', what: 'fotos o PDF, también desde el móvil con QR' },
   { id: 'exams', name: 'Exámenes', where: 'Exámenes', what: 'tests y simulacros autocorregidos con tus apuntes' },
   { id: 'tasks', name: 'Tareas', where: 'Tareas', what: 'tareas y fechas' },
+  { id: 'dreams', name: 'Dreams', where: 'Dreams (y se piden en el chat)', what: 'esquemas y juegos' },
   { id: 'history', name: 'Historial', where: 'Historial', what: 'chats y tests anteriores' },
   { id: 'settings', name: 'Ajustes', where: 'Ajustes', what: 'perfil y privacidad' },
   { id: 'modes', name: 'Modos de IA', where: 'el selector del chat', what: 'Rápido, Normal o Pensar más' },

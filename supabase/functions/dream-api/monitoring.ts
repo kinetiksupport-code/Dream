@@ -19,6 +19,7 @@ const operations = new Set([
   "game_get",
   "game_result",
   "dreams_list",
+  "chat_route",
   "test_check_answer",
   "test_submit",
   "exam_prepare",

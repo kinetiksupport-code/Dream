@@ -1,5 +1,6 @@
 import { MATERIAL_GUARD, wrapStudentMaterial } from './file-guard.mjs';
 import { selfKnowledge } from './features.mjs';
+import { FILES_RULE } from './conversation-memory.mjs';
 // ============================================================
 // DREAM — SYSTEM PROMPT ÚNICO (proporcionado por el usuario, verbatim).
 // No se reescribe, no se resume, no se elimina la regla de deberes,
@@ -723,22 +724,28 @@ export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes bus
  * Mensajes de sistema del chat. Es el MISMO camino para los tres modos y para
  * el respaldo: solo cambia el prompt base y cuánto contexto entra.
  * @param {string} modeId
- * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null, personal?: string, memory?: string}} [parts]
+ * @param {{fallback?: boolean, search?: boolean, academicMemory?: any[], skillPrompt?: string, examContext?: string, attachmentContext?: string, attachmentFiles?: {file_name?: string, extracted_text?: string}[], attachmentChars?: number|null, shortcut?: string|null, personal?: string, memory?: string, filesIndex?: string, board?: string}} [parts]
  */
 export function chatSystemMessages(modeId, {
   fallback = false, search = false, academicMemory = [], skillPrompt = '',
   examContext = '', attachmentContext = '', attachmentFiles = [], attachmentChars = null, shortcut = null, personal = '', memory = '',
+  filesIndex = '', board = '',
 } = {}) {
   const messages = [
     { role: 'system', content: systemPromptFor(modeId, { fallback }) },
     { role: 'system', content: CONVERSATION_POLICY },
   ];
+  // Conversación con archivos (docs/MEMORIA-CHAT.md): la regla fija va en la
+  // parte estable (igual en todos los turnos) y el índice y la pizarra, después.
+  if (filesIndex) messages.push({ role: 'system', content: FILES_RULE });
   if (search) messages.push({ role: 'system', content: SEARCH_TOOL_PROMPT });
   messages.push({ role: 'system', content: dynamicContextFor(academicMemory, shortcut, personal) });
   // Memoria entre conversaciones (memory.mjs): fija durante toda la conversación.
   if (memory) messages.push({ role: 'system', content: memory });
   if (skillPrompt) messages.push({ role: 'system', content: skillPrompt });
   if (examContext) messages.push({ role: 'system', content: examContext });
+  if (filesIndex) messages.push({ role: 'system', content: filesIndex });
+  if (board) messages.push({ role: 'system', content: board });
   // El material del alumno va siempre delimitado como datos y con la
   // instrucción de no obedecer órdenes que aparezcan dentro (apartado 7.8).
   const files = attachmentFiles.length ? attachmentFiles

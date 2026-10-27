@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mock } from "./design-fixture";
+import { emptyBoard, routeByRules, updateBoard } from "../../supabase/functions/dream-api/conversation-memory.mjs";
 // Dreams interactivos (docs/ESQUEMAS.md, Bloque 7): del chat a la tarjeta, el
 // juego en su iframe aislado (teclado y arrastrar), el aislamiento frente a un
 // juego malicioso y la sección «Dreams» con filtro. API simulada.
@@ -33,11 +34,27 @@ const match = {
   ],
 };
 
+// Router de dream-api simulado con la lógica real (conversation-memory.mjs) y
+// su pizarra, para que el navegador pruebe el flujo de verdad.
+function routeMock() {
+  let board = emptyBoard();
+  let files: string[] = [];
+  return (b: { prompt: string; attachment_ids: string[] }) => {
+    files = [...files, ...b.attachment_ids];
+    const r = routeByRules({ prompt: b.prompt, board, hasFiles: files.length > 0, attached: b.attachment_ids.length });
+    board = updateBoard(board, { prompt: b.prompt, route: r });
+    if (["dreams_game", "dreams_scheme", "test"].includes(r.intent)) board = updateBoard(board, { prompt: b.prompt, delivered: { type: r.intent, title: "x" } });
+    return { route: { intent: r.intent, kind: r.kind ?? null, topic: r.topic ?? "", ask: r.ask ?? null, attachment_ids: r.intent === "chat" ? [] : files.slice(-1) } };
+  };
+}
+
 async function api(page: Page, calls: Record<string, unknown>[] = []) {
   await mock(page);
+  const router = routeMock();
   await page.route("**/functions/v1/dream-api", async (route) => {
     const b = route.request().postDataJSON();
     calls.push(b);
+    if (b.action === "chat_route") return route.fulfill({ json: router(b) });
     if (b.action === "attachment_upload")
       return route.fulfill({ json: { attachment: { id: aid, file_name: b.file_name, status: "processed" } } });
     if (b.action === "game_generate") {
@@ -84,8 +101,28 @@ test("sin apuntes, «hazme un juego» los pide sin gastar cupo", async ({ page }
   await page.goto("/chat");
   await page.getByLabel("Mensaje para Dream").fill("Hazme un juego de la célula");
   await page.getByLabel("Enviar mensaje").click();
-  await expect(page.getByText("Para prepararte un juego fiable necesito tus apuntes")).toBeVisible();
+  await expect(page.getByText("Para hacerte un juego fiable necesito tus apuntes")).toBeVisible();
   expect(calls.some((c) => c.action === "chat" || c.action === "game_generate")).toBe(false);
+});
+
+test("el caso de Carlos: «genérame un Dreams» pregunta el tipo y «un juego» lo crea sin pedir otra vez el archivo", async ({ page }) => {
+  const calls: Record<string, unknown>[] = [];
+  await api(page, calls);
+  await page.goto("/chat");
+  await page.locator('.composer input[type="file"]').setInputFiles({ name: "apuntes-sintagmas.txt", mimeType: "text/plain", buffer: Buffer.from("El sintagma nominal…") });
+  await page.getByLabel("Mensaje para Dream").fill("genérame un Dreams de los sintagmas");
+  await expect(page.getByLabel("Enviar mensaje")).toBeEnabled();
+  await page.getByLabel("Enviar mensaje").click();
+  await expect(page.getByText("¿Cómo lo quieres")).toBeVisible();
+  await page.getByLabel("Mensaje para Dream").fill("un juego");
+  await page.getByLabel("Enviar mensaje").click();
+  const card = page.locator('a.quiz-widget[data-kind="game"]');
+  await expect(card).toBeVisible();
+  const generate = calls.find((c) => c.action === "game_generate");
+  expect(generate?.attachment_ids).toEqual([aid]);
+  expect(generate?.kind).toBe("classify");
+  await expect(page.getByText(/necesito tus apuntes|vuelve a subir|súbeme/i)).toHaveCount(0);
+  expect(calls.some((c) => c.action === "chat")).toBe(false);
 });
 
 test("clasificar solo con el teclado: colocar, comprobar, explicación del fallo y resultado guardado", async ({ page }) => {

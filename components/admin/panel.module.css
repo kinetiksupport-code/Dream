@@ -250,3 +250,30 @@
     animation: none !important;
   }
 }
+
+/* Memoria del chat: tabla de números, con scroll propio en pantallas estrechas. */
+.tableWrap {
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.table th,
+.table td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.table thead th {
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: normal;
+  vertical-align: bottom;
+}
+.table th[scope="row"] {
+  text-align: left;
+}

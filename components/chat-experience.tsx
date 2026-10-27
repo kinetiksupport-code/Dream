@@ -51,6 +51,7 @@ import {
 import { parseDreamContent } from "@/lib/widgets";
 import { wantsScheme } from "@/lib/esquema";
 import { gameKindFor, wantsGame } from "@/lib/dream-games";
+import { routeCandidate } from "../supabase/functions/dream-api/conversation-memory.mjs";
 import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
@@ -513,6 +514,7 @@ export function ChatExperience({
     prompt: string,
     signal: AbortSignal,
     attachmentIds: string[],
+    kind: "classify" | "match" = gameKindFor(prompt),
   ) {
     setDreaming(true);
     setState("shaping");
@@ -521,7 +523,7 @@ export function ChatExperience({
       {
         conversation_id: id,
         context: prompt,
-        kind: gameKindFor(prompt),
+        kind,
         attachment_ids: attachmentIds,
         persist_user_message: true,
       },
@@ -534,6 +536,13 @@ export function ChatExperience({
       { id: messageId, role: "assistant", content: r.assistant_message },
     ]);
   }
+  type ChatRoute = {
+    intent: "chat" | "dreams_scheme" | "dreams_game" | "test";
+    kind: "classify" | "match" | null;
+    topic: string;
+    ask: string | null;
+    attachment_ids: string[];
+  };
   async function send(
     promptOverride?: string,
     retryIds?: string[],
@@ -618,34 +627,39 @@ export function ChatExperience({
         /\b(hazme (?:un |una )?(?:test|examen)|quiero practicar|ponme preguntas|pregúntame|genera (?:un )?(?:test|examen))\b/i.test(
           prompt,
         ) && !/imprimir/i.test(prompt);
-      if (directTest) {
-        await generateTest(id, prompt, controller.signal, true, attachmentIds);
-      } else if (attachmentIds.length && !study && wantsGame(prompt)) {
+      // Router (docs/MEMORIA-CHAT.md): los mensajes cortos, con referencias
+      // («eso», «un juego») o que piden crear algo pasan antes por dream-api,
+      // que mira la conversación entera (archivos y pizarra). Si falla, se
+      // sigue como antes, solo con este mensaje.
+      let route: ChatRoute | null = null;
+      if (!study && routeCandidate(prompt)) {
+        try {
+          route = (
+            await callDream<{ route: ChatRoute }>(
+              "chat_route",
+              { conversation_id: id, prompt, attachment_ids: attachmentIds },
+              controller.signal,
+            )
+          ).route;
+        } catch (e) {
+          if (controller.signal.aborted) throw e;
+          route = null;
+        }
+      }
+      if (route?.ask) {
+        // Una sola pregunta útil (ya guardada en la conversación).
+        const ask = route.ask;
+        setMessages((s) => [...s, { id: assistantId, role: "assistant", content: ask }]);
+      } else if (route?.intent === "dreams_game") {
+        await generateGame(id, prompt, controller.signal, route.attachment_ids, route.kind ?? gameKindFor(prompt));
+      } else if (route?.intent === "dreams_scheme") {
+        await generateScheme(id, prompt, controller.signal, route.attachment_ids);
+      } else if (route?.intent === "test" || (!route && directTest)) {
+        await generateTest(id, prompt, controller.signal, true, route?.attachment_ids ?? attachmentIds);
+      } else if (!route && attachmentIds.length && !study && wantsGame(prompt)) {
         await generateGame(id, prompt, controller.signal, attachmentIds);
-      } else if (!study && wantsGame(prompt)) {
-        // Igual que los esquemas: sin apuntes no hay juego fiable.
-        setMessages((s) => [
-          ...s,
-          {
-            id: assistantId,
-            role: "assistant",
-            content:
-              "Para prepararte un juego fiable necesito tus apuntes: adjunta una foto de la página, el PDF o el documento con el botón del clip y vuelve a pedírmelo. Así cada respuesta sale de lo que estudias.",
-          },
-        ]);
-      } else if (attachmentIds.length && !study && wantsScheme(prompt)) {
+      } else if (!route && attachmentIds.length && !study && wantsScheme(prompt)) {
         await generateScheme(id, prompt, controller.signal, attachmentIds);
-      } else if (!study && wantsScheme(prompt)) {
-        // Sin apuntes no hay esquema (8/10 en el banco): se piden, sin gastar cupo.
-        setMessages((s) => [
-          ...s,
-          {
-            id: assistantId,
-            role: "assistant",
-            content:
-              "Para hacerte un esquema fiable necesito tus apuntes: adjunta una foto de la página, el PDF o el documento con el botón del clip y vuelve a pedírmelo. Así cada dato sale de lo que estudias, no de memoria.",
-          },
-        ]);
       } else {
         setMessages((s) => [
           ...s,

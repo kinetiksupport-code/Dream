@@ -7,6 +7,7 @@ import {
   type Inbox,
   type InboxAppeal,
   type InboxSanction,
+  type MemoryDay,
   type UserCard,
   type UserRef,
 } from "@/lib/admin-api";
@@ -34,6 +35,7 @@ interface Pending {
 
 export function PanelHome({ onLock }: { onLock: () => void }) {
   const [inbox, setInbox] = useState<Inbox | null>(null);
+  const [memory, setMemory] = useState<MemoryDay[] | null>(null);
   const [card, setCard] = useState<{ id: string; data: UserCard } | null>(null);
   const [message, setMessage] = useState("");
   const [pending, setPending] = useState<Pending | null>(null);
@@ -56,6 +58,8 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
   const load = useCallback(async () => {
     const reply = await call("admin_inbox");
     if (reply.status === 200 && reply.data) setInbox(reply.data as unknown as Inbox);
+    const stats = await call("admin_memory_stats");
+    if (stats.status === 200 && Array.isArray(stats.data?.days)) setMemory(stats.data.days as unknown as MemoryDay[]);
   }, [call]);
   useEffect(() => {
     void load();
@@ -236,6 +240,10 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
             ))}
           </Section>
 
+          <Section title="Memoria del chat (14 días)" count={memory?.length ?? 0} empty="Aún no hay datos.">
+            <MemoryTable days={memory ?? []} />
+          </Section>
+
           <Section title="Eventos graves (14 días)" count={inbox.events.length} empty="Sin eventos graves.">
             {inbox.events.map((e, i) => (
               <Card key={`${e.user_id}-${e.created_at}-${i}`} who={e} onOpen={() => void openCard(e.user_id)}>
@@ -277,6 +285,49 @@ function Section({ title, count, empty, children }: { title: string; count: numb
       </h2>
       {count === 0 ? <p className={styles.empty}>{empty}</p> : <div className={styles.list}>{children}</div>}
     </section>
+  );
+}
+/** Totales por día, sin texto ni alumnos: cuánto recuerda el chat y cuánto cuesta. */
+function MemoryTable({ days }: { days: MemoryDay[] }) {
+  const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)} %` : "—");
+  const per = (n: number, d: number) => (d ? Math.round(n / d) : 0);
+  return (
+    <div className={styles.tableWrap}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th scope="col">Día</th>
+            <th scope="col">Turnos</th>
+            <th scope="col">Con archivos</th>
+            <th scope="col">Con material</th>
+            <th scope="col">Rehechas</th>
+            <th scope="col">Router (IA)</th>
+            <th scope="col">Preguntas</th>
+            <th scope="col">Dreams</th>
+            <th scope="col">Tok. índice + pizarra / turno</th>
+            <th scope="col">Tok. router</th>
+          </tr>
+        </thead>
+        <tbody>
+          {days.map((d) => (
+            <tr key={d.day}>
+              <th scope="row">{d.day.slice(5)}</th>
+              <td>{d.turns}</td>
+              <td>{pct(d.with_files, d.turns)}</td>
+              <td>{pct(d.material, d.turns)}</td>
+              <td>{d.reupload_retries}</td>
+              <td>
+                {d.routes} ({d.router_llm})
+              </td>
+              <td>{d.router_asks}</td>
+              <td>{d.dreams}</td>
+              <td>{per(d.index_tokens + d.board_tokens, d.turns)}</td>
+              <td>{d.router_tokens}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 const Actions = ({ children }: { children: ReactNode }) => <div className={styles.actions}>{children}</div>;

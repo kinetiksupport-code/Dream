@@ -15,6 +15,7 @@ import {
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { chatSystemMessages, gameMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
+import { REUPLOAD_NOTE, ROUTER_SCHEMA, asksToReupload, boardText, conversationFiles, fileIndex, ftsQuery, needsMaterial, normalizeRoute, pickFiles, readBoard, routeByRules, routerMessages, updateBoard } from './conversation-memory.mjs';
 import { GAME_JSON_SCHEMAS, GAME_KINDS, gameKindFor, generateGame, validResult } from './games.mjs';
 import { IMAGE_BUCKET, ILLUSTRATIONS_GLOBAL_PER_DAY, ILLUSTRATIONS_PER_DAY, generateImage, illustrationTargets, illustrationsEnabled, imageType, promptHash } from './illustrations.mjs';
 import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
@@ -91,7 +92,7 @@ const WELCOME_ACTIONS = new Set(['onboarding_save', 'onboarding_age', 'consent',
  * apuntes y exámenes nuevos también espera al permiso. Ver, descargar o
  * borrar lo guardado sigue abierto.
  */
-const CONSENT_GATED = new Set(['conversation_create', 'exam_create', 'exam_upload_start', 'exam_material_add', 'upload_session_create', 'upload_session_renew']);
+const CONSENT_GATED = new Set(['chat_route', 'conversation_create', 'exam_create', 'exam_upload_start', 'exam_material_add', 'upload_session_create', 'upload_session_renew']);
 // Errores de proveedores de IA con la misma forma (code, status, retryAfter).
 const isProviderError = (error: unknown): error is GroqProviderError | CloudflareProviderError =>
   error instanceof GroqProviderError || error instanceof CloudflareProviderError;
@@ -378,6 +379,36 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     profile = loaded.data;
   }
 
+  // Memoria de la conversación (conversation-memory.mjs, docs/MEMORIA-CHAT.md).
+  // Archivos ya procesados de la conversación (sin repetidos, en orden de subida).
+  const filesOf = async (conversationId: string) => {
+    const found = await admin.from('dream_attachments').select('id,file_name,extracted_text,created_at')
+      .eq('conversation_id', conversationId).eq('owner_id', user.id).eq('status', 'processed')
+      .order('created_at', { ascending: false }).limit(20);
+    return conversationFiles(found.data || []);
+  };
+  // Los que contienen las palabras de la petición (texto completo de Postgres en español, sin IA).
+  const filesMatching = async (conversationId: string, prompt: string): Promise<string[]> => {
+    const query = ftsQuery(prompt);
+    if (!query) return [];
+    const found = await admin.from('dream_attachments').select('id').eq('conversation_id', conversationId).eq('owner_id', user.id)
+      .eq('status', 'processed').textSearch('extracted_text', query, { config: 'spanish', type: 'websearch' }).limit(4);
+    return (found.data || []).map((f: any) => f.id);
+  };
+  const boardOf = async (conversationId: string) =>
+    readBoard((await admin.from('dream_conversations').select('board').eq('id', conversationId).eq('owner_id', user.id).maybeSingle()).data?.board);
+  const saveBoard = async (conversationId: string, before: unknown, after: unknown) => {
+    if (JSON.stringify(before) === JSON.stringify(after)) return;
+    await admin.from('dream_conversations').update({ board: after }).eq('id', conversationId).eq('owner_id', user.id);
+  };
+  // Tras crear un Dreams o un test: queda en la pizarra como entregado.
+  const markDelivered = async (conversationId: string, type: string, title: string, prompt: string) => {
+    try {
+      const board = await boardOf(conversationId);
+      await saveBoard(conversationId, board, updateBoard(board, { prompt, delivered: { type, title } }));
+    } catch { /* la pizarra nunca rompe una entrega */ }
+  };
+
   // Dream is for students only: no roles, onboarding or per-user help settings.
   const publicProfile = {
     email,
@@ -642,9 +673,13 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const testAttachmentIds = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
     let testAttachmentRows: any[] = [];
     if (ownedConversationId && testAttachmentIds.length) {
+      // También los ya enlazados a un mensaje anterior (docs/MEMORIA-CHAT.md).
       const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', testAttachmentIds)
-        .eq('conversation_id', ownedConversationId).eq('owner_id', user.id).eq('status', 'processed').is('message_id', null);
+        .eq('conversation_id', ownedConversationId).eq('owner_id', user.id).eq('status', 'processed');
       testAttachmentRows = found.data || [];
+    } else if (ownedConversationId && !body.exam_id && needsMaterial(context)) {
+      const files = await filesOf(ownedConversationId);
+      if (files.length) testAttachmentRows = pickFiles(files, context, { ftsIds: await filesMatching(ownedConversationId, context) });
     }
     let recentEducationalContext = '';
     if (ownedConversationId) {
@@ -697,6 +732,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       await admin.from('dream_messages').insert({ conversation_id: ownedConversationId, owner_id: user.id, role: 'assistant', content: assistantMessage });
       await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', ownedConversationId);
     }
+    if (ownedConversationId && body.persist_user_message === true) await markDelivered(ownedConversationId, 'test', String(testInsert.data?.title || 'test'), context);
     return json({ test: testInsert.data, assistant_message: assistantMessage, widget });
   }
 
@@ -707,7 +743,12 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
     const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
     if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
-    const ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    let ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    // Sin archivos en este mensaje: los que ya subió en la conversación (nunca se piden otra vez).
+    if (!ids.length) {
+      const asked = typeof body.context === 'string' ? body.context : '';
+      ids = pickFiles(await filesOf(body.conversation_id), asked, { ftsIds: await filesMatching(body.conversation_id, asked) }).map((f: any) => f.id);
+    }
     if (!ids.length) return json({ error: 'Sube tus apuntes o una foto del libro y te hago el esquema.', code: 'scheme_needs_notes' }, 400);
     const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', ids)
       .eq('conversation_id', body.conversation_id).eq('owner_id', user.id).eq('status', 'processed');
@@ -743,6 +784,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', files.map((f: any) => f.id)).is('message_id', null);
     await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
     await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+    await markDelivered(body.conversation_id, 'esquema', inserted.data.title, request);
     return json({ scheme: { id: inserted.data.id, title: inserted.data.title }, assistant_message: assistantMessage, widget });
   }
 
@@ -855,7 +897,11 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
     const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
     if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
-    const ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    let ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    if (!ids.length) {
+      const asked = typeof body.context === 'string' ? body.context : '';
+      ids = pickFiles(await filesOf(body.conversation_id), asked, { ftsIds: await filesMatching(body.conversation_id, asked) }).map((f: any) => f.id);
+    }
     if (!ids.length) return json({ error: 'Sube tus apuntes o una foto del libro y te preparo el juego.', code: 'game_needs_notes' }, 400);
     const found = await admin.from('dream_attachments').select('id,file_name,extracted_text').in('id', ids)
       .eq('conversation_id', body.conversation_id).eq('owner_id', user.id).eq('status', 'processed');
@@ -891,6 +937,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', files.map((f: any) => f.id)).is('message_id', null);
     await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
     await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+    await markDelivered(body.conversation_id, 'juego', inserted.data.title, request);
     return json({ game: { id: inserted.data.id, title: inserted.data.title, kind }, assistant_message: assistantMessage, widget });
   }
 
@@ -1018,6 +1065,60 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (adminResult) return json(adminResult.body, adminResult.status, { 'Cache-Control': 'no-store' });
   }
 
+  if (body.action === 'chat_route') {
+    // Router (docs/MEMORIA-CHAT.md, Bloque 3): antes de un mensaje corto, con
+    // referencias o que pide crear algo, decide si es chat, un Dreams (esquema o
+    // juego), un test o una sola pregunta útil. Reglas primero; el modelo solo si
+    // no bastan. No gasta del cupo del alumno (coste de Dream, como el prompt de
+    // sistema) y no registra texto: solo la decisión.
+    const started = Date.now();
+    if (!uuid.test(body.conversation_id || '')) return json({ error: 'Conversación no válida.' }, 400);
+    const prompt = typeof body.prompt === 'string' ? body.prompt.trim().slice(0, 1200) : '';
+    if (!prompt) return json({ error: 'Mensaje vacío.' }, 400);
+    const owns = await admin.from('dream_conversations').select('id,board').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
+    if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
+    const attached = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    const files = await filesOf(body.conversation_id);
+    const board = readBoard(owns.data.board);
+    let route: any = routeByRules({ prompt, board, hasFiles: files.length > 0, attached: attached.length });
+    let routerTokens = 0;
+    if (!route.confident && groqConfigured()) {
+      try {
+        const recent = (await admin.from('dream_messages').select('role,content').eq('conversation_id', body.conversation_id).eq('owner_id', user.id)
+          .order('created_at', { ascending: false }).limit(3)).data || [];
+        const response = await groqProvider.request({ operation: 'chat_route', signal: req.signal, timeoutMs: 8000, body: {
+          model: groqModel(), stream: false, temperature: 0, max_tokens: 200,
+          ...(/^qwen\//.test(groqModel()) ? { reasoning_format: 'hidden', reasoning_effort: 'none' } : {}),
+          response_format: { type: 'json_schema', json_schema: { ...ROUTER_SCHEMA, strict: false } },
+          messages: routerMessages({ prompt, recent: recent.reverse(), board, index: fileIndex(files) }),
+        }});
+        const data = await response.json();
+        routerTokens = Number(data?.usage?.total_tokens) || 0;
+        route = normalizeRoute(JSON.parse(data?.choices?.[0]?.message?.content ?? '{}'), { hasFiles: files.length > 0, attached: attached.length, prompt });
+      } catch { route = { ...route, intent: 'chat', via: 'rules_fallback' }; }
+    }
+    const after = updateBoard(board, { prompt, files, route });
+    // Una pregunta del router se guarda como un turno normal (queda en el historial).
+    if (route.ask) {
+      const saved = await admin.from('dream_messages').insert([
+        { conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: prompt },
+        { conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: route.ask },
+      ]).select('id,role');
+      if (saved.error) return json({ error: 'No se pudo guardar tu mensaje.' }, 503);
+      const userMessageId = (saved.data || []).find((m: any) => m.role === 'user')?.id;
+      if (attached.length && userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', attached).eq('owner_id', user.id).is('message_id', null);
+      await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id).eq('owner_id', user.id);
+    }
+    await saveBoard(body.conversation_id, board, after);
+    // Archivos para la tarea: los de este mensaje o, si no trae, los de la conversación.
+    const useFiles = attached.length ? attached
+      : route.intent === 'chat' ? [] : pickFiles(files, `${prompt} ${route.topic ?? ''}`, { ftsIds: await filesMatching(body.conversation_id, `${prompt} ${route.topic ?? ''}`) }).map((f: any) => f.id);
+    console.log(JSON.stringify({ event: 'chat_route', via: route.via, intent: route.intent, asked: Boolean(route.ask), files: files.length, attached: attached.length, router_tokens: routerTokens, ms: Date.now() - started }));
+    await admin.rpc('dream_memory_count', { p: { routes: 1, router_llm: route.via === 'llm' ? 1 : 0, router_asks: route.ask ? 1 : 0,
+      dreams: route.intent === 'dreams_game' || route.intent === 'dreams_scheme' ? 1 : 0, router_tokens: routerTokens } });
+    return json({ route: { intent: route.intent, kind: route.kind ?? null, topic: route.topic ?? '', ask: route.ask ?? null, attachment_ids: useFiles } });
+  }
+
   if (body.action !== 'chat') return json({ error: 'Acción no válida.' }, 400);
 
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : '';
@@ -1037,21 +1138,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const canFallback = fallbackAvailable(mode, ai);
   const searchAvailable = mode.tools && tavilyProvider.configured();
   const askedToSearch = mode.tools && wantsWebSearch(prompt);
-  // «Si no lo sabes, búscalo» (fact-check.mjs): el servidor decide con reglas
-  // cuándo hay que comprobar y lanza la búsqueda él, con un tope diario global
-  // para no agotar el cupo gratis de Tavily. Sin cupo, la IA no inventa: dice
-  // que no puede comprobarlo ahora.
-  const verify = !askedToSearch && needsVerification(prompt, { attachments: Array.isArray(body.attachment_ids) ? body.attachment_ids.length : 0 });
-  const verifyBudget = verify && searchAvailable ? await forcedSearchBudget(admin) : { ok: false };
-  const forcedSearch = verify && searchAvailable && verifyBudget.ok;
-  const searchRequested = askedToSearch || forcedSearch;
-  if (verify) console.log(JSON.stringify({ event: 'fact_check', forced: forcedSearch, budget_used: verifyBudget.used ?? null, budget_cap: verifyBudget.cap ?? null }));
-  // Búsqueda pedida pero sin configurar (o comprobación sin cupo): se responde
-  // sin buscar y se avisa.
-  const searchMissing = (askedToSearch && !tavilyProvider.configured()) || (verify && mode.tools && !forcedSearch);
 
   const conversation = await admin.from('dream_conversations')
-    .select('id,title').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
+    .select('id,title,board').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
   if (conversation.error || !conversation.data) return json({ error: 'Conversación no encontrada.' }, 404);
 
   // Preguntas sobre cómo usar Dream: respuesta fija, sin llamar a la IA ni
@@ -1123,10 +1212,30 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
       .in('id', attachmentIds)
       .eq('conversation_id', conversation.data.id)
       .eq('owner_id', user.id)
-      .eq('status', 'processed')
-      .is('message_id', null);
+      .eq('status', 'processed');
     attachmentRows = found.data || [];
   }
+  // Memoria de la conversación (docs/MEMORIA-CHAT.md): índice de todos sus
+  // archivos en cada turno, pizarra, y el texto solo cuando la tarea lo pide.
+  const convFiles = await filesOf(conversation.data.id);
+  const board = readBoard(conversation.data.board);
+  let materialFiles: any[] = attachmentRows;
+  if (!attachmentRows.length && convFiles.length && needsMaterial(prompt))
+    materialFiles = pickFiles(convFiles, prompt, { ftsIds: await filesMatching(conversation.data.id, prompt) });
+  const filesIndex = fileIndex(convFiles);
+  const boardNow = boardText(board);
+  // «Si no lo sabes, búscalo» (cuenta también el material de la conversación) (fact-check.mjs): el servidor decide con reglas
+  // cuándo hay que comprobar y lanza la búsqueda él, con un tope diario global
+  // para no agotar el cupo gratis de Tavily. Sin cupo, la IA no inventa: dice
+  // que no puede comprobarlo ahora.
+  const verify = !askedToSearch && needsVerification(prompt, { attachments: materialFiles.length });
+  const verifyBudget = verify && searchAvailable ? await forcedSearchBudget(admin) : { ok: false };
+  const forcedSearch = verify && searchAvailable && verifyBudget.ok;
+  const searchRequested = askedToSearch || forcedSearch;
+  if (verify) console.log(JSON.stringify({ event: 'fact_check', forced: forcedSearch, budget_used: verifyBudget.used ?? null, budget_cap: verifyBudget.cap ?? null }));
+  // Búsqueda pedida pero sin configurar (o comprobación sin cupo): se responde
+  // sin buscar y se avisa.
+  const searchMissing = (askedToSearch && !tavilyProvider.configured()) || (verify && mode.tools && !forcedSearch);
 
   // Ahorro: cada modo envía su propio historial (menos mensajes y más cortos
   // en Rápido y en Cloudflare) y limita su salida.
@@ -1195,9 +1304,11 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     personal,
     skillPrompt: educationalSkillPrompt(educationalSelection, profile.academic_level),
     examContext: examStudyContext,
-    attachmentFiles: attachmentRows,
+    attachmentFiles: materialFiles,
     shortcut,
     memory: memoryText,
+    filesIndex,
+    board: boardNow,
   };
   const systemMessages = chatSystemMessages(mode.id, { ...contextParts, search: searchAvailable, attachmentChars: mode.attachmentChars });
   if (searchMissing) systemMessages.push({ role: 'system', content: SEARCH_UNAVAILABLE_PROMPT });
@@ -1247,7 +1358,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   if (attachmentRows.length) {
     await admin.from('dream_attachments')
       .update({ message_id: userSave.data.id })
-      .in('id', attachmentRows.map((a) => a.id));
+      .in('id', attachmentRows.map((a) => a.id))
+      .is('message_id', null);
   }
 
   const encoder = new TextEncoder();
@@ -1310,13 +1422,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         if (shown) send({ type: 'delta', text: shown });
       };
       const flushNickname = () => { const rest = nickname.flush(); if (rest) send({ type: 'delta', text: rest }); };
+      let reuploadRetry = false;
       try {
         // Ciencias con AI_FLAGS.mathCheck: la respuesta se guarda entera, se
         // comprueban sus operaciones y, si no cuadran, se pide una vez que la rehaga.
         const mathCheck = AI_FLAGS.mathCheck && isStemPrompt(prompt);
         // Respuestas largas sin pedirlas: se pide una más corta (AI_FLAGS.shortRetry).
         const shortRetry = AI_FLAGS.shortRetry && !wantsLongAnswer(prompt);
-        const searchKey = searchAvailable || mathCheck || shortRetry;
+        // Con archivos en la conversación, la respuesta se revisa antes de
+        // enseñarla: si pide volver a subir un archivo que ya está, se rehace.
+        const watchReupload = convFiles.length > 0;
+        const searchKey = searchAvailable || mathCheck || shortRetry || watchReupload;
         let usage: any = null;
         const toolDeltas: any[] = [];
         let provisional = '';
@@ -1388,7 +1504,21 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         } else if (searchKey && provisional) {
           let final = provisional;
           const wrong = mathCheck ? checkEqualities(final) : [];
-          if (wrong.length && !servedByFallback) {
+          if (watchReupload && asksToReupload(final) && !servedByFallback) {
+            reuploadRetry = true;
+            const retryFiles = materialFiles.length ? materialFiles : pickFiles(convFiles, prompt);
+            const retrySystem = chatSystemMessages(mode.id, { ...contextParts, attachmentFiles: retryFiles, attachmentChars: mode.attachmentChars });
+            let retry = '';
+            for await (const chunk of providerStream(
+              { ...baseBody, messages: [...retrySystem, ...priorMessages, { role: 'user', content: prompt }, { role: 'assistant', content: final }, { role: 'system', content: REUPLOAD_NOTE }] },
+              { ...fallbackBase, messages: fallbackMessages })) {
+              const delta = chunk?.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') retry += delta;
+              if (retry.length > 32000) break;
+            }
+            final = retry.trim() && !asksToReupload(retry) ? retry
+              : 'Tengo tus archivos de esta conversación. Dime qué parte quieres que miremos y seguimos con ella.';
+          } else if (wrong.length && !servedByFallback) {
             console.log(JSON.stringify({ event: 'math_check', generation_id: generationId, wrong: wrong.length }));
             let retry = '';
             for await (const chunk of providerStream(
@@ -1423,6 +1553,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           });
           await admin.from('dream_conversations')
             .update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+          try { await saveBoard(body.conversation_id, board, updateBoard(board, { prompt, files: convFiles })); } catch { /* la pizarra nunca rompe el turno */ }
+          // Contabilidad de la memoria (Bloque 4): solo contadores y tamaños.
+          console.log(JSON.stringify({ event: 'dream_memory_turn', generation_id: generationId, files: convFiles.length,
+            index_tokens: Math.ceil(filesIndex.length / 3.5), board_tokens: Math.ceil(boardNow.length / 3.5),
+            material_files: materialFiles.length, material_from: attachmentRows.length ? 'message' : materialFiles.length ? 'conversation' : 'none',
+            reupload_retry: reuploadRetry }));
+          await admin.rpc('dream_memory_count', { p: { turns: 1, with_files: convFiles.length ? 1 : 0, material: materialFiles.length ? 1 : 0,
+            reupload_retries: reuploadRetry ? 1 : 0, index_tokens: Math.ceil(filesIndex.length / 3.5), board_tokens: Math.ceil(boardNow.length / 3.5) } });
           send({ type: 'complete' });
         } else {
           send({ type: 'error', message: 'El servicio respondió sin texto. Tu mensaje se conserva.' });

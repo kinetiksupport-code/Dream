@@ -62,6 +62,7 @@ export type DreamAction =
   | "game_get"
   | "game_result"
   | "dreams_list"
+  | "chat_route"
   | "test_get"
   | "test_check_answer"
   | "test_submit"
