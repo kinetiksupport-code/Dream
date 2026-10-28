@@ -10,7 +10,7 @@ import {
 } from "../lib/crisp";
 
 type Command = unknown[];
-function setup({ loads = true, opens = true } = {}) {
+function setup({ loads = true, opens = true, consent = true } = {}) {
   const win: CrispWindow = {};
   const scripts: { src: string; async: boolean; onerror: ((e: Event) => void) | null }[] = [];
   const commands: Command[] = [];
@@ -18,6 +18,7 @@ function setup({ loads = true, opens = true } = {}) {
   const crisp = createCrisp({
     win,
     websiteId: "site-id",
+    allowed: () => consent,
     loadTimeoutMs: 50,
     checkMs: 0,
     wait: async () => {},
@@ -67,6 +68,14 @@ test("the script is inserted once, with the site id and the bubble hidden", asyn
   assert.ok(commands.some((c) => c[1] === "chat:open"));
   // Nothing about the student is sent.
   assert.ok(!commands.some((c) => c[0] === "set"));
+});
+
+test("without consent for Preferences cookies nothing is inserted, whoever calls it", async () => {
+  const { crisp, scripts, win } = setup({ consent: false });
+  await assert.rejects(crisp.load(), (e: unknown) => e instanceof CrispUnavailable && e.reason === "no_consent");
+  await assert.rejects(crisp.open(), (e: unknown) => e instanceof CrispUnavailable && e.reason === "no_consent");
+  assert.equal(scripts.length, 0);
+  assert.equal(win.$crisp, undefined);
 });
 
 test("closing the chat hides it again", async () => {

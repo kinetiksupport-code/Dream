@@ -8,6 +8,7 @@ import {
 import { canonicalRedirect } from "@/lib/auth-redirect";
 import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, panelPath } from "@/lib/admin-route";
 import { HEAD_BOOT } from "@/lib/theme";
+import { COOKIEBOT, cookiebotExcluded } from "@/lib/cookie-consent";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -121,7 +122,7 @@ async function panel(request: NextRequest): Promise<NextResponse> {
     url.search = "";
     return NextResponse.rewrite(url);
   }
-  if (kind !== "panel") return NextResponse.next();
+  if (kind !== "panel") return app(request);
   const nonce = btoa(crypto.randomUUID());
   // El único script en línea propio del diseño (tema y lectura fácil) no lleva nonce:
   // se permite por su hash, y solo ese.
@@ -134,6 +135,7 @@ async function panel(request: NextRequest): Promise<NextResponse> {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
+  headers.set(COOKIEBOT_HEADER, "off");
   const url = request.nextUrl.clone();
   url.pathname = PANEL_INTERNAL;
   url.search = "";
@@ -143,6 +145,22 @@ async function panel(request: NextRequest): Promise<NextResponse> {
   response.headers.set("Content-Security-Policy", csp);
   for (const [key, value] of Object.entries(PANEL_HEADERS)) response.headers.set(key, value);
   return response;
+}
+
+/**
+ * Every other page: x-dream-cookiebot tells app/layout.tsx whether this page
+ * shows Cookiebot (not on the admin panel or the sign-in callback).
+ */
+const COOKIEBOT_HEADER = "x-dream-cookiebot";
+function app(request: NextRequest): NextResponse {
+  const headers = new Headers(request.headers);
+  // Never trust it from the browser.
+  headers.delete(COOKIEBOT_HEADER);
+  const excluded =
+    !COOKIEBOT.enabled ||
+    cookiebotExcluded(request.nextUrl.pathname, panelPath(process.env.ADMIN_PANEL_PATH));
+  headers.set(COOKIEBOT_HEADER, excluded ? "off" : "on");
+  return NextResponse.next({ request: { headers } });
 }
 
 export const config = {

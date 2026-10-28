@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
+import { ConsentWatcher } from "@/components/consent-watcher";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
@@ -218,9 +219,6 @@ export function Providers({ children }: { children: ReactNode }) {
     };
     apply();
     media.addEventListener("change", apply);
-    try {
-      localStorage.setItem("dream-theme", theme);
-    } catch {}
     return () => media.removeEventListener("change", apply);
   }, [theme, themeReady]);
   useEffect(() => {
@@ -259,6 +257,16 @@ export function Providers({ children }: { children: ReactNode }) {
     setProfile(null);
     router.replace("/login");
   };
+  // Saved only when the student picks light or dark (an exempt preference
+  // under the AEPD guide); «Sistema» removes it. Nothing is written on a
+  // first visit (docs/cookies-inventario.md).
+  const setTheme = useCallback((next: Theme) => {
+    setThemeState(next);
+    try {
+      if (next === "system") localStorage.removeItem("dream-theme");
+      else localStorage.setItem("dream-theme", next);
+    } catch {}
+  }, []);
   return (
     <DreamContext.Provider
       value={{
@@ -270,11 +278,12 @@ export function Providers({ children }: { children: ReactNode }) {
         refreshProfile,
         setProfile,
         theme,
-        setTheme: setThemeState,
+        setTheme,
         logout,
       }}
     >
       <ObservabilityRoutes />
+      <ConsentWatcher />
       <ConnectionStatus />
       <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>

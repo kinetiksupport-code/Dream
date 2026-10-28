@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor, Info } from "lucide-react";
 import { PrivacySettings } from "@/components/observability";
+import { SupportChatButton } from "@/components/moderation/support-chat-button";
 import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
@@ -305,6 +306,18 @@ export default function Settings() {
       <PrivacySettings />
 
       <InstallDream />
+
+      <section className="group" aria-labelledby="help-title">
+        <h2 className="section-title" id="help-title">
+          Ayuda
+        </h2>
+        <p className="page-intro">
+          ¿Algo no funciona o tienes una duda? Escríbenos por el chat de ayuda.
+        </p>
+        <div className="button-row">
+          <SupportChatButton context="help" label="Hablar con soporte" />
+        </div>
+      </section>
 
       <section className="group" aria-labelledby="account-title">
         <h2 className="section-title" id="account-title">
