@@ -1,4 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
+import Script from "next/script";
+import { COOKIEBOT, cookiebotScript } from "@/lib/cookie-consent";
 import { Inter, Lexend } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { HEAD_BOOT, THEME_COLORS } from "@/lib/theme";
@@ -69,11 +72,16 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
 };
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Per-request nonce from middleware.ts (CSP). Reading headers makes
+  // every page dynamic, which a nonce needs.
+  const requestHeaders = await headers();
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  const cookiebot = COOKIEBOT.enabled && requestHeaders.get("x-dream-cookiebot") !== "off";
   return (
     <html
       lang="es"
@@ -81,9 +89,23 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: HEAD_BOOT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: HEAD_BOOT }} />
       </head>
       <body>
+        {cookiebot && (
+          // Cookiebot by Usercentrics: Carlos's snippet as next/script, once,
+          // only here. The banner is Cookiebot's; docs/cookiebot-panel.md has
+          // its panel settings. Not on the admin panel or /auth/callback.
+          <Script
+            id="Cookiebot"
+            src={cookiebotScript(COOKIEBOT)}
+            data-cbid={COOKIEBOT.cbid}
+            data-blockingmode={COOKIEBOT.blockingMode}
+            data-culture="es"
+            strategy="beforeInteractive"
+            nonce={nonce}
+          />
+        )}
         <Providers>{children}</Providers>
       </body>
     </html>

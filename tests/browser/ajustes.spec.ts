@@ -238,9 +238,10 @@ test.describe("lectura fácil", () => {
     expect(state.reading).toBe("easy");
     expect(state.font).toMatch(/Lexend/);
     expect(state.value).toBe("easy");
-    // Only preferences live in localStorage, never content.
+    // Only preferences live in localStorage, never content. The theme is
+    // saved only when the student picks one (docs/cookies-inventario.md).
     expect(state.stored.sort()).toEqual(
-      ["dream-reading", "dream-storage-notice-v1", "dream-theme"].sort(),
+      ["dream-reading", "dream-storage-notice-v1"].sort(),
     );
 
     await page.reload();
