@@ -187,9 +187,18 @@ test("emparejar: tocar y arrastrar, deshacer una pareja y todo bien", async ({ p
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
+// La CSP de la página (lib/csp.ts) ya impide que un script añadido al juego se
+// ejecute (ver la prueba siguiente). Esta comprueba las otras capas, el
+// sandbox y la CSP propia del juego, quitando solo la cabecera CSP de la página.
 test("aislamiento: un juego malicioso no lee el almacenamiento ni las cookies de Dream, no hace peticiones y Dream ignora sus mensajes", async ({ page }) => {
   const calls: Record<string, unknown>[] = [];
   await api(page, calls);
+  await page.route(`**/juegos/${gid}`, async (route) => {
+    const response = await route.fetch();
+    const headers = { ...response.headers() };
+    delete headers["content-security-policy"];
+    await route.fulfill({ response, headers });
+  });
   const leaked: string[] = [];
   await page.route("**/robado**", (route) => {
     leaked.push(route.request().url());
@@ -236,6 +245,26 @@ test("aislamiento: un juego malicioso no lee el almacenamiento ni las cookies de
   await expect(page).toHaveURL(new RegExp(`/juegos/${gid}$`));
   expect(calls.some((c) => c.action === "game_result")).toBe(false);
   await expect(page.getByRole("status").filter({ hasText: "de 4" })).toHaveCount(0);
+});
+
+test("aislamiento: con la CSP, un script añadido al juego ni siquiera se ejecuta", async ({ page }) => {
+  const calls: Record<string, unknown>[] = [];
+  await api(page, calls);
+  await page.goto(`/juegos/${gid}`);
+  const frame = page.locator('[data-testid="game-frame"]');
+  await expect(frame).toHaveAttribute("sandbox", "allow-scripts");
+  const ran = await page.evaluate(
+    () =>
+      new Promise<string>((resolve) => {
+        const iframe = document.querySelector<HTMLIFrameElement>('[data-testid="game-frame"]')!;
+        window.addEventListener("message", (e) => {
+          if (e.source === iframe.contentWindow && e.data?.tipo === "ejecutado") resolve("ejecutado");
+        });
+        iframe.srcdoc = iframe.srcdoc.replace("</body>", `<script>parent.postMessage({ tipo: "ejecutado" }, "*")<\/script></body>`);
+        setTimeout(() => resolve("bloqueado"), 2000);
+      }),
+  );
+  expect(ran).toBe("bloqueado");
 });
 
 test("sección «Dreams»: esquemas y juegos con filtro por tipo, y entrada en la navegación", async ({ page }) => {
