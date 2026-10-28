@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Markdown } from "@/components/markdown";
 import { Orb } from "@/components/orb";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 
 const LINKS = [
   { href: "/privacidad", label: "Privacidad" },
@@ -27,6 +28,9 @@ export function LegalPage({ content }: { content: string }) {
       <article className="legal-body">
         <Markdown content={content} />
       </article>
+      <footer className="legal-foot">
+        <CookieSettingsButton />
+      </footer>
     </main>
   );
 }

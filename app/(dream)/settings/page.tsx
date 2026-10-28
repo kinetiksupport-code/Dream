@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor, Info } from "lucide-react";
+import Link from "next/link";
 import { PrivacySettings } from "@/components/observability";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import { SupportChatButton } from "@/components/moderation/support-chat-button";
 import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
@@ -292,6 +294,12 @@ export default function Settings() {
           >
             Eliminar mi cuenta
           </button>
+        </div>
+        <div className="button-row">
+          <CookieSettingsButton className="secondary press" />
+          <Link className="text-link" href="/cookies">
+            Política de cookies
+          </Link>
         </div>
         {(historyBlocked || accountBlocked) && (
           <p className="settings-why" id="privacy-why">

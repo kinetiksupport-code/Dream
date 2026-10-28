@@ -1,3 +1,4 @@
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import Link from "next/link";
 import { Orb } from "@/components/orb";
 import { OrbLink } from "@/components/orb-link";
@@ -228,6 +229,7 @@ export default function LandingPage() {
           <Link href="/terminos">Términos</Link>
           <Link href="/cookies">Cookies</Link>
           <Link href="/aviso-legal">Aviso legal</Link>
+          <CookieSettingsButton className={s.footerButton} />
         </nav>
       </footer>
     </div>
