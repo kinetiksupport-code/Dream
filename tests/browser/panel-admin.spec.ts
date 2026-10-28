@@ -124,6 +124,8 @@ test("the administrator gets the link, the inbox and a two-step confirmation; ho
   await page.goto("/chat");
   const link = page.getByRole("link", { name: "Panel de administración" });
   await expect(link).toBeVisible();
+  // Lo que cuenta es la página del panel (carga completa): sin Cookiebot ni nada de fuera.
+  outside.length = 0;
   await link.click();
   await expect(page.getByRole("heading", { name: "Panel de administración", level: 1 })).toBeVisible();
   expect(calls).toContain("admin_session_start");
