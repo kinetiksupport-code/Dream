@@ -38,7 +38,10 @@ export const sendAppeal = (body: string, sanctionId?: string) =>
   });
 
 const dateFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" });
-const dateTimeFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+// Fecha y hora por separado: con las dos juntas, el texto depende de la
+// versión de ICU (Node 22 escribe «22 de octubre, 11:30»; Node 24, «… a las 11:30»).
+const dayMonthFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" });
+const timeFormat = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
 
 /** «hasta el 12 de noviembre de 2026» o «de forma permanente». */
 export function untilText(until: string | null, permanent: boolean): string {
@@ -47,7 +50,9 @@ export function untilText(until: string | null, permanent: boolean): string {
 }
 /** Límite corto de una limitación: «hasta el 22 de octubre, 11:30». */
 export function limitText(until: string | null): string {
-  return until ? `hasta el ${dateTimeFormat.format(new Date(until))}` : "durante un tiempo";
+  if (!until) return "durante un tiempo";
+  const date = new Date(until);
+  return `hasta el ${dayMonthFormat.format(date)}, ${timeFormat.format(date)}`;
 }
 export const isModerationBlock = (code: string) => code === "mod_ip_blocked" || code === "mod_user_limited";
 
