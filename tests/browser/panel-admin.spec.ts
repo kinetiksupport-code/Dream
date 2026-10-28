@@ -92,8 +92,13 @@ test("signed out, the usual admin paths look exactly like a missing page and the
   expect(panel.headers()["x-frame-options"]).toBe("DENY");
   expect(panel.headers()["cache-control"]).toContain("no-store");
   expect(panel.headers()["x-robots-tag"]).toContain("noindex");
-  expect((await request.get("/admin")).headers()["content-security-policy"]).toBeUndefined();
-  expect((await request.get("/panel-interno")).headers()["content-security-policy"]).toBeUndefined();
+  // El resto lleva la CSP de la app (lib/csp.ts), igual que una página que no existe.
+  const appPolicy = async (path: string) =>
+    ((await request.get(path)).headers()["content-security-policy"] ?? "").replace(/'nonce-[^']+'/, "'nonce-x'");
+  const missing = await appPolicy("/no-existe-nada");
+  expect(missing).toMatch(/^default-src 'self'/);
+  expect(await appPolicy("/admin")).toBe(missing);
+  expect(await appPolicy("/panel-interno")).toBe(missing);
 });
 
 test("a signed-in student with another email is sent to Inicio from the panel path and has no menu entry", async ({ page }) => {
