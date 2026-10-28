@@ -4,7 +4,8 @@ import { readFileSync } from "node:fs";
 import {
   COOKIEBOT_DEFAULT_CBID,
   cookiebotConfig,
-  cookiebotExcluded,
+  cookiebotPage,
+  consentFromCookie,
   cookieDeclarationScript,
   cookiebotScript,
   grantPreferences,
@@ -28,9 +29,22 @@ test("config: Carlos's id and «auto» by default; env can switch to manual, .eu
   assert.equal(cookiebotConfig({ cbid: "\"><script>" }).enabled, false, "un id raro nunca llega al HTML");
 });
 
-test("no Cookiebot on the admin panel, the sign-in callback or well-known files", () => {
-  for (const p of ["/revision", "/panel-interno", "/auth/callback", "/.well-known/security.txt"]) assert.ok(cookiebotExcluded(p, "/revision"), p);
-  for (const p of ["/", "/login", "/chat", "/settings", "/cookies", "/subir", "/revision-2"]) assert.ok(!cookiebotExcluded(p, "/revision"), p);
+test("Cookiebot only on the landing, Términos, Privacidad and /cookies", () => {
+  for (const p of ["/", "/terminos", "/privacidad", "/cookies"]) assert.ok(cookiebotPage(p), p);
+  for (const p of ["/login", "/chat", "/settings", "/aviso-legal", "/subir", "/revision", "/panel-interno", "/auth/callback", "/.well-known/security.txt", "/cookies/x"])
+    assert.ok(!cookiebotPage(p), p);
+});
+
+test("consent from the CookieConsent cookie when Cookiebot is not on the page (the app)", () => {
+  const real = (p: boolean, s: boolean) =>
+    `CookieConsent=${encodeURIComponent(`{stamp:'abc',necessary:true,preferences:${p},statistics:${s},marketing:false,method:'explicit',ver:1,utc:1761600000000,region:'es'}`)}`;
+  assert.deepEqual(consentFromCookie(`a=1; ${real(true, false)}; b=2`), { ready: false, decided: true, preferences: true, statistics: false });
+  assert.deepEqual(readConsent({}, real(false, true)), { ready: false, decided: true, preferences: false, statistics: true });
+  assert.deepEqual(consentFromCookie(`CookieConsent=${encodeURIComponent(JSON.stringify({ preferences: true, statistics: false }))}`).preferences, true);
+  for (const c of [undefined, "", "CookieConsent=-1", "CookieConsent=%E0%A4%A", "XCookieConsent=preferences:true"])
+    assert.deepEqual(consentFromCookie(c), { ready: false, decided: false, preferences: false, statistics: false }, String(c));
+  // Cookiebot on the page wins over the cookie.
+  assert.equal(readConsent({ Cookiebot: { hasResponse: false } }, real(true, true)).preferences, false);
 });
 
 test("consent: silence is never consent, and only a real decision counts", () => {

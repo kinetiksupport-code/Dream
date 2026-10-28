@@ -86,6 +86,7 @@ export default async function RootLayout({
     <html
       lang="es"
       className={`${inter.variable} ${interHero.variable} ${lexend.variable}`}
+      data-cookiebot={cookiebot ? "on" : "off"}
       suppressHydrationWarning
     >
       <head>
@@ -95,7 +96,8 @@ export default async function RootLayout({
         {cookiebot && (
           // Cookiebot by Usercentrics: Carlos's snippet as next/script, once,
           // only here. The banner is Cookiebot's; docs/cookiebot-panel.md has
-          // its panel settings. Not on the admin panel or /auth/callback.
+          // its panel settings. Only on the landing and the legal pages
+          // (COOKIEBOT_PAGES), never inside the app.
           <Script
             id="Cookiebot"
             src={cookiebotScript(COOKIEBOT)}

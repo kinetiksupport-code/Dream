@@ -111,8 +111,8 @@ test("the appeal button asks first, then loads Crisp; Crisp gets nothing from th
   await fakeCookiebot(page);
   await setup(page, { banned: true });
   await page.goto("/chat");
-  // El banner de cookies también sale aquí; se rechaza todo y la apelación sigue posible.
-  await page.getByRole("button", { name: "Denegar" }).click();
+  // Dentro de la app no hay banner de cookies.
+  await expect(page.locator("#CybotCookiebotDialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Hacer una apelación" }).click();
   const dialog = page.getByRole("alertdialog");
   await expect(dialog).toContainText("Dream no le pasa tu correo ni tu nombre");
