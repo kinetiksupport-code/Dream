@@ -49,7 +49,8 @@
   .navCta:hover {
     background-color: rgba(255, 255, 255, 0.24);
   }
-  .footer a:hover {
+  .footer a:hover,
+  .footerButton:hover {
     color: var(--text);
   }
 }
@@ -444,7 +445,8 @@
   flex-wrap: wrap;
   gap: 0 8px;
 }
-.footer a {
+.footer a,
+.footerButton {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);

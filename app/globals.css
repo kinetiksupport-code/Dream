@@ -3129,6 +3129,16 @@ fieldset:disabled .test-option {
     color: var(--primary-ink);
   }
 }
+.legal-foot {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 16px calc(32px + var(--safe-bottom));
+}
+.cookie-settings-missing {
+  display: block;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
 .legal-body {
   max-width: 760px;
   margin: 0 auto;
