@@ -144,7 +144,7 @@ button:disabled{opacity:.55;cursor:default}
 
 // Lógica común y de cada plantilla. Todo el texto del contenido entra con
 // textContent: nunca como HTML.
-const SCRIPT = `
+export const GAME_SCRIPT = `
 (function(){
 "use strict";
 var game = JSON.parse(document.getElementById("data").textContent);
@@ -335,5 +335,5 @@ export function gameDocument(game: Game) {
 <style>${STYLE}</style></head>
 <body><main id="app"></main><div id="live" class="sr" aria-live="polite"></div>
 <script type="application/json" id="data">${jsonForScript(game)}</script>
-<script>${SCRIPT}</script></body></html>`;
+<script>${GAME_SCRIPT}</script></body></html>`;
 }

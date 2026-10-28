@@ -12,6 +12,7 @@ import {
   renewConsent,
 } from "../lib/cookie-consent";
 import { clearCrispCookies, clearCrispStorage } from "../lib/consent-cleanup";
+import { appCsp, cspHeaderName } from "../lib/csp";
 
 // Cookiebot (docs/cookies-inventario.md, docs/cookiebot-panel.md).
 test("config: Carlos's id and «auto» by default; env can switch to manual, .eu or off", () => {
@@ -79,6 +80,31 @@ test("withdrawing consent removes Crisp's cookies and storage, and nothing else"
   assert.deepEqual([...store.keys()], ["dream-theme"]);
 });
 
+test("CSP: nonce + strict-dynamic, Cookiebot and Crisp hosts, only style-src is unsafe-inline", () => {
+  const csp = appCsp("abc", {
+    supabaseUrl: "https://ref.supabase.co",
+    dreamApiUrl: "https://ref.supabase.co/functions/v1/dream-api",
+    posthogHost: "https://eu.i.posthog.com",
+    sentryDsn: "https://k@o1.ingest.de.sentry.io/2",
+  }, ["sha256-xyz"]);
+  const dir = Object.fromEntries(csp.split("; ").map((d) => [d.split(" ")[0], d]));
+  assert.match(dir["script-src"], /'nonce-abc' 'sha256-xyz' 'strict-dynamic' https:\/\/consent\.cookiebot\.com https:\/\/consentcdn\.cookiebot\.com/);
+  assert.doesNotMatch(dir["script-src"], /unsafe-inline|unsafe-eval/);
+  assert.match(dir["connect-src"], /https:\/\/consent\.cookiebot\.com https:\/\/consentcdn\.cookiebot\.com/);
+  assert.match(dir["connect-src"], /https:\/\/eu\.i\.posthog\.com https:\/\/eu-assets\.i\.posthog\.com https:\/\/o1\.ingest\.de\.sentry\.io/);
+  assert.match(dir["frame-src"], /https:\/\/consentcdn\.cookiebot\.com/);
+  assert.match(dir["img-src"], /https:\/\/imgsct\.cookiebot\.com/);
+  assert.doesNotMatch(csp, /http:\/\//, "solo https");
+  assert.equal(csp.match(/'unsafe-inline'/g)?.length, 1);
+  assert.match(dir["style-src"], /'unsafe-inline'/);
+  assert.equal(dir["frame-ancestors"], "frame-ancestors 'none'");
+  assert.equal(dir["object-src"], "object-src 'none'");
+  assert.match(appCsp("n", { development: true }), /'unsafe-eval'/);
+  assert.equal(cspHeaderName(undefined), "Content-Security-Policy");
+  assert.equal(cspHeaderName("report-only"), "Content-Security-Policy-Report-Only");
+  assert.equal(cspHeaderName("off"), null);
+});
+
 test("Cookiebot is installed once, in the root layout, with the nonce and without async/defer", () => {
   const layout = readFileSync("app/layout.tsx", "utf8");
   assert.equal(layout.match(/id="Cookiebot"/g)?.length, 1);
@@ -89,4 +115,9 @@ test("Cookiebot is installed once, in the root layout, with the nonce and withou
   for (const f of ["components/providers.tsx", "app/page.tsx", "components/legal-page.tsx"]) assert.doesNotMatch(readFileSync(f, "utf8"), /uc\.js/);
   // Ni gtag ni Google Tag Manager.
   assert.doesNotMatch(layout, /gtag|googletagmanager/);
+});
+
+test("the service worker never caches anything from another origin (Cookiebot included)", () => {
+  const sw = readFileSync("public/sw.js", "utf8");
+  assert.match(sw, /if \(url\.origin !== self\.location\.origin\) return;/);
 });

@@ -77,7 +77,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Per-request nonce from middleware.ts (CSP). Reading headers makes
+  // Per-request nonce from middleware.ts (lib/csp.ts). Reading headers makes
   // every page dynamic, which a nonce needs.
   const requestHeaders = await headers();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
