@@ -3139,6 +3139,11 @@ fieldset:disabled .test-option {
   font-size: var(--text-small);
   color: var(--text-secondary);
 }
+/* Cookiebot only on the landing and the legal pages (COOKIEBOT_PAGES). */
+html[data-cookiebot="off"] #CybotCookiebotDialog,
+html[data-cookiebot="off"] #CookiebotWidget {
+  display: none !important;
+}
 .legal-body {
   max-width: 760px;
   margin: 0 auto;

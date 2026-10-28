@@ -10,7 +10,7 @@ import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, p
 import { HEAD_BOOT } from "@/lib/theme";
 import { GAME_SCRIPT } from "@/lib/dream-games";
 import { appCsp, cspHeaderName } from "@/lib/csp";
-import { COOKIEBOT, cookiebotExcluded } from "@/lib/cookie-consent";
+import { COOKIEBOT, cookiebotPage } from "@/lib/cookie-consent";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -163,10 +163,8 @@ async function app(request: NextRequest, rewrite?: URL): Promise<NextResponse> {
   // Never trust these from the browser.
   headers.delete("x-nonce");
   headers.delete(COOKIEBOT_HEADER);
-  const excluded =
-    !COOKIEBOT.enabled ||
-    cookiebotExcluded(request.nextUrl.pathname, panelPath(process.env.ADMIN_PANEL_PATH));
-  headers.set(COOKIEBOT_HEADER, excluded ? "off" : "on");
+  const shown = COOKIEBOT.enabled && !rewrite && cookiebotPage(request.nextUrl.pathname);
+  headers.set(COOKIEBOT_HEADER, shown ? "on" : "off");
   const pass = () =>
     rewrite ? NextResponse.rewrite(rewrite, { request: { headers } }) : NextResponse.next({ request: { headers } });
   if (!header) return pass();

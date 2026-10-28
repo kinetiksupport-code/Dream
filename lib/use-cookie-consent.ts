@@ -12,7 +12,7 @@ import {
 // from here (Crisp today). On the server there is no decision: NO_CONSENT.
 let snapshot: ConsentState = NO_CONSENT;
 function current(): ConsentState {
-  const next = readConsent(window as unknown as ConsentWindow);
+  const next = readConsent(window as unknown as ConsentWindow, document.cookie);
   if (
     next.ready !== snapshot.ready ||
     next.decided !== snapshot.decided ||

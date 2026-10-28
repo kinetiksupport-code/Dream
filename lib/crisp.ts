@@ -157,7 +157,7 @@ export function crisp() {
     websiteId:
       process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID || CRISP_DEFAULT_WEBSITE_ID,
     allowed: () =>
-      grantedThisVisit || readConsent(window as unknown as ConsentWindow).preferences,
+      grantedThisVisit || readConsent(window as unknown as ConsentWindow, document.cookie).preferences,
   });
   return browserCrisp;
 }

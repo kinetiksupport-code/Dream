@@ -79,8 +79,8 @@ export function SupportChatButton({
   function confirm() {
     rememberNotice(storage());
     if (sheet?.permission) {
-      // El clic es el consentimiento: queda registrado en Cookiebot y vale para
-      // esta visita aunque Cookiebot no esté (bloqueador).
+      // El clic es el consentimiento: se registra en Cookiebot si está en la
+      // página; en la app (sin Cookiebot) vale solo para esta visita.
       grantPreferences(window as unknown as ConsentWindow);
       allowCrispThisVisit();
     }

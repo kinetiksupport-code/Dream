@@ -17,11 +17,13 @@ Medido con el banner **real** de tu cuenta, sirviendo la build local como `https
 | CSP | ✅ Sin ninguna violación con el script real | Nada |
 | **Tamaño en el móvil** | ❌ **Ocupa 828 de 844 px: es un muro** (tapa toda la pantalla). En el escritorio está bien | Paso 2: «Posición: abajo, compacto» |
 | **Texto del banner y de la declaración** | ❌ **Es el de serie: «…personalizar el contenido y los anuncios, ofrecer funciones de redes sociales… compartimos información… con nuestros partners de redes sociales, publicidad…». Es falso para Dream** | Paso 2: textos. **Urgente antes de producción** |
-| Icono flotante (*Privacy trigger*) | ❌ Sale a la izquierda | Paso 2: desactivarlo |
+| Icono flotante (*Privacy trigger*) | ❌ Sale a la izquierda | Paso 2: desactivarlo. Desde el 28-oct ya no sale dentro de la app (ver abajo) |
 | `dream-theme` en la declaración | ⚠️ «No clasificado» (lo encontró el escaneo del 27-oct) | Paso 3: marcarlo como Necesarias |
 | Duración de `CookieConsent` | 12 meses (no 1 mes) | Ya está así en `/cookies` |
 | Bloqueo `auto` | No bloqueó nada ni avisó. Inconcluso: antes del consentimiento no hay scripts de terceros que bloquear | Nada. El chat va bloqueado por código |
 | Accesibilidad (axe) | ⚠️ 1 problema serio de la plantilla (`scrollable-region-focusable`: el texto con scroll no se alcanza con el teclado). Al abrirse, el foco **no** pasa al banner | Se resuelve con un banner compacto sin scroll. El foco no se controla con el plan Free: Premium Lite permite una plantilla propia |
+
+**Dónde sale Cookiebot.** Solo en la landing (`/`), `/terminos`, `/privacidad` y `/cookies` (`COOKIEBOT_PAGES` en `lib/cookie-consent.ts`). Dentro de la app no se carga: antes del consentimiento la app solo usa almacenamiento necesario, así que no necesita banner. Allí la decisión se lee de la cookie `CookieConsent`. «Configurar cookies» de Ajustes lleva a `/cookies` con el banner abierto. Si el alumno entra en la app desde la landing sin recargar, el banner y el icono quedan ocultos.
 
 ## 1. Dominio
 

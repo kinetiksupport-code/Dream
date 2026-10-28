@@ -57,18 +57,14 @@ export const cookieDeclarationScript = (c: CookiebotConfig) =>
   `${cookiebotHosts(c.tld).consent}/${c.cbid}/cd.js`;
 
 /**
- * Pages without Cookiebot: the admin panel (no third parties at all, see
- * docs/PANEL_ADMIN.md), the sign-in callback and the well-known files.
- * manifest and sw.js are not pages and never render the layout.
+ * Cookiebot (banner and floating icon) only on the landing and the legal
+ * pages: Términos, Privacidad and the cookie policy. Before consent the app
+ * only uses strictly necessary storage (docs/cookies-inventario.md), so it
+ * needs no banner; inside it, the decision is read from the CookieConsent
+ * cookie and «Configurar cookies» goes to /cookies.
  */
-export function cookiebotExcluded(pathname: string, panelPath: string): boolean {
-  return (
-    pathname === panelPath ||
-    pathname === "/panel-interno" ||
-    pathname === "/auth/callback" ||
-    pathname.startsWith("/.well-known/")
-  );
-}
+export const COOKIEBOT_PAGES: readonly string[] = ["/", "/terminos", "/privacidad", "/cookies"];
+export const cookiebotPage = (pathname: string) => COOKIEBOT_PAGES.includes(pathname);
 
 export interface ConsentState {
   /** Cookiebot's script is on the page and answered. */
@@ -105,9 +101,13 @@ export const CONSENT_EVENTS = [
   "CookiebotOnDecline",
 ] as const;
 
-export function readConsent(win: ConsentWindow | undefined): ConsentState {
+/**
+ * The decision, from Cookiebot when it is on the page, or else from its
+ * CookieConsent cookie (app pages, where Cookiebot is not loaded).
+ */
+export function readConsent(win: ConsentWindow | undefined, cookie?: string): ConsentState {
   const api = win?.Cookiebot;
-  if (!api || typeof api !== "object") return NO_CONSENT;
+  if (!api || typeof api !== "object") return consentFromCookie(cookie);
   const c = api.consent ?? {};
   const decided = api.hasResponse === true;
   return {
@@ -120,9 +120,28 @@ export function readConsent(win: ConsentWindow | undefined): ConsentState {
 }
 
 /**
+ * Cookiebot's own cookie: `{stamp:'…',necessary:true,preferences:false,…}`,
+ * URL-encoded. Anything else (no cookie, «-1» for regions without consent,
+ * garbage) is no decision.
+ */
+export function consentFromCookie(cookie: string | undefined): ConsentState {
+  const match = cookie?.match(/(?:^|;\s*)CookieConsent=([^;]*)/);
+  if (!match) return NO_CONSENT;
+  let value: string;
+  try {
+    value = decodeURIComponent(match[1]);
+  } catch {
+    return NO_CONSENT;
+  }
+  const flag = (key: string) => new RegExp(`["']?${key}["']?\\s*:\\s*(true|false)\\b`).exec(value)?.[1];
+  if (!flag("preferences")) return NO_CONSENT;
+  return { ready: false, decided: true, preferences: flag("preferences") === "true", statistics: flag("statistics") === "true" };
+}
+
+/**
  * «Permitir y abrir» in the support sheet: grants Preferences and keeps the
  * student's earlier choice on Statistics. Marketing is always false.
- * Returns false when Cookiebot is not available (blocker, excluded page).
+ * Returns false when Cookiebot is not on the page (app pages, blocker).
  */
 export function grantPreferences(win: ConsentWindow | undefined): boolean {
   const api = win?.Cookiebot;
