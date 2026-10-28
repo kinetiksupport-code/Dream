@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 27 de octubre de 2026 (versión provisional).*
+*Última actualización: 28 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -67,9 +67,11 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 - **Cloudflare** (Cloudflare Workers AI, ilustraciones de los esquemas). Para dibujar las imágenes de un esquema solo recibe una **descripción corta en inglés del tema** (por ejemplo, «un palacio andalusí al atardecer») que escribe la IA de Dream; **no recibe tus apuntes, tus mensajes, tu nombre ni tu correo**. Las imágenes no llevan datos personales, se guardan en Supabase y se reutilizan para otros esquemas del mismo tema. No conocemos la región en la que se generan las imágenes, así que esa descripción puede tratarse fuera de la Unión Europea.
 - **Tavily** (búsqueda web). Solo recibe la consulta de búsqueda que el tutor genera cuando necesita verificar un dato actual.
 - **Google** (iconos de webs). Cuando abres una respuesta con búsqueda, tu navegador pide a Google el logo de cada web consultada. Google recibe la dirección de esa web y la de tu conexión (IP), igual que al visitar cualquier página; no recibe tu pregunta, tu nombre ni tu correo.
+- **Usercentrics** (Cookiebot, gestor de cookies). Muestra el aviso de cookies y guarda tu elección como prueba del consentimiento: un identificador aleatorio, la fecha y hora, tu elección, tu dirección IP recortada, el navegador que usas y la página desde la que decidiste. No recibe tu nombre, tu correo ni nada de lo que estudias. Con el plan actual el registro se guarda 12 meses. El país en el que se tratan estos datos está pendiente de confirmar en el contrato de encargado de Usercentrics. Más detalle en la [Política de cookies](/cookies).
+- **Crisp** (chat de ayuda), solo si lo abres desde Ajustes > Ayuda o desde la pantalla de apelación, y solo con tu permiso para sus cookies. Recibe los mensajes que escribas en ese chat y datos técnicos de conexión (como la IP). Dream no le pasa tu correo, tu nombre ni tu cuenta.
 - **PostHog** y **Sentry** (estadísticas y errores), solo si tú lo activas en Ajustes. Funcionan de forma anónima: sin grabación de pantalla, sin contenido de tus mensajes y sin geolocalización por IP.
 
-No cedemos tus datos a nadie más salvo obligación legal.
+No cedemos tus datos a nadie más salvo obligación legal. Qué guarda cada servicio en tu navegador lo explicamos en la [Política de cookies](/cookies).
 
 ## 5. Transferencias internacionales
 
