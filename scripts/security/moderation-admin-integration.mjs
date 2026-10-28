@@ -14,6 +14,9 @@ await admin.query("create database dream_mod_admin_test");
 const url = new URL(process.env.DREAM_TEST_DATABASE_URL || "postgresql://postgres:isolated-test-only@127.0.0.1:55432/postgres");
 url.pathname = "/dream_mod_admin_test";
 const pool = new pg.Pool({ connectionString: url.toString(), max: 4, statement_timeout: 5000 });
+// La base se borra con (force) al final: el aviso tardío de un cliente ya cerrado
+// no es un fallo de la prueba (sin manejador, Node lo convierte en una excepción).
+pool.on("error", () => {});
 
 await pool.query(`
   do $$ begin
