@@ -10,7 +10,7 @@ const LINKS = [
   { href: "/aviso-legal", label: "Aviso legal" },
 ];
 
-export function LegalPage({ content }: { content: string }) {
+export function LegalPage({ content, children }: { content: string; children?: React.ReactNode }) {
   return (
     <main className="legal-page">
       <header className="legal-head">
@@ -27,6 +27,7 @@ export function LegalPage({ content }: { content: string }) {
       </header>
       <article className="legal-body">
         <Markdown content={content} />
+        {children}
       </article>
       <footer className="legal-foot">
         <CookieSettingsButton />

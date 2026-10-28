@@ -4,7 +4,7 @@ export const terminos = String.raw`# Términos y condiciones
 
 ## 1. Quién ofrece Dream
 
-Dream Education ("Dream") es un servicio ofrecido por **Carlos Sánchez**, a título particular, contacto **hellodream@edudream.es**. Al crear una cuenta o usar Dream aceptas estos términos y la [Política de privacidad](/privacidad).
+Dream Education ("Dream") es un servicio ofrecido por **Carlos Sánchez**, a título particular, contacto **hellodream@edudream.es**. Al crear una cuenta o usar Dream aceptas estos términos y la [Política de privacidad](/privacidad). Las cookies se explican en la [Política de cookies](/cookies).
 
 ## 2. Qué es Dream
 
