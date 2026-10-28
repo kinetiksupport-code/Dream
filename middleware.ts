@@ -8,6 +8,8 @@ import {
 import { canonicalRedirect } from "@/lib/auth-redirect";
 import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, panelPath } from "@/lib/admin-route";
 import { HEAD_BOOT } from "@/lib/theme";
+import { GAME_SCRIPT } from "@/lib/dream-games";
+import { appCsp, cspHeaderName } from "@/lib/csp";
 import { COOKIEBOT, cookiebotExcluded } from "@/lib/cookie-consent";
 
 const PUBLIC_ROUTES = new Set([
@@ -120,7 +122,8 @@ async function panel(request: NextRequest): Promise<NextResponse> {
     const url = request.nextUrl.clone();
     url.pathname = "/no-existe-404";
     url.search = "";
-    return NextResponse.rewrite(url);
+    // Same headers as any other missing page.
+    return app(request, url);
   }
   if (kind !== "panel") return app(request);
   const nonce = btoa(crypto.randomUUID());
@@ -148,19 +151,45 @@ async function panel(request: NextRequest): Promise<NextResponse> {
 }
 
 /**
- * Every other page: x-dream-cookiebot tells app/layout.tsx whether this page
- * shows Cookiebot (not on the admin panel or the sign-in callback).
+ * Every other page: CSP with a fresh nonce (lib/csp.ts). The nonce travels in
+ * the request headers so Next.js puts it on its scripts and app/layout.tsx on
+ * Cookiebot's; x-dream-cookiebot says whether this page shows Cookiebot.
  */
 const COOKIEBOT_HEADER = "x-dream-cookiebot";
-function app(request: NextRequest): NextResponse {
+let gameHash: Promise<string> | undefined;
+async function app(request: NextRequest, rewrite?: URL): Promise<NextResponse> {
+  const header = cspHeaderName();
   const headers = new Headers(request.headers);
-  // Never trust it from the browser.
+  // Never trust these from the browser.
+  headers.delete("x-nonce");
   headers.delete(COOKIEBOT_HEADER);
   const excluded =
     !COOKIEBOT.enabled ||
     cookiebotExcluded(request.nextUrl.pathname, panelPath(process.env.ADMIN_PANEL_PATH));
   headers.set(COOKIEBOT_HEADER, excluded ? "off" : "on");
-  return NextResponse.next({ request: { headers } });
+  const pass = () =>
+    rewrite ? NextResponse.rewrite(rewrite, { request: { headers } }) : NextResponse.next({ request: { headers } });
+  if (!header) return pass();
+  const nonce = btoa(crypto.randomUUID());
+  readingBootHash ??= cspHash(HEAD_BOOT);
+  gameHash ??= cspHash(GAME_SCRIPT);
+  const csp = appCsp(
+    nonce,
+    {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      dreamApiUrl: process.env.NEXT_PUBLIC_DREAM_API_URL,
+      posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      development: process.env.NODE_ENV === "development",
+    },
+    [await readingBootHash, await gameHash],
+  );
+  headers.set("x-nonce", nonce);
+  // Next.js reads the nonce from this request header (only when enforced).
+  if (header === "Content-Security-Policy") headers.set(header, csp);
+  const response = pass();
+  response.headers.set(header, csp);
+  return response;
 }
 
 export const config = {
