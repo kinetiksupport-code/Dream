@@ -8,11 +8,11 @@ import {
   UPLOAD_QR,
   UploadSessionError,
   base64Size,
-  clientIp,
   desktopUploadAction,
   displayFileName,
   isExpired,
   mobileUploadAction,
+  qrIpHash,
   randomSecret,
   sha256Hex,
 } from "../functions/dream-api/upload-session.ts";
@@ -50,10 +50,24 @@ Deno.test("SHA-256 en hexadecimal (vector conocido)", async () => {
   assertEquals(await sha256Hex("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 });
 
-Deno.test("utilidades: IP, nombre, tamaño y caducidad", () => {
-  assertEquals(clientIp(new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" })), "203.0.113.7");
-  assertEquals(clientIp(new Headers({ "cf-connecting-ip": "198.51.100.2", "x-forwarded-for": "1.1.1.1" })), "198.51.100.2");
-  assertEquals(clientIp(new Headers()), "unknown");
+Deno.test("huella de IP del QR: solo la cabecera de la plataforma, nunca en claro", async () => {
+  const real = await qrIpHash(new Headers({ "cf-connecting-ip": "198.51.100.2" }));
+  // Cabeceras escritas por el cliente: no cambian la huella.
+  assertEquals(await qrIpHash(new Headers({ "cf-connecting-ip": "198.51.100.2", "x-forwarded-for": "1.1.1.1", "x-real-ip": "1.1.1.1", "true-client-ip": "1.1.1.1" })), real);
+  // Antes se leía el primer valor de X-Forwarded-For, que escribe el cliente.
+  const spoofOnly = await qrIpHash(new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }));
+  assertEquals(spoofOnly, await qrIpHash(new Headers()));
+  assertEquals(spoofOnly, await qrIpHash(new Headers({ "x-forwarded-for": "198.51.100.99" })));
+  assertMatch(real, /^[0-9a-f]{64}$/);
+  assert(!real.includes("198.51.100.2"));
+  // Con secreto, HMAC: distinta del SHA-256 sin secreto.
+  const pepper = "p".repeat(40);
+  const keyed = await qrIpHash(new Headers({ "cf-connecting-ip": "198.51.100.2" }), { MOD_IP_PEPPER: pepper });
+  assertMatch(keyed, /^[0-9a-f]{64}$/);
+  assert(keyed !== real);
+});
+
+Deno.test("utilidades: nombre, tamaño y caducidad", () => {
   assertEquals(displayFileName("../../etc/passwd"), "passwd");
   assertEquals(displayFileName("C:\\Users\\ana\\tema\u0007 1.pdf"), "tema 1.pdf");
   assertEquals(displayFileName("a\u202Efdp.exe"), "afdp.exe");
@@ -112,7 +126,7 @@ function mobile(db, overrides = {}) {
   const discarded = [];
   const deps = {
     db,
-    headers: new Headers({ "x-forwarded-for": "203.0.113.7" }),
+    headers: new Headers({ "cf-connecting-ip": "203.0.113.7", "x-forwarded-for": "192.0.2.1" }),
     dispatch: (owner, payload) => {
       dispatched.push({ owner, payload });
       const handler = overrides[payload.action];
