@@ -29,9 +29,9 @@ import { texToPlain } from "../lib/math";
 // characters, set from the real Qwen3 tokenizer on 26/10/2026
 // (scripts/ia/medir-tokens.py): tone 821 chars = 277 tokens (≤ 200 + 80 for
 // the example), no-invent 483 = 142 (≤ 150), self-knowledge 752 = 229 (≤ 250).
-// tone: «CÓMO HABLAS Y ESCRIBES» (docs/HABLA_NATURAL.md), 634 tokens reales
-// de Qwen3 con los dos pares «mal → bien» y la marca del plan.
-const CHAR_CAPS = { tone: 1900, noInvent: 500, self: 790 };
+// tone: «CÓMO HABLAS Y ESCRIBES» (docs/HABLA_NATURAL.md): dos pares
+// «mal → bien», la marca del plan y (P4) ejemplo antes que definición.
+const CHAR_CAPS = { tone: 2000, noInvent: 500, self: 790 };
 
 test("self-knowledge lists only features whose flag is on", () => {
   const off = selfKnowledge({ memory: false });
@@ -201,7 +201,7 @@ test("the usage bar says roughly how many messages are left", async () => {
   assert.equal(parseUsage({ percent: 1, modes: [{ id: "normal" }], messages_left: -3 }).messages_left, null);
 });
 
-test("profile block: fixed format, under 120 tokens, never identifying data, hobbies cannot inject", async () => {
+test("profile block: fixed format, under 180 tokens, never identifying data, hobbies cannot inject", async () => {
   const { personalContext } = await import("../supabase/functions/dream-api/onboarding.mjs");
   const profile = {
     terms_version: "x", display_name: "Lucía Pérez", nickname: "Lu", email: "lucia@example.com",
@@ -216,12 +216,13 @@ test("profile block: fixed format, under 120 tokens, never identifying data, hob
   assert.equal(block.split("\n").filter((l) => l.startsWith("- ")).length, 4);
   assert.equal(block.match(/\{\{APODO\}\}/g)?.length, 2);
   assert.ok(!block.includes("x".repeat(31)));
-  // Worst case measured with the Qwen3 tokenizer: 5 long hobbies + a long subject = 118 tokens (331 chars).
+  // Worst case with the Qwen3 tokenizer, now ≤ 180 tokens (P4: the hobby for
+  // this message and two more, plus the study profile; see habla-natural.test.ts).
   const worst = personalContext(
     { ...profile, interests: ["series de misterio", "guitarra eléctrica", "programación", "baloncesto", "videojuegos", "dibujo"] },
     { nextExam: { subject: "Matemáticas Aplicadas II", exam_date: "2026-11-07" }, today: "2026-10-26" },
   );
-  assert.ok(worst.length <= 335, `${worst.length} caracteres`);
+  assert.ok(worst.length <= 480, `${worst.length} caracteres`);
   assert.doesNotMatch(worst, /dibujo/, "como mucho 5 aficiones");
   // Past exams and drafts are not mentioned.
   assert.doesNotMatch(personalContext(profile, { nextExam: { subject: "Física", exam_date: "2026-10-01" }, today: "2026-10-26" }), /Física/);

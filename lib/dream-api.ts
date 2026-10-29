@@ -7,6 +7,7 @@ import { readNDJSON, DreamStreamError } from "./streaming";
 import { askHuman } from "./human-check";
 import { TURNSTILE_ACTIONS } from "./turnstile";
 import type { DreamProfile, DreamStreamEvent } from "./types";
+import type { StudyProfile } from "./onboarding";
 export type DreamAction =
   | "exams"
   | "special_welcome_seen"
@@ -329,6 +330,20 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.onboarding_step =
       typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
   }
+  if (typeof p.academic_level === "string" || p.academic_level === null)
+    profile.academic_level = p.academic_level;
+  const study = (p as { study_profile?: unknown }).study_profile;
+  if (study && typeof study === "object" && !Array.isArray(study)) {
+    const sp = study as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+    profile.study_profile = {
+      hard: Array.isArray(sp.hard) ? sp.hard.filter((x): x is string => typeof x === "string") : [],
+      region: str(sp.region),
+      goal: str(sp.goal),
+      style: str(sp.style),
+      time: str(sp.time),
+    };
+  }
   // Solo la cuenta administradora recibe esto; la ruta se valida para que nunca
   // sea un enlace raro (el enlace ni es la seguridad ni se fía del servidor a ciegas).
   const panel = (p as { admin_panel?: { path?: unknown } }).admin_panel;
@@ -377,6 +392,9 @@ export function saveOnboarding(input: {
   display_name?: string;
   interests?: string[];
   nickname?: string;
+  /** Ajustes › Perfil › Cómo estudias (listas cerradas). */
+  academic_level?: string | null;
+  study_profile?: StudyProfile;
 }) {
   return callDream<{ profile?: unknown }>("onboarding_save", input);
 }

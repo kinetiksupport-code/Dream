@@ -1325,7 +1325,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const today = madridToday();
   const upcoming = await admin.from('dream_exams').select('subject,exam_date').eq('owner_id', user.id)
     .neq('status', 'draft').gte('exam_date', today).order('exam_date', { ascending: true }).limit(1).maybeSingle();
-  const personal = personalContext(profile, { interests: examples, nextExam: upcoming.error ? null : upcoming.data, today });
+  // La afición del ejemplo rota con cada mensaje del alumno (P4).
+  const turn = storedHistory.filter((m: { role: string }) => m.role === 'user').length;
+  const personal = personalContext(profile, { interests: examples, nextExam: upcoming.error ? null : upcoming.data, today, turn });
   // Memoria entre conversaciones (memory-actions.mjs): al empezar se calcula y se
   // guarda con la conversación; después se reutiliza tal cual. Si algo falla, sin memoria.
   const memoryActive = memoryOn(profile);

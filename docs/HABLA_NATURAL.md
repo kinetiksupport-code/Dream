@@ -348,3 +348,72 @@ ahorrar de verdad, ver P2 (corte y «¿Sigo?») y P6.
 - **Respuesta en 2-3 burbujas** (punto 8, opcional): no está implementada. El
   encargo pide que Carlos la vea antes en una vista previa; se puede hacer
   detrás de un interruptor apagado cuando lo pida.
+
+## P4 · Explicar simple, con sus gustos, y no inventar
+
+### Qué cambia para el alumno
+
+- **Ejemplo antes que definición.** «CÓMO HABLAS Y ESCRIBES» pide primero un
+  ejemplo y, si hace falta, la definición en una frase, con la prueba del
+  pasillo: «¿lo diría así un profe en el pasillo?».
+- **Ejemplos con sus gustos, rotando.**
+  - En los turnos que explican algo nuevo, el bloque de perfil trae una afición
+    distinta en cada mensaje: «Ejemplo de hoy, si encaja: videojuegos».
+  - Se usa sin decir «sé que te gusta…» y sin inventar datos reales
+    (resultados, cifras); si no encaja, un ejemplo cotidiano.
+- **«Cómo estudias»** (Ajustes › Perfil, todo opcional y de listas cerradas):
+  - curso, hasta 4 asignaturas que le cuestan, objetivo, cómo prefiere que le
+    expliquen, cuánto estudia al día y comunidad autónoma (por el temario);
+  - las mismas listas en el servidor y en la app; dream-api rechaza cualquier
+    otro valor, así que nunca entra texto libre en el prompt.
+  - Columna nueva `dream_profiles.study_profile`, migración
+    `20261101090000_study_profile.sql`. Solo la escribe dream-api: el alumno no
+    tiene permiso de UPDATE sobre ella.
+- **Bloque de perfil ≤ 180 tokens.** El peor caso (5 aficiones, curso, examen,
+  4 asignaturas, objetivo, estilo, tiempo y comunidad) mide **175 tokens** con
+  el tokenizador de Qwen3. El apodo sigue yendo como `{{APODO}}`.
+- **No inventar** (búsqueda con Tavily, comprobado en su documentación):
+  - `include_domains` con `include_domains_mode: "prefer"` (fuentes educativas
+    y oficiales delante, sin dejar de buscar en el resto de la web);
+  - `exclude_domains` con webs de deberes resueltos;
+  - `search_depth: "basic"` y 3 resultados;
+  - la consulta, limpia de datos del alumno como antes;
+  - **caché de 24 h por consulta**, en la memoria de la función: una misma
+    pregunta no gasta otra búsqueda mientras la función está caliente.
+  - Si no lo encuentra con claridad, dice «no lo sé con seguridad». Lo
+    encontrado se reescribe con sus palabras, sin copiar ni imitar el estilo de
+    enciclopedia.
+- **Privacidad:** la política nombra «Cómo estudias (opcional)», qué se envía a
+  la IA y cómo cambiarlo o borrarlo.
+
+### Lista de fuentes (para que la revise Carlos)
+
+`supabase/functions/dream-api/tavily.mjs`:
+
+- **Preferidas:** rae.es, fundeu.es, cervantes.es, cervantesvirtual.com,
+  khanacademy.org, educacionyfp.gob.es, intef.es, boe.es, ine.es, csic.es,
+  agenciasinc.es, es.wikipedia.org, britannica.com, museodelprado.es, nasa.gov,
+  esa.int e iupac.org.
+- **Excluidas:** brainly (.com, .lat, .in), quizlet, coursehero, chegg,
+  studocu, slader, mathway, symbolab, photomath, rincondelvago, buenastareas,
+  clubensayos, monografias, gauthmath y solvely.
+
+El documento largo (Bloque 2 bis) no trae una lista: esta es una propuesta.
+
+### Tokens
+
+| | Antes de P4 | Ahora |
+|---|---:|---:|
+| `TONE_LAYER` (Qwen3) | 634 | 683 (+49: ejemplo antes que definición) |
+| Bloque de perfil, peor caso | ~118 | 175 (≤ 180) |
+| Sistema Normal con herramienta | 5.137 | 5.187 |
+
+### Lo que no he podido comprobar
+
+- **Que los ejemplos con gustos no empeoren la corrección:** hace falta el
+  banco con clave de Groq (`evals/`).
+- **La caché entre instancias:** vive en la memoria de cada instancia de la
+  función. Una caché compartida necesitaría una tabla.
+- **Las fichas verificadas** no entran todavía en el chat; las citas
+  comprobadas y la comprobación numérica siguen detrás de sus interruptores
+  (`AI_FLAGS.claimCheck` y `mathCheck`, apagados).

@@ -3,6 +3,27 @@ import { retryAfterSeconds } from "./admission.mjs";
 // para que la segunda llamada de la búsqueda gaste menos tokens.
 export const SEARCH_RESULTS = 3;
 export const RESULT_CHARS = 700;
+/**
+ * Fuentes (P4, docs/HABLA_NATURAL.md; lista para que la revise Carlos).
+ * Preferidas: educativas y oficiales. Con include_domains_mode «prefer»
+ * Tavily las pone delante pero sigue buscando en el resto de la web.
+ * Excluidas: webs de deberes resueltos y de trabajos copiados.
+ */
+export const SEARCH_PREFER_DOMAINS = Object.freeze([
+  "rae.es", "fundeu.es", "cervantes.es", "cervantesvirtual.com",
+  "khanacademy.org", "educacionyfp.gob.es", "intef.es", "boe.es",
+  "ine.es", "csic.es", "agenciasinc.es", "es.wikipedia.org", "britannica.com",
+  "museodelprado.es", "nasa.gov", "esa.int", "iupac.org",
+]);
+export const SEARCH_EXCLUDE_DOMAINS = Object.freeze([
+  "brainly.com", "brainly.lat", "brainly.in", "quizlet.com", "coursehero.com",
+  "chegg.com", "studocu.com", "slader.com", "mathway.com", "symbolab.com",
+  "photomath.com", "rincondelvago.com", "buenastareas.com", "clubensayos.com",
+  "monografias.com", "gauthmath.com", "solvely.ai",
+]);
+/** Una misma consulta en 24 h no gasta otra búsqueda (memoria de la función). */
+export const CACHE_MS = 24 * 3600 * 1000;
+export const CACHE_MAX = 200;
 export class TavilyError extends Error {
   constructor(code, status = 503, retryAfter = 0) {
     super(code);
@@ -20,6 +41,11 @@ export function createTavilyManager({
 } = {}) {
   let blockedUntil = 0;
   const health = new Map();
+  // Caché por consulta (ya limpia de datos del alumno: sanitizeSearchQuery).
+  // Vive mientras la función está caliente; nunca guarda nada del alumno.
+  /** @type {Map<string, {at: number, value: string}>} */
+  const cache = new Map();
+  const cacheKey = (q) => q.trim().toLowerCase().replace(/\s+/g, " ");
   const keys = () => {
     const names = ["TAVILY_API_KEY_1", "TAVILY_API_KEY_2"];
     const values = names
@@ -36,6 +62,11 @@ export function createTavilyManager({
     async search(query, { signal, beforeAttempt, pause } = {}) {
       if (typeof query !== "string" || !query.trim() || query.length > 300)
         throw new TavilyError("invalid_query", 400);
+      const hit = cache.get(cacheKey(query));
+      if (hit && now() - hit.at < CACHE_MS) {
+        logger.log(JSON.stringify({ provider: "tavily", cache: "hit" }));
+        return hit.value;
+      }
       if (blockedUntil > now())
         throw new TavilyError(
           "provider_rate_limit",
@@ -69,6 +100,9 @@ export function createTavilyManager({
               search_depth: "basic",
               max_results: SEARCH_RESULTS,
               include_answer: false,
+              include_domains: SEARCH_PREFER_DOMAINS,
+              include_domains_mode: "prefer",
+              exclude_domains: SEARCH_EXCLUDE_DOMAINS,
             }),
           });
           logger.log(
@@ -121,7 +155,12 @@ export function createTavilyManager({
               url: String(item.url).slice(0, 500),
               content: String(item.content ?? "").slice(0, RESULT_CHARS),
             }));
-          return JSON.stringify(results);
+          const value = JSON.stringify(results);
+          cache.delete(cacheKey(query));
+          cache.set(cacheKey(query), { at: now(), value });
+          // La más antigua sale primero (orden de inserción del Map).
+          while (cache.size > CACHE_MAX) cache.delete(cache.keys().next().value);
+          return value;
         } catch (e) {
           if (e?.name === "AdmissionError" || e instanceof TavilyError) throw e;
           if (overall.aborted)

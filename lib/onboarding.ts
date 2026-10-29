@@ -37,6 +37,28 @@ export const INTERESTS = [
   "Naturaleza",
 ] as const;
 
+/**
+ * «Cómo estudias» (P4, docs/HABLA_NATURAL.md): listas cerradas, todo
+ * opcional. Igual que dream-api › onboarding.mjs › STUDY (lo comprueba
+ * tests/habla-natural.test.ts).
+ */
+export const STUDY = {
+  level: ["1º ESO", "2º ESO", "3º ESO", "4º ESO", "1º Bachillerato", "2º Bachillerato", "FP", "Universidad", "Otro"],
+  hard: ["Matemáticas", "Lengua", "Inglés", "Física", "Química", "Biología", "Geología", "Historia", "Geografía", "Filosofía", "Economía", "Latín", "Dibujo técnico", "Otra"],
+  region: ["Andalucía", "Aragón", "Asturias", "Baleares", "Canarias", "Cantabria", "Castilla-La Mancha", "Castilla y León", "Cataluña", "Comunidad Valenciana", "Extremadura", "Galicia", "La Rioja", "Madrid", "Murcia", "Navarra", "País Vasco", "Ceuta", "Melilla", "Fuera de España"],
+  goal: ["Aprobar", "Subir nota", "Preparar la PAU", "Entenderlo de verdad"],
+  style: ["Con ejemplos", "Paso a paso", "Directo y corto", "Con esquemas"],
+  time: ["Menos de 30 min", "30-60 min", "1-2 horas", "Más de 2 horas"],
+} as const;
+export const MAX_HARD_SUBJECTS = 4;
+export type StudyProfile = {
+  hard?: string[];
+  region?: string;
+  goal?: string;
+  style?: string;
+  time?: string;
+};
+
 export const WELCOME_ERRORS = {
   name: "Escribe cómo te llamas.",
   nameLong: `Tu nombre puede tener hasta ${LIMITS.name} letras.`,
