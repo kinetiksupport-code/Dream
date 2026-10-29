@@ -132,6 +132,19 @@ export function trustedClientIp(headers, { header = DEFAULT_IP_HEADER, hopsFromR
   return normalizeIp(raw);
 }
 
+/**
+ * La única lectura de la IP del cliente en dream-api (docs/ip-real.md). La usan
+ * la moderación, los límites y la subida por QR; nadie más lee cabeceras de IP.
+ * Las llamadas del navegador llegan directas a Supabase (Cloudflare de
+ * edudream.es no interviene) y la pasarela de Supabase fija cf-connecting-ip.
+ */
+export function getClientIp(headers, env = {}) {
+  return trustedClientIp(headers, {
+    header: env.MOD_IP_HEADER || DEFAULT_IP_HEADER,
+    hopsFromRight: Number(env.MOD_IP_XFF_HOPS) || 1,
+  });
+}
+
 /** HMAC-SHA256 en hexadecimal. Sin secreto largo no hay huella. */
 export async function ipFingerprint(ip, pepper) {
   if (typeof pepper !== "string" || pepper.length < 32) throw new Error("mod_pepper_missing");
@@ -186,10 +199,7 @@ export async function moderationGate({ rpc, headers, userId, ageBand, env, now =
   const mode = modMode(env.MOD_MODE);
   if (mode === "off") return null;
   try {
-    const ip = trustedClientIp(headers, {
-      header: env.MOD_IP_HEADER || DEFAULT_IP_HEADER,
-      hopsFromRight: Number(env.MOD_IP_XFF_HOPS) || 1,
-    });
+    const ip = getClientIp(headers, env);
     if (!ip) {
       log(JSON.stringify({ event: "mod_ip_unavailable" }));
       return null;
@@ -263,10 +273,7 @@ export async function moderationEntry({ rpc, headers, userId, env, now = Date.no
   const mode = modMode(env.MOD_MODE);
   if (mode === "off") return null;
   try {
-    const ip = trustedClientIp(headers, {
-      header: env.MOD_IP_HEADER || DEFAULT_IP_HEADER,
-      hopsFromRight: Number(env.MOD_IP_XFF_HOPS) || 1,
-    });
+    const ip = getClientIp(headers, env);
     if (!ip) return null;
     const hash = await ipFingerprint(ip, env.MOD_IP_PEPPER);
     const obs = await rpc("mod_entry", {

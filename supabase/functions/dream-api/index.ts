@@ -154,6 +154,7 @@ async function handleQr(req: Request): Promise<Response> {
     const result = await mobileUploadAction({
       db: { rpc: (name, args) => admin.rpc(name, args) },
       headers: req.headers,
+      ipEnv: { MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER') },
       dispatch: async (owner, payload) => {
         const context = await ownerContext(owner);
         // Misma admisión que attachment_upload desde el ordenador.

@@ -84,7 +84,7 @@ Orden recomendado: aplicar la migración → crear `MOD_IP_PEPPER` → **verific
 
 - **Qué cabecera trae la IP real.** Las peticiones del navegador van directamente a Supabase. No he podido comprobar en producción cuál es la cabecera de confianza, porque eso exige desplegar una función de prueba que devuelva las cabeceras que recibe. Hasta entonces el sistema solo lee `cf-connecting-ip` (o la que se configure) y, **si no existe, no hace nada** (falla abierto). Hay que comprobarlo antes de pasar a `enforce`.
 - Si el cliente puede falsificar la cabecera elegida: depende de la plataforma. El código ignora todas las demás (`X-Forwarded-For` escrito por el cliente, `X-Real-IP`, `Forwarded`…) y lo prueba un test.
-- `clientIp` de `supabase/functions/dream-api/upload-session.ts` (subida por QR) sigue usando su propia lectura de la IP, más permisiva. Tiene límites propios y se queda como está hasta verificar la cabecera real.
+- La subida por QR usa ya la misma lectura (`getClientIp`). Comprobación real de la cabecera en los registros de Supabase: `docs/ip-real.md` (2026-10-29).
 - No se han hecho pruebas de carga.
 
 ## Texto de los términos que propongo a Carlos (no lo he editado)

@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import {
   DEFAULT_IP_HEADER,
   MESSAGES,
   RULES,
   THRESHOLDS,
   decideAbuse,
+  getClientIp,
   ipFingerprint,
   autoBanEnabled,
   minEntriesFrom,
@@ -317,4 +318,32 @@ test("B3 sends only IP fingerprints, shows nothing to the student and fails open
   };
   assert.equal(await moderationEntry({ rpc: broken, headers: ROUTED, userId: USER, env: ENV, now: NOW, log }), null);
   assert.equal(await moderationEntry({ rpc: db.rpc, headers: h({ "x-forwarded-for": "203.0.113.99" }), userId: USER, env: ENV, now: NOW, log }), null);
+});
+
+// ── Lectura única de la IP en dream-api (docs/ip-real.md) ────────────────────
+
+test("getClientIp is the only IP reader in dream-api and follows MOD_IP_HEADER", () => {
+  assert.equal(getClientIp(h({ "cf-connecting-ip": "198.51.100.7", "x-forwarded-for": "203.0.113.99" })), "198.51.100.7");
+  assert.equal(getClientIp(h({ "x-forwarded-for": "203.0.113.99, 192.0.2.50" }), { MOD_IP_HEADER: "x-forwarded-for" }), "192.0.2.50");
+  assert.equal(getClientIp(h({ "cf-connecting-ip": "not-an-ip" })), null);
+  assert.equal(getClientIp(h({})), null);
+  const dir = "supabase/functions/dream-api";
+  const reads = /x-forwarded-for|x-real-ip|cf-connecting-ip|true-client-ip/i;
+  const offenders = readdirSync(dir)
+    .filter((f) => /\.(ts|mjs|js)$/.test(f) && f !== "moderation.mjs")
+    .filter((f) => reads.test(readFileSync(`${dir}/${f}`, "utf8")));
+  assert.deepEqual(offenders, []);
+});
+
+test("the plain IP never reaches the logs, whatever the outcome", async () => {
+  const lines: string[] = [];
+  const capture = (...a: unknown[]) => void lines.push(a.map(String).join(" "));
+  const failing = async () => { throw new Error("db down"); };
+  for (const rpc of [fakeDb(burst).rpc, fakeDb(school).rpc, failing]) {
+    await moderationGate({ rpc, headers: ROUTED, userId: USER, ageBand: "18_plus", env: ENV, log: capture });
+    await moderationEntry({ rpc, headers: ROUTED, userId: USER, env: ENV, log: capture });
+  }
+  await moderationGate({ rpc: fakeDb(burst).rpc, headers: ROUTED, userId: USER, ageBand: null, env: { MOD_MODE: "enforce" }, log: capture });
+  assert.ok(lines.length > 0);
+  assert.ok(!lines.join("\n").includes("198.51.100.7"));
 });
