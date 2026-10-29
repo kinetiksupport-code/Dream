@@ -75,7 +75,7 @@ test("QR: the phone passes the check before connecting, and a rejected token ask
   await expect(page.getByRole("heading", { name: "Una comprobación rápida" })).toBeVisible();
   await expect(page.getByRole("group", { name: "Comprobación de seguridad" })).toBeVisible();
   // Cloudflare draws its iframe inside a shadow root: wait for the box to get its size.
-  await expect.poll(() => page.locator('[class*="widget"]').evaluate((el) => el.getBoundingClientRect().height), { timeout: 20_000 }).toBeGreaterThanOrEqual(65);
+  await expect.poll(() => page.locator("[data-turnstile]").evaluate((el) => el.getBoundingClientRect().height), { timeout: 20_000 }).toBeGreaterThanOrEqual(65);
   // The rejected token makes the widget give a new one, and the phone connects with it.
   await expect(page.getByRole("heading", { name: "Conectado con tu ordenador" })).toBeVisible({ timeout: 20_000 });
   const connectCalls = calls.filter((c) => c.action === "upload_qr_connect");

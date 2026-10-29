@@ -1,7 +1,14 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { HUMAN_CHECK_MESSAGE, currentTheme, loadTurnstile, turnstileSiteKey, type TurnstileAction } from "@/lib/turnstile";
-import styles from "./human-check.module.css";
+
+// Estilos en línea, sin hoja propia: esta pieza se monta en toda la app (la
+// hoja de primera IA) y una hoja CSS más en el layout cambiaba el orden de las
+// demás (el login perdía el color de sus enlaces en el móvil).
+const CHECK: CSSProperties = { display: "flex", flexDirection: "column", gap: 8, width: "100%" };
+const LABEL: CSSProperties = { margin: 0, color: "var(--text-secondary)", fontSize: "var(--text-small)" };
+/** Alto reservado del widget de Cloudflare (65 px) para que nada salte al cargar. */
+const WIDGET: CSSProperties = { minHeight: 65, width: "100%" };
 
 /**
  * Widget de Turnstile (modo managed, en español, tema de Dream). Llama a
@@ -78,11 +85,11 @@ export function Turnstile({
 
   const message = error || problem;
   return (
-    <div className={styles.check} role="group" aria-labelledby={`${id}-label`} aria-describedby={message ? `${id}-error` : undefined}>
-      <p id={`${id}-label`} className={styles.label}>
+    <div style={CHECK} role="group" aria-labelledby={`${id}-label`} aria-describedby={message ? `${id}-error` : undefined}>
+      <p id={`${id}-label`} style={LABEL}>
         Comprobación de seguridad
       </p>
-      <div ref={box} className={styles.widget} />
+      <div ref={box} data-turnstile style={WIDGET} />
       {message && (
         <p id={`${id}-error`} className="error" role="alert">
           {message}
