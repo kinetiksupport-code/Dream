@@ -2,6 +2,12 @@
 
 Un apunte por cambio que afecte a los textos legales, a las cookies o a los consentimientos. Lo más nuevo, arriba.
 
+## Política de privacidad
+
+| Fecha | Cambio | ¿Avisar en la app? |
+|---|---|---|
+| 2026-10-29 | Cloudflare como red y protección de la web (proxy/CDN) y Cloudflare Turnstile en tres pantallas (QR, «Reclamar», primera IA sospechosa). Nueva fila de datos técnicos de conexión (interés legítimo). Pendiente de revisión profesional (PR aparte). | Sí, al publicarla: es una finalidad y un proveedor nuevos. |
+
 ## Cookies
 
 | Fecha | Cambio | ¿Renovar el consentimiento en Cookiebot? |
