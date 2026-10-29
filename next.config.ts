@@ -1,5 +1,6 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
+import { siteSecurityHeaders } from "./lib/security-headers";
 const config: NextConfig = {
   env: {
     NEXT_PUBLIC_DREAM_ENVIRONMENT:
@@ -11,11 +12,7 @@ const config: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Frame-Options", value: "DENY" },
-        ],
+        headers: siteSecurityHeaders(),
       },
       {
         // Upload link from the QR: see middleware.ts (same values).
