@@ -417,3 +417,73 @@ El documento largo (Bloque 2 bis) no trae una lista: esta es una propuesta.
 - **Las fichas verificadas** no entran todavía en el chat; las citas
   comprobadas y la comprobación numérica siguen detrás de sus interruptores
   (`AI_FLAGS.claimCheck` y `mathCheck`, apagados).
+
+## P6 · Que el límite dure más
+
+### De qué se compone cada mensaje (medido, 29/10/2026)
+
+| Parte | Normal (tokens reales, logs de Groq) | ¿Cuenta en el límite del alumno? |
+|---|---:|---|
+| Prompt de sistema | 4.900-5.500 | **No** (desde IA-3) |
+| Historial | 0-550 | 25 % |
+| Apuntes del alumno | 0 en los mensajes medidos | 25 % |
+| Imágenes | No se reenvían: el texto se extrae una vez al subir | – |
+| Su mensaje | 1-35 | Sí |
+| Salida (con el razonamiento oculto) | 19-247 | Sí |
+
+**Por qué «se agota en 7-15 mensajes».** Antes de IA-3 cada mensaje de
+Normal cargaba al alumno **~4.400 tokens** (mediana de
+`dream_private.ai_usage_attempts`, 20-26 de octubre). Con 60.000 por ventana
+salen **13-14 mensajes**: justo lo que vio Carlos.
+
+Con la cuenta de IA-3 (ya en producción) un mensaje carga:
+- su texto;
+- el 25 % del historial y de los apuntes;
+- la salida real.
+
+Eso son unos **200-700 tokens**. Desde el 27/10 no hay cargos de alumnos
+normales que medir: los chats de estos días son de cuentas de Fundación Loyola,
+que no tienen límite. Hay que mirarlo con la consulta de abajo cuando chateen
+alumnos normales.
+
+### Qué se aplica en esta entrega
+
+| Medida | Ahorro | Estado |
+|---|---|---|
+| Política de conversación sin repetir longitud, pasos ni tono (que ya están en «CÓMO HABLAS Y ESCRIBES») | −106 tokens de sistema por mensaje | **Adoptada** |
+| Contexto del alumno sin «un paso por mensaje» ni «tono sobrio» (repetidos) | −34 | **Adoptada** |
+| Respuestas cortas: corte a 120 palabras y salida máxima 800 (P2) | Salida del alumno: unos −40 % en las respuestas largas; reserva por mensaje de 1.200 a 800 | Adoptada en P2 |
+| «¿Sigo?» → «sí» sin llamar a la IA (P2) | Un mensaje entero (0 tokens) | Adoptada en P2 |
+| Historial recortado con resumen, apuntes con solo lo relevante | – | Ya estaba (IA-3 y memoria del chat) |
+| Orden del prompt para la caché de Groq (lo fijo primero) | – | Ya estaba; lo nuevo (plan y recordatorio) va al final |
+| No contar el prompt de sistema contra el alumno | ~4.700 por mensaje | Ya estaba (IA-3) |
+| **Prompt compacto** (`prompt-compact.mjs`, −1.600 tokens) | El mayor ahorro posible | **No sustituido**: necesita el OK de Carlos y los evals con clave de Groq |
+| **Razonamiento «none» fuera de mates en Normal** | El razonamiento oculto que cuenta como salida | **No adoptado**: sin evals no se sabe si empeora las explicaciones. Groq acepta el parámetro (dream-api ya lo usa en esquemas y en el router) |
+
+### Tokens del prompt de sistema (Qwen3 / gpt-oss)
+
+| | Antes de todo el encargo | Tras P2-P4 | Ahora (P6) |
+|---|---:|---:|---:|
+| Normal, con herramienta | 4.718 / 4.035 | 5.187 / 4.455 | **5.047 / 4.336** |
+| Rápido | 1.659 / 1.458 | 2.073 / 1.823 | **1.933 / 1.704** |
+| Pensar más | 1.620 / 1.404 | 2.017 / 1.755 | **1.877 / 1.636** |
+| Búsqueda: respuesta | 1.301 / 1.126 | 1.751 / 1.522 | **1.611 / 1.403** |
+
+Balance del encargo: **+329 tokens de sistema** en Normal (+7 %), pagados por
+Dream (no por el alumno). A cambio:
+- las respuestas, y con ellas el historial, son más cortas;
+- el «sí» a «¿Sigo?» no gasta nada.
+
+### Cómo medirlo tras desplegar (sin texto)
+
+```sql
+select mode, count(*) as mensajes, round(avg(tokens)) as tokens_medios,
+  percentile_cont(0.5) within group (order by tokens) as mediana,
+  floor(60000 / nullif(avg(tokens), 0)) as mensajes_por_ventana
+from dream_private.ai_usage_attempts
+where created_at > now() - interval '7 days' and kind = 'mode' and settled
+group by 1;
+```
+
+`TYPICAL_MESSAGE_TOKENS` (1.100, la estimación de «te quedan N mensajes») se
+deja igual hasta tener una semana de datos con la cuenta nueva.
