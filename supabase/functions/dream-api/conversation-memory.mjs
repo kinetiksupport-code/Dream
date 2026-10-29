@@ -8,12 +8,15 @@
 //    o una sola pregunta útil, completando las peticiones cortas («un juego»,
 //    «otra vez») con la pizarra.
 // Nunca se registra el contenido: quien llama solo registra contadores.
+import { readPlan } from './reply-shape.mjs';
 
 export const MAX_INDEX_FILES = 8;
 /** Archivos que entran como material en un turno. */
 export const MAX_MATERIAL_FILES = 4;
 /** ≈ 200 tokens. */
 export const BOARD_MAX_CHARS = 700;
+/** Resto guardado tras un corte «¿Sigo?»: unas 600 palabras como mucho. */
+export const REST_MAX_CHARS = 4000;
 
 const clean = (value, max) => String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
 const words = (text) => String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9ñ]+/).filter(Boolean);
@@ -121,11 +124,11 @@ export function asksToReupload(text) {
 
 // ---------------------------------------------------------------- pizarra
 
-/** @typedef {{ v: 1, first: string, goal: string, pending: null | { intent: 'dreams' | 'dreams_scheme' | 'dreams_game' | 'test', topic: string, kind?: string }, files: string[], delivered: { type: string, title: string }[], prefs: string[] }} Board */
+/** @typedef {{ v: 1, first: string, goal: string, pending: null | { intent: 'dreams' | 'dreams_scheme' | 'dreams_game' | 'test', topic: string, kind?: string }, files: string[], delivered: { type: string, title: string }[], prefs: string[], rest: string, plan: ReturnType<typeof readPlan> }} Board */
 
 /** @returns {Board} */
 export function emptyBoard() {
-  return { v: 1, first: '', goal: '', pending: null, files: [], delivered: [], prefs: [] };
+  return { v: 1, first: '', goal: '', pending: null, files: [], delivered: [], prefs: [], rest: '', plan: null };
 }
 
 /** Pizarra guardada → forma segura (lo que no encaje se descarta). */
@@ -140,6 +143,9 @@ export function readBoard(raw) {
   b.files = Array.isArray(raw.files) ? raw.files.map((f) => clean(f, 60)).filter(Boolean).slice(-4) : [];
   b.delivered = Array.isArray(raw.delivered) ? raw.delivered.filter((d) => d && typeof d === 'object').map((d) => ({ type: clean(d.type, 20), title: clean(d.title, 60) })).filter((d) => d.type).slice(-5) : [];
   b.prefs = Array.isArray(raw.prefs) ? raw.prefs.map((x) => clean(x, 40)).filter(Boolean).slice(-3) : [];
+  // Lo que quedó tras un «¿Sigo?» (reply-shape.mjs). Nunca va a la IA en la pizarra.
+  b.rest = typeof raw.rest === 'string' ? raw.rest.replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').slice(0, REST_MAX_CHARS) : '';
+  b.plan = readPlan(raw.plan);
   return b;
 }
 
@@ -154,6 +160,9 @@ const DREAMS_LABEL = { dreams_scheme: 'esquema', dreams_game: 'juego', test: 'te
  */
 export function updateBoard(board, { prompt = '', files = [], route = null, delivered = null }) {
   const b = readBoard(board);
+  // Un mensaje nuevo deja sin efecto el «¿Sigo?» anterior (el turno del chat
+  // pone el suyo después, si lo hay).
+  b.rest = '';
   const text = clean(prompt, 400);
   const task = route && route.intent !== 'chat';
   if (!b.first && text && (task || needsMaterial(text) || text.split(' ').length >= 4)) b.first = text.slice(0, 160);

@@ -75,4 +75,5 @@ export function claimCheckMessages(answer, sourcesText) {
 
 /** Palabras visibles de una respuesta (para el reintento de respuestas largas). */
 export const visibleWords = (text) => (String(text).replace(/<!--[\s\S]*?-->/g, ' ').match(/[\p{L}\p{N}]+/gu) ?? []).length;
+export const FOREIGN_NOTE = 'Tu respuesta anterior tiene palabras o caracteres de otro idioma. Rehazla entera solo en español, con las mismas ideas y la misma longitud. No menciones esta indicación.';
 export const SHORTER_NOTE = 'Tu respuesta anterior es demasiado larga para lo que ha pedido. Rehazla en 75 palabras como mucho, un solo paso y, si hace falta, una pregunta al final. No menciones esta indicación.';

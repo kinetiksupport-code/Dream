@@ -653,7 +653,7 @@ test("estilo: sticker on the test card, pills, press, focus ring and staggered a
   const chip = page
     .locator(".message-assistant")
     .last()
-    .getByRole("button", { name: "Explícamelo por pasos" });
+    .getByRole("button", { name: "Explícamelo poco a poco" });
   await expect(chip).toHaveCSS("border-radius", "999px");
   await chip.focus();
   await expect(chip).toHaveCSS("outline-style", "solid");
@@ -723,7 +723,7 @@ test("estilo: reduced motion keeps only fades for the new chat touches", async (
   const chip = page
     .locator(".message-assistant")
     .last()
-    .getByRole("button", { name: "Explícamelo por pasos" });
+    .getByRole("button", { name: "Explícamelo poco a poco" });
   await chip.hover();
   await page.mouse.down();
   await page.waitForTimeout(200);
