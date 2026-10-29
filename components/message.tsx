@@ -14,6 +14,7 @@ import {
 import { Markdown } from "./markdown";
 import { plainMath } from "@/lib/math";
 import { AiStatus } from "./ai-status";
+import { TypingIndicator } from "./typing-indicator";
 import { WebSources } from "./web-sources";
 import { useReveal } from "./use-reveal";
 import { parseDreamContent } from "@/lib/widgets";
@@ -28,6 +29,28 @@ const WORKING = new Set<DreamState>([
 ]);
 /** States in which text can still arrive (the cursor blinks). */
 const STREAMING = new Set<DreamState>(["thinking", "searching", "composing"]);
+
+/**
+ * Reads a new answer once, when it has finished typing (polite, never takes
+ * the focus). The text is plain (no Markdown) and leaves the region a few
+ * seconds later, so browsing the thread does not read it twice.
+ */
+function Announce({ text }: { text: string }) {
+  const [said, setSaid] = useState("");
+  const done = useRef(false);
+  useEffect(() => {
+    if (!text || done.current) return;
+    done.current = true;
+    setSaid(plainMath(text).replace(/[*_#>`]/g, ""));
+    const timer = window.setTimeout(() => setSaid(""), 6000);
+    return () => window.clearTimeout(timer);
+  }, [text]);
+  return (
+    <span className="visually-hidden" role="status" aria-live="polite" aria-atomic="true">
+      {said}
+    </span>
+  );
+}
 
 export const MessageView = memo(function MessageView({
   message,
@@ -90,18 +113,21 @@ export const MessageView = memo(function MessageView({
   const working = WORKING.has(state);
   const text = live ? settleStreaming(parsed.text) : parsed.text;
   const typing = live && !!text;
+  // Before the first character: «Dream está escribiendo…» (P5). Searching
+  // and preparing a test keep their own status line.
+  const waitingFirst = !text && (state === "thinking" || state === "composing");
   return (
     <article
       className={`message message-assistant${enter}${typing ? " is-typing" : ""}${onRegenerate ? " is-last" : ""}${revealing ? " is-revealing" : ""}`}
     >
       {parsed.sources.length > 0 && <WebSources sources={parsed.sources} />}
-      {/* Polite live region, busy until the reveal ends: read once, whole,
-          never word by word, and it never takes the focus. A tap or click on
-          the answer shows it all at once. */}
+      {/* Not a live region while it types (aria-live="off"): screen readers
+          get the answer once, whole, from the announcer below when it ends,
+          never word by word. A tap or click on the answer shows it all. */}
       <div
         className="message-body"
         ref={body}
-        aria-live="polite"
+        aria-live="off"
         aria-busy={live || revealing}
         onClick={revealing ? finish : undefined}
       >
@@ -111,7 +137,21 @@ export const MessageView = memo(function MessageView({
           <Markdown content={text} streaming={live || isNew} reveal={isNew} />
         )}
       </div>
-      {working && <AiStatus state={state} since={since} />}
+      {/* While it thinks or writes, the indicator and then the cursor say it;
+          searching and preparing a test keep their status line. */}
+      {waitingFirst ? (
+        <TypingIndicator />
+      ) : (
+        working &&
+        state !== "thinking" &&
+        state !== "composing" && <AiStatus state={state} since={since} />
+      )}
+      {/* A stopped answer is not read out: the student stopped it. */}
+      {isNew && (
+        <Announce
+          text={!live && !revealing && !message.stopped ? parsed.text : ""}
+        />
+      )}
       {/* The test card, the notice and the actions wait for the last word. */}
       {!revealing &&
         parsed.widgets.map((w) => (

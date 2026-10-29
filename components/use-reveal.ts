@@ -14,6 +14,7 @@ import {
   stepReveal,
   type RevealClock,
 } from "@/lib/reveal";
+import { unitCost } from "@/lib/typing";
 
 const reducedMotion = () =>
   typeof window !== "undefined" &&
@@ -22,15 +23,26 @@ const reducedMotion = () =>
 const clockOf = (ref: { current: RevealClock | null }) =>
   (ref.current ??= createReveal(reducedMotion()));
 
+/** Esc, or Enter outside a text field, shows the whole answer at once. */
+const finishKey = (e: KeyboardEvent) => {
+  if (e.defaultPrevented || e.isComposing) return false;
+  if (e.key === "Escape") return true;
+  if (e.key !== "Enter") return false;
+  const t = e.target as HTMLElement | null;
+  return !t?.closest?.("input, textarea, select, button, a, [contenteditable]");
+};
+
 /**
- * Soft reveal of an answer that is already in the DOM (words wrapped in
- * <span data-w> by rehypeRevealWords). Each frame it only adds a class to
- * the words that become visible: React does not re-render during the reveal,
- * and the Markdown tree is the final one, so nothing moves when it ends.
+ * «Typing» of an answer that is already in the DOM (words wrapped in
+ * <span data-w> by rehypeRevealWords), at the pace of lib/reveal.ts and
+ * lib/typing.ts. Each frame it only adds a class to the words that become
+ * visible: React does not re-render while it types, and the Markdown tree is
+ * the final one, so nothing moves when it ends.
  *
  * Returns `revealing` (true until everything has arrived and is visible) and
- * `finish` (tap or click: show everything now). With reduced motion the
- * clock starts in instant mode.
+ * `finish` (tap, click, Esc or Enter: show everything now). With reduced
+ * motion the clock starts in instant mode; a hidden tab finishes it (there is
+ * nothing to watch, and no frames run there).
  */
 export function useReveal(
   root: RefObject<HTMLElement | null>,
@@ -40,6 +52,7 @@ export function useReveal(
   const [revealing, setRevealing] = useState(enabled);
   const clock = useRef<RevealClock | null>(null);
   const units = useRef<HTMLElement[]>([]);
+  const costs = useRef<number[]>([]);
   const shown = useRef(0);
   const caret = useRef<HTMLElement | null>(null);
   const frame = useRef(0);
@@ -103,7 +116,13 @@ export function useReveal(
       const done = completeRef.current;
       // The last word may still be half received while the answer streams.
       const available = done || c.instant ? total : Math.max(0, total - 1);
-      const n = stepReveal(c, now, available, done);
+      // Cost of each word (fixed per position: the pace never jumps when a
+      // block re-renders while the answer streams).
+      const list = costs.current;
+      if (list.length > available) list.length = available;
+      for (let i = list.length; i < available; i++)
+        list.push(unitCost(units.current[i].textContent ?? "", i));
+      const n = stepReveal(c, now, list, done);
       if (n !== shown.current) apply(n, Math.min(n, shown.current));
       if (revealDone(c, available)) {
         setRevealing(false);
@@ -122,6 +141,8 @@ export function useReveal(
     units.current = Array.from(
       root.current.querySelectorAll<HTMLElement>("[data-w]"),
     );
+    // A streamed block re-rendered: the words after it may have changed.
+    costs.current.length = Math.min(costs.current.length, Math.max(0, shown.current - 1));
     // Instant (reduced motion, or after a tap): visible in this same paint.
     apply(clockOf(clock).instant ? units.current.length : shown.current, 0);
     if (!frame.current) frame.current = requestAnimationFrame(tick);
@@ -137,6 +158,24 @@ export function useReveal(
     finishReveal(c);
     apply(units.current.length, shown.current);
   }, [apply]);
+
+  // Esc / Enter and a hidden tab show everything (only while typing).
+  useEffect(() => {
+    if (!revealing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (finishKey(e)) finish();
+    };
+    const onHide = () => {
+      if (document.hidden) finish();
+    };
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("visibilitychange", onHide);
+    if (document.hidden) finish();
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, [revealing, finish]);
 
   return { revealing, finish };
 }

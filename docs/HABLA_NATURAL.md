@@ -246,3 +246,105 @@ reintento, hay que corregir el prompt. Se mira con
   sin texto» en los logs.
 - Las fichas verificadas no entran hoy en el chat (solo en el panel). Por eso
   los pasos del plan los decide la IA.
+
+## P5 · El texto aparece escribiéndose poco a poco
+
+Sustituye al «revelado suave» de la Parte I, que enseñaba la respuesta en
+**2 segundos como mucho**.
+
+### Qué hay hoy (antes de este cambio)
+
+- El navegador ya revelaba **palabra a palabra**:
+  - con `requestAnimationFrame` y sin `setState` por palabra;
+  - solo cambia una clase en cada `<span data-w>`, y el árbol Markdown es el
+    final desde el primer pintado;
+  - un toque o un clic lo completa;
+  - con movimiento reducido sale entero;
+  - el historial no se anima;
+  - las acciones esperan al final.
+- **El ritmo** era «lo que haya en 2 s»: 150 palabras salían a 75 palabras por
+  segundo, casi de golpe.
+- El servidor manda la respuesta casi siempre entera (ver P1), así que todo el
+  efecto depende del navegador.
+
+### Qué cambia
+
+- **Ritmo de escritura** (`lib/typing.ts`, un solo archivo):
+  - **40 caracteres por segundo**, unas 7 palabras por segundo;
+  - **pausas variables** de 150-250 ms tras punto, interrogación, exclamación o
+    puntos suspensivos, y de 60-100 ms tras coma, punto y coma o dos puntos;
+  - una variación fija de ±15 % por palabra, para que no suene a máquina;
+  - **tope de 8 s**: una respuesta larga acelera para acabar a tiempo;
+  - si la cola se acumula mientras sigue llegando texto, acelera poco a poco
+    (como mucho ×2,5); si se vacía, espera.
+  - Para que Carlos pida «más lento» o «más rápido», se cambia `charsPerSecond`
+    o `maxTotalMs`.
+- **Primer carácter al instante.** La primera palabra sale en el primer
+  fotograma tras llegar los datos (medido: menos de 1 s).
+- **«Dream está escribiendo…»** con tres puntos animados (solo `opacity` y
+  `transform`) hasta el primer carácter.
+  - Sale a los 400 ms, para no parpadear en una respuesta rápida.
+  - El cursor parpadeante sigue durante la escritura y se va al terminar.
+  - Mientras busca en internet o prepara un test, se mantiene su propia línea
+    («Buscando en internet…»).
+- **Controles:**
+  - un toque, un clic, **Esc** o **Intro** (fuera del cuadro de escribir, donde
+    Intro envía) enseñan todo al instante;
+  - con la pestaña en segundo plano no se anima: al volver está completo.
+- **Accesibilidad:**
+  - el cuerpo de la respuesta es `aria-live="off"` mientras se escribe;
+  - un anunciador oculto (`role="status"`, `aria-atomic`) lee la respuesta
+    **una sola vez al terminar**, en texto plano, y la retira a los 6 s para
+    que no se lea dos veces al recorrer el hilo;
+  - con `prefers-reduced-motion` la respuesta sale entera y los puntos no se
+    mueven.
+- **Sin Markdown a medias:**
+  - las fórmulas ya esperaban a estar completas;
+  - ahora también un enlace sin cerrar («[texto](https://…») y una negrita sin
+    cerrar.
+- El «¿Sigo?» del corte (P2) se escribe con el mismo ritmo: es parte del texto.
+
+### Reglas de las skills aplicadas
+
+| Skill | Regla | Dónde |
+|---|---|---|
+| emil-design-eng | «Only animate transform and opacity» | Palabras (opacity 160 ms), puntos (opacity + translateY) |
+| emil-design-eng | «Never animate keyboard-initiated actions» | Esc o Intro terminan al instante, sin transición |
+| emil-design-eng | Reduced motion: «fewer and gentler animations, not zero» | Puntos quietos, cursor fijo y texto entero; se quedan los fundidos |
+| emil-design-eng | Evitar parpadeos en esperas cortas | Indicador a los 400 ms |
+| emil-design-eng | «Handle edge cases invisibly. Pause … when the tab is hidden» | Pestaña oculta: la respuesta se termina |
+| apple-design | `motion.md › Let people cancel motion`: «don’t make people wait for an animation to complete» | Toque, clic, Esc o Intro |
+| apple-design | `accessibility.md`: con Reduce Motion, reducir las animaciones automáticas y repetitivas | Movimiento reducido: sin escritura ni puntos animados |
+| apple-design | `motion.md`: «avoid adding motion to UI interactions that occur frequently» | El historial y las respuestas ya completas nunca se animan |
+
+### Medidas (Playwright, `tests/browser/revelado.spec.ts`, 29/10/2026)
+
+| Medida | Antes (2 s) | Ahora |
+|---|---:|---:|
+| Respuesta corta, 203 caracteres (~40 palabras) | ≈ 0,5 s | **5,9 s** |
+| Respuesta larga, ~170 palabras | 2 s | **8,1 s** (tope) |
+| Primer carácter tras recibir los datos | 1 fotograma | 1 fotograma (< 1 s) |
+| `requestAnimationFrame` en el segundo siguiente a terminar | – | **0** (no gasta CPU) |
+| Fotogramas largos (> 50 ms) con CPU ×4 mientras escribe | ≤ 8 | 1 (74 ms) |
+
+Capturas en móvil (390 px) y escritorio (1280 px), claro y oscuro, mientras
+escribe y al terminar; indicador «escribiendo» y movimiento reducido:
+`docs/diseno/escritura/`. Vídeos cortos en `docs/diseno/escritura/video/`.
+
+**Fórmulas** (duda «texto o LaTeX»): `tests/browser/formulas.spec.ts` pasa en
+móvil y escritorio.
+- Cada fracción, raíz, potencia y subíndice sale una vez y bien maquetado.
+- Al copiar sale `246/100`, `√2` o `x^2`.
+- El renderizador está arreglado desde IA-1. Aun así, el prompt pide texto
+  sencillo para las cuentas cortas (3/7, x²) y LaTeX solo cuando haga falta: en
+  un chat se lee mejor.
+
+**Honestidad:** esto mejora la sensación, **no reduce el gasto de tokens**.
+El coste está en generar la respuesta, y llega igual de rápido de Groq. Para
+ahorrar de verdad, ver P2 (corte y «¿Sigo?») y P6.
+
+### Lo que no se hace (aún)
+
+- **Respuesta en 2-3 burbujas** (punto 8, opcional): no está implementada. El
+  encargo pide que Carlos la vea antes en una vista previa; se puede hacer
+  detrás de un interruptor apagado cuando lo pida.
