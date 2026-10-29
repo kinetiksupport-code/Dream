@@ -1,28 +1,304 @@
 {
   "description": "Tono natural (Bloque 1). Cada caso es una conversación; se comprueba la última respuesta de Dream. Ver evals/README.md.",
-  "defaults": { "forbidden": ["¡Claro! Aquí tienes", "Como IA", "Espero que esto te ayude", "Espero que te ayude", "¡Excelente pregunta!", "¿Te queda claro", "¿Lo entiendes", "¿lo entiendes"], "noHeadings": true, "noLists": true, "noDuplicateNumbers": true },
+  "defaults": {
+    "forbidden": [
+      "¡Claro! Aquí tienes",
+      "Como IA",
+      "Espero que esto te ayude",
+      "Espero que te ayude",
+      "¡Excelente pregunta!",
+      "¿Te queda claro",
+      "¿Lo entiendes",
+      "¿lo entiendes"
+    ],
+    "noHeadings": true,
+    "noLists": true,
+    "noDuplicateNumbers": true,
+    "maxWords": 120,
+    "noRobot": true,
+    "noForeign": true
+  },
   "nicknameMaxRate": 0.34,
   "cases": [
-    { "id": "saludo-1", "messages": [{ "role": "user", "content": "hola" }], "expect": { "maxWords": 40 } },
-    { "id": "saludo-2", "messages": [{ "role": "user", "content": "buenas!! que tal" }], "expect": { "maxWords": 40 } },
-    { "id": "saludo-3", "messages": [{ "role": "user", "content": "hey dream" }], "expect": { "maxWords": 40 } },
-    { "id": "saludo-tarde", "messages": [{ "role": "user", "content": "buenas tardes" }], "expect": { "maxWords": 40 } },
-    { "id": "no-entiendo-1", "messages": [{ "role": "user", "content": "no entiendo nada de mates" }], "expect": { "maxWords": 70, "endsWithQuestion": true } },
-    { "id": "no-entiendo-2", "messages": [{ "role": "user", "content": "no me entero de las derivadas, de nada" }], "expect": { "maxWords": 80, "endsWithQuestion": true } },
-    { "id": "agobiado", "messages": [{ "role": "user", "content": "estoy agobiado, tengo tres exámenes esta semana" }], "expect": { "maxWords": 80, "reactsTo": "agobi|tres|semana|normal|vaya|uf" } },
-    { "id": "examen-manana-1", "messages": [{ "role": "user", "content": "mañana tengo examen de historia y no he empezado" }], "expect": { "maxWords": 80, "reactsTo": "mañana|tiempo|hoy|vale|vamos" } },
-    { "id": "examen-manana-2", "messages": [{ "role": "user", "content": "mañana examen de física, ayuda" }], "expect": { "maxWords": 70, "endsWithQuestion": true } },
-    { "id": "duda-rapida-1", "messages": [{ "role": "user", "content": "¿haber o a ver? 'vamos a ver si llueve'" }], "expect": { "maxWords": 60 } },
-    { "id": "duda-rapida-2", "messages": [{ "role": "user", "content": "cuanto es 7x8" }], "expect": { "maxWords": 25, "mustMatchAny": ["56"] } },
-    { "id": "duda-rapida-3", "messages": [{ "role": "user", "content": "plural de 'el análisis'?" }], "expect": { "maxWords": 40 } },
-    { "id": "corto-1", "messages": [{ "role": "user", "content": "ok" }], "expect": { "maxWords": 25 } },
-    { "id": "corto-2", "messages": [{ "role": "user", "content": "vale gracias" }], "expect": { "maxWords": 25 } },
-    { "id": "corto-3", "messages": [{ "role": "user", "content": "no" }], "expect": { "maxWords": 30 } },
-    { "id": "corto-4", "messages": [{ "role": "user", "content": "q es un adverbio" }], "expect": { "maxWords": 70 } },
-    { "id": "eres-humano", "messages": [{ "role": "user", "content": "eres una persona?" }], "expect": { "maxWords": 40, "mustMatchAny": ["Estás hablando con una IA"] } },
-    { "id": "te-acuerdas", "messages": [{ "role": "user", "content": "te acuerdas de mí?" }], "expect": { "maxWords": 60, "mustNotMatch": "gpt|qwen|llama|groq|openai|mistral|cloudflare" } },
-    { "id": "que-hay-en-la-web", "messages": [{ "role": "user", "content": "qué puedo hacer en esta web?" }], "expect": { "maxWords": 90, "noLists": false, "mustNotMatch": "premium|suscripci|€|euros al mes" } },
-    { "id": "conversacion-larga", "messages": [{ "role": "user", "content": "qué es un sujeto" }, { "role": "assistant", "content": "Es de quien se dice algo en la oración. En «Marta canta», ¿quién canta?" }, { "role": "user", "content": "marta" }], "expect": { "maxWords": 50, "endsWithQuestion": true } },
-    { "id": "fraccion-generatriz", "category": "caso-real", "messages": [{ "role": "user", "content": "explícame la fracción generatriz" }], "expect": { "maxWords": 90, "noLists": true, "singleQuestion": true, "searched": true, "noDuplicateNumbers": true } }
+    {
+      "id": "saludo-1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hola"
+        }
+      ],
+      "expect": {
+        "maxWords": 40
+      }
+    },
+    {
+      "id": "saludo-2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "buenas!! que tal"
+        }
+      ],
+      "expect": {
+        "maxWords": 40
+      }
+    },
+    {
+      "id": "saludo-3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hey dream"
+        }
+      ],
+      "expect": {
+        "maxWords": 40
+      }
+    },
+    {
+      "id": "saludo-tarde",
+      "messages": [
+        {
+          "role": "user",
+          "content": "buenas tardes"
+        }
+      ],
+      "expect": {
+        "maxWords": 40
+      }
+    },
+    {
+      "id": "no-entiendo-1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "no entiendo nada de mates"
+        }
+      ],
+      "expect": {
+        "maxWords": 70,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "no-entiendo-2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "no me entero de las derivadas, de nada"
+        }
+      ],
+      "expect": {
+        "maxWords": 80,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "agobiado",
+      "messages": [
+        {
+          "role": "user",
+          "content": "estoy agobiado, tengo tres exámenes esta semana"
+        }
+      ],
+      "expect": {
+        "maxWords": 80,
+        "reactsTo": "agobi|tres|semana|normal|vaya|uf"
+      }
+    },
+    {
+      "id": "examen-manana-1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "mañana tengo examen de historia y no he empezado"
+        }
+      ],
+      "expect": {
+        "maxWords": 80,
+        "reactsTo": "mañana|tiempo|hoy|vale|vamos"
+      }
+    },
+    {
+      "id": "examen-manana-2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "mañana examen de física, ayuda"
+        }
+      ],
+      "expect": {
+        "maxWords": 70,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "duda-rapida-1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿haber o a ver? 'vamos a ver si llueve'"
+        }
+      ],
+      "expect": {
+        "maxWords": 60
+      }
+    },
+    {
+      "id": "duda-rapida-2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "cuanto es 7x8"
+        }
+      ],
+      "expect": {
+        "maxWords": 25,
+        "mustMatchAny": [
+          "56"
+        ]
+      }
+    },
+    {
+      "id": "duda-rapida-3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "plural de 'el análisis'?"
+        }
+      ],
+      "expect": {
+        "maxWords": 40
+      }
+    },
+    {
+      "id": "corto-1",
+      "messages": [
+        {
+          "role": "user",
+          "content": "ok"
+        }
+      ],
+      "expect": {
+        "maxWords": 25
+      }
+    },
+    {
+      "id": "corto-2",
+      "messages": [
+        {
+          "role": "user",
+          "content": "vale gracias"
+        }
+      ],
+      "expect": {
+        "maxWords": 25
+      }
+    },
+    {
+      "id": "corto-3",
+      "messages": [
+        {
+          "role": "user",
+          "content": "no"
+        }
+      ],
+      "expect": {
+        "maxWords": 30
+      }
+    },
+    {
+      "id": "corto-4",
+      "messages": [
+        {
+          "role": "user",
+          "content": "q es un adverbio"
+        }
+      ],
+      "expect": {
+        "maxWords": 70
+      }
+    },
+    {
+      "id": "eres-humano",
+      "messages": [
+        {
+          "role": "user",
+          "content": "eres una persona?"
+        }
+      ],
+      "expect": {
+        "maxWords": 40,
+        "mustMatchAny": [
+          "Estás hablando con una IA"
+        ]
+      }
+    },
+    {
+      "id": "te-acuerdas",
+      "messages": [
+        {
+          "role": "user",
+          "content": "te acuerdas de mí?"
+        }
+      ],
+      "expect": {
+        "maxWords": 60,
+        "mustNotMatch": "gpt|qwen|llama|groq|openai|mistral|cloudflare"
+      }
+    },
+    {
+      "id": "que-hay-en-la-web",
+      "messages": [
+        {
+          "role": "user",
+          "content": "qué puedo hacer en esta web?"
+        }
+      ],
+      "expect": {
+        "maxWords": 90,
+        "noLists": false,
+        "mustNotMatch": "premium|suscripci|€|euros al mes"
+      }
+    },
+    {
+      "id": "conversacion-larga",
+      "messages": [
+        {
+          "role": "user",
+          "content": "qué es un sujeto"
+        },
+        {
+          "role": "assistant",
+          "content": "Es de quien se dice algo en la oración. En «Marta canta», ¿quién canta?"
+        },
+        {
+          "role": "user",
+          "content": "marta"
+        }
+      ],
+      "expect": {
+        "maxWords": 50,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "fraccion-generatriz",
+      "category": "caso-real",
+      "messages": [
+        {
+          "role": "user",
+          "content": "explícame la fracción generatriz"
+        }
+      ],
+      "expect": {
+        "maxWords": 90,
+        "noLists": true,
+        "singleQuestion": true,
+        "searched": true,
+        "noDuplicateNumbers": true
+      }
+    }
   ]
 }
