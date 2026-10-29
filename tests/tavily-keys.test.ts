@@ -77,12 +77,13 @@ test("a Tavily key in cooldown is skipped until its wait is over", async () => {
     },
     () => clock,
   );
-  await tavily.search("consulta");
+  // Different queries: the same one would come from the 24 h cache (P4).
+  await tavily.search("consulta uno");
   used.length = 0;
-  await tavily.search("consulta");
+  await tavily.search("consulta dos");
   assert.deepEqual(used, ["synthetic-two"]);
   clock += 11_000;
   used.length = 0;
-  await tavily.search("consulta");
+  await tavily.search("consulta tres");
   assert.deepEqual(used, ["synthetic-one"]);
 });

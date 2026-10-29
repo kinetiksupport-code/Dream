@@ -10,6 +10,7 @@ import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
 import { AiPermission, WelcomeProfile } from "@/components/welcome/profile-settings";
+import { StudySettings } from "@/components/welcome/study-settings";
 import { UsageLimits } from "@/components/usage-limits";
 import { MemorySettings } from "@/components/memory-settings";
 import { DownloadMyData } from "@/components/data-export";
@@ -204,7 +205,10 @@ export default function Settings() {
             Tu nombre y tu correo vienen de tu cuenta de Google.
           </p>
         ) : (
-          <WelcomeProfile />
+          <>
+            <WelcomeProfile />
+            <StudySettings />
+          </>
         )}
       </section>
 

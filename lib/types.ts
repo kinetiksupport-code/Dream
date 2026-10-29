@@ -1,7 +1,12 @@
+import type { StudyProfile } from "./onboarding";
 import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Curso (lista cerrada de lib/onboarding.ts › STUDY.level). */
+  academic_level?: string | null;
+  /** «Cómo estudias» (P4): solo si dream-api lo envía (con su migración). */
+  study_profile?: StudyProfile;
   /** Solo lo envía dream-api a la cuenta administradora. Ocultar el enlace no es la seguridad. */
   admin_panel?: { path: string };
   /** Present only while the account is banned: Dream then shows only the ban screen. */
