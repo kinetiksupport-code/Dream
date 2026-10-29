@@ -71,34 +71,33 @@ async function sendFromHome(page: Page, text = "Explícame las derivadas") {
   return sentAt;
 }
 
-test("AI status: nothing before 2 s, «Pensando…» at 2 s, «Buscando…» on activity", async ({
+test("waiting: «Dream está escribiendo…» until the first character, «Buscando…» on activity", async ({
   page,
 }) => {
   await setup(page);
   await page.setViewportSize({ width: 1280, height: 860 });
-  const sentAt = await sendFromHome(page);
+  await sendFromHome(page);
   await streamReady(page);
   // Stop button visible from the first moment the answer is in progress.
   await expect(
     page.getByRole("button", { name: "Detener respuesta" }),
   ).toBeVisible();
-  await page.waitForTimeout(1500);
+  // P5 (docs/HABLA_NATURAL.md): the typing indicator replaces «Pensando…».
+  const typing = page.locator(".typing-indicator");
+  await expect(typing).toBeVisible({ timeout: 2000 });
+  await expect(typing).toHaveText("Dream está escribiendo…");
+  await expect(typing).toHaveAttribute("role", "status");
   await expect(page.locator(".ai-status")).toHaveCount(0);
-  const status = page.locator(".ai-status");
-  await expect(status).toBeVisible({ timeout: 2000 });
-  await expect(status).toHaveText("Pensando…");
-  await expect(status).toHaveAttribute("aria-live", "polite");
-  const shownAfter = await page.evaluate(
-    (t) => ((window as QA).qaStatusAt ?? 0) - t,
-    sentAt,
-  );
-  expect(shownAfter).toBeGreaterThanOrEqual(1950);
-  expect(shownAfter).toBeLessThan(2600);
   await emit(page, { type: "activity", activity: "searching" });
+  const status = page.locator(".ai-status");
   await expect(status).toHaveText("Buscando en internet…");
   await expect(page.locator(".ai-status .orb-pulsing")).toBeVisible();
+  await expect(typing).toHaveCount(0);
+  // Once it writes, the cursor says it: no status line, no indicator.
   await emit(page, { type: "delta", text: "La derivada mide" });
-  await expect(page.locator(".ai-status")).toHaveText("Escribiendo…");
+  await expect(page.locator(".message-assistant").last()).toHaveClass(/is-typing/);
+  await expect(page.locator(".ai-status")).toHaveCount(0);
+  await expect(typing).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Detener respuesta" }),
   ).toBeVisible();
@@ -131,9 +130,10 @@ test("cursor blinks while the text arrives and disappears when it completes", as
   await emit(page, { type: "delta", text: "Una derivada es " });
   const answer = page.locator(".message-assistant").last();
   await expect(answer).toHaveClass(/is-typing/);
+  // Not live while it writes: read once at the end (P5).
   await expect(answer.locator(".message-body")).toHaveAttribute(
     "aria-live",
-    "polite",
+    "off",
   );
   await expect(answer.locator(".message-body")).toHaveAttribute(
     "aria-busy",

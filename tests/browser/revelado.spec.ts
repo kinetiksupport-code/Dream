@@ -1,8 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
 import { mock } from "./design-fixture";
-// Soft reveal of the answers (feat/revelado-suave): an answer that arrives
-// whole appears word by word in ~2 s, a click shows it all, reduced motion is
-// instant, the actions wait for the end and nothing moves when it ends.
+// The answer «types itself» (P5, docs/HABLA_NATURAL.md; replaces the 2 s soft
+// reveal): ~40 characters per second with pauses, never more than 8 s; a
+// click, a tap, Esc or Enter shows it all; reduced motion is instant; the
+// actions wait for the end and nothing moves when it ends.
 test.use({ serviceWorkers: "block" });
 
 type QA = typeof window & {
@@ -99,20 +100,20 @@ const revealEnd = (page: Page) =>
       }),
   );
 
-test("an answer that arrives whole appears word by word in ~2 s; actions at the end", async ({
+test("an answer that arrives whole types itself in ≤ 8 s; actions at the end", async ({
   page,
 }) => {
   await setup(page);
   await page.setViewportSize({ width: 1280, height: 860 });
   await ask(page);
   const sentAt = await deliver(page);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1500);
   const mid = await progress(page);
   expect(mid.all).toBeGreaterThan(150);
   expect(mid.revealing).toBe(true);
   // Partway, not all at once and not nothing: by words, at a steady pace.
   expect(mid.shown).toBeGreaterThan(0);
-  expect(mid.shown).toBeLessThan(mid.all * 0.6);
+  expect(mid.shown).toBeLessThan(mid.all * 0.4);
   // No actions and the live region stays busy (read once, at the end).
   expect(mid.actions).toBe(0);
   expect(mid.busy).toBe("true");
@@ -147,8 +148,10 @@ test("an answer that arrives whole appears word by word in ~2 s; actions at the 
     type: "revelado",
     description: `${Math.round(took)} ms`,
   });
-  expect(took).toBeGreaterThan(1600);
-  expect(took).toBeLessThan(2400);
+  // ~170 words would take ~30 s at 40 characters per second: it speeds up
+  // to end at the 8 s limit, not before.
+  expect(took).toBeGreaterThan(7000);
+  expect(took).toBeLessThan(8800);
   const end = await progress(page);
   expect(end.shown).toBe(end.all);
   expect(end.busy).toBe("false");
@@ -343,4 +346,185 @@ test("fluency: reveal with CPU ×4 (long frames counted)", async ({ page }) => {
   // Same bar as the chat streaming test (shared, loaded machine).
   expect(long.length).toBeLessThanOrEqual(8);
   expect(Math.max(0, ...long)).toBeLessThan(120);
+});
+
+// ── P5: typing pace, controls, accessibility (docs/HABLA_NATURAL.md) ────────
+
+/** ~40 words, the length Dream should answer with now. */
+const SHORT =
+  "Vale, vamos por partes. Una ecuación de segundo grado tiene una x al cuadrado, y eso cambia cómo se resuelve. Primero mira si puedes sacar factor común. ¿Ves algún número que divida a todos los términos?";
+const CAPTURAS = process.env.CAPTURAS_DIR;
+
+test("time to first character < 1 s, then ~40 characters per second with pauses", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await ask(page);
+  const sentAt = await deliver(page, SHORT);
+  // First word: within a frame or two of the data arriving.
+  const firstAt = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const check = () => {
+          const a = [...document.querySelectorAll(".message-assistant")].at(-1);
+          if (a?.querySelector(".markdown [data-w].is-shown")) resolve(performance.now());
+          else requestAnimationFrame(check);
+        };
+        check();
+      }),
+  );
+  expect(firstAt - sentAt).toBeLessThan(1000);
+  await page.waitForTimeout(1000);
+  const atOne = await progress(page);
+  // About 7 words a second (40 characters), not the whole answer.
+  expect(atOne.shown).toBeGreaterThanOrEqual(3);
+  expect(atOne.shown).toBeLessThanOrEqual(12);
+  const took = (await revealEnd(page)) - sentAt;
+  console.log(`Respuesta de ${SHORT.length} caracteres escrita en ${Math.round(took)} ms`);
+  // 205 characters at 40/s ≈ 5,1 s + pauses: well under the 8 s limit.
+  expect(took).toBeGreaterThan(4000);
+  expect(took).toBeLessThan(8200);
+});
+
+test("«Dream está escribiendo…» shows before the first character and goes with it", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await ask(page);
+  const indicator = page.locator(".message-assistant").last().locator(".typing-indicator");
+  await expect(indicator).toBeVisible();
+  await expect(indicator).toHaveText("Dream está escribiendo…");
+  // The dots move with opacity and transform only.
+  const animated = await indicator
+    .locator(".typing-dots span")
+    .first()
+    .evaluate((el) => getComputedStyle(el).animationName);
+  expect(animated).toBe("typing-dot");
+  if (CAPTURAS) await page.screenshot({ path: `${CAPTURAS}/escribiendo-indicador-movil.png` });
+  await deliver(page, SHORT);
+  await expect(indicator).toHaveCount(0);
+});
+
+test("Esc, or Enter outside the composer, shows it all at once", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await ask(page);
+  await deliver(page);
+  await page.waitForTimeout(300);
+  // Enter while typing in the composer does not end it (it is for sending).
+  await page.getByRole("textbox", { name: "Mensaje para Dream" }).press("Enter");
+  expect((await progress(page)).revealing).toBe(true);
+  const at = await page.evaluate(() => performance.now());
+  await page.keyboard.press("Escape");
+  expect((await revealEnd(page)) - at).toBeLessThan(300);
+  // Enter with the focus elsewhere, on a second answer.
+  await page.evaluate(() => ((window as QA).qaStream = undefined));
+  await page.getByRole("textbox", { name: "Mensaje para Dream" }).fill("Otra");
+  await page.getByRole("textbox", { name: "Mensaje para Dream" }).press("Enter");
+  await page.waitForFunction(() => !!(window as QA).qaStream);
+  await deliver(page);
+  await page.waitForTimeout(300);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("Enter");
+  await expect.poll(async () => (await progress(page)).revealing).toBe(false);
+});
+
+test("a hidden tab does not animate: it shows everything", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await ask(page);
+  await deliver(page);
+  await page.waitForTimeout(300);
+  expect((await progress(page)).revealing).toBe(true);
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect.poll(async () => (await progress(page)).revealing).toBe(false);
+  const end = await progress(page);
+  expect(end.shown).toBe(end.all);
+});
+
+test("screen readers: not live while typing, the answer is announced once at the end", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await ask(page);
+  await deliver(page, SHORT);
+  const answer = page.locator(".message-assistant").last();
+  await expect(answer.locator(".message-body")).toHaveAttribute("aria-live", "off");
+  // While typing, the announcer is empty.
+  const announcer = answer.locator('[role="status"][aria-atomic="true"]');
+  await expect(announcer).toHaveText("");
+  // Count every change of the announcer: exactly one, with the whole text.
+  await page.evaluate(() => {
+    const w = window as typeof window & { qaSaid: string[] };
+    w.qaSaid = [];
+    const el = [...document.querySelectorAll('.message-assistant [role="status"][aria-atomic="true"]')].at(-1)!;
+    new MutationObserver(() => {
+      if (el.textContent) w.qaSaid.push(el.textContent);
+    }).observe(el, { childList: true, subtree: true, characterData: true });
+  });
+  await revealEnd(page);
+  await expect(announcer).toContainText("Vale, vamos por partes.");
+  await page.waitForTimeout(500);
+  const said = await page.evaluate(() => (window as typeof window & { qaSaid: string[] }).qaSaid);
+  expect(said).toHaveLength(1);
+  expect(said[0]).toContain("¿Ves algún número que divida a todos los términos?");
+});
+
+test("when it ends, the effect stops using frames (CPU idle)", async ({ page }) => {
+  await setup(page);
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await ask(page);
+  await deliver(page, SHORT);
+  await page.locator(".message-assistant").last().locator(".message-body").click({ position: { x: 20, y: 8 } });
+  await revealEnd(page);
+  await page.waitForTimeout(500);
+  const frames = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        let n = 0;
+        const raf = window.requestAnimationFrame.bind(window);
+        window.requestAnimationFrame = (cb) => {
+          n++;
+          return raf(cb);
+        };
+        setTimeout(() => resolve(n), 1000);
+      }),
+  );
+  console.log(`requestAnimationFrame en 1 s tras terminar: ${frames}`);
+  expect(frames).toBeLessThanOrEqual(2);
+});
+
+test("screenshots and video while it types: phone and desktop, light, dark and reduced motion", async ({ browser }) => {
+  test.skip(!CAPTURAS, "Set CAPTURAS_DIR to take screenshots");
+  test.setTimeout(120000);
+  for (const [name, viewport] of [
+    ["movil", { width: 390, height: 844 }],
+    ["escritorio", { width: 1280, height: 860 }],
+  ] as const)
+    for (const colorScheme of ["light", "dark"] as const) {
+      const context = await browser.newContext({
+        viewport,
+        colorScheme,
+        serviceWorkers: "block",
+        ...(colorScheme === "light" ? { recordVideo: { dir: `${CAPTURAS}/video`, size: viewport } } : {}),
+      });
+      const page = await context.newPage();
+      await setup(page);
+      await ask(page, "¿Cómo resuelvo x² − 5x + 6 = 0?");
+      await deliver(page, SHORT);
+      await page.waitForTimeout(1800);
+      await page.screenshot({ path: `${CAPTURAS}/escribiendo-${name}-${colorScheme === "light" ? "claro" : "oscuro"}.png` });
+      await revealEnd(page);
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${CAPTURAS}/escrito-${name}-${colorScheme === "light" ? "claro" : "oscuro"}.png` });
+      await context.close();
+    }
+  const reduced = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce", serviceWorkers: "block" });
+  const page = await reduced.newPage();
+  await setup(page);
+  await ask(page);
+  await deliver(page, SHORT);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${CAPTURAS}/movimiento-reducido-movil.png` });
+  await reduced.close();
 });

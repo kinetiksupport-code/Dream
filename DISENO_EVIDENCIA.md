@@ -210,6 +210,7 @@ emil-design-eng permite cambios de color en hover («Is it a hover/color change?
 | Inicio | `antes/inicio-*` | `docs/diseno/inicio/*` | `inicio.webm` | #18 |
 | Chat y estados de la IA | `antes/chat-*` | `docs/diseno/chat/*` | `chat.webm` | #24 |
 | Aparición suave de respuestas (Parte I) | `docs/diseno/chat/*` | `docs/diseno/revelado/*` | `revelado.webm` (antes y después) | #25 |
+| El texto se escribe poco a poco (P5, docs/HABLA_NATURAL.md) | `docs/diseno/revelado/*` (2 s) | `docs/diseno/escritura/*` (40 car./s, tope 8 s, «Dream está escribiendo…», movimiento reducido) | `docs/diseno/escritura/video/*.webm` (móvil y escritorio) | Habla natural 3/5 |
 | Test y simulacro | `antes/test-*` | `docs/diseno/test/*` | `test.webm`, `test-movil.webm` | #17 |
 | Historial | `antes/historial-*` | `docs/diseno/historial/*` | `historial.webm` | #16 |
 | Ajustes | `antes/ajustes-*` | `docs/diseno/ajustes/*` | `ajustes.webm` | #23 |
