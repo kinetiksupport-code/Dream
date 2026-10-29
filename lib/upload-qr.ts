@@ -83,6 +83,8 @@ export async function qrConnect(
   token: string,
   deviceKey?: string,
   signal?: AbortSignal,
+  /** Token de Turnstile (docs/turnstile.md); lo valida dream-api. */
+  humanToken?: string,
 ): Promise<QrConnection> {
   if (!tokenLooksValid(token))
     throw new UploadQrError("", 404, "upload_link_invalid");
@@ -96,6 +98,7 @@ export async function qrConnect(
       action: "upload_qr_connect",
       token,
       ...(deviceKey ? { device_key: deviceKey } : {}),
+      ...(humanToken ? { turnstile_token: humanToken } : {}),
     },
     signal,
   );

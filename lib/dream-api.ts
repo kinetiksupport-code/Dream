@@ -4,6 +4,8 @@ import { captureDiagnostic } from "./observability/diagnostics";
 import type { Outcome } from "./observability/policy";
 import { getSupabase } from "./supabase";
 import { readNDJSON, DreamStreamError } from "./streaming";
+import { askHuman } from "./human-check";
+import { TURNSTILE_ACTIONS } from "./turnstile";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
@@ -104,21 +106,39 @@ async function request(
   }
   const url = process.env.NEXT_PUBLIC_DREAM_API_URL;
   if (!url) throw new Error("Falta configurar dream-api.");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${data.session.access_token}`,
-      apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...payload,
-      action,
-      request_id: crypto.randomUUID(),
-    }),
-    signal,
-    cache: "no-store",
-  });
+  const send = (extra: Record<string, unknown> = {}) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${data.session!.access_token}`,
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        ...extra,
+        action,
+        request_id: crypto.randomUUID(),
+      }),
+      signal,
+      cache: "no-store",
+    });
+  let response = await send();
+  // Cuenta nueva y algo raro: dream-api pide Turnstile antes de la primera
+  // acción de IA (docs/turnstile.md). Se muestra la comprobación y se repite
+  // una sola vez con el token; si el alumno cancela, sale el error normal.
+  // «Reclamar» lleva su propio widget (components/moderation/appeal-form.tsx).
+  if (response.status === 428 && action !== "mod_appeal_create" && typeof window !== "undefined") {
+    const code = await response
+      .clone()
+      .json()
+      .then((d: { code?: unknown }) => d.code)
+      .catch(() => "");
+    if (code === "turnstile_required") {
+      const token = await askHuman(TURNSTILE_ACTIONS.firstAi);
+      if (token) response = await send({ turnstile_token: token });
+    }
+  }
   if (!response.ok) {
     let code = "";
     let retryAfter = Number(response.headers.get("Retry-After")) || 0;

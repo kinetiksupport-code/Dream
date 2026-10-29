@@ -1,7 +1,9 @@
 "use client";
 import { useId, useState, type FormEvent } from "react";
 import { APPEAL_DEADLINE_DAYS, APPEAL_MAX_CHARS, sendAppeal } from "@/lib/moderation";
-import { errorMessage } from "@/lib/dream-api";
+import { DreamApiError, errorMessage } from "@/lib/dream-api";
+import { TURNSTILE_ACTIONS, isHumanCheckCode, turnstileOn } from "@/lib/turnstile";
+import { Turnstile } from "@/components/human-check/turnstile";
 import { CopyCode } from "./copy-code";
 import styles from "./moderation.module.css";
 
@@ -16,22 +18,31 @@ export function AppealForm({ onSent }: { onSent?: () => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState<{ code: string } | null>(null);
+  // Turnstile (docs/turnstile.md): un token nuevo por envío.
+  const human = turnstileOn();
+  const [token, setToken] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
+  const [humanError, setHumanError] = useState("");
   const left = APPEAL_MAX_CHARS - text.length;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (busy || !text.trim()) return;
+    if (busy || !text.trim() || (human && !token)) return;
     setBusy(true);
     setError("");
+    setHumanError("");
     try {
-      const result = await sendAppeal(text.trim());
+      const result = await sendAppeal(text.trim(), undefined, token ?? undefined);
       setSent({ code: result.code });
       setText("");
       onSent?.();
     } catch (e) {
-      setError(errorMessage(e));
+      if (e instanceof DreamApiError && isHumanCheckCode(e.code)) setHumanError(e.message);
+      else setError(errorMessage(e));
     } finally {
       setBusy(false);
+      // El token ya se ha gastado: el widget pide otro.
+      if (human) setRound((n) => n + 1);
     }
   }
 
@@ -68,8 +79,9 @@ export function AppealForm({ onSent }: { onSent?: () => void }) {
           {error}
         </p>
       )}
+      {human && <Turnstile action={TURNSTILE_ACTIONS.appeal} onToken={setToken} resetKey={round} error={humanError} />}
       <div className="button-row">
-        <button className="primary press" type="submit" disabled={busy || !text.trim()} aria-busy={busy || undefined}>
+        <button className="primary press" type="submit" disabled={busy || !text.trim() || (human && !token)} aria-busy={busy || undefined}>
           {busy ? "Enviando…" : "Enviar reclamación"}
         </button>
       </div>

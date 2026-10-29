@@ -39,7 +39,9 @@ const fail = (status, code, error) => ({ status, body: { error, code } });
  * Devuelve { status, body } o null si la acción no es de este módulo.
  * rpc(nombre, argumentos) lanza si la base de datos da error.
  */
-export async function handleStudentModeration({ action, body, userId, rpc }) {
+/** @param {{ action: string, body: any, userId: string, rpc: any,
+ *   humanCheck?: ((token: unknown) => Promise<{ ok: boolean, status?: number, code?: string, message?: string }>) | null }} options */
+export async function handleStudentModeration({ action, body, userId, rpc, humanCheck = null }) {
   if (!STUDENT_MOD_ACTIONS.has(action)) return null;
   try {
     if (action === "mod_ban_info") {
@@ -59,6 +61,11 @@ export async function handleStudentModeration({ action, body, userId, rpc }) {
       const text = typeof body.body === "string" ? body.body.trim() : "";
       if (text.length < 1 || text.length > APPEAL_MAX_CHARS) return fail(400, "texto_no_valido", `Escribe entre 1 y ${APPEAL_MAX_CHARS} caracteres.`);
       const sanction = typeof body.sanction_id === "string" && UUID.test(body.sanction_id) ? body.sanction_id : null;
+      // Turnstile (docs/turnstile.md): un bot no puede llenar la cola de reclamaciones.
+      if (humanCheck) {
+        const human = await humanCheck(body.turnstile_token);
+        if (!human.ok) return fail(human.status ?? 403, human.code ?? "turnstile_failed", human.message);
+      }
       const result = await rpc("mod_appeal_create", { p_user: userId, p_body: text, p_sanction: sanction });
       if (!result?.ok) {
         if (result?.code === "demasiadas_abiertas") return fail(409, "demasiadas_abiertas", "Ya tienes 3 reclamaciones abiertas. Espera a que respondamos a alguna.");

@@ -190,12 +190,37 @@ function reject(code, untilIso, now) {
 }
 
 /**
+ * Turnstile en la primera acción de IA de una cuenta nueva, SOLO si algo es raro
+ * (decisión de Carlos, 2026-10-29; docs/turnstile.md). No se pide a todo el mundo:
+ *  - cuenta creada hace menos de 24 h, y
+ *  - la conexión NO parece un colegio (menos de `sharedNetworkMinUsers` cuentas
+ *    en la última hora: en un colegio muchas cuentas nuevas a la vez es normal), y
+ *  - la conexión va deprisa: la mitad de la ráfaga que ya bloquea por minuto, o
+ *    la mitad del máximo por hora.
+ * La comprobación de «primera acción» (sin uso de IA en la ventana) la hace quien
+ * llama, solo si esto da true, para no leer la base de datos sin motivo.
+ */
+export const NEW_ACCOUNT = Object.freeze({
+  maxAgeMs: DAY,
+  hitsMinute: Math.ceil(THRESHOLDS.burstPerMinute / 2),
+  hitsHour: Math.ceil(THRESHOLDS.hourPerIp / 2),
+});
+export function suspiciousNewAccount({ createdAt, sig, now = Date.now() }) {
+  const created = Date.parse(String(createdAt ?? ""));
+  if (!Number.isFinite(created) || now - created > NEW_ACCOUNT.maxAgeMs || now < created) return false;
+  if (!sig || Number(sig.distinct_users_hour) >= THRESHOLDS.sharedNetworkMinUsers) return false;
+  return Number(sig.hits_minute) >= NEW_ACCOUNT.hitsMinute || Number(sig.hits_hour) >= NEW_ACCOUNT.hitsHour;
+}
+
+/**
  * Puerta de moderación para las acciones que consumen IA (consumingActions).
  * No toca páginas legales, el inicio de sesión ni «Reclamar»: solo se llama
  * desde las acciones que gastan IA. Falla abierta: ante un error no bloquea.
  * Devuelve null (seguir) o { status, code, message, retryAfter }.
  */
-export async function moderationGate({ rpc, headers, userId, ageBand, env, now = Date.now(), log = console.error }) {
+/** @param {{ rpc: any, headers: Headers, userId: string, ageBand: string | null, env: Record<string, any>, now?: number,
+ *   log?: (line: string) => void, challenge?: ((sig: any) => Promise<any>) | null }} options */
+export async function moderationGate({ rpc, headers, userId, ageBand, env, now = Date.now(), log = console.error, challenge = null }) {
   const mode = modMode(env.MOD_MODE);
   if (mode === "off") return null;
   try {
@@ -209,6 +234,13 @@ export async function moderationGate({ rpc, headers, userId, ageBand, env, now =
     const enforce = mode === "enforce";
     if (enforce && sig.ip_blocked_until && Date.parse(sig.ip_blocked_until) > now) return reject("mod_ip_blocked", sig.ip_blocked_until, now);
     if (enforce && sig.user_limited_until && Date.parse(sig.user_limited_until) > now) return reject("mod_user_limited", sig.user_limited_until, now);
+    // Turnstile para una cuenta nueva sospechosa (solo en enforce). Lo que
+    // devuelva el reto (una negativa) se respeta; si el reto falla por un error
+    // propio, la puerta sigue abierta como el resto.
+    if (enforce && typeof challenge === "function") {
+      const denied = await challenge(sig);
+      if (denied) return denied;
+    }
 
     const decision = decideAbuse(
       { hitsMinute: sig.hits_minute, hitsHour: sig.hits_hour, distinctUsers: sig.distinct_users_hour, userHitsHour: sig.user_hits_hour },

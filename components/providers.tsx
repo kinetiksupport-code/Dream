@@ -15,6 +15,7 @@ import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
 import { ConsentWatcher } from "@/components/consent-watcher";
+import { HumanCheckHost } from "@/components/human-check/human-check-host";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
@@ -284,6 +285,7 @@ export function Providers({ children }: { children: ReactNode }) {
     >
       <ObservabilityRoutes />
       <ConsentWatcher />
+      <HumanCheckHost />
       <ConnectionStatus />
       <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>

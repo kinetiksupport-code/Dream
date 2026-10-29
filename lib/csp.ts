@@ -15,6 +15,13 @@ export interface CspEnv {
   posthogHost?: string;
   sentryDsn?: string;
   development?: boolean;
+  /**
+   * Turnstile configurado (NEXT_PUBLIC_TURNSTILE_SITE_KEY). Solo añade su origen
+   * a script-src y frame-src. Va en todas las páginas de la app y no solo en
+   * las que lo enseñan: Next.js navega sin recargar y la CSP que vale es la de
+   * la primera página abierta. El script solo se carga donde se usa.
+   */
+  turnstile?: boolean;
 }
 
 const origin = (value?: string) => {
@@ -31,6 +38,8 @@ const unique = (list: string[]) => [...new Set(list.filter(Boolean))].join(" ");
 // after consent and a click, but the policy has to allow it beforehand.
 const CRISP = "https://*.crisp.chat";
 const CRISP_WS = ["wss://*.relay.crisp.chat", "wss://*.relay.rescue.crisp.chat"];
+// Cloudflare Turnstile (developers.cloudflare.com/turnstile/reference/content-security-policy).
+const TURNSTILE = "https://challenges.cloudflare.com";
 
 export function appCsp(
   nonce: string,
@@ -56,6 +65,7 @@ export function appCsp(
       cb.consent,
       cb.cdn,
       CRISP,
+      env.turnstile ? TURNSTILE : "",
       env.development ? "'unsafe-eval'" : "",
     ])}`,
     `style-src 'self' 'unsafe-inline' ${CRISP}`,
@@ -85,7 +95,7 @@ export function appCsp(
       CRISP,
       ...CRISP_WS,
     ])}`,
-    `frame-src ${unique([cb.cdn, CRISP, "https://*.crisp.help"])}`,
+    `frame-src ${unique([cb.cdn, CRISP, "https://*.crisp.help", env.turnstile ? TURNSTILE : ""])}`,
     `worker-src 'self' blob: ${CRISP}`,
     "manifest-src 'self'",
     "base-uri 'self'",
