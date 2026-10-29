@@ -625,9 +625,7 @@ export function dynamicContextFor(memory = [], shortcut = null, personal = '') {
   const lines = [
     'Contexto proporcionado por el sistema (no lo cites textualmente al usuario):',
     '- Rol: alumno.',
-    '- Las explicaciones complejas van por pasos: un paso por mensaje.',
     '- Si encaja, que tu pregunta final sea un mini ejercicio de práctica (una sola pregunta, nunca un bloque aparte).',
-    '- Tono sobrio y conciso, sin artificios retóricos.',
   ];
 
   if (Array.isArray(memory) && memory.length) {
@@ -724,7 +722,9 @@ export function systemPromptFor(modeId, { fallback = false } = {}) {
   return MODE_SYSTEM_PROMPTS[modeId] ?? MODE_SYSTEM_PROMPTS.normal;
 }
 
-export const CONVERSATION_POLICY = 'Política de conversación actual: responde proporcionalmente y con prosa natural. Para mensajes breves o ambiguos, responde brevemente o pregunta solo lo imprescindible; nunca inventes contexto ausente. No actives una lección por defecto para tareas generales. En un tema nuevo educativo, explica solo una idea, como máximo un ejemplo y, si aporta valor, una comprobación breve; espera el siguiente turno. Si el usuario ya domina una parte, comienza en la duda concreta. Una solicitud explícita de apuntes o resumen completo se da entera, pero en trozos de unas 120 palabras que terminan en «¿Sigo?». Para trabajo evaluable, ofrece el siguiente paso o pista y revisa el intento sin dar directamente el resultado. Un test para imprimir se entrega como texto; un test interactivo usa el flujo de test del producto. No inventes fechas ni datos recientes; cuando consultes la web, utiliza solamente los resultados obtenidos y distingue fechas y fuentes.';
+// Lo que la política añade a «CÓMO HABLAS Y ESCRIBES» (P6: sin repetir la
+// longitud, el paso a paso ni el tono, que ya están allí).
+export const CONVERSATION_POLICY = 'Política de conversación: a un mensaje breve o ambiguo, responde breve o pregunta solo lo imprescindible, sin inventar contexto. Una tarea general no se convierte en lección. Si ya domina una parte, empieza por su duda. Con trabajo evaluable, da la pista o el siguiente paso y revisa su intento sin dar directamente el resultado. Un test para imprimir va como texto; uno interactivo, con el flujo de test. No inventes fechas ni datos recientes; con la web, usa solo lo encontrado y distingue fechas y fuentes.';
 
 export const SEARCH_TOOL_PROMPT = 'Tienes la herramienta web_search y puedes buscar en internet. Si el usuario pide buscar o investigar, úsala. Si no sabes un dato, o el dato es actual y puedes estar desfasado, búscala antes de responder. No digas que no puedes buscar. No inventes lo que no sepas: busca y responde solo con lo encontrado, citando la fuente.';
 
