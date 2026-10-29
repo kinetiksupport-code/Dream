@@ -5,7 +5,7 @@ import {
   MAINTENANCE_COOKIE_NAME,
   verifyMaintenanceAccessToken,
 } from "@/lib/maintenance";
-import { canonicalRedirect } from "@/lib/auth-redirect";
+import { canonicalRedirect, refuseSecondaryHost } from "@/lib/auth-redirect";
 import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, panelPath } from "@/lib/admin-route";
 import { HEAD_BOOT } from "@/lib/theme";
 import { GAME_SCRIPT } from "@/lib/dream-games";
@@ -68,6 +68,12 @@ async function route(request: NextRequest): Promise<NextResponse> {
     method: request.method,
   });
   if (canonical) return NextResponse.redirect(canonical, 308);
+  // *.vercel.app would skip Cloudflare: production writes there are refused.
+  if (refuseSecondaryHost({ url: requested, method: request.method }))
+    return NextResponse.json(
+      { error: "Usa www.edudream.es." },
+      { status: 421, headers: { "Cache-Control": "no-store" } },
+    );
 
   if (!isMaintenanceMode()) {
     return panel(request);

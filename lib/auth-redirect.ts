@@ -68,30 +68,47 @@ interface CanonicalOptions {
   environment?: string;
 }
 
-/**
- * Where a production request on a secondary host (edudream.vercel.app,
- * edudream.es without www, a deployment URL) should go, or null to serve it.
- * API calls and non-GET requests are left alone so nothing breaks mid-flight.
- */
-export function canonicalRedirect({
+/** The canonical origin when this production request came in on another host. */
+function secondaryHost({
   url,
-  method,
   siteUrl = process.env.NEXT_PUBLIC_SITE_URL,
   environment = process.env.NEXT_PUBLIC_DREAM_ENVIRONMENT,
-}: CanonicalOptions): URL | null {
+}: Omit<CanonicalOptions, "method">): URL | null {
   if (environment !== "production") return null;
-  if (method !== "GET" && method !== "HEAD") return null;
-  if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/_next/"))
-    return null;
   const canonical = siteOrigin(siteUrl);
   if (!canonical || isLocalHost(url.hostname)) return null;
   const target = new URL(canonical);
   // Hostnames, not hosts: a port must never turn the canonical site into a
   // redirect loop.
   if (url.hostname === target.hostname) return null;
+  return target;
+}
+
+/**
+ * Where a production GET on a secondary host (edudream.vercel.app, edudream.es
+ * without www, a deployment URL) should go, or null to serve it. Everything
+ * but the hashed build files goes to www.edudream.es, so nobody uses the
+ * *.vercel.app address to skip Cloudflare (docs/cloudflare-reglas.md).
+ */
+export function canonicalRedirect(options: CanonicalOptions): URL | null {
+  const { url, method } = options;
+  if (method !== "GET" && method !== "HEAD") return null;
+  if (url.pathname.startsWith("/_next/")) return null;
+  const target = secondaryHost(options);
+  if (!target) return null;
   target.pathname = url.pathname;
   target.search = url.search;
   return target;
+}
+
+/**
+ * True for a production POST/PUT/… on a secondary host: it is refused instead
+ * of served (a 308 would only send a cross-origin POST). Nothing legitimate
+ * writes there: the app, the Google callback and previews use their own host.
+ */
+export function refuseSecondaryHost(options: CanonicalOptions): boolean {
+  if (options.method === "GET" || options.method === "HEAD") return false;
+  return secondaryHost(options) !== null;
 }
 
 /** Short Spanish message for each way the return from Google can fail. */

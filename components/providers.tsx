@@ -16,6 +16,7 @@ import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
 import { ConsentWatcher } from "@/components/consent-watcher";
 import { HumanCheckHost } from "@/components/human-check/human-check-host";
+import { cloudflareChallenge } from "@/lib/maintenance-check";
 import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
@@ -136,6 +137,10 @@ export function Providers({ children }: { children: ReactNode }) {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (!alive) return;
+
+        // A Cloudflare challenge (Under Attack Mode, docs/plan-ataque.md) is
+        // not an answer from Dream: ignore it instead of signing everyone out.
+        if (cloudflareChallenge(response)) return;
 
         if (!response.ok) {
           if ([401, 403, 503].includes(response.status)) {
