@@ -29,7 +29,9 @@ import { texToPlain } from "../lib/math";
 // characters, set from the real Qwen3 tokenizer on 26/10/2026
 // (scripts/ia/medir-tokens.py): tone 821 chars = 277 tokens (≤ 200 + 80 for
 // the example), no-invent 483 = 142 (≤ 150), self-knowledge 752 = 229 (≤ 250).
-const CHAR_CAPS = { tone: 840, noInvent: 500, self: 790 };
+// tone: «CÓMO HABLAS Y ESCRIBES» (docs/HABLA_NATURAL.md), 634 tokens reales
+// de Qwen3 con los dos pares «mal → bien» y la marca del plan.
+const CHAR_CAPS = { tone: 1900, noInvent: 500, self: 790 };
 
 test("self-knowledge lists only features whose flag is on", () => {
   const off = selfKnowledge({ memory: false });
@@ -55,7 +57,7 @@ test("self-knowledge never names the model or the AI company", () => {
 });
 
 test("tone and no-invent layers stay within their token budget and reach every mode", () => {
-  assert.ok(TONE_LAYER.length <= CHAR_CAPS.tone, "tono ≤ 200 + ejemplo ≤ 80");
+  assert.ok(TONE_LAYER.length <= CHAR_CAPS.tone, `tono ${TONE_LAYER.length}`);
   assert.ok(NO_INVENT_LAYER.length <= CHAR_CAPS.noInvent);
   for (const prompt of Object.values(MODE_SYSTEM_PROMPTS)) {
     assert.ok(prompt.includes(TONE_LAYER));

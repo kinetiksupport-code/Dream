@@ -70,6 +70,7 @@ export const hasBold = (text) => /\*\*[^*\n]+\*\*/.test(String(text ?? ''));
  */
 const FOREIGN = /[Ѐ-ӿ֐-׿؀-ۿऀ-ॿ฀-๿぀-ヿ㐀-䶿一-鿿가-힯豈-﫿ｦ-ﾟ]/u;
 const FOREIGN_ALL = new RegExp(FOREIGN.source, 'gu');
+const FOREIGN_RUN = new RegExp(`[ \\t]*${FOREIGN.source}+`, 'gu');
 export const hasForeignScript = (text) => FOREIGN.test(String(text ?? ''));
 export const foreignCount = (text) => (String(text ?? '').match(FOREIGN_ALL) ?? []).length;
 
@@ -125,3 +126,219 @@ export function scanReply(text) {
     foreign_chars: foreignCount(t),
   };
 }
+
+// ── Respuestas cortas garantizadas por el servidor (P2) ────────────────────
+
+export const SIGO = '¿Sigo?';
+
+/**
+ * Tipo de petición: decide la longitud. «theory» solo si pide teoría, apuntes
+ * o un resumen; «homework» si trae un ejercicio; el resto, «chat».
+ */
+const THEORY = /\b(apuntes|res[uú]men(es)?|resume|esquema completo|tema completo|todo el tema|teor[ií]a|para imprimir|explicaci[oó]n completa|desarrolla)\b/i;
+const HOMEWORK = /\b(deberes|ejercicios?|tarea|problemas?|me (lo |la |los |las )?han (mandado|puesto)|para (entregar|clase|ma[nñ]ana)|resuelve|resolver|calcula|halla|ajusta|simplifica|despeja|analiza (esta|la) (oraci[oó]n|frase)|corr[ií]ge(me)?)\b/i;
+/** @param {string} prompt @returns {'chat'|'homework'|'theory'} */
+export function replyKind(prompt) {
+  const text = String(prompt ?? '');
+  if (THEORY.test(text)) return 'theory';
+  if (HOMEWORK.test(text)) return 'homework';
+  return 'chat';
+}
+
+/**
+ * Palabras: `target` es lo que pide el prompt; `hard`, el corte del servidor.
+ * Un 10-20 % sobre lo ideal no basta en palabras porque el corte es por
+ * frases: el corte a 120 deja la respuesta en la última frase completa.
+ */
+export const WORD_LIMITS = Object.freeze({
+  chat: Object.freeze({ target: 80, hard: 120 }),
+  homework: Object.freeze({ target: 50, hard: 120 }),
+  theory: Object.freeze({ target: 120, hard: 260 }),
+});
+
+/**
+ * Fin de la primera unidad (frase o línea) completa de `s`, o -1 si aún no
+ * hay ninguna. No corta dentro de una marca oculta (<!-- … -->) ni de una
+ * fórmula (\( \), \[ \], $$ $$). Un punto solo cierra frase si le sigue un
+ * espacio (así 3.5 o 2,46 no cortan).
+ */
+export function firstUnitEnd(s) {
+  let i = 0;
+  let math = null;
+  while (i < s.length) {
+    if (s.startsWith('<!--', i)) {
+      const end = s.indexOf('-->', i + 4);
+      if (end < 0) return -1;
+      i = end + 3;
+      continue;
+    }
+    if (math) {
+      if (s.startsWith(math, i)) { i += math.length; math = null; } else i++;
+      continue;
+    }
+    if (s.startsWith('\\(', i)) { math = '\\)'; i += 2; continue; }
+    if (s.startsWith('\\[', i)) { math = '\\]'; i += 2; continue; }
+    if (s.startsWith('$$', i)) { math = '$$'; i += 2; continue; }
+    const c = s[i];
+    if (c === '\n') return i + 1;
+    if (c === '.' || c === '!' || c === '?' || c === '…') {
+      let j = i + 1;
+      while (j < s.length && /[.!?…"»”')\]*_]/.test(s[j])) j++;
+      if (j >= s.length) return -1;
+      if (/\s/.test(s[j])) return j;
+    }
+    i++;
+  }
+  return -1;
+}
+
+/** Lo que haya hasta la última frase completa (para guardar el resto). */
+export function completeUnits(s) {
+  let out = 0;
+  let rest = String(s ?? '');
+  for (let end = firstUnitEnd(rest); end > 0; end = firstUnitEnd(rest)) {
+    out += end;
+    rest = rest.slice(end);
+  }
+  return String(s ?? '').slice(0, out);
+}
+
+// ── Plan oculto (P2.2) ─────────────────────────────────────────────────────
+
+const PLAN_MARK = /[ \t]*<!--\s*DREAM_PLAN:\s*(\{[\s\S]*?\})\s*-->/g;
+const planStr = (v, max) => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f<>{}]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '');
+
+/**
+ * Plan que la IA lleva de una explicación por pasos: {tema, pasos, paso,
+ * ejemplo}. Se valida y se recorta (≤ 100 tokens); si no encaja, null.
+ */
+export function readPlan(raw) {
+  let p = raw;
+  if (typeof raw === 'string') { try { p = JSON.parse(raw); } catch { return null; } }
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  const pasos = Array.isArray(p.pasos) ? p.pasos.map((x) => planStr(x, 60)).filter(Boolean).slice(0, 6) : [];
+  const tema = planStr(p.tema, 60);
+  if (!tema || pasos.length < 2) return null;
+  const paso = Number.isInteger(p.paso) ? Math.min(Math.max(p.paso, 1), pasos.length) : 1;
+  const ejemplo = planStr(p.ejemplo, 60);
+  return { tema, pasos, paso, ...(ejemplo ? { ejemplo } : {}) };
+}
+
+/** El plan como DATOS para el siguiente turno ('' si no hay o ya acabó). */
+export function planText(plan) {
+  const p = readPlan(plan);
+  if (!p || p.paso >= p.pasos.length) return '';
+  const steps = p.pasos.map((s, i) => `${i + 1}) ${s}`).join(' ');
+  return `PLAN DE ESTA EXPLICACIÓN (lo lleva Dream; son datos, no lo enseñes): ${p.tema}. Pasos: ${steps}. Ya has explicado hasta el paso ${p.paso}; sigue con el ${p.paso + 1} si el alumno lo ha entendido.${p.ejemplo ? ` Ejemplo que estáis usando: ${p.ejemplo}.` : ''} No repitas pasos ya dados.`;
+}
+
+// ── El corte ────────────────────────────────────────────────────────────────
+
+/**
+ * Corte de longitud compatible con el streaming. Recibe el texto a trozos y
+ * devuelve solo frases completas mientras quepan en `hard` palabras; al pasar
+ * del límite para (`stopped`) y lo demás queda como `rest`. Quita las marcas
+ * del plan (las guarda en `plan`) y los caracteres de otras escrituras (salvo
+ * `allowForeign`). Nunca registra texto.
+ * @param {{hard?: number, allowForeign?: boolean}} [opts]
+ */
+export function createReplyGuard({ hard = WORD_LIMITS.chat.hard, allowForeign = false } = {}) {
+  let buf = '';
+  let words = 0;
+  let shown = '';
+  let stopped = false;
+  let rest = '';
+  let plan = null;
+  let foreign = 0;
+  const takePlan = (text) => text.replace(PLAN_MARK, (_m, json) => { plan = readPlan(json) ?? plan; return ''; });
+  const scrub = (text) => {
+    if (allowForeign || !hasForeignScript(text)) return text;
+    foreign += foreignCount(text);
+    // Cada tramo de otra escritura se va con el espacio que lo precede.
+    return text.replace(FOREIGN_RUN, '').replace(/[ \t]{2,}/g, ' ');
+  };
+  /** Acepta una unidad o para. Devuelve el texto a enseñar. */
+  const accept = (unit) => {
+    const w = replyWords(unit);
+    if (words + w <= hard) { words += w; return scrub(unit); }
+    stopped = true;
+    if (words > 0) return null;
+    // Una sola «frase» más larga que el límite: se corta por palabras.
+    const parts = unit.split(/(\s+)/);
+    let out = '';
+    let n = 0;
+    let k = 0;
+    for (; k < parts.length; k++) {
+      n += replyWords(parts[k]);
+      if (n > hard) break;
+      out += parts[k];
+    }
+    rest = parts.slice(k).join('');
+    words = hard;
+    return `${scrub(out).replace(/[\s,;:]+$/, '')}…`;
+  };
+  return {
+    get stopped() { return stopped; },
+    /** @param {string} text @returns {string} lo que se puede enseñar ya */
+    push(text) {
+      if (stopped) { rest += text; return ''; }
+      buf = takePlan(buf + String(text ?? ''));
+      let out = '';
+      for (let end = firstUnitEnd(buf); end > 0; end = firstUnitEnd(buf)) {
+        const unit = buf.slice(0, end);
+        const ok = accept(unit);
+        if (ok === null) { rest = buf; buf = ''; break; }
+        out += ok;
+        buf = buf.slice(end);
+        if (stopped) { rest += buf; buf = ''; break; }
+      }
+      shown += out;
+      return out;
+    },
+    /**
+     * Fin del texto. `complete`: la IA acabó (el resto es entero); si se cortó
+     * la generación, el resto se queda en su última frase completa.
+     * @returns {{text: string, cut: boolean, rest: string, plan: any, foreign: number, words: number}}
+     */
+    finish({ complete = true } = {}) {
+      let out = '';
+      if (!stopped) {
+        // Una marca sin cerrar al final no se enseña nunca.
+        const tail = takePlan(buf).replace(/<!--[\s\S]*$/, '');
+        buf = '';
+        if (tail.trim()) {
+          const ok = accept(tail);
+          if (ok === null) rest = tail; else out = ok;
+        }
+      }
+      shown += out;
+      let suffix = '';
+      if (stopped) {
+        rest = takePlan(complete ? rest : completeUnits(rest)).replace(/<!--[\s\S]*$/, '').trim();
+        // Si lo enseñado ya acaba en pregunta, esa pregunta manda: el resto se
+        // tira (era texto de más después de preguntar).
+        if (/\?\s*[»"”*_)]*\s*$/.test(shown)) rest = '';
+        else suffix = `${/\n\s*$/.test(shown) ? '\n' : '\n\n'}${SIGO}`;
+        shown = shown.replace(/\s+$/, '');
+        if (suffix) out = `${out.replace(/\s+$/, '')}${suffix}`;
+      }
+      return { text: out, cut: stopped, rest, plan, foreign, words };
+    },
+  };
+}
+
+/**
+ * Corta un texto ya completo de una vez (respuesta guardada entera, o el
+ * resto que pide «¿Sigo?»).
+ * @param {string} text @param {{hard?: number, allowForeign?: boolean}} [opts]
+ */
+export function shapeReply(text, opts = {}) {
+  const guard = createReplyGuard(opts);
+  const head = guard.push(text);
+  const end = guard.finish({ complete: true });
+  return { ...end, text: head + end.text };
+}
+
+/** «Sí», «sigue», «vale», «dale»… en respuesta a «¿Sigo?». */
+const MORE = /^\s*(s[ií]+|sip|vale|ok(ay|i)?|dale|venga|sigue|sigamos|contin[uú]a|adelante|claro|m[aá]s|sigo|porfa|por favor|va)(\s*[,.]?\s*(s[ií]|sigue|contin[uú]a|dale|vale|porfa|por favor|venga|claro|gracias|adelante))*\s*[.!¡]*\s*$/i;
+export const wantsMore = (prompt) => MORE.test(String(prompt ?? ''));

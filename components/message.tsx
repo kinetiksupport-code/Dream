@@ -203,9 +203,9 @@ export const MessageView = memo(function MessageView({
         <div className="message-actions">
           <button
             className="chip chip-small message-action press"
-            onClick={() => onContinue("Explícamelo por pasos.")}
+            onClick={() => onContinue("Explícamelo poco a poco, un paso cada vez.")}
           >
-            Explícamelo por pasos
+            Explícamelo poco a poco
           </button>
           <button
             className={`message-action icon-action copy-action press${copied ? " is-copied" : ""}`}

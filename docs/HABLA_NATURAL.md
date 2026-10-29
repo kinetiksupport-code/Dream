@@ -112,3 +112,137 @@ alumno (`studentInputTokens`, IA-3), pero sí en el cupo de Groq.
   sabe si eran deberes. En el banco sí se mide (`oneStep`, `mustNotMatch`).
 - La prueba con alumnos reales: necesita el permiso de Carlos (ver §4 del
   encargo).
+
+## P2 y P3 · Corto, paso a paso y bien escrito
+
+### Qué cambia para el alumno
+
+- **Nunca más un tocho.** dream-api corta la respuesta a **120 palabras** en la
+  última frase completa (260 si pidió teoría, apuntes o un resumen) y añade
+  **«¿Sigo?»**.
+  - Si el alumno contesta «sí», «sigue», «vale» o «dale», recibe el siguiente
+    trozo **sin llamar a la IA**: no gasta tokens ni cuenta en su límite.
+  - Si lo ya enseñado acaba en una pregunta, el resto se tira: esa pregunta
+    manda.
+- **Un paso cada vez.** El prompt pide unas 80 palabras (50 con deberes), una
+  sola idea y una sola pregunta al final.
+  - Si pide «todos los pasos», Dream dice cuántos son sin numerarlos y explica
+    solo el primero.
+  - El botón «Explícamelo por pasos» pasa a ser «Explícamelo poco a poco» y
+    ya no pide una lista.
+- **Plan oculto.** Cuando enseña un procedimiento, la IA deja una marca que el
+  alumno no ve: `<!--DREAM_PLAN:{tema, pasos, paso}-->`.
+  - El servidor la quita, la valida (≤ 6 pasos, ≤ 100 tokens) y la guarda en la
+    pizarra de la conversación.
+  - En el turno siguiente vuelve como DATOS: «ya has explicado hasta el paso 2;
+    sigue con el 3; no repitas pasos».
+- **Solo español.** Si una respuesta guardada entera trae caracteres chinos u
+  otras escrituras, se rehace una vez («rehazla solo en español»). Lo que quede
+  y lo que llegue en streaming se quita. No se toca si el propio alumno escribió
+  en esa escritura (clase de idiomas).
+- **Tono reescrito** (`TONE_LAYER`, «CÓMO HABLAS Y ESCRIBES»):
+  - prosa corta, en positivo y con el porqué de cada regla;
+  - sin listas ni mayúsculas, porque el estilo del prompt se contagia;
+  - conductas en vez de adjetivos: reacción corta, frases de menos de 20
+    palabras, elogio del método y casi sin emojis;
+  - redacción y ortografía: tildes, ¿ ¡, números a la española, sin muletillas
+    y solo en español;
+  - cuentas sencillas en texto (3/7, x²);
+  - dos pares «mal → bien» con los casos reales de Carlos (fracción generatriz
+    y sintagmas).
+- **Contadores en producción** (`dream_reply_shape` en los logs, sin texto):
+  palabras, listas, títulos, negritas, frases de robot, preguntas, caracteres
+  quitados, si se cortó, si se guardó resto, si hubo plan y si se rehízo por el
+  idioma.
+
+### Qué se ha quitado del prompt (no es de Carlos)
+
+| Antes | Ahora |
+|---|---|
+| Normal: «normalmente menos de 250 palabras» | Remite a «CÓMO HABLAS Y ESCRIBES» |
+| Pensar más: «Máximo 350 palabras», lista 1-6, «Usa Markdown» | Prosa: «más cuidadosa, no más larga» |
+| Rápido: «Máximo 120 palabras», viñetas, «Usa Markdown sencillo» | Prosa, unas 60 palabras |
+| Búsqueda: «menos de 250 palabras», «Markdown sencillo» | 80-120 palabras, en prosa |
+| Contexto: «Propón un ejercicio de práctica al final» | «Que tu pregunta final sea un mini ejercicio» |
+| Política: «apuntes o resumen completo requieren respuesta completa» | Entera, pero en trozos de 120 palabras con «¿Sigo?» |
+
+`DREAM_SYSTEM_PROMPT` **no se ha tocado**. El texto de
+`system-prompt-dream-reglas-de-explicacion.md` (`EXPLAIN_RULES`) que cita el
+encargo **no está en el repositorio ni en lo que me pasaste**. «CÓMO HABLAS Y
+ESCRIBES» está escrito a partir del encargo y hace ese papel.
+
+### Límites de salida (`max_tokens`)
+
+| Modo | Antes | Ahora (conversación y deberes) | Teoría |
+|---|---:|---:|---:|
+| Rápido | 900 | 700 | 1.400 |
+| Normal | 1.200 | 800 | 2.048 |
+| Pensar más | 1.500 | 1.000 | 2.048 |
+| Respuesta con búsqueda | 1.000 | 800 | 800 |
+
+La salida real medida en Normal es de 19 a 247 tokens. El margen es para el
+razonamiento oculto de Qwen, que también cuenta. El límite que manda es el de
+palabras del servidor.
+
+### Tokens por mensaje (tokenizador real, `scripts/ia/medir-tokens.py`)
+
+| Prompt de sistema | Antes (Qwen3 / gpt-oss) | Ahora (Qwen3 / gpt-oss) |
+|---|---:|---:|
+| Normal, con herramienta | 4.718 / 4.035 | 5.137 / 4.407 |
+| Rápido | 1.659 / 1.458 | 2.023 / 1.775 |
+| Pensar más | 1.620 / 1.404 | 1.967 / 1.707 |
+| Búsqueda: respuesta | 1.301 / 1.126 | 1.688 / 1.463 |
+| Recordatorio antes del mensaje | – | ~30 |
+
+**+419 tokens por mensaje en Normal (+9 %).** Es el coste de «CÓMO HABLAS Y
+ESCRIBES»: 634 tokens frente a los 277 del tono anterior. Va en el prompt de
+sistema, que **no cuenta en el límite del alumno** (IA-3), pero sí en el cupo de
+Groq.
+
+Lo compensan:
+- respuestas más cortas, unos 40-120 tokens menos de salida en las largas;
+- un historial más corto en los turnos siguientes;
+- el «sí» a «¿Sigo?», que no llama a la IA.
+
+La entrega 5 (P6) recorta lo que se ha quedado repetido.
+
+### Otros enfoques (P3.6): qué he probado
+
+Investigado en artículos y foros de tutores con IA y en las fichas de Qwen. Lo
+que más se repite:
+- un límite **con cifra** («unas 80 palabras») funciona; «sé breve», no;
+- ejemplos con la longitud buena ayudan a calibrar;
+- un `max_tokens` bajo corta a mitad de frase: no da forma, solo frena;
+- Qwen3 pide temperatura 0,7 y top_p 0,8 sin razonamiento, y avisa de que
+  `presence_penalty` alto **mezcla idiomas**.
+
+| Enfoque | Estado | Coste en tokens | Medido |
+|---|---|---:|---|
+| Longitud con cifras y un paso (en vez de «extensión necesaria») | **Adoptado** | (incluido arriba) | Producción, tras desplegar |
+| Corte del servidor a 120 palabras en frase completa + «¿Sigo?» | **Adoptado**: garantiza la longitud aunque el prompt falle | 0 (ahorra salida) | Pruebas: siempre ≤ 120 |
+| Recordatorio de forma justo antes del mensaje del alumno (instrucción cerca del turno) | **Adoptado** | ~30 por mensaje | No (sin clave de Groq) |
+| Lista de frases de robot más larga (27) en el escáner y los evals | **Adoptado** para medir. El prompt nombra solo 5, porque nombrar muchas las sugiere | 0 | Producción: `robot` en los logs |
+| Pares «mal → bien» con los casos reales | **Adoptado** (2) | ~120 | No |
+| Reglas de estilo al principio, al final o en ambos sitios | Al final (detrás del prompt de Carlos) + recordatorio por turno | – | No: comparar con `evals/comparar-modelos.mjs` |
+| Segunda pasada barata que reescribe más corto (`AI_FLAGS.shortRetry`) | **No adoptado**: el corte hace lo mismo gratis y sin esperar otra llamada | +1 llamada | – |
+| Temperatura 0,7 / top_p 0,8 (ficha de Qwen3) frente a 0,5 | **Sin cambiar**: sin evals no se sabe si mejora | 0 | No |
+| `presence_penalty` | **No adoptado**: la ficha de Qwen avisa de que mezcla idiomas | 0 | – |
+| Ejemplos dinámicos según el tipo de petición | Solo el recordatorio cambia según el tipo (charla, deberes o teoría) | ~30 | No |
+
+**Regla del encargo:** si más del ~10 % de respuestas necesita corte o
+reintento, hay que corregir el prompt. Se mira con
+`scripts/ia/medir-chat.sql` (`pct_cortadas_con_sigo`) o en los logs
+(`dream_reply_shape`: `cut`, `foreign_retry`).
+
+### Lo que no he podido comprobar
+
+- Cómo responde el modelo con el prompt nuevo: no hay clave de Groq. Las
+  cifras de antes y después salen de producción (tabla de P1, repetir con
+  `scripts/ia/medir-chat.sql` unos días después de desplegar).
+- Si Qwen deja bien la marca del plan. Si no la deja, no pasa nada: no hay plan.
+  Se ve en los logs (`plan: true`).
+- Si con 800 tokens de salida el razonamiento oculto de Qwen deja sin respuesta
+  algún ejercicio de matemáticas difícil. Se vigila con los errores «respondió
+  sin texto» en los logs.
+- Las fichas verificadas no entran hoy en el chat (solo en el panel). Por eso
+  los pasos del plan los decide la IA.

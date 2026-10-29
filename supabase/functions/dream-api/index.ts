@@ -15,8 +15,9 @@ import {
   desktopUploadAction, mobileUploadAction,
 } from './upload-session.ts';
 import { createClient, type User, type SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
-import { chatSystemMessages, gameMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker } from './prompts.mjs';
-import { REUPLOAD_NOTE, ROUTER_SCHEMA, asksToReupload, boardText, conversationFiles, fileIndex, ftsQuery, needsMaterial, normalizeRoute, pickFiles, readBoard, routeByRules, routerMessages, updateBoard } from './conversation-memory.mjs';
+import { chatSystemMessages, gameMessages, schemeMessages, schemeRefineMessages, searchAnswerMessages, searchPlannerMessages, sourcesMarker, stripSourcesMarker, styleReminder } from './prompts.mjs';
+import { WORD_LIMITS, createReplyGuard, hasForeignScript, planText, replyKind, scanReply, shapeReply, wantsMore } from './reply-shape.mjs';
+import { REST_MAX_CHARS, REUPLOAD_NOTE, ROUTER_SCHEMA, asksToReupload, boardText, conversationFiles, fileIndex, ftsQuery, needsMaterial, normalizeRoute, pickFiles, readBoard, routeByRules, routerMessages, updateBoard } from './conversation-memory.mjs';
 import { GAME_JSON_SCHEMAS, GAME_KINDS, gameKindFor, generateGame, validResult } from './games.mjs';
 import { IMAGE_BUCKET, ILLUSTRATIONS_GLOBAL_PER_DAY, ILLUSTRATIONS_PER_DAY, generateImage, illustrationTargets, illustrationsEnabled, imageType, promptHash } from './illustrations.mjs';
 import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
@@ -31,7 +32,7 @@ import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReason
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
 import { isStemPrompt, needsVerification, sanitizeSearchQuery } from './fact-check.mjs';
 import { checkEqualities, correctionNote } from './math-tools.mjs';
-import { CLAIM_CHECK_SCHEMA, NOT_IN_SOURCES_REPLY, SHORTER_NOTE, claimCheckMessages, visibleWords } from './sources.mjs';
+import { CLAIM_CHECK_SCHEMA, FOREIGN_NOTE, NOT_IN_SOURCES_REPLY, SHORTER_NOTE, claimCheckMessages, visibleWords } from './sources.mjs';
 import { wantsLongAnswer } from './capacity.mjs';
 import { RULES_REMINDER, fixedAnswer, needsReminder, olderSummary } from './chat-helpers.mjs';
 import { SPECIAL_WELCOME, specialDomain } from './special-accounts.mjs';
@@ -1204,6 +1205,24 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     moderationFooter = moderated.footer ?? '';
   }
 
+  // «¿Sigo?» → «sí»: el resto de la respuesta anterior ya está escrito y
+  // guardado en la pizarra (reply-shape.mjs). Se da sin llamar a la IA (no
+  // gasta tokens ni cuenta en el límite), otra vez en trozos de 120 palabras.
+  const kind = replyKind(prompt);
+  const savedBoard = readBoard(conversation.data.board);
+  if (!examInternal && savedBoard.rest && wantsMore(prompt) && !(Array.isArray(body.attachment_ids) && body.attachment_ids.length)) {
+    const served = shapeReply(savedBoard.rest, { hard: WORD_LIMITS.chat.hard });
+    const userRow = await admin.from('dream_messages').insert({ conversation_id: conversation.data.id, owner_id: user.id, role: 'user', content: prompt }).select('id').single();
+    if (userRow.error) return json({ error: 'No se pudo guardar tu mensaje.' }, 503);
+    await admin.from('dream_messages').insert({ conversation_id: conversation.data.id, owner_id: user.id, role: 'assistant', content: served.text.slice(0, 32000) });
+    await admin.from('dream_conversations').update({ updated_at: new Date().toISOString(), board: { ...savedBoard, rest: served.rest.slice(0, REST_MAX_CHARS) } })
+      .eq('id', conversation.data.id).eq('owner_id', user.id);
+    console.log(JSON.stringify({ event: 'dream_reply_shape', mode: mode.id, kind: 'rest', served_rest: true, cut: served.cut, ...scanReply(served.text) }));
+    const shown = replaceNickname(served.text, nicknameFor(profile));
+    const lines = JSON.stringify({ type: 'delta', text: shown }) + '\n' + JSON.stringify({ type: 'complete' }) + '\n';
+    return new Response(lines, { headers: { ...cors, 'Content-Type': 'application/x-ndjson', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+  }
+
   // Límite conjunto por ventanas de 5 h: se comprueba ANTES de guardar nada y
   // de llamar al proveedor. La carga atómica (más abajo) lo vuelve a comprobar
   // sumando todos los modos en Postgres.
@@ -1237,7 +1256,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Memoria de la conversación (docs/MEMORIA-CHAT.md): índice de todos sus
   // archivos en cada turno, pizarra, y el texto solo cuando la tarea lo pide.
   const convFiles = await filesOf(conversation.data.id);
-  const board = readBoard(conversation.data.board);
+  const board = savedBoard;
   let materialFiles: any[] = attachmentRows;
   if (!attachmentRows.length && convFiles.length && needsMaterial(prompt))
     materialFiles = pickFiles(convFiles, prompt, { ftsIds: await filesMatching(conversation.data.id, prompt) });
@@ -1272,7 +1291,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     : 0;
   const priorMessages = compactHistory(storedHistory, mode.history);
   const fallbackHistory = compactHistory(storedHistory.slice(-CLOUDFLARE_FALLBACK.history.maxMessages), CLOUDFLARE_FALLBACK.history);
-  const answerTokens = outputTokensFor(mode, prompt);
+  const answerTokens = outputTokensFor(mode, prompt, examInternal ? null : kind);
   const educationalSelection = selectEducationalSkills(prompt, priorMessages, true);
   const model = mode.id === 'normal' ? groqModel() : mode.model;
   console.log(JSON.stringify({
@@ -1332,9 +1351,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const systemMessages = chatSystemMessages(mode.id, { ...contextParts, search: searchAvailable, attachmentChars: mode.attachmentChars });
   if (searchMissing) systemMessages.push({ role: 'system', content: SEARCH_UNAVAILABLE_PROMPT });
   if (earlier) systemMessages.push({ role: 'system', content: earlier });
+  // Plan oculto de una explicación por pasos (reply-shape.mjs): datos para no
+  // repetir ni perder el hilo. Solo mientras queden pasos.
+  const planNow = planText(board.plan);
+  if (planNow) systemMessages.push({ role: 'system', content: planNow });
   if (needsReminder(studentTurns + 1)) systemMessages.push({ role: 'system', content: RULES_REMINDER });
   const fallbackSystemMessages = chatSystemMessages(mode.id, { ...contextParts, fallback: true, attachmentChars: CLOUDFLARE_FALLBACK.attachmentChars });
-  const fallbackMessages = [...fallbackSystemMessages, ...fallbackHistory, { role: 'user', content: prompt }];
+  const reminder = styleReminder(kind);
+  const fallbackMessages = [...fallbackSystemMessages, ...fallbackHistory, reminder, { role: 'user', content: prompt }];
   const baseBody = {
     model, stream: true, max_tokens: answerTokens, temperature: mode.temperature,
     // Groq: uso real al final y razonamiento fuera del texto (models.mjs).
@@ -1356,7 +1380,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const planSearch = searchAvailable && searchRequested;
   const initialMessages = planSearch
     ? [...searchPlannerMessages(), ...searchHistory, { role: 'user', content: prompt }]
-    : [...systemMessages, ...priorMessages, { role: 'user', content: prompt }];
+    : [...systemMessages, ...priorMessages, reminder, { role: 'user', content: prompt }];
   const firstBody = { ...baseBody, messages: initialMessages, ...(planSearch ? { max_tokens: SEARCH_TURN.plannerMaxTokens } : {}) };
   // Contabilidad por partes (Bloque 8 bis): tamaños estimados, nunca texto.
   console.log(JSON.stringify({ event: 'dream_prompt_breakdown', generation_mode: mode.id, search_plan: planSearch, forced_search: forcedSearch,
@@ -1441,6 +1465,20 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
         if (shown) send({ type: 'delta', text: shown });
       };
       const flushNickname = () => { const rest = nickname.flush(); if (rest) send({ type: 'delta', text: rest }); };
+      // Corte de longitud (P2, reply-shape.mjs): solo frases completas, hasta
+      // 120 palabras si no pidió teoría; al pasar, se para la generación y
+      // queda «¿Sigo?». También quita la marca del plan y las letras de otras
+      // escrituras. Los avisos y las fuentes no pasan por aquí.
+      const guard = createReplyGuard({ hard: examInternal ? Number.MAX_SAFE_INTEGER : WORD_LIMITS[kind].hard, allowForeign: hasForeignScript(prompt) });
+      let cutWhileStreaming = false;
+      let foreignRetry = false;
+      /** @returns true si hay que dejar de generar */
+      const say = (text: string) => {
+        const out = guard.push(text);
+        if (out) emit(out);
+        if (guard.stopped) cutWhileStreaming = true;
+        return guard.stopped;
+      };
       let reuploadRetry = false;
       try {
         // Ciencias con AI_FLAGS.mathCheck: la respuesta se guarda entera, se
@@ -1465,7 +1503,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
           const delta = chunk?.choices?.[0]?.delta?.content;
           if (typeof delta === 'string') {
             if (searchKey) provisional += delta;
-            else emit(delta);
+            else if (say(delta)) break;
           }
           if (answer.length > 32000 || provisional.length > 32000) break;
         }
@@ -1509,7 +1547,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
             if (chunk?.usage) usage = chunk.usage;
             const delta = chunk?.choices?.[0]?.delta?.content;
             if (typeof delta !== 'string' || !delta) continue;
-            if (checkClaims) held += delta; else emit(delta);
+            if (checkClaims) held += delta; else if (say(delta)) break;
             if (answer.length > 32000 || held.length > 32000) break;
           }
           if (checkClaims && held) {
@@ -1517,7 +1555,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
             try { supported = (await memoryAI(admin, user.id, admission)(claimCheckMessages(held, result), CLAIM_CHECK_SCHEMA, 'claim_check'))?.supported !== false; }
             catch { supported = true; } // si la comprobación falla, no se bloquea la respuesta
             console.log(JSON.stringify({ event: 'claim_check', generation_id: generationId, supported }));
-            emit(supported ? held : NOT_IN_SOURCES_REPLY);
+            say(supported ? held : NOT_IN_SOURCES_REPLY);
+            cutWhileStreaming = false; // guardada entera
           }
           logUsage('search_answer', usage);
         } else if (searchKey && provisional) {
@@ -1561,18 +1600,42 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
               if (retry.length > 32000) break;
             }
             if (retry.trim()) final = retry;
+          } else if (hasForeignScript(final) && !hasForeignScript(prompt) && !servedByFallback) {
+            // Qwen a veces cuela caracteres chinos: se rehace una vez. Si vuelve
+            // a pasar, el corte los quita.
+            foreignRetry = true;
+            let retry = '';
+            for await (const chunk of providerStream(
+              { ...firstBody, messages: [...initialMessages, { role: 'assistant', content: final }, { role: 'system', content: FOREIGN_NOTE }] },
+              { ...fallbackBase, messages: fallbackMessages })) {
+              const delta = chunk?.choices?.[0]?.delta?.content;
+              if (typeof delta === 'string') retry += delta;
+              if (retry.length > 32000) break;
+            }
+            if (retry.trim()) final = retry;
           }
-          emit(final);
+          // Guardada entera: el corte ya no para nada, solo decide qué se enseña.
+          say(final);
+          cutWhileStreaming = false;
         }
+        const shaped = guard.finish({ complete: !cutWhileStreaming });
+        if (shaped.text) emit(shaped.text);
         if (moderationFooter && answer.trim()) emit(moderationFooter);
         flushNickname();
+        // Contadores de forma (nunca el texto): longitud, listas, robot, cortes.
+        console.log(JSON.stringify({ event: 'dream_reply_shape', generation_id: generationId, mode: mode.id, kind, ...scanReply(answer),
+          cut: shaped.cut, cut_streaming: cutWhileStreaming, rest_saved: Boolean(shaped.rest), plan: Boolean(shaped.plan), plan_used: Boolean(planNow),
+          foreign_removed: shaped.foreign, foreign_retry: foreignRetry }));
         if (answer.trim()) {
           await admin.from('dream_messages').insert({
             conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: answer.slice(0, 32000)
           });
           await admin.from('dream_conversations')
             .update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
-          try { await saveBoard(body.conversation_id, board, updateBoard(board, { prompt, files: convFiles })); } catch { /* la pizarra nunca rompe el turno */ }
+          // El resto tras «¿Sigo?» y el plan de pasos viven en la pizarra.
+          // Un plan ya terminado se borra.
+          const nextPlan = shaped.plan ?? (planNow ? board.plan : null);
+          try { await saveBoard(body.conversation_id, board, { ...updateBoard(board, { prompt, files: convFiles }), rest: shaped.rest.slice(0, REST_MAX_CHARS), plan: nextPlan }); } catch { /* la pizarra nunca rompe el turno */ }
           // Contabilidad de la memoria (Bloque 4): solo contadores y tamaños.
           console.log(JSON.stringify({ event: 'dream_memory_turn', generation_id: generationId, files: convFiles.length,
             index_tokens: Math.ceil(filesIndex.length / 3.5), board_tokens: Math.ceil(boardNow.length / 3.5),
