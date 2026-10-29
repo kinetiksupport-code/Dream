@@ -1,6 +1,6 @@
 export const privacidad = String.raw`# Política de privacidad
 
-*Última actualización: 28 de octubre de 2026 (versión provisional).*
+*Última actualización: 29 de octubre de 2026 (versión provisional).*
 
 ## 1. Quién es el responsable
 
@@ -18,6 +18,7 @@ El responsable del tratamiento de tus datos es **Carlos Sánchez**, a título pa
 | Archivos que subes (fotos, PDF, Word, PowerPoint, Excel, texto) | Los subes tú, desde el dispositivo o escaneando el QR con el móvil | Leer su contenido para ayudarte a estudiar | Ejecución del servicio |
 | Exámenes, temas, fechas, planes de estudio, tests, respuestas y notas | Lo creas tú o lo genera Dream | Preparar tus exámenes y simulacros | Ejecución del servicio |
 | Datos técnicos de uso: número de mensajes, tokens y coste por usuario, tokens gastados en cada modo de IA (Rápido, Normal, Pensar más) por ventana de 5 horas, bloqueos por abuso. Sin el texto de los mensajes | Se generan al usar la IA | Evitar abusos y mantener el servicio gratuito dentro de un uso razonable | Interés legítimo |
+| Datos técnicos de conexión: dirección IP, navegador, página que pides y, en tres pantallas, las señales de la comprobación «no soy un robot» | Los genera tu navegador al conectarse a edudream.es | Proteger Dream frente a ataques, bots y abusos (secciones 4 y 11) | Interés legítimo |
 | Estadísticas anónimas y errores | Solo si lo activas en Ajustes | Mejorar Dream | Tu consentimiento |
 | Audio del micrófono (dictado por voz) | Solo cuando pulsas el botón de voz | Convertir tu voz en texto | Tu consentimiento (el navegador te lo pide) |
 
@@ -61,6 +62,8 @@ Usamos proveedores que tratan datos por nuestra cuenta, con contrato de encargad
 
 - **Supabase** (base de datos, autenticación y servidor de la aplicación). Región del proyecto: Zúrich (Suiza), en Europa.
 - **Vercel** (alojamiento de la web). Puede registrar datos técnicos de conexión como la dirección IP.
+- **Cloudflare** (red y protección de la web). Las visitas a edudream.es pasan primero por Cloudflare, que filtra ataques y bots y después las envía a Vercel. Para eso trata datos técnicos de conexión: tu dirección IP, el navegador que usas, la página que pides y datos de enrutamiento. **No pasan por Cloudflare tus mensajes al tutor ni tus archivos**: el navegador los envía directamente a nuestro servidor en Supabase. Cloudflare actúa como encargado del tratamiento. Su política no fija un plazo concreto de conservación de estos registros: dice que los guarda el tiempo coherente con la finalidad. Más información en la [política de privacidad de Cloudflare](https://www.cloudflare.com/privacypolicy/).
+- **Cloudflare Turnstile** (comprobación «no soy un robot»). Sale solo al subir archivos desde el móvil con el QR, al enviar una reclamación y, si detectamos algo raro, antes de la primera pregunta a la IA de una cuenta nueva. Según Cloudflare, recibe tu dirección IP, una huella técnica de la conexión cifrada (huella TLS), el navegador que usas (User-Agent) y qué web y widget te lo muestran, y no las usa para identificarte, perfilarte ni dirigirse a ti. Cloudflare es encargado del tratamiento para hacer la comprobación para Dream, y responsable de usar esas señales para mejorar la detección de bots de Turnstile. Detalle y contacto de su delegado de protección de datos en el [aviso de privacidad de Turnstile](https://www.cloudflare.com/turnstile-privacy-policy/).
 - **Google** (inicio de sesión con tu cuenta de Google).
 - **Groq** (proveedor de inteligencia artificial de los modos «Rápido» y «Normal»). Recibe el texto de tus mensajes, el contenido extraído de tus archivos y el contexto necesario para responder (incluidas, si ayudan para un ejemplo, tus aficiones, y, si activas la memoria, lo que Dream recuerda de ti). También hace, en segundo plano, la extracción de la memoria y la importación de otra IA. Tus mensajes **no incluyen tu correo, tu nombre ni tu apodo**.
 - **Cloudflare** (Cloudflare Workers AI, proveedor de inteligencia artificial). Se usa para el modo «Pensar más» y como respaldo cuando Groq no responde. Recibe lo mismo que Groq: el texto de tu mensaje, una parte más corta de la conversación, el contenido extraído de tus archivos y las instrucciones del tutor, **sin tu correo ni tu nombre**. No conocemos la región en la que ejecuta el modelo, así que puede tratar tus mensajes fuera de la Unión Europea. Según Cloudflare, no usa este contenido para entrenar modelos de IA y no lo guarda cuando ya no lo necesita para responder.
@@ -75,7 +78,7 @@ No cedemos tus datos a nadie más salvo obligación legal. Qué guarda cada serv
 
 ## 5. Transferencias internacionales
 
-Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Google, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo. En el caso de Cloudflare Workers AI no sabemos en qué región se ejecuta el modelo de IA, así que tus mensajes pueden tratarse fuera de la Unión Europea (transferencia internacional).
+Algunos de estos proveedores (por ejemplo Groq, Cloudflare, Vercel, Tavily, Google, PostHog o Sentry) pueden tratar datos fuera de la Unión Europea, principalmente en Estados Unidos. En ese caso la protección se apoya en el Marco de Privacidad de Datos UE-EEUU o en cláusulas contractuales tipo. En el caso de Cloudflare Workers AI no sabemos en qué región se ejecuta el modelo de IA, así que tus mensajes pueden tratarse fuera de la Unión Europea (transferencia internacional). Cloudflare (red de la web y Turnstile) dice que guarda la información principalmente en Estados Unidos y en el Espacio Económico Europeo, y que se apoya en el Marco de Privacidad de Datos UE-EEUU y, si falla, en cláusulas contractuales tipo.
 
 ## 6. Inteligencia artificial
 
@@ -105,13 +108,15 @@ Puedes **descargar una copia de todo lo que Dream guarda de ti** en Ajustes › 
 
 ## 10. Seguridad
 
-La conexión va cifrada (HTTPS). Cada usuario solo puede leer sus propios datos (reglas de seguridad por fila en la base de datos), las escrituras pasan por un servidor con comprobación de identidad, y las claves de los proveedores de IA no están en tu navegador. Ningún sistema es infalible: avisaremos de cualquier brecha según exige la ley.
+La conexión va cifrada (HTTPS). Las visitas a la web pasan por Cloudflare, que frena ataques y bots antes de que lleguen a Dream. Cada usuario solo puede leer sus propios datos (reglas de seguridad por fila en la base de datos), las escrituras pasan por un servidor con comprobación de identidad, y las claves de los proveedores de IA no están en tu navegador. Ningún sistema es infalible: avisaremos de cualquier brecha según exige la ley.
 
 ## 11. Seguridad contra abusos y moderación
 
 Dream tiene medidas para que el servicio siga siendo gratis, justo y seguro, y para aplicar las normas de uso de los Términos (apartado 6). Esto es lo que hacen, y qué datos usan.
 
 **Huella de tu conexión (no tu IP).** Para detectar abusos, como usos anormales desde una misma conexión o varias cuentas para saltarse un baneo, calculamos de tu dirección IP una *huella*: un código que se obtiene con un secreto que solo conoce el servidor y del que no se puede recuperar la IP. **Nunca guardamos ni registramos tu IP en claro.** Finalidad: seguridad y prevención de abuso. Base legal: interés legítimo. La huella se guarda **30 días** y se borra sola; también se borra con tu cuenta. (Si tu cuenta pasa por la observación de la que hablamos más abajo, las huellas anotadas en ese caso se conservan mientras dure el caso y, como mucho, hasta que se borre tu cuenta.) Una misma huella solo indica la misma red, no la misma persona (un colegio, una biblioteca o una casa comparten conexión), por eso nunca sirve por sí sola para castigar a alguien en una red compartida.
+
+**Comprobación «no soy un robot» (Cloudflare Turnstile).** Para que un programa automático no pueda subir archivos con un QR, llenar de reclamaciones la cola ni gastar la IA creando cuentas, en esas tres pantallas te pedimos una comprobación de Cloudflare. Casi siempre es invisible o un solo clic, sin imágenes. En la primera pregunta de una cuenta nueva solo sale si vemos algo raro (por ejemplo, muchísimas peticiones desde una conexión que no es un colegio), no a todo el mundo. La validamos en nuestro servidor y no guardamos el resultado. Qué datos recibe Cloudflare está en la sección 4. Base legal: interés legítimo (seguridad y prevención de abusos). Si no la pasas, esa acción no se hace, pero puedes volver a intentarlo o escribirnos.
 
 **Moderación automática y revisión humana.** Algunos límites son automáticos, como bloquear 24 horas el uso de la IA desde una conexión con un uso anormal o limitar unas horas una cuenta que satura el chat. Cualquier sanción de 7 días o más (baneos) **la decide una persona**: el sistema solo la propone. La única excepción posible es el baneo de 7 días a una cuenta nueva que entra repetidamente desde la conexión de una cuenta baneada tras 2 días de observación; **solo se aplica si Carlos lo activa**, solo en conexiones de tamaño de hogar (nunca en redes compartidas) y siempre con aviso y apelación atendida por una persona.
 
