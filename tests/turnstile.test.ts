@@ -108,8 +108,13 @@ test("Cloudflare down: fails closed (503 turnstile_unavailable), the action does
     assert.equal(out.message, HUMAN_CHECK_MESSAGE);
   }
   // A hung Cloudflare is cut by the timeout.
+  // AbortSignal.timeout does not keep Node's event loop alive (Node 22): a
+  // plain timer does, so the test waits for the abort instead of ending early.
   const hang = (async (_u: string, init: { signal: AbortSignal }) =>
-    new Promise((_, reject) => init.signal.addEventListener("abort", () => reject(new Error("timeout"))))) as unknown as typeof fetch;
+    new Promise((_, reject) => {
+      const alive = setTimeout(() => {}, 5_000);
+      init.signal.addEventListener("abort", () => { clearTimeout(alive); reject(new Error("timeout")); });
+    })) as unknown as typeof fetch;
   const out = await verifyTurnstile({ token: TOKEN, action: ACTION, env: ENV, fetchImpl: hang, spent: createSpentTokens(() => NOW), now: NOW, timeoutMs: 20, log });
   assert.equal(out.code, "turnstile_unavailable");
 });

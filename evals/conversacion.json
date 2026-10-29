@@ -1,0 +1,32 @@
+{
+  "description": "Conversaciones completas simuladas (P1, docs/HABLA_NATURAL.md). El alumno dice lo que pone el guion; la respuesta de Dream de cada turno pasa al historial. Cada turno: un solo paso, sin lista numerada, sin frases de robot, ≤ 120 palabras y una pregunta al final. Al final: resultado correcto y ningún paso repetido.",
+  "type": "script",
+  "defaults": { "maxWords": 120, "noLists": true, "noHeadings": true, "noRobot": true, "noForeign": true, "oneStep": true, "forbidden": ["¿Te queda claro", "¿lo entiendes"] },
+  "cases": [
+    {
+      "id": "generatriz-bien",
+      "note": "Alumno que contesta bien cada paso: 2,46 → 246/100 → 123/50.",
+      "script": [
+        "Quiero aprender a sacar la fracción generatriz de 2,46. Vamos paso a paso.",
+        "Pues 246/100, ¿no?",
+        "Divido arriba y abajo entre 2 y me queda 123/50",
+        "Ya no se puede simplificar más, 123 y 50 no tienen divisores comunes"
+      ],
+      "eachTurn": {},
+      "mustMatchTurn": { "2": "(bien|eso es|exacto|correcto|así es|perfecto|sí)", "3": "(bien|eso es|exacto|correcto|así es|perfecto|sí)" },
+      "final": "123\\s*/\\s*50|\\\\frac\\{123\\}\\{50\\}|(bien|exacto|correcto|eso es)"
+    },
+    {
+      "id": "generatriz-falla-paso-2",
+      "note": "Alumno que se equivoca en el paso 2 (pone 246/10): Dream no avanza, da una pista y no le da el resultado.",
+      "script": [
+        "Quiero aprender a sacar la fracción generatriz de 2,46. Vamos paso a paso.",
+        "246/10",
+        "Ah, 246/100 porque hay dos decimales"
+      ],
+      "eachTurn": {},
+      "mustMatchTurn": { "2": "(casi|f[ií]jate|cu[aá]ntos decimales|no del todo|mira|revisa|ojo)" },
+      "final": "(bien|eso es|exacto|correcto|así es|sí)"
+    }
+  ]
+}

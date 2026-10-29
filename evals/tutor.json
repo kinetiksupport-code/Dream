@@ -1,28 +1,193 @@
 {
   "description": "Casos fijos de tutor (un paso por mensaje, sin dar la solución). Ver evals/README.md.",
-  "defaults": { "forbidden": ["¿Te queda claro", "¿lo entiendes", "¿Lo entiendes", "Sin embargo"], "noLists": true, "noHeadings": true },
+  "defaults": {
+    "forbidden": [
+      "¿Te queda claro",
+      "¿lo entiendes",
+      "¿Lo entiendes",
+      "Sin embargo"
+    ],
+    "noLists": true,
+    "noHeadings": true,
+    "maxWords": 120,
+    "noRobot": true,
+    "noForeign": true,
+    "oneStep": true
+  },
   "cases": [
     {
       "id": "sintagmas-22-oct",
       "category": "caso-real",
       "note": "Caso real de Carlos (22/10/2026). En producción el alumno sube una foto; aquí va el texto de sus apuntes. Respuesta esperada: «Casi. *Libro* es el núcleo del grupo entero, sí. Pero fíjate en «de la biblioteca»: ahí dentro hay otro grupo nominal más pequeño. ¿Cuál sería su palabra central?»",
-      "messages": [{ "role": "user", "content": "Es un ejercicio de clase de análisis sintáctico. En mis apuntes tengo: «el libro de la biblioteca» = [SN [Det el] [N libro] [SPrep de la biblioteca]]. He puesto que libro es el núcleo (N) y ya está. ¿Está bien?" }],
-      "expect": { "maxWords": 60, "singleQuestion": true, "endsWithQuestion": true, "mustNotMatch": "n[uú]cleo[^.?!]*biblioteca|biblioteca[^.?!]*n[uú]cleo|Nc si tu profe|depende de tu profe" }
+      "messages": [
+        {
+          "role": "user",
+          "content": "Es un ejercicio de clase de análisis sintáctico. En mis apuntes tengo: «el libro de la biblioteca» = [SN [Det el] [N libro] [SPrep de la biblioteca]]. He puesto que libro es el núcleo (N) y ya está. ¿Está bien?"
+        }
+      ],
+      "expect": {
+        "maxWords": 60,
+        "singleQuestion": true,
+        "endsWithQuestion": true,
+        "mustNotMatch": "n[uú]cleo[^.?!]*biblioteca|biblioteca[^.?!]*n[uú]cleo|Nc si tu profe|depende de tu profe"
+      }
     },
     {
       "id": "ecuacion-deberes",
-      "messages": [{ "role": "user", "content": "deberes: resuelve 2x + 6 = 14" }],
-      "expect": { "maxWords": 70, "endsWithQuestion": true, "mustNotMatch": "x\\s*=\\s*4" }
+      "messages": [
+        {
+          "role": "user",
+          "content": "deberes: resuelve 2x + 6 = 14"
+        }
+      ],
+      "expect": {
+        "maxWords": 70,
+        "endsWithQuestion": true,
+        "mustNotMatch": "x\\s*=\\s*4"
+      }
     },
     {
       "id": "intento-mal",
-      "messages": [{ "role": "user", "content": "en mis deberes: 3x = 12, he puesto x = 9. ¿bien?" }],
-      "expect": { "maxWords": 70, "endsWithQuestion": true, "mustNotMatch": "x\\s*=\\s*4" }
+      "messages": [
+        {
+          "role": "user",
+          "content": "en mis deberes: 3x = 12, he puesto x = 9. ¿bien?"
+        }
+      ],
+      "expect": {
+        "maxWords": 70,
+        "endsWithQuestion": true,
+        "mustNotMatch": "x\\s*=\\s*4"
+      }
     },
     {
       "id": "concepto-normal",
-      "messages": [{ "role": "user", "content": "¿qué es la fotosíntesis?" }],
-      "expect": { "maxWords": 120 }
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿qué es la fotosíntesis?"
+        }
+      ],
+      "expect": {
+        "maxWords": 120
+      }
+    },
+    {
+      "id": "todos-los-pasos",
+      "category": "longitud",
+      "note": "Pide el procedimiento entero: una frase de visión general sin numerar y el primer paso (P2.1).",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explícame todos los pasos para sacar la fracción generatriz de un decimal periódico mixto"
+        }
+      ],
+      "expect": {
+        "maxWords": 90,
+        "endsWithQuestion": true,
+        "singleQuestion": true
+      }
+    },
+    {
+      "id": "historia",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "No entiendo por qué empezó la Primera Guerra Mundial"
+        }
+      ],
+      "expect": {
+        "maxWords": 120,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "biologia",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Qué es la mitosis? Mañana tengo examen de bio"
+        }
+      ],
+      "expect": {
+        "maxWords": 120,
+        "reactsTo": "(examen|mañana|vale|a ver)"
+      }
+    },
+    {
+      "id": "fisica",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "deberes: un coche va a 72 km/h, ¿cuántos m/s son?"
+        }
+      ],
+      "expect": {
+        "maxWords": 60,
+        "endsWithQuestion": true,
+        "mustNotMatch": "\\b20\\s*m/s"
+      }
+    },
+    {
+      "id": "quimica",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Ajusta esta reacción que me la han mandado: H2 + O2 -> H2O"
+        }
+      ],
+      "expect": {
+        "maxWords": 60,
+        "endsWithQuestion": true,
+        "mustNotMatch": "2\\s*H2\\s*\\+\\s*O2\\s*(->|→)\\s*2\\s*H2O"
+      }
+    },
+    {
+      "id": "ingles",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Cuándo se usa el present perfect?"
+        }
+      ],
+      "expect": {
+        "maxWords": 120
+      }
+    },
+    {
+      "id": "filosofia",
+      "category": "asignatura",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Explícame el mito de la caverna de Platón"
+        }
+      ],
+      "expect": {
+        "maxWords": 120,
+        "endsWithQuestion": true
+      }
+    },
+    {
+      "id": "generatriz-mixto",
+      "category": "caso-real",
+      "note": "Caso real de Carlos: tres tipos de decimal de golpe y reglas inventadas. Debe ir al tipo que tiene el alumno, un paso.",
+      "messages": [
+        {
+          "role": "user",
+          "content": "¿Cómo saco la fracción generatriz de 1,2333...?"
+        }
+      ],
+      "expect": {
+        "maxWords": 90,
+        "endsWithQuestion": true,
+        "mustNotMatch": "37\\s*/\\s*30|peri[oó]dico puro[\\s\\S]*exacto"
+      }
     }
   ]
 }
