@@ -46,7 +46,15 @@ El navegador habla **directamente** con `cxaujyagtpsxvkwkdxbc.supabase.co`. El C
 
 Vercel entrega la IP del visitante y `getClientIp` la acepta. La vista previa está protegida con el inicio de sesión de Vercel, así que no he podido enviarle cabeceras falsas desde fuera.
 
-**Con Cloudflare delante: pendiente de comprobar.** Solo se puede probar en `www.edudream.es`, y eso exige desplegar a producción (lo decide Carlos). Vercel dice que reconoce a Cloudflare como proxy verificado (Verified Proxy Lite, automático en todos los planes). Su documentación no aclara si entonces `x-real-ip` es la del visitante o la de Cloudflare. Cuando esté desplegado, abre `https://www.edudream.es/api/ip-check`:
+**Con Cloudflare delante: comprobado en producción el 2026-10-29** (despliegue `dpl_5BKwfZH1aNixysqGnyFwuV1FmeRY`):
+
+```json
+{"pasa_por_cloudflare":true,"en_vercel":true,"ip_de_vercel":"de_cloudflare","coincide_con_cloudflare":false,"ip_usable":false}
+```
+
+**Vercel entrega la IP de Cloudflare, no la del alumno.** En el plan Hobby, el «Verified Proxy Lite» no la traduce. `getClientIp` hace lo correcto: devuelve `null` y la web no limita a nadie por IP. No se rompe nada, porque la moderación y los límites por IP están en `dream-api`, donde la IP sí es la del alumno (arriba).
+
+Antes de esta prueba, la documentación decía: Solo se puede probar en `www.edudream.es`, y eso exige desplegar a producción (lo decide Carlos). Vercel dice que reconoce a Cloudflare como proxy verificado (Verified Proxy Lite, automático en todos los planes). Su documentación no aclara si entonces `x-real-ip` es la del visitante o la de Cloudflare. Cuando esté desplegado, abre `https://www.edudream.es/api/ip-check`:
 
 | Resultado | Qué significa | Qué hacer |
 |---|---|---|
@@ -64,6 +72,5 @@ Vercel entrega la IP del visitante y `getClientIp` la acepta. La vista previa es
 
 ## Lo que no he podido comprobar
 
-- Qué IP ve Vercel con Cloudflare delante (necesita producción; ver arriba).
 - Enviar cabeceras falsas a `dream-api` en producción (prohibido por el encargo; cubierto con pruebas locales y con el comportamiento documentado de Cloudflare).
 - `MOD_IP_PEPPER` no existe todavía. Mientras no exista, la moderación por IP no hace nada (falla abierta) y la huella del QR es SHA-256.
