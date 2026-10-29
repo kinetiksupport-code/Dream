@@ -4,7 +4,8 @@ import { AdmissionError, admissionOperation, consumingActions, createAdmission, 
 import { ADMIN_ACTIONS, adminLink, handleAdminAction } from './admin.mjs';
 import { contentModerationEnabled, CONTENT_THRESHOLDS, moderateMessage } from './content-moderation.mjs';
 import { STUDENT_MOD_ACTIONS, handleStudentModeration } from './student-moderation.mjs';
-import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderationGate } from './moderation.mjs';
+import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, getClientIp, moderationEntry, moderationGate, suspiciousNewAccount } from './moderation.mjs';
+import { TURNSTILE_ACTIONS, verifyTurnstile } from './turnstile.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
@@ -118,6 +119,13 @@ const serviceClient = () => createClient(Deno.env.get('SUPABASE_URL')!, Deno.env
 // upload_qr_connect y upload_qr_file. Cada archivo recorre la ruta normal
 // (exam_upload_start → attachment_upload → exam_material_add) como el dueño del
 // examen, con su admisión. El token nunca se registra.
+const ipEnv = () => ({ MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER') });
+/** Turnstile validado en el servidor (turnstile.mjs, docs/turnstile.md). Sin clave, deja pasar. */
+const humanCheckFor = (action: string, headers: Headers) => (token: unknown) => verifyTurnstile({
+  token, action,
+  env: { TURNSTILE_SECRET_KEY: Deno.env.get('TURNSTILE_SECRET_KEY'), TURNSTILE_EXTRA_HOSTNAMES: Deno.env.get('TURNSTILE_EXTRA_HOSTNAMES') },
+  remoteip: getClientIp(headers, ipEnv()),
+});
 async function handleQr(req: Request): Promise<Response> {
   if (maintenanceOn()) return maintenanceResponse();
   let body: any;
@@ -154,7 +162,8 @@ async function handleQr(req: Request): Promise<Response> {
     const result = await mobileUploadAction({
       db: { rpc: (name, args) => admin.rpc(name, args) },
       headers: req.headers,
-      ipEnv: { MOD_IP_HEADER: Deno.env.get('MOD_IP_HEADER'), MOD_IP_XFF_HOPS: Deno.env.get('MOD_IP_XFF_HOPS'), MOD_IP_PEPPER: Deno.env.get('MOD_IP_PEPPER') },
+      ipEnv: ipEnv(),
+      humanCheck: humanCheckFor(TURNSTILE_ACTIONS.qr, req.headers),
       dispatch: async (owner, payload) => {
         const context = await ownerContext(owner);
         // Misma admisión que attachment_upload desde el ordenador.
@@ -346,6 +355,15 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     const limited = await moderationGate({
       rpc: modRpc, headers: req.headers, userId: user.id, env: modEnv,
       ageBand: typeof consentRow?.age_band === 'string' ? consentRow.age_band : null,
+      // Turnstile solo en la primera acción de IA de una cuenta nueva, y solo si
+      // algo es raro (suspiciousNewAccount). «Primera» = sin uso de IA en la ventana.
+      challenge: async (sig: Record<string, unknown>) => {
+        if (!suspiciousNewAccount({ createdAt: user.created_at, sig })) return null;
+        const usage = await createWindowLimiter(admin, user.id).read();
+        if (usage?.window) return null;
+        const human = await humanCheckFor(TURNSTILE_ACTIONS.firstAi, req.headers)(body.turnstile_token);
+        return human.ok ? null : { status: human.status ?? 403, code: human.code ?? 'turnstile_failed', message: human.message, retryAfter: 0 };
+      },
     });
     if (limited) return json({ error: limited.message, code: limited.code, retry_after: limited.retryAfter }, limited.status, { 'Retry-After': String(limited.retryAfter) });
   }
@@ -530,7 +548,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // cada modo en palabras. Ni tokens ni nombres de modelo.
   // Moderación, lado del alumno (B6): ver su baneo, reclamar, marcar avisos como vistos.
   if (STUDENT_MOD_ACTIONS.has(String(body.action))) {
-    const studentResult = await handleStudentModeration({ action: String(body.action), body, userId: user.id, rpc: rpcFor(admin) });
+    const studentResult = await handleStudentModeration({ action: String(body.action), body, userId: user.id, rpc: rpcFor(admin), humanCheck: humanCheckFor(TURNSTILE_ACTIONS.appeal, req.headers) });
     if (studentResult) return json(studentResult.body, studentResult.status, { 'Cache-Control': 'no-store' });
   }
 

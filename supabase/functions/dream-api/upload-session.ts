@@ -162,6 +162,11 @@ export interface MobileDeps {
   headers: Headers;
   /** Configuración de la lectura de IP (MOD_IP_HEADER, MOD_IP_XFF_HOPS, MOD_IP_PEPPER). */
   ipEnv?: IpEnv;
+  /**
+   * Comprobación «no soy un robot» (Turnstile) al conectar el móvil. La valida
+   * turnstile.mjs; sin clave configurada deja pasar. Ver docs/turnstile.md.
+   */
+  humanCheck?: (token: unknown) => Promise<{ ok: boolean; status?: number; code?: string; message?: string }>;
   /** Ejecuta una acción normal de dream-api como el dueño del examen. */
   dispatch: Dispatch;
   /** Borra un adjunto que no se pudo asociar al examen. */
@@ -208,6 +213,11 @@ export async function mobileUploadAction(deps: MobileDeps, body: Row): Promise<R
     if (body.device_key !== undefined && (typeof body.device_key !== 'string' || !SECRET_PATTERN.test(body.device_key))) throw invalidLink();
 
     if (action === 'upload_qr_connect') {
+      // Antes de tocar la base de datos: un bot no llega ni a probar códigos.
+      if (deps.humanCheck) {
+        const human = await deps.humanCheck(body.turnstile_token);
+        if (!human.ok) throw new UploadSessionError(human.status ?? 403, human.code ?? 'turnstile_failed', human.message ?? 'No hemos podido comprobar que eres una persona, vuelve a intentarlo.');
+      }
       const device = typeof body.device_key === 'string' ? body.device_key : randomSecret();
       const row = await gate(deps, body, 'connect', device);
       log('connected');

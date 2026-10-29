@@ -1,0 +1,18 @@
+/* Comprobación «no soy un robot» (Turnstile). El widget lo pinta Cloudflare en
+   un iframe; aquí solo el hueco (sin saltos de diseño) y la etiqueta. */
+.check {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+.label {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+/* Alto reservado del widget de Cloudflare (65 px) para que nada salte al cargar. */
+.widget {
+  min-height: 65px;
+  width: 100%;
+}

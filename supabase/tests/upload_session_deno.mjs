@@ -260,3 +260,25 @@ Deno.test("móvil: los límites de subida de file-guard llegan con su mensaje", 
   assertEquals([e2.status, e2.code], [422, "upload_file_rejected"]);
   assertMatch(e2.message, /macros/);
 });
+
+Deno.test("móvil: sin Turnstile válido no se conecta ni se toca la base de datos", async () => {
+  const token = randomSecret();
+  for (const human of [
+    { ok: false, status: 428, code: "turnstile_required", message: "No hemos podido comprobar que eres una persona, vuelve a intentarlo." },
+    { ok: false, status: 503, code: "turnstile_unavailable", message: "No hemos podido comprobar que eres una persona, vuelve a intentarlo." },
+  ]) {
+    const db = fakeDb({ dream_upload_qr_gate: { ok: true, expires_at: "2026-10-17T10:10:00Z", uploads: 0, max_uploads: 10 } });
+    const { deps } = mobile(db);
+    let seen;
+    deps.humanCheck = (t) => { seen = t; return Promise.resolve(human); };
+    const error = await assertRejects(() => mobileUploadAction(deps, { action: "upload_qr_connect", token, turnstile_token: "abc" }), UploadSessionError);
+    assertEquals([error.status, error.code], [human.status, human.code]);
+    assertEquals(seen, "abc");
+    assertEquals(db.calls.length, 0);
+  }
+  const db = fakeDb({ dream_upload_qr_gate: { ok: true, expires_at: "2026-10-17T10:10:00Z", uploads: 0, max_uploads: 10 } });
+  const { deps } = mobile(db);
+  deps.humanCheck = () => Promise.resolve({ ok: true });
+  const ok = await mobileUploadAction(deps, { action: "upload_qr_connect", token, turnstile_token: "abc" });
+  assertEquals(ok.ok, true);
+});

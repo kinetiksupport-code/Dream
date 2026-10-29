@@ -31,10 +31,11 @@ export interface Notice {
 export const getBanInfo = (signal?: AbortSignal) => callDream<BanInfo>("mod_ban_info", {}, signal);
 export const getNotices = (signal?: AbortSignal) => callDream<{ items: Notice[] }>("mod_notices", {}, signal);
 export const ackNotice = (id: string) => callDream<{ ok: boolean }>("mod_ack", { id });
-export const sendAppeal = (body: string, sanctionId?: string) =>
+export const sendAppeal = (body: string, sanctionId?: string, turnstileToken?: string) =>
   callDream<{ ok: boolean; code: string; due_at: string; deadline_days: number }>("mod_appeal_create", {
     body,
     ...(sanctionId ? { sanction_id: sanctionId } : {}),
+    ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
   });
 
 const dateFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" });

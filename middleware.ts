@@ -11,6 +11,7 @@ import { HEAD_BOOT } from "@/lib/theme";
 import { GAME_SCRIPT } from "@/lib/dream-games";
 import { appCsp, cspHeaderName } from "@/lib/csp";
 import { COOKIEBOT, cookiebotPage } from "@/lib/cookie-consent";
+import { turnstileOn } from "@/lib/turnstile";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -179,6 +180,7 @@ async function app(request: NextRequest, rewrite?: URL): Promise<NextResponse> {
       posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST,
       sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       development: process.env.NODE_ENV === "development",
+      turnstile: turnstileOn(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
     },
     [await readingBootHash, await gameHash],
   );
