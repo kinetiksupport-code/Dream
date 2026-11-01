@@ -487,3 +487,40 @@ group by 1;
 
 `TYPICAL_MESSAGE_TOKENS` (1.100, la estimación de «te quedan N mensajes») se
 deja igual hasta tener una semana de datos con la cuenta nueva.
+
+## Búsqueda · por fecha, a fondo y «si no lo sabe, que lo busque»
+
+Lo pidió Carlos el 1 de noviembre: que busque cuando no sabe algo, que con
+noticias o cosas recientes busque primero por fecha, que haga una búsqueda más
+profunda con Tavily cuando haga falta mucha información, y que hable mejor.
+
+| | Antes | Ahora |
+|---|---|---|
+| Noticias («noticias», «qué ha pasado», «hoy», «esta semana»…) | búsqueda general, sin fecha | `topic: "news"` y `time_range` (day, week, month, year); lo más nuevo primero y con su fecha |
+| «Lo último», «actualmente», «la última versión» | sin fecha | ventana de un año |
+| Mucha información («a fondo», «compara», «causas y consecuencias», «un trabajo sobre»…) | 3 resultados, `basic` | `search_depth: "advanced"`, 5 resultados de 600 caracteres |
+| Pocos resultados con fecha (o ninguno) | se respondía con lo que hubiera | otra vuelta más amplia: más sitios y sin ventana de fecha |
+| La IA dice «no lo sé con seguridad» sin haber buscado | se quedaba ahí | el servidor busca y responde con lo encontrado (solo preguntas cortas, nunca deberes) |
+| Fecha de hoy | no la sabía | va al planificador y a la respuesta («Hoy es 2026-11-01.») |
+| Caché | 24 h por consulta | 24 h, y 1 h para noticias, hoy y esta semana; la clave incluye las opciones |
+
+- Reglas en `supabase/functions/dream-api/search-options.mjs`. La IA puede
+  pedir `recency` y `deep` en `web_search`, pero solo para estrechar la
+  ventana de fecha, nunca para ensancharla más que las reglas.
+- La búsqueda automática usa el mismo cupo diario global que la comprobación
+  de datos (`dream_forced_search_budget`). En los registros solo hay
+  contadores y opciones (`web_search_options`, `unsure_search`), nunca texto.
+- **Google directamente no:** necesita una clave de la API de Google
+  (Programmable Search), que hay que crear en el panel de Google Cloud. «Más
+  sitios» se hace con la segunda vuelta de Tavily, sin la lista de fuentes
+  preferidas.
+- **Créditos de Tavily (1.000 al mes por clave, 2 claves):** la búsqueda a
+  fondo gasta 2 y la segunda vuelta otro más. Solo saltan con las palabras de
+  arriba o con pocos resultados.
+- **Cómo habla:** empieza reaccionando con una frase distinta cada vez (no
+  siempre «vale»), y si el alumno se agobia lo nota antes de seguir
+  («normal, esto lía»). Se ha quitado «Gran pregunta» de los ejemplos. El
+  bloque sigue por debajo de 2.000 caracteres.
+
+**No comprobado:** con Tavily y Groq de verdad (no tengo sus claves); cuántos
+créditos gasta en un mes real.
