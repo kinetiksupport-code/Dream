@@ -51,6 +51,9 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-dream-request-id, x-dream-channel',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Expose-Headers': 'Retry-After',
+  // El navegador guarda 2 h el permiso CORS: sin esto pregunta (OPTIONS, ~300 ms)
+  // antes de CADA llamada a dream-api. Chrome no guarda más de 2 h.
+  'Access-Control-Max-Age': '7200',
   'Vary': 'Origin'
 };
 const json = (data: unknown, status = 200, extra: Record<string,string> = {}) =>
@@ -328,17 +331,22 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Baneo (B5b): se comprueba en el servidor en CADA petición, también con la
   // sesión ya abierta. Una cuenta baneada solo puede ver su pantalla, apelar y
   // borrar su cuenta. Las llamadas internas (examInternal) ya pasaron por aquí.
-  let ban: Awaited<ReturnType<typeof banState>> = null;
-  if (!examInternal && !verified) {
-    ban = await banState({ rpc: rpcFor(admin), userId: user.id });
-    if (ban && !BAN_ALLOWED_ACTIONS.has(String(body.action))) {
-      const denied = bannedResponse(ban);
-      return json(denied.body, denied.status);
-    }
+  // El baneo y el perfil (permiso de IA) se leen a la vez: son dos lecturas
+  // independientes y así la petición espera un viaje a la base de datos, no dos.
+  // El orden de las comprobaciones no cambia: primero el baneo, luego el permiso.
+  const needsConsent = !examInternal && (consuming || CONSENT_GATED.has(String(body.action)));
+  const [banRead, profileRead] = await Promise.all([
+    !examInternal && !verified ? banState({ rpc: rpcFor(admin), userId: user.id }) : Promise.resolve(null),
+    needsConsent && !verified ? admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle() : Promise.resolve(null),
+  ]);
+  let ban: Awaited<ReturnType<typeof banState>> = banRead;
+  if (ban && !BAN_ALLOWED_ACTIONS.has(String(body.action))) {
+    const denied = bannedResponse(ban);
+    return json(denied.body, denied.status);
   }
   let consentRow: Record<string, unknown> | null = null;
-  if (!examInternal && (consuming || CONSENT_GATED.has(String(body.action)))) {
-    const row = verified?.profile ?? (await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle()).data;
+  if (needsConsent) {
+    const row = verified?.profile ?? profileRead?.data;
     consentRow = row ?? null;
     const blocked = consentBlock(row);
     if (blocked) return json({ error: blocked.message, code: blocked.code }, blocked.status);
@@ -387,7 +395,8 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   const jsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => groqJson(system, context, operation, signal, admission);
   const email = String(user.email || '').trim().toLowerCase();
 
-  let { data: profile } = verified ? {data:verified.profile} : await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle();
+  // Si el perfil ya se leyó para el permiso de IA, se reutiliza (antes se leía dos veces).
+  let { data: profile } = verified ? {data:verified.profile} : consentRow ? {data:consentRow} : await admin.from('dream_profiles').select('*').eq('id', user.id).maybeSingle();
   if (!profile) {
     // Normally created by the auth trigger; this covers a race on first sign-in.
     const insert = await admin.from('dream_profiles').upsert({
