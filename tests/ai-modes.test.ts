@@ -634,6 +634,17 @@ test("fallback only for Groq failures that leave no text: 5xx, 429 on every key,
     false,
   );
   assert.equal(shouldFallback(new GroqProviderError("aborted")), false);
+  // Groq 413: el mensaje no cabe en los 8.000 tokens/min de la cuenta gratuita.
+  assert.equal(
+    shouldFallback(new GroqProviderError("http_413", { status: 413 })),
+    true,
+  );
+  assert.equal(
+    shouldFallback(
+      new GroqProviderError("http_413", { status: 413, emittedContent: true }),
+    ),
+    false,
+  );
   assert.equal(
     shouldFallback(new GroqProviderError("http_400", { status: 400 })),
     false,
