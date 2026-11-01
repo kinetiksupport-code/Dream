@@ -51,6 +51,9 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info, x-dream-request-id, x-dream-channel',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Expose-Headers': 'Retry-After',
+  // El navegador guarda el permiso CORS 2 h (Chrome no acepta más) y no repite
+  // la petición OPTIONS antes de cada mensaje: ~300 ms menos por llamada.
+  'Access-Control-Max-Age': '7200',
   'Vary': 'Origin'
 };
 const json = (data: unknown, status = 200, extra: Record<string,string> = {}) =>
