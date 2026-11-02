@@ -30,6 +30,7 @@ export type DreamAction =
   | "card_report"
   | "error_bank_list"
   | "study_quota"
+  | "study_today"
   | "special_welcome_seen"
   | "memory_list"
   | "memory_toggle"

@@ -49,6 +49,9 @@ export interface MountOptions {
 }
 
 /** Monta el modelo en el lienzo y devuelve la función que lo desmonta. */
+export const MIN_FPS = 40;
+const SAMPLE_MS = 2000;
+
 export function mountSubjectModel(
   canvas: HTMLCanvasElement,
   object: SubjectObjectKey,
@@ -95,6 +98,11 @@ export function mountSubjectModel(
   let onScreen = true;
   let lost = false;
   let first = true;
+  // Si va lento (< 40 fps sostenidos en los primeros 2 s visibles), vuelve al
+  // icono plano: mejor quieto que a trompicones (prompt de la ruta, Entrega 3).
+  let sampleStart = 0;
+  let frames = 0;
+  let measured = false;
 
   const frame = (t: number) => {
     raf = 0;
@@ -106,6 +114,15 @@ export function mountSubjectModel(
     tiltY += (target.y - tiltY) * k;
     pivot.rotation.set(0.12 + tiltX, spin + tiltY, 0);
     renderer.render(scene, camera);
+    if (!measured) {
+      if (!sampleStart) sampleStart = t;
+      frames++;
+      const elapsed = t - sampleStart;
+      if (elapsed >= SAMPLE_MS) {
+        measured = true;
+        if ((frames * 1000) / elapsed < MIN_FPS) return onLost();
+      }
+    }
     if (first) {
       first = false;
       onReady();
@@ -120,6 +137,9 @@ export function mountSubjectModel(
       cancelAnimationFrame(raf);
       raf = 0;
       last = 0;
+      // Fuera de pantalla no cuenta: la medida vuelve a empezar al verse.
+      sampleStart = 0;
+      frames = 0;
     }
   }
 

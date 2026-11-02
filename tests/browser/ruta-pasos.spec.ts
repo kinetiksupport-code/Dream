@@ -48,7 +48,8 @@ const sizes = [
 for (const size of sizes) {
   test(`presupuesto de elementos ${size.width}px`, async ({ page }) => {
     await page.setViewportSize(size);
-    await routeFixture(page);
+    // Con el repaso de hoy a la vista (Entrega 5): también cuenta.
+    await routeFixture(page, { handlers: { study_today: () => ({ due: 14, minutes: 5, reviewed_today: 0, lessons_today: 0, goal: { lessons: 1, cards: 10 } }) } });
     await page.goto(`/exams/${eid}/ruta`);
     await expect(page.getByTestId("ruta-pasos")).toBeVisible();
     const ruta = await budget(page);

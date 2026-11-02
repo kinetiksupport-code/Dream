@@ -52,8 +52,17 @@ export const getQuiz = (ids: Ids, round = 0) => callDream<{ questions: QuizQuest
 export const getPretest = (ids: Ids) => callDream<{ questions: QuizQuestion[] }>("unit_quiz_get", { ...ids, pretest: true });
 export const answerQuiz = (ids: Ids, index: number, answer: string | boolean) =>
   callDream<QuizCheck>("unit_quiz_answer", { ...ids, index, answer });
-export const finishQuiz = (ids: Ids, answers: Record<number, string | boolean>) =>
-  callDream<QuizResult>("unit_quiz_finish", { ...ids, answers });
+export const finishQuiz = (ids: Ids, answers: Record<number, string | boolean>, known = false) =>
+  callDream<QuizResult>("unit_quiz_finish", { ...ids, answers, ...(known ? { known: true } : {}) });
+/** Repaso de hoy y meta diaria suave (Bloque 6.1 y 6.7): solo contadores. */
+export interface StudyToday {
+  due: number;
+  minutes: number;
+  reviewed_today: number;
+  lessons_today: number;
+  goal: { lessons: number; cards: number };
+}
+export const studyToday = () => callDream<StudyToday>("study_today", {});
 
 // ── Tarjetas (Bloque 4) ──
 export interface DueCard {

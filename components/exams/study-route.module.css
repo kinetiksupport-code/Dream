@@ -176,6 +176,29 @@
   font-weight: 600;
 }
 
+/* Repaso de hoy y meta diaria suave (Bloque 6): una línea pequeña, sin presión. */
+.today {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.dueLink {
+  min-block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+.goal {
+  white-space: nowrap;
+}
+
 /* ── Camino ── */
 .pill {
   margin-block-start: 20px;
