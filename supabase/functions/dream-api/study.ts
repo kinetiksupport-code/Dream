@@ -7,6 +7,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { ExamError, id, type Body } from './validation.ts';
 import { DIFFICULTIES, LESSON_MAX_TOKENS, MASTERY_THRESHOLD, gradeQuestion, lessonContext, lessonSystem, mistakeCard, pickLessonTest, publicQuestion, unitNotes, validateLesson } from './lesson.mjs';
 import { schedule } from './srs.mjs';
+import { MOCK_ACTIONS, mockAction } from './mock.ts';
 
 interface LessonValue {
   reading: { sections: { title: string; body_markdown: string; why_it_matters?: string; check: { statement: string; is_true: boolean; explanation: string } }[]; sources: string[] };
@@ -18,7 +19,7 @@ type JsonAI = (system: string, context: string, operation: string, signal?: Abor
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
-  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list',
+  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list', ...MOCK_ACTIONS,
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
 
@@ -63,6 +64,8 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
   };
 
   if (action === 'study_quota') return { lessons: await quota('lesson') };
+  // Simulacro (Bloque 5): diagnóstico, de bloque y final.
+  if (MOCK_ACTIONS.has(action)) return mockAction(db, owner, b, ai, signal, quota);
 
   // ── La lección: se genera la primera vez que se abre y se guarda ──
   if (action === 'unit_content_get') {

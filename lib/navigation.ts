@@ -34,7 +34,7 @@ export function isFocusRoute(pathname: string) {
     pathname === "/exams/new" ||
     /^\/exams\/[^/]+\/sessions\//.test(pathname) ||
     // La lección de la ruta (0.6), a pantalla completa con el flag encendido.
-    (studyStepsEnabled() && (/^\/exams\/[^/]+\/study\//.test(pathname) || pathname === "/exams/repaso"))
+    (studyStepsEnabled() && (/^\/exams\/[^/]+\/study\//.test(pathname) || pathname === "/exams/repaso" || /^\/exams\/[^/]+\/simulacro$/.test(pathname)))
   );
 }
 

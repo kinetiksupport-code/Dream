@@ -10,7 +10,7 @@
 // - Movimiento: solo transform y opacity (globals.css › .press, hoja).
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers } from "lucide-react";
+import { ArrowDown, ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
 import { PIECE, STEP_LABEL, STEP_PIECE, masteryOf, stepGroups, subjectPiece } from "@/lib/study-steps";
@@ -249,6 +249,9 @@ export function StudyRoute(p: StudyRouteProps) {
           )}
           <Link role="menuitem" className={s.menuItem} href={`/exams/${exam.id}/tarjetas`}>
             <Layers size={18} aria-hidden="true" /> Mis tarjetas
+          </Link>
+          <Link role="menuitem" className={s.menuItem} href={`/exams/${exam.id}/simulacro?tipo=diagnostico`}>
+            <Compass size={18} aria-hidden="true" /> Tu punto de partida
           </Link>
           <Link role="menuitem" className={s.menuItem} href={`/exams/${exam.id}`}>
             <FileText size={18} aria-hidden="true" /> Mi examen y mis apuntes

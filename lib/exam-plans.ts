@@ -41,6 +41,8 @@ export interface ExamSession extends ExamSessionSummary {
   unit_id?: string | null;
   /** Previous session whose mistakes this review practises. */
   source_session_id?: string | null;
+  /** Simulacro de la ruta (Entrega 4): se abre en su propia pantalla. */
+  kind?: "diagnostic" | "block" | "final" | null;
   answers: Record<string, AnswerValue>;
   question_index: number;
   revision: number;

@@ -506,7 +506,8 @@ export function ExamPath({ id }: { id: string }) {
         onPractice={(node) => void practice(node)}
         hrefFor={(node) =>
           node.type === "mock"
-            ? `/exams/${id}#simulacro`
+            ? // El último simulacro de la ruta es el final; los demás, de bloque (5.1).
+              `/exams/${id}/simulacro?tipo=${route?.nodes.filter((n) => n.type === "mock").at(-1)?.key === node.key ? "final" : "bloque"}`
             : node.type === "study" && node.unit
               ? `/exams/${id}/study/${node.unit.id}`
               : null

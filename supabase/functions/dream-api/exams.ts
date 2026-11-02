@@ -156,6 +156,8 @@ export async function examAction(db:SupabaseClient,owner:string,b:Body,ai:JsonAI
  if(['exam_session_get','exam_session_save','exam_session_submit'].includes(String(action))){
  const session=checked(await db.from('dream_exam_sessions').select('*').eq('id',id(b.session_id)).eq('exam_id',exam.id).eq('owner_id',owner).maybeSingle());if(!session)throw new ExamError('Simulacro no encontrado.',404);
  if(action==='exam_session_get')return {session};
+ // Simulacros de la ruta (kind): se corrigen con mock_submit (rúbrica y nota estimada), nunca con la corrección antigua.
+ if(action==='exam_session_submit'&&session.kind)throw new ExamError('Entrega este simulacro desde su pantalla.',409);
  if(!session.test_id)throw new ExamError('La práctica aún no está lista. Consulta su preparación.',409);
  const questions=checked(await db.from('dream_test_questions').select('id,position,prompt,correct_answer,expected_concepts').eq('test_id',session.test_id).order('position'))??[];
  const expired=session.time_limit_seconds!==null&&Date.now()>Date.parse(session.started_at)+session.time_limit_seconds*1000;
