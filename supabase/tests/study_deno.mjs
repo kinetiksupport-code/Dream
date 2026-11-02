@@ -227,10 +227,21 @@ Deno.test("Bloque 6: repaso de hoy y meta diaria (solo contadores), «Ya me sé 
 });
 
 
-Deno.test("con el flag apagado, las acciones no existen", async () => {
+Deno.test("con el flag apagado, las acciones no existen; por fases, solo para la cuenta de prueba", async () => {
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "false");
   const res = await call({ action: "cards_due" });
   assertEquals(res.status, 404);
+  assertEquals((await call({ action: "profile" })).json.study_steps, undefined);
+  // Cuenta de prueba (apartado 6): solo ella la tiene, y el perfil se lo dice a la web.
+  Deno.env.set("DREAM_STUDY_STEPS_USERS", "otra@example.test, ALUMNO@example.test");
+  assertEquals((await call({ action: "cards_due" })).status, 200);
+  assertEquals((await call({ action: "profile" })).json.study_steps, true);
+  Deno.env.set("DREAM_STUDY_STEPS_USERS", "otra@example.test");
+  assertEquals((await call({ action: "cards_due" })).status, 404);
+  // «loyola»: solo cuentas de Fundación Loyola (esta no lo es).
+  Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "loyola");
+  assertEquals((await call({ action: "cards_due" })).status, 404);
+  Deno.env.delete("DREAM_STUDY_STEPS_USERS");
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "true");
 });
 

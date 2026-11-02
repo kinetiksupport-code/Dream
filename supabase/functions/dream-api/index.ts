@@ -9,7 +9,7 @@ import { TURNSTILE_ACTIONS, verifyTurnstile } from './turnstile.mjs';
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
-import { STUDY_ACTIONS, studyAction, studyEnabled } from './study.ts';
+import { STUDY_ACTIONS, studyAction, studyEnabledFor } from './study.ts';
 import { chatShortcut, type ChatShortcut } from './validation.ts';
 import {
   DESKTOP_UPLOAD_ACTIONS, MOBILE_UPLOAD_ACTIONS, QR_CHANNEL_HEADER, UploadSessionError,
@@ -446,7 +446,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
 
   // Ruta de estudio (Leer, Test, tarjetas): solo con DREAM_STUDY_STEPS_ENABLED.
   if (STUDY_ACTIONS.has(String(body.action))) {
-    if (!studyEnabled()) return json({ error: 'Acción no disponible.' }, 404);
+    if (!studyEnabledFor(user, !!specialDomain(user))) return json({ error: 'Acción no disponible.' }, 404);
     try { return json(await studyAction(admin, user.id, body, jsonAI, req.signal, { course: profile.academic_level ?? null })); }
     catch (error) {
       if (error instanceof AdmissionError || isProviderError(error)) return safeFailure(error);
@@ -476,7 +476,9 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     // Volver a Dream con la última conversación quieta 30 min: se extrae su memoria (en segundo plano).
     if (memoryOn(profile) && !ban) inBackground(extractPreviousConversation({ admin, userId: user.id, ai: memoryAI(admin, user.id), minIdleMinutes: 30 }));
     return json({ profile: panel ? { ...publicProfile, admin_panel: panel } : publicProfile, service_ready: groqConfigured(),
-      ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null, ...features, ...(specialAccount ? { special_account: specialAccount } : {}) });
+      ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null, ...features,
+      // Ruta de estudio encendida para esta cuenta (por fases): la web la enseña solo entonces.
+      ...(studyEnabledFor(user, !!specialDomain(user)) ? { study_steps: true } : {}), ...(specialAccount ? { special_account: specialAccount } : {}) });
   }
 
   // Descargar mis datos: como mucho una vez por minuto en cada instancia.

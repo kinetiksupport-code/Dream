@@ -22,6 +22,20 @@ export const STUDY_ACTIONS = new Set([
   'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list', 'study_today', ...MOCK_ACTIONS,
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
+/**
+ * Encendido por fases (prompt de la ruta, apartado 6):
+ * - DREAM_STUDY_STEPS_ENABLED=true: para todos.
+ * - DREAM_STUDY_STEPS_ENABLED=loyola: para las cuentas de Fundación Loyola.
+ * - DREAM_STUDY_STEPS_USERS: correos o ids separados por comas (la cuenta de prueba).
+ * Sin nada de eso, apagado: las acciones no existen (404).
+ */
+export function studyEnabledFor(user: { id: string; email?: string | null }, loyola: boolean) {
+  const mode = Deno.env.get('DREAM_STUDY_STEPS_ENABLED');
+  if (mode === 'true') return true;
+  if (mode === 'loyola' && loyola) return true;
+  const list = (Deno.env.get('DREAM_STUDY_STEPS_USERS') ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
+  return list.includes(user.id.toLowerCase()) || (!!user.email && list.includes(user.email.toLowerCase()));
+}
 
 /** Medianoche de hoy en Madrid (los días del alumno). */
 export function madridDayStart(now: Date) {

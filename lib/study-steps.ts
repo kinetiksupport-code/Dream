@@ -4,11 +4,19 @@
 // para poder revisarlo. Con el flag apagado la web se comporta como hoy.
 import type { RouteNodeType } from "@/supabase/functions/dream-api/route-plan.mjs";
 
+// Encendido por fases: el servidor dice en el perfil si esta cuenta la tiene
+// (cuenta de prueba, Fundación Loyola o todos). Lo fija providers.tsx al
+// cargar el perfil, antes de pintar nada de la app.
+let runtimeOn = false;
+export function setStudyStepsForAccount(on: boolean) {
+  runtimeOn = on;
+}
+
 export function studyStepsEnabled(
   flag = process.env.NEXT_PUBLIC_DREAM_STUDY_STEPS_ENABLED,
   environment = process.env.NEXT_PUBLIC_DREAM_ENVIRONMENT,
 ) {
-  if (flag === "true") return true;
+  if (flag === "true" || runtimeOn) return true;
   if (flag === "false") return false;
   return environment === "preview" || environment === "development";
 }

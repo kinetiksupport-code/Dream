@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation";
+import { StudyGate } from "@/components/study-gate";
 import { MockFlow } from "@/components/exams/mock-flow";
-import { studyStepsEnabled } from "@/lib/study-steps";
 import type { MockKind } from "@/lib/study-api";
 
 const KIND: Record<string, MockKind> = { final: "final", bloque: "block", diagnostico: "diagnostic" };
@@ -14,8 +13,11 @@ export default async function Page({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tipo?: string; s?: string }>;
 }) {
-  if (!studyStepsEnabled()) notFound();
   const { id } = await params;
   const { tipo, s } = await searchParams;
-  return <MockFlow key={tipo} examId={id} kind={KIND[tipo ?? ""] ?? "final"} sessionId={s && UUID.test(s) ? s : null} />;
+  return (
+    <StudyGate>
+      <MockFlow key={tipo} examId={id} kind={KIND[tipo ?? ""] ?? "final"} sessionId={s && UUID.test(s) ? s : null} />
+    </StudyGate>
+  );
 }
