@@ -1,0 +1,140 @@
+{
+  "title": "Guerra Civil Española",
+  "subtitle": "1936-1939",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Origen y bandos",
+      "period": "1936-1936",
+      "kind": "list",
+      "intro": "El conflicto comenzó con un golpe de estado que no logró controlar todo el territorio.",
+      "bullets": [
+        {
+          "text": "**Sublevación militar** el 17 y 18 de julio de 1936.",
+          "quote": "el 17 y 18 de julio de 1936 una parte del ejército se subleva"
+        },
+        {
+          "text": "El golpe fracasa parcialmente, iniciando una **guerra civil**.",
+          "quote": "guerra civil entre el bando republicano y el bando sublevado o nacional"
+        },
+        {
+          "text": "**Franco** es nombrado jefe del Estado en 1936.",
+          "quote": "Franco fue nombrado jefe del Estado en 1936"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A split view of a Spanish city street, one side with red flags, the other with grey military uniforms, no faces visible.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Apoyos internacionales",
+      "period": "",
+      "kind": "list",
+      "intro": "Potencias extranjeras influyeron directamente en el desarrollo del conflicto.",
+      "bullets": [
+        {
+          "text": "Alemania e Italia apoyaron al **bando sublevado**.",
+          "quote": "el bando sublevado recibió ayuda de la Alemania nazi y de la Italia fascista"
+        },
+        {
+          "text": "La URSS y las **Brigadas Internacionales** apoyaron a la República.",
+          "quote": "La República recibió ayuda de la Unión Soviética y de las Brigadas Internacionales"
+        },
+        {
+          "text": "Francia y Reino Unido crearon el **Comité de No Intervención**.",
+          "quote": "Francia y Reino Unido impulsaron el Comité de No Intervención"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A map of Europe with arrows pointing to Spain, showing different colored routes from Germany, Italy and the Soviet Union.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fases militares clave",
+      "period": "1936-1939",
+      "kind": "dates",
+      "intro": "La guerra se desarrolló en varias campañas decisivas para el resultado final.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1936-1937",
+          "text": "1936-1937: Avance hacia Madrid.",
+          "quote": "Avance hacia Madrid (1936–1937)"
+        },
+        {
+          "year": "1937",
+          "text": "Abril 1937: Bombardeo de Guernica.",
+          "quote": "En abril de 1937 la Legión Cóndor bombardea Guernica"
+        },
+        {
+          "year": "1938",
+          "text": "1938: Batalla del Ebro.",
+          "quote": "Batalla del Ebro (1938)"
+        },
+        {
+          "year": "1939",
+          "text": "1 de abril 1939: Fin de la guerra.",
+          "quote": "el 1 de abril de 1939 Franco firma el último parte de guerra"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Desarrollo del conflicto",
+      "period": "1936-1939",
+      "kind": "list",
+      "intro": "Las campañas militares definieron el control territorial de ambos bandos.",
+      "bullets": [
+        {
+          "text": "Ocupación de **Cataluña** y fin de la guerra en 1939.",
+          "quote": "Ocupación de Cataluña y fin de la guerra (1939)"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A ruined town square with collapsed stone buildings and smoke rising, no people, historical war damage.",
+      "illustration_caption": "La Legión Cóndor bombardeó Guernica en abril de 1937."
+    },
+    {
+      "heading": "Consecuencias y legado",
+      "period": "1939-1975",
+      "kind": "legacy",
+      "intro": "El final del conflicto trajo consecuencias sociales y políticas duraderas.",
+      "bullets": [
+        {
+          "text": "**Cientos de miles** de muertos, exilio y represión.",
+          "quote": "cientos de miles de muertos, exilio, represión"
+        },
+        {
+          "text": "Inicio de la **dictadura** hasta 1975.",
+          "quote": "comienzo de la dictadura de Franco, que duró hasta 1975"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La guerra dejó una profunda herida social y política que definió la España del siglo XX.",
+      "illustration_prompt": "A long line of suitcases and coats hanging on a fence, symbolizing exile and displacement, no faces.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El conflicto enfrentó a la República y a los sublevados con ayuda internacional.",
+    "Guernica y el Ebro fueron hitos militares y simbólicos decisivos.",
+    "La guerra derivó en una larga dictadura franquista."
+  ],
+  "summary": "La Guerra Civil enfrentó a la República y a los sublevados con apoyo internacional. Tras fases militares clave como Guernica y el Ebro, terminó en 1939. Sus consecuencias incluyeron represión y el inicio de la dictadura franquista.",
+  "closing": "La Guerra Civil marcó el inicio de una dictadura que transformó España durante décadas."
+}

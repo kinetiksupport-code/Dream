@@ -1,7 +1,12 @@
+import type { StudyProfile } from "./onboarding";
 import type { ConsentProfile } from "./consent";
 export interface DreamProfile extends ConsentProfile {
   email: string;
   display_name: string | null;
+  /** Curso (lista cerrada de lib/onboarding.ts › STUDY.level). */
+  academic_level?: string | null;
+  /** «Cómo estudias» (P4): solo si dream-api lo envía (con su migración). */
+  study_profile?: StudyProfile;
   /** Solo lo envía dream-api a la cuenta administradora. Ocultar el enlace no es la seguridad. */
   admin_panel?: { path: string };
   /** Present only while the account is banned: Dream then shows only the ban screen. */
@@ -72,6 +77,22 @@ export type DreamStreamEvent =
 export interface WebSource {
   title: string;
   url: string;
+}
+/** Tarjeta «Dreams» de un esquema (docs/ESQUEMAS.md). */
+export interface SchemeWidget {
+  type: "scheme";
+  schemeId: string;
+  title: string;
+  subject?: string;
+  sections?: number;
+}
+/** Tarjeta «Dreams» de un juego interactivo (docs/ESQUEMAS.md, Bloque 7). */
+export interface GameWidget {
+  type: "game";
+  gameId: string;
+  title: string;
+  kind: "classify" | "match";
+  count?: number;
 }
 export interface QuizWidget {
   type: "quiz";

@@ -1,39 +1,47 @@
+import { TYPING } from "./typing";
+
 /**
- * Presentation buffer for AI answers (Parte I, «aparición suave»).
+ * Presentation queue for AI answers: the answer «types itself»
+ * (docs/HABLA_NATURAL.md, P5; replaces the 2 s soft reveal of Parte I).
  *
  * The network stream is untouched (lib/streaming.ts): this only decides how
- * many words of what has already arrived are visible at a given moment, so
- * an answer that lands whole (or very fast, as with Groq) appears word by
- * word at a steady pace instead of all at once.
+ * many words of what has already arrived are visible at a given moment.
+ * Each word has a cost in ms (lib/typing.ts › unitCost: ~40 characters per
+ * second, a short pause after commas and a longer one after a full stop,
+ * with a small fixed jitter), so the pace is the same however fast the
+ * network is.
  *
  * Rules:
- * - While text is still arriving, the pace follows the backlog: it shows the
- *   pending words over REVEAL_MS, so it settles at the arrival speed.
- * - Once everything has arrived, the pace becomes «what is left / time left
- *   until arrival + REVEAL_MS»: constant, and never later than that limit,
- *   however long the answer is.
- * - Never slower than MIN_WORDS_PER_S, so a short answer («¡Hola!») does not
- *   drag for 2 s.
- * - `finish` shows everything at once (tap, click or reduced motion).
+ * - The first word shows at once (time to first character ≈ one frame).
+ * - Steady pace while there is text queued; if the queue empties, it waits.
+ * - While text still arrives, a queue past TYPING.catchUpMs speeds it up
+ *   smoothly (at most TYPING.maxCatchUp times).
+ * - Never later than TYPING.maxTotalMs after the first word: a long answer
+ *   speeds up so it ends by then (and anything arriving later shows at once).
+ * - `finish` shows everything at once (tap, click, Esc/Enter, hidden tab,
+ *   reduced motion).
  *
  * Pure and clock-agnostic: the caller passes `now` (ms) from rAF.
  */
-export const REVEAL_MS = 2000;
-export const MIN_WORDS_PER_S = 40;
-
 export type RevealClock = {
-  /** Words visible (fractional: the pace accumulates between frames). */
+  /** Words visible. */
   shown: number;
+  /** Typing time banked towards the next word (ms). */
+  credit: number;
+  /** Current speed multiplier (1 = TYPING.charsPerSecond). */
+  speed: number;
   /** Time of the previous step, null before the first one. */
   last: number | null;
+  /** When the first word was shown, null before. */
+  startAt: number | null;
   /** When the whole answer had arrived, null while it streams. */
   completeAt: number | null;
-  /** Everything is shown and will keep being shown (finish or deadline). */
+  /** Everything is shown and will keep being shown. */
   instant: boolean;
 };
 
 export function createReveal(instant = false): RevealClock {
-  return { shown: 0, last: null, completeAt: null, instant };
+  return { shown: 0, credit: 0, speed: 1, last: null, startAt: null, completeAt: null, instant };
 }
 
 /** Show everything that has arrived, and everything that arrives later. */
@@ -43,42 +51,63 @@ export function finishReveal(clock: RevealClock) {
 
 /**
  * Advance the clock to `now` and return how many words are visible.
- * `available`: words that may be shown (the caller leaves out a word that
- * may still be half received). `complete`: the answer has fully arrived.
+ * `costs[i]`: ms to type word i (lib/typing.ts › unitCost), one per word
+ * that may be shown (the caller leaves out a word that may still be half
+ * received). `complete`: the answer has fully arrived.
  */
 export function stepReveal(
   clock: RevealClock,
   now: number,
-  available: number,
+  costs: readonly number[],
   complete: boolean,
+  opts = TYPING,
 ): number {
+  const available = costs.length;
   const dt = clock.last === null ? 0 : Math.max(0, now - clock.last);
   clock.last = now;
   if (complete && clock.completeAt === null) clock.completeAt = now;
   if (clock.instant) {
     clock.shown = Math.max(clock.shown, available);
-    return available;
+    return clock.shown;
   }
-  const remaining = available - clock.shown;
-  const floor = MIN_WORDS_PER_S / 1000;
-  if (remaining > 0) {
-    const left =
-      clock.completeAt === null
-        ? REVEAL_MS
-        : clock.completeAt + REVEAL_MS - now;
-    // Words per ms. Past the limit (a hidden tab, a stalled frame): all of it.
-    clock.shown =
-      left <= 0
-        ? available
-        : Math.min(
-            available,
-            clock.shown + Math.max(floor, remaining / left) * dt,
-          );
+  if (available === 0) return clock.shown;
+  if (clock.startAt === null) {
+    // First character as soon as there is text.
+    clock.startAt = now;
+    clock.shown = Math.max(clock.shown, 1);
+    return clock.shown;
   }
-  return Math.floor(clock.shown + 1e-9);
+  let pending = 0;
+  for (let i = clock.shown; i < available; i++) pending += costs[i];
+  if (pending <= 0) {
+    clock.credit = 0; // nothing queued: wait, do not bank time
+    return clock.shown;
+  }
+  const left = clock.startAt + opts.maxTotalMs - now;
+  // Past the limit (or a hidden tab that stalled the frames): all of it.
+  if (left <= 0) {
+    clock.shown = available;
+    clock.credit = 0;
+    return clock.shown;
+  }
+  // Speed needed to end by the limit, and to catch up with a long queue.
+  let target = Math.max(1, pending / left);
+  // A queue that keeps growing while text still arrives: catch up, gently.
+  if (!complete && pending > opts.catchUpMs)
+    target = Math.max(target, Math.min(opts.maxCatchUp, pending / opts.catchUpMs));
+  // Speeds up and slows down smoothly, but never below what the limit needs.
+  const k = Math.min(1, dt / opts.smoothingMs);
+  clock.speed = Math.max(pending / left, clock.speed + (target - clock.speed) * k);
+  clock.credit += dt * clock.speed;
+  while (clock.shown < available && clock.credit >= costs[clock.shown]) {
+    clock.credit -= costs[clock.shown];
+    clock.shown++;
+  }
+  if (clock.shown >= available) clock.credit = 0;
+  return clock.shown;
 }
 
 /** The reveal has nothing left to do: all arrived and all visible. */
 export function revealDone(clock: RevealClock, available: number) {
-  return clock.completeAt !== null && clock.shown >= available - 1e-9;
+  return clock.completeAt !== null && clock.shown >= available;
 }

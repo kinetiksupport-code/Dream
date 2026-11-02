@@ -25,6 +25,7 @@ export const ADMIN_ACTIONS = new Set([
   "admin_ip_unblock",
   "admin_appeal_resolve",
   "admin_appeal_by_code",
+  "admin_memory_stats",
 ]);
 
 export const ADMIN_LIMITS = Object.freeze({
@@ -246,6 +247,9 @@ export async function handleAdminAction({ action, body, user, token, origin, ori
           proposals: withUsers(data?.proposals, emails), active_bans: withUsers(data?.active_bans, emails), events: withUsers(data?.events, emails),
         });
       });
+    // Memoria del chat (docs/MEMORIA-CHAT.md, Bloque 4): totales por día, sin texto ni alumnos.
+    case "admin_memory_stats":
+      return run(action, null, "memoria_chat", async () => ok({ days: (await rpc("admin_memory_stats", {})) ?? [] }));
     case "admin_user": {
       const id = needUuid(body.user_id);
       if (!id) return fail(400, "invalid", "Cuenta no válida.");

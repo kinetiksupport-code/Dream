@@ -1,0 +1,102 @@
+{
+  "title": "Evolución de al-Ándalus",
+  "subtitle": "De las taifas a los almohades",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Fragmentación y unificación",
+      "period": "",
+      "kind": "list",
+      "intro": "Tras la disolución del califato, la península se dividió en reinos rivales hasta la intervención bereber.",
+      "bullets": [
+        {
+          "text": "El fin del califato omeya provocó la **fragmentación política** de al-Ándalus.",
+          "quote": ""
+        },
+        {
+          "text": "La victoria beréber marcó el **final del periodo de taifas**.",
+          "quote": "The Berber victory not only signaled the end to the taifa period"
+        },
+        {
+          "text": "Los **almorávides** fueron la primera tribu bereber en consolidar el poder.",
+          "quote": "The Almoravid were the first indigenous Berber tribe to consolidate the"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A fragmented map of the Iberian Peninsula with distinct colored regions, symbolizing political division, no text or labels.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Retroceso territorial",
+      "period": "",
+      "kind": "dates",
+      "intro": "El avance cristiano y las derrotas militares aceleraron la pérdida de territorio islámico.",
+      "bullets": [
+        {
+          "text": "La derrota en **Las Navas de Tolosa** terminó el reinado de al-Nasir.",
+          "quote": "THE DEFEAT OF AL-'IKÄB (LAS NAVAS DE TOLOSA) AND THE END OF AL-NXSIR'S REIGN"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A medieval battlefield with banners and smoke, representing a significant military confrontation, no people visible.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Contexto económico",
+      "period": "",
+      "kind": "list",
+      "intro": "La presión fiscal fue una característica notable de los regímenes posteriores al califato.",
+      "bullets": [
+        {
+          "text": "Ibn Ghalib destacó el **peso de la fiscalidad** bajo el régimen almorávide.",
+          "quote": "Ibn Ghalib particularly remarked on the weight of taxation in al-Andalus under their regime"
+        },
+        {
+          "text": "Los sucesivos regímenes reclamaban la **abolición de impuestos** no canónicos.",
+          "quote": "The frequency of pronouncements against non-canonical taxes, as successive regimes claimed credit for their abolition"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A medieval market scene with coins and scales, symbolizing trade and taxation, no people visible.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Legado histórico",
+      "period": "",
+      "kind": "legacy",
+      "intro": "Los cambios políticos transformaron la estructura social y territorial de al-Ándalus.",
+      "bullets": [
+        {
+          "text": "La victoria beréber puso fin a la **era de las taifas**.",
+          "quote": "The Berber victory not only signaled the end to the taifa period"
+        },
+        {
+          "text": "Las Navas de Tolosa supuso el **declive definitivo** del poder almohade.",
+          "quote": "THE DEFEAT OF AL-'IKÄB (LAS NAVAS DE TOLOSA) AND THE END OF AL-NXSIR'S REIGN"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La unificación beréber y su posterior derrota definieron el mapa político de la península durante siglos.",
+      "illustration_prompt": "A silhouette of a fortified city on a hill, representing the enduring legacy of Islamic architecture in Spain, no text.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El fin del califato omeya derivó en la fragmentación de los reinos de taifas.",
+    "Los almorávides y almohades unificaron al-Ándalus desde el Magreb.",
+    "La derrota en Las Navas de Tolosa aceleró el retroceso territorial."
+  ],
+  "summary": "Tras el fin del califato, al-Ándalus se fragmentó en taifas hasta la unificación almorávide. La derrota en Las Navas de Tolosa aceleró el retroceso territorial.",
+  "closing": "La caída del califato marcó el inicio de una fragmentación política que, tras la unificación beréber, culminó en la pérdida irreversible de territorio."
+}

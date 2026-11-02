@@ -1,0 +1,275 @@
+{
+  "title": "Fotosíntesis: Fases",
+  "subtitle": "Fase luminosa y fase oscura",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Definición y fases",
+      "period": "",
+      "kind": "list",
+      "intro": "La fotosíntesis es un proceso fundamental para la vida en la Tierra.",
+      "bullets": [
+        {
+          "text": "Proceso anabólico que convierte energía luminosa en energía química.",
+          "quote": ""
+        },
+        {
+          "text": "Se divide en **fase luminosa** y **fase oscura**.",
+          "quote": "La fotosíntesis se desarrolla en dos fases, fase luminosa (que depende de la luz para su realización) y fase oscura"
+        },
+        {
+          "text": "La fase oscura no depende directamente de la luz.",
+          "quote": "La fase oscura o biosintética agrupa todos los procesos y reacciones de la fotosíntesis que pueden ser llevados a cabo por los cloroplastos sin necesidad de la luz."
+        },
+        {
+          "text": "La fase oscura se conoce como **ciclo de Calvin-Benson**.",
+          "quote": "La fase oscura o ciclo de Calvin-Benson"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fase luminosa",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Ocurre en las membranas de los tilacoides y requiere luz.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Productos y función",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Genera **ATP** y **NADPH**.",
+              "quote": "La energía que impulsa al ciclo de Calvin-Benson proviene del ATP y el NADPH producidos por las reacciones de captura de energía"
+            },
+            {
+              "text": "Depende directamente de la **luz**.",
+              "quote": "La fase oscura o biosintética agrupa todos los procesos y reacciones de la fotosíntesis que pueden ser llevados a cabo por los cloroplastos sin necesidad de la luz."
+            }
+          ]
+        },
+        {
+          "title": "Relación con fase oscura",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Sus productos alimentan la **fase oscura**.",
+              "quote": "La fase oscura o ciclo de Calvin-Benson"
+            },
+            {
+              "text": "Se realiza en los **cloroplastos**.",
+              "quote": "La fase oscura o biosintética agrupa todos los procesos y reacciones de la fotosíntesis que pueden ser llevados a cabo por los cloroplastos sin necesidad de la luz."
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Close-up of green thylakoid membranes inside a chloroplast, showing stacked discs and light rays hitting them, no text, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fase oscura: Ciclo de Calvin",
+      "period": "",
+      "kind": "subcards",
+      "intro": "Tiene lugar en el estroma de los cloroplastos.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Localización y condiciones",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Se realiza en el **estroma**.",
+              "quote": "Tiene lugar en el estroma de los cloroplastos mediante una ruta metabólica llamada Ciclo de Calvin-Benson."
+            },
+            {
+              "text": "No necesita luz directa, pero depende de la fase luminosa.",
+              "quote": "La fase oscura o biosintética agrupa todos los procesos y reacciones de la fotosíntesis que pueden ser llevados a cabo por los cloroplastos sin necesidad de la luz."
+            }
+          ]
+        },
+        {
+          "title": "Proceso de fijación",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Fija **CO2** para formar glucosa.",
+              "quote": "Se utilizan seis moléculas de CO2 para generar una molécula de glucosa."
+            },
+            {
+              "text": "Usa **RuBP** como molécula aceptora.",
+              "quote": "En estas reacciones cada una de las moléculas de CO2 es unida a una molécula aceptora, ribulosa-1,5-bifosfato (RuBP)"
+            },
+            {
+              "text": "La enzima **RuBisCo** cataliza la reacción.",
+              "quote": "siendo catalizada por la enzima rubisco"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Diagrammatic view of a chloroplast stroma with floating molecules and a central enzyme structure, no text, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Etapas del ciclo de Calvin",
+      "period": "",
+      "kind": "subcards",
+      "intro": "El ciclo consta de tres etapas principales.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Fijación del carbono",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El **CO2** se une a la **RuBP**.",
+              "quote": "cada una de las moléculas de CO2 es unida a una molécula aceptora, ribulosa-1,5-bifosfato (RuBP)"
+            },
+            {
+              "text": "Catalizada por **RuBisCo** sin usar ATP.",
+              "quote": "siendo catalizada por la enzima rubisco (mediante un proceso de carboxilación sin ATP, utilizando como sustratos CO2 y agua)"
+            },
+            {
+              "text": "Forma dos moléculas de **3-fosfoglicerato**.",
+              "quote": "que luego se divide en dos moléculas de 3-fosfoglicerato"
+            }
+          ]
+        },
+        {
+          "title": "Reducción",
+          "period": "",
+          "bullets": [
+            {
+              "text": "El **3-PGA** se convierte en **G3P**.",
+              "quote": "las moléculas de 3-PGA se convierten en moléculas de gliceraldehído-3-fosfato (G3P) utilizando la energía y los electrones suministrados por el NADPH"
+            },
+            {
+              "text": "Usa **ATP** y **NADPH** de la fase luminosa.",
+              "quote": "utilizando la energía y los electrones suministrados por el NADPH (nicotinamida adenina dinucleótido fosfato reducido) y el ATP"
+            }
+          ]
+        },
+        {
+          "title": "Regeneración",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Parte del G3P regenera la **RuBP**.",
+              "quote": "algunas moléculas se reutilizan en el ciclo y otras sirven para la síntesis de glúcidos"
+            },
+            {
+              "text": "El resto forma **glúcidos** como la glucosa.",
+              "quote": "otras sirven para la síntesis de glúcidos"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Abstract representation of a circular biochemical cycle with three distinct colored zones, no text, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Datos clave y enzimas",
+      "period": "",
+      "kind": "list",
+      "intro": "Conceptos esenciales para entender el proceso.",
+      "bullets": [
+        {
+          "text": "Se necesitan **seis moléculas de CO2** para una glucosa.",
+          "quote": "Se utilizan seis moléculas de CO2 para generar una molécula de glucosa."
+        },
+        {
+          "text": "El **ATP** y **NADPH** impulsan el ciclo.",
+          "quote": "La energía que impulsa al ciclo de Calvin-Benson proviene del ATP y el NADPH producidos por las reacciones de captura de energía"
+        },
+        {
+          "text": "El **ciclo de Calvin-Benson** fija el carbono.",
+          "quote": "La fase oscura o ciclo de Calvin-Benson"
+        },
+        {
+          "text": "La **RuBisCo** es la enzima clave.",
+          "quote": "siendo catalizada por la enzima rubisco"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Errores comunes",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Aclaraciones sobre la terminología.",
+      "bullets": [
+        {
+          "text": "El nombre **fase oscura** es erróneo.",
+          "quote": "Cabe destacar que este conjunto de reacciones se denomina erróneamente fase oscura, pues muchas de las enzimas del proceso, entre ellas la RuBisCO, dependen de la activación del sistema ferredoxina-ti"
+        },
+        {
+          "text": "Muchas enzimas dependen de la **luz** indirectamente.",
+          "quote": "dependen de la activación del sistema ferredoxina-tiorredoxina, que solo se encuentra en su forma activa (la reducida) en presencia"
+        },
+        {
+          "text": "Se realiza aunque no use luz directamente.",
+          "quote": "La fase oscura, a pesar de su nombre, se realiza"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Importancia biológica",
+      "period": "",
+      "kind": "legacy",
+      "intro": "Consecuencias del proceso fotosintético.",
+      "bullets": [
+        {
+          "text": "Es un proceso **anabólico** fundamental.",
+          "quote": "La fotosíntesis puede definirse como un proceso anabólico"
+        },
+        {
+          "text": "Base de la **producción de energía** vegetal.",
+          "quote": "un proceso fundamental para la producción de energía y la síntesis de compuestos orgánicos en las plantas"
+        },
+        {
+          "text": "Es opuesta a la **respiración celular**.",
+          "quote": "La fotosíntesis y la respiración celular son procesos químicamente opuestos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La fotosíntesis produce la glucosa y el oxígeno que sostienen la vida en la Tierra.",
+      "illustration_prompt": "A lush green forest with sunlight filtering through leaves, no text, no people.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La fase luminosa ocurre en las membranas tilacoidales y produce ATP y NADPH.",
+    "La fase oscura o ciclo de Calvin ocurre en el estroma y fija el CO2.",
+    "Se necesitan seis moléculas de CO2 para generar una molécula de glucosa.",
+    "La enzima RuBisCo cataliza la unión del CO2 con la ribulosa bifosfato."
+  ],
+  "summary": "La fotosíntesis ocurre en dos fases: la luminosa, que produce ATP y NADPH, y la oscura o ciclo de Calvin, que fija el CO2. El ciclo de Calvin utiliza la energía de la fase luminosa para sintetizar glucosa. Seis moléculas de CO2 son necesarias para formar una molécula de glucosa.",
+  "closing": "La fotosíntesis transforma la luz en materia orgánica, base de la vida en la Tierra."
+}

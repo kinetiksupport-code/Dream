@@ -20,7 +20,7 @@ import { needsVerification, sanitizeSearchQuery, copiesStatement } from '../supa
 import { wantsWebSearch, webSearchTool, validateToolCall } from '../supabase/functions/dream-api/tools.mjs';
 import { createTavilyManager } from '../supabase/functions/dream-api/tavily.mjs';
 import { SEARCH_UNAVAILABLE_PROMPT } from '../supabase/functions/dream-api/limit-messages.mjs';
-import { checkCase, expectationsFor, nicknameRate, wordCount } from './checks.mjs';
+import { checkCase, expectationsFor, givesWholeProcedure, loadSpeller, nicknameRate, readability, scanReply, spellingErrors, wordCount } from './checks.mjs';
 import { MEMORY_JSON_SCHEMA, extractionMessages, validateExtraction } from '../supabase/functions/dream-api/memory.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -107,12 +107,42 @@ async function runCase(model, testCase) {
   return { answer: answer.replaceAll('{{APODO}}', PROFILE.nickname), searched, query, queryPasted, usage };
 }
 
+/**
+ * Conversación completa simulada (evals/conversacion.json): el alumno dice lo
+ * que pone el guion y la respuesta de Dream de cada turno pasa al historial.
+ * Se comprueba cada turno (un paso, sin lista, pregunta final) y el final.
+ */
+async function runScript(model, testCase, file) {
+  const history = [];
+  const turns = [];
+  for (const content of testCase.script) {
+    const run = await runCase(model, { messages: [...history, { role: 'user', content }] });
+    history.push({ role: 'user', content }, { role: 'assistant', content: run.answer });
+    turns.push(run);
+  }
+  const answers = turns.map((t) => t.answer);
+  const perTurn = answers.map((a) => checkCase({ ...file.defaults, ...testCase.eachTurn }, { answer: a }));
+  const result = {};
+  for (const r of perTurn) for (const [k, ok] of Object.entries(r)) result[`turno.${k}`] = (result[`turno.${k}`] ?? true) && ok;
+  // Ningún paso se repite: dos respuestas con la misma frase larga.
+  const sentences = answers.flatMap((a, i) => a.split(/(?<=[.!?])\s+/).filter((x) => x.length > 40).map((x) => [i, x.toLowerCase()]));
+  result.noRepeatedStep = !sentences.some(([i, x], k) => sentences.some(([j, y], m) => m > k && i !== j && x === y));
+  if (testCase.final) result.finalCorrect = new RegExp(testCase.final, 'i').test(answers.at(-1) ?? '');
+  if (testCase.mustMatchTurn) for (const [turn, pattern] of Object.entries(testCase.mustMatchTurn))
+    result[`turno${turn}`] = new RegExp(pattern, 'i').test(answers[Number(turn) - 1] ?? '');
+  return { result, answers, usage: turns.flatMap((t) => t.usage) };
+}
+
+/** Mediana y percentil de una lista de números. */
+const percentile = (xs, p) => { const s = [...xs].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+
 const missing = models.filter((m) => !endpoint(m).key);
 if (missing.length) {
   console.error(`Faltan claves para: ${missing.join(', ')}. Ver evals/README.md.`);
   process.exit(2);
 }
 
+await loadSpeller();
 const report = { date: new Date().toISOString(), options: { forced, reasoning, temperature, compact }, models: {} };
 for (const model of models) {
   const perCriterion = {};
@@ -141,6 +171,19 @@ for (const model of models) {
       }
       continue;
     }
+    if (file.type === 'script') {
+      for (const testCase of file.cases) {
+        let out;
+        try { out = await runScript(model, testCase, file); }
+        catch (error) { failures.push({ id: `${name}/${testCase.id}`, error: String(error.message) }); continue; }
+        for (const [k, ok] of Object.entries(out.result)) { perCriterion[k] ??= { ok: 0, total: 0 }; perCriterion[k].total++; if (ok) perCriterion[k].ok++; }
+        const failed = Object.entries(out.result).filter(([, ok]) => !ok).map(([k]) => k);
+        if (failed.length) failures.push({ id: `${name}/${testCase.id}`, failed, answers: out.answers.map((a) => a.slice(0, 400)) });
+        for (const a of out.answers) { answers.push(a); words += wordCount(a); n++; }
+        tokens += out.usage.reduce((s, u) => s + (u.total_tokens ?? 0), 0);
+      }
+      continue;
+    }
     for (const testCase of file.cases) {
       let run;
       try { run = await runCase(model, testCase); }
@@ -157,9 +200,26 @@ for (const model of models) {
       words += wordCount(run.answer); n++;
     }
   }
+  // Diagnóstico P1 (docs/HABLA_NATURAL.md): forma de todas las respuestas.
+  const scans = answers.map(scanReply);
+  const share = (f) => answers.length ? `${Math.round((100 * scans.filter(f).length) / answers.length)} %` : '–';
+  const lengths = scans.map((x) => x.words);
+  const read = answers.map(readability).filter((x) => x !== null);
+  const spelling = answers.map((a) => spellingErrors(a));
+  const spellWords = answers.reduce((s, a) => s + wordCount(a), 0);
+  const shape = {
+    words_mean: lengths.length ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length) : 0,
+    words_median: percentile(lengths, 0.5), words_p90: percentile(lengths, 0.9),
+    over_120: share((x) => x.words > 120), numbered_list: share((x) => x.numbered_list), bullets: share((x) => x.bullets),
+    heading: share((x) => x.heading), bold: share((x) => x.bold), robot: share((x) => x.robot > 0),
+    whole_procedure: answers.length ? `${Math.round((100 * answers.filter(givesWholeProcedure).length) / answers.length)} %` : '–',
+    more_than_one_question: share((x) => x.questions > 1), foreign_chars: scans.reduce((s, x) => s + x.foreign_chars, 0),
+    fernandez_huerta: read.length ? Math.round((read.reduce((a, b) => a + b, 0) / read.length) * 10) / 10 : null,
+    spelling_per_100: spellWords ? Math.round((spelling.reduce((s, x) => s + x.errors.length, 0) / spellWords) * 1000) / 10 : 0,
+  };
   const pct = Object.fromEntries(Object.entries(perCriterion).map(([k, v]) => [k, `${Math.round(100 * v.ok / v.total)} % (${v.ok}/${v.total})`]));
-  report.models[model] = { cases: n, criteria: pct, nickname_rate: nicknameRate(answers, PROFILE.nickname), mean_words: n ? Math.round(words / n) : 0, mean_tokens: n ? Math.round(tokens / n) : 0, failures };
-  console.log(`\n== ${model} ==`); console.table(pct);
+  report.models[model] = { cases: n, criteria: pct, nickname_rate: nicknameRate(answers, PROFILE.nickname), mean_words: n ? Math.round(words / n) : 0, mean_tokens: n ? Math.round(tokens / n) : 0, shape, failures };
+  console.log(`\n== ${model} ==`); console.table(pct); console.table(shape);
   console.log(`palabras medias ${report.models[model].mean_words} · tokens por caso ${report.models[model].mean_tokens} · fallos ${failures.length}`);
 }
 const out = args.out && args.out !== true ? String(args.out) : path.join(here, 'resultados', `${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.json`);

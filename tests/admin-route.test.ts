@@ -79,12 +79,16 @@ test("middleware: the panel path answers 404 with strict headers; the internal p
   // La página interna pedida a mano: el 404 de siempre.
   const internal = await ask(PANEL_INTERNAL);
   assert.match(internal.headers.get("x-middleware-rewrite") ?? "", /\/no-existe-404$/);
-  assert.equal(internal.headers.get("content-security-policy"), null);
+  // Con la CSP de la app (lib/csp.ts), como cualquier otra página: nada la delata.
+  const appPolicy = (csp: string | null) => (csp ?? "").replace(/'nonce-[^']+'/, "'nonce-x'");
+  const missing = await ask("/no-existe-de-verdad");
+  assert.match(missing.headers.get("content-security-policy") ?? "", /^default-src 'self'/);
+  assert.equal(appPolicy(internal.headers.get("content-security-policy")), appPolicy(missing.headers.get("content-security-policy")));
   // Las rutas «típicas» no existen: pasan de largo y Next responde su 404.
   for (const decoy of ["/admin", "/panel", "/administracion", "/admin/users"]) {
     const res = await ask(decoy);
     assert.equal(res.headers.get("x-middleware-rewrite"), null, decoy);
-    assert.equal(res.headers.get("content-security-policy"), null, decoy);
+    assert.equal(appPolicy(res.headers.get("content-security-policy")), appPolicy(missing.headers.get("content-security-policy")), decoy);
   }
 });
 

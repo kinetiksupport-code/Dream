@@ -14,9 +14,11 @@ import {
   takeTokenFromLocation,
   tokenLooksValid,
 } from "@/lib/upload-qr";
+import { TURNSTILE_ACTIONS, isHumanCheckCode, turnstileOn } from "@/lib/turnstile";
+import { Turnstile } from "@/components/human-check/turnstile";
 import styles from "./upload.module.css";
 
-type Phase = "connecting" | "ready" | "invalid" | "offline";
+type Phase = "verify" | "connecting" | "ready" | "invalid" | "offline";
 interface Item {
   id: number;
   name: string;
@@ -49,6 +51,10 @@ export function MobileUpload() {
   const photo = useRef<HTMLInputElement>(null);
   const picker = useRef<HTMLInputElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
+  // Turnstile antes de conectar (docs/turnstile.md). Un token por conexión.
+  const human = turnstileOn();
+  const [round, setRound] = useState(0);
+  const [humanError, setHumanError] = useState("");
 
   useEffect(() => {
     const read = () => setToken(takeTokenFromLocation());
@@ -58,14 +64,16 @@ export function MobileUpload() {
     return () => window.removeEventListener("hashchange", read);
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (humanToken?: string) => {
     if (token === null) return;
+    if (!tokenLooksValid(token)) return setPhase("invalid");
+    // Sin comprobación todavía: primero el widget, que vuelve a llamar aquí.
+    if (human && !humanToken) return setPhase("verify");
     setPhase("connecting");
     setItems([]); // a new code starts a new list
     setUploads(0);
-    if (!tokenLooksValid(token)) return setPhase("invalid");
     try {
-      const c = await qrConnect(token, readDeviceKey(token));
+      const c = await qrConnect(token, readDeviceKey(token), undefined, humanToken);
       device.current = c.deviceKey;
       saveDeviceKey(token, c.deviceKey);
       setUploads(c.uploads);
@@ -73,7 +81,12 @@ export function MobileUpload() {
       setPhase("ready");
     } catch (error) {
       if (isInvalidLink(error)) setPhase("invalid");
-      else {
+      else if (error instanceof UploadQrError && isHumanCheckCode(error.code)) {
+        // Token rechazado o Cloudflare sin responder: otra comprobación.
+        setHumanError(error.message);
+        setRound((n) => n + 1);
+        setPhase("verify");
+      } else {
         setNotice(
           error instanceof UploadQrError && error.message
             ? error.message
@@ -82,7 +95,7 @@ export function MobileUpload() {
         setPhase("offline");
       }
     }
-  }, [token]);
+  }, [token, human]);
 
   useEffect(() => {
     void connect();
@@ -148,6 +161,33 @@ export function MobileUpload() {
             Vuelve a tu ordenador y escanea el código que aparece allí. Si ya
             has terminado, puedes cerrar esta página.
           </p>
+        </div>
+      </main>
+    );
+
+  if (phase === "verify")
+    return (
+      <main className={styles.page}>
+        <div className={styles.center}>
+          <Orb size={56} />
+          <h1 ref={title} tabIndex={-1} className={styles.title}>
+            Una comprobación rápida
+          </h1>
+          <p className={styles.lead}>
+            Comprobamos que eres una persona antes de conectar con tu ordenador.
+          </p>
+          <div className={styles.wide}>
+            <Turnstile
+              action={TURNSTILE_ACTIONS.qr}
+              resetKey={round}
+              error={humanError}
+              onToken={(t) => {
+                if (!t) return;
+                setHumanError("");
+                void connect(t);
+              }}
+            />
+          </div>
         </div>
       </main>
     );

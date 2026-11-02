@@ -1,0 +1,204 @@
+{
+  "title": "Evolución de Al-Ándalus",
+  "subtitle": "De la fragmentación a la resistencia nazarí",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Crisis y caída del Califato",
+      "period": "1002-1031",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El año 1.000 supuso un punto de inflexión para el Califato de Córdoba.",
+          "quote": "El año 1.000 supuso un punto de inflexión con respecto al desarrollo del Califato de Córdoba"
+        },
+        {
+          "text": "Los reinos cristianos del norte comenzaron a empujar la línea fronteriza.",
+          "quote": "los reinos cristianos del norte que se habían formado durante los últimos siglos, comienzan a empujar la línea de la"
+        },
+        {
+          "text": "Hisham II fue un califa débil que cedió el poder real a Almanzor.",
+          "quote": "Todo se torció con Hisham II, un califa débil que dejó el poder real en manos de Almanzor."
+        },
+        {
+          "text": "Almanzor murió en 1002, iniciando las fitnas o guerras civiles.",
+          "quote": "Este dictador militar arrasó Barcelona y Santiago de Compostela, pero cuando murió en 1002, comenzaron las fitnas"
+        },
+        {
+          "text": "Las guerras civiles acabaron con el califato en 1031.",
+          "quote": "guerras civiles que acabaron con el califato en 1031."
+        }
+      ],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1031",
+          "text": "Fin del Califato de Córdoba.",
+          "quote": "guerras civiles que acabaron con el califato en 1031."
+        },
+        {
+          "year": "1119",
+          "text": "Toma de Zaragoza por los cristianos.",
+          "quote": "toma de Zaragoza en 1119"
+        },
+        {
+          "year": "1246",
+          "text": "Granada se convierte en reino vasallo de Castilla.",
+          "quote": "Desde 1246 Granada se constituyó en reino vasallo y tenía que entregar un tributo anual."
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Reinos de Taifas",
+      "period": "1031-1090",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Aparecieron los Reinos de Taifas, desplazando a Córdoba como capital.",
+          "quote": "aparecieron de los primeros Reinos de Taifas, que desplazaron a Córdoba c antigua capital del Califato"
+        },
+        {
+          "text": "Se formaron 12 marcas o reinos, cada uno con su dinastía.",
+          "quote": "ofreciendo un nuevo panorama político de 12 Marcas o Reinos. Cada uno con su correspondiente dinastía."
+        },
+        {
+          "text": "Los reinos se subdividieron, provocando una atomización territorial.",
+          "quote": "Éstos a su vez se fueron subdividiendo en otros, con lo que el resultado final fue una ATOMIZACIÓN"
+        },
+        {
+          "text": "La desunión facilitó el avance de los reinos cristianos.",
+          "quote": "Esta situación hizo progresar más rápidamente el empuje de los reinos cristianos"
+        },
+        {
+          "text": "A finales del siglo XI, los cristianos tomaron Toledo.",
+          "quote": "a finales del s. XI habían tomado Toledo y fijado la línea de Reconquista en el río Tajo."
+        },
+        {
+          "text": "Los cristianos cobraron parias y presionaron hacia el sur.",
+          "quote": "los reinos cristianos empezaron a cobrarles parias (tributos) y a presionar hacia el sur."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A fragmented map of the Iberian Peninsula showing multiple small, distinct political territories with different colors, representing the Taifa kingdoms.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Los almorávides",
+      "period": "1090-1145",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los almorávides eran tribus bereberes con visión rigorista del Islam.",
+          "quote": "los almorávides 1090−1145, tribus bereberes del norte de África con una visión rigorista del Islam."
+        },
+        {
+          "text": "Derrotaron a Alfonso VI en Sagrajas y unificaron las taifas.",
+          "quote": "Derrotaron a Alfonso VI en Sagrajas y unificaron las taifas"
+        },
+        {
+          "text": "No pudieron evitar la toma de Zaragoza en 1119.",
+          "quote": "toma de Zaragoza en 1119"
+        },
+        {
+          "text": "Su celo religioso chocó con la tolerancia local.",
+          "quote": "el celo religioso frente al carácter más tolerante de los musulmanes españoles"
+        },
+        {
+          "text": "Cayeron en África ante el surgimiento de los almohades.",
+          "quote": "el hundimiento de los Almorávides en África frente a un nuevo poder, los almohades"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A desert landscape with a fortified city in the distance, representing the North African origins of the Almoravids.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Los almohades",
+      "period": "1175-1231",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los almohades establecieron su capital en Sevilla.",
+          "quote": "los almohades 1175−1231, que pusieron su capital en Sevilla y construyeron la Giralda."
+        },
+        {
+          "text": "Construyeron la Giralda en Sevilla.",
+          "quote": "construyeron la Giralda."
+        },
+        {
+          "text": "No contaron con la colaboración de los musulmanes españoles.",
+          "quote": "los almohades no contaron con la colaboración de los musulmanes españoles que estaban cansados del intervencionismo norteafricano."
+        },
+        {
+          "text": "Su poder se basaba en un poderoso ejército.",
+          "quote": "Su poder se basaba en un poderoso ejército"
+        },
+        {
+          "text": "Las nuevas taifas fueron conquistadas rápidamente por los cristianos.",
+          "quote": "todos serían conquistados de manera fulminante por los cristianos."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A tall, square minaret with intricate brickwork patterns, standing against a clear sky, representing the Giralda in Seville.",
+      "illustration_caption": "La Giralda de Sevilla, construida por los almohades."
+    },
+    {
+      "heading": "Reino nazarí de Granada",
+      "period": "1246-1492",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El único reino que resistió fue el de Granada.",
+          "quote": "El único que logró resistir fue el reino de Granada."
+        },
+        {
+          "text": "Desde 1246, Granada fue reino vasallo de Castilla.",
+          "quote": "Desde 1246 Granada se constituyó en reino vasallo y tenía que entregar un tributo anual."
+        },
+        {
+          "text": "Debía entregar un tributo anual a los reyes castellanos.",
+          "quote": "tenía que entregar un tributo anual."
+        },
+        {
+          "text": "El cobro del tributo dependía de la fuerza real.",
+          "quote": "la percepción de éste, dependía muchas veces de la fuerza de los reyes castellanos."
+        },
+        {
+          "text": "Hubo muchas treguas entre Castilla y Granada.",
+          "quote": "Hubo muchas treguas concedidas entre los reinos de Castilla y Granada."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Granada sobrevivió como reino vasallo hasta el final de la Edad Media.",
+      "illustration_prompt": "A mountainous landscape with a fortified city on a hilltop, representing the Kingdom of Granada.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La caída del califato provocó la atomización en reinos de Taifas.",
+    "Los almorávides y almohades intentaron unificar el territorio desde el norte de África.",
+    "La derrota en las Navas de Tolosa marcó el declive definitivo del poder musulmán."
+  ],
+  "summary": "Tras la caída del Califato de Córdoba en 1031, Al-Ándalus se fragmentó en reinos de Taifas. Los almorávides y almohades intentaron unificar el territorio, pero la derrota en las Navas de Tolosa en 1212 aceleró la Reconquista, dejando solo el reino nazarí de Granada.",
+  "closing": "La fragmentación política de Al-Ándalus aceleró la Reconquista, aunque su legado cultural perdura."
+}

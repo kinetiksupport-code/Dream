@@ -1,23 +1,53 @@
-export const cookies = String.raw`# Almacenamiento en tu dispositivo y cookies
+// Política de cookies (Bloque 5 de Cookiebot). La introducción es nuestra; la
+// lista detallada la pinta Cookiebot (cd.js) debajo, y si no carga se muestra
+// `cookiesTabla`, que sale del inventario real (docs/cookies-inventario.md).
+export const cookies = String.raw`# Política de cookies
 
-*Última actualización: 19 de octubre de 2026 (versión provisional).*
+*Última actualización: 28 de octubre de 2026 (versión provisional).*
 
-Dream guarda pequeños datos en tu navegador. Los necesarios para que funcione no requieren consentimiento; los de estadísticas solo se activan si tú lo aceptas en Ajustes.
+## Qué es una cookie
 
-| Qué | Para qué | Tipo | Consentimiento |
-| --- | --- | --- | --- |
-| Sesión de inicio de sesión (Supabase / Google) | Mantenerte conectado | Necesario | No hace falta |
-| dream-theme (almacenamiento local) | Recordar tema claro u oscuro | Necesario | No hace falta |
-| dream-ai-mode (almacenamiento local) | Recordar el modo de la IA que eliges (Rápido, Normal o Pensar más) | Necesario | No hace falta |
-| dream-login-pending (almacenamiento de sesión) | Completar el inicio de sesión | Necesario | No hace falta |
-| Preferencias de privacidad (almacenamiento local) | Recordar tu elección sobre estadísticas y errores | Necesario | No hace falta |
-| Caché de la app instalable (service worker) | Cargar más rápido y mostrar una página sin conexión; solo guarda archivos de la app, no tus conversaciones | Necesario | No hace falta |
-| Identificador anónimo de PostHog (almacenamiento local) | Estadísticas anónimas de uso | Analítico | **Sí**, desactivado por defecto |
-| Informes de errores de Sentry | Detectar fallos | Diagnóstico | **Sí**, desactivado por defecto |
+Una cookie es un archivo pequeño que una web guarda en tu navegador. Dream también usa el almacenamiento del navegador (*localStorage* y *sessionStorage*), que funciona igual. En esta página llamamos «cookies» a todo eso.
 
-Dream no usa cookies de publicidad ni de seguimiento entre webs. Los archivos que subes se mantienen solo en memoria mientras los preparas y no se guardan en tu dispositivo. Los proveedores de IA (Groq y Cloudflare) y de búsqueda (Tavily) solo reciben datos desde nuestro servidor: no ponen cookies ni guardan nada en tu navegador.
+## Qué usa Dream
 
-Puedes borrar estos datos desde los ajustes de tu navegador, y cambiar tu elección de estadísticas y errores en cualquier momento en **Ajustes > Datos de uso**.
+- **Necesarias.** Sirven para iniciar sesión, mantener la web segura y recordar lo que eliges, como el tema oscuro. Funcionan siempre: sin ellas Dream no funciona. No hace falta tu permiso.
+- **Preferencias.** Solo para el **chat de ayuda (Crisp)**. Se usan si tú lo permites, y solo cuando abres el chat.
+- **Estadísticas.** Solo si activas «Datos de uso» en **Ajustes**. Hoy no están en marcha.
+- **Publicidad: ninguna.** Dream no usa cookies de publicidad, de perfiles ni de seguimiento entre webs, ni aunque aceptes todo.
 
-Más información sobre el tratamiento de tus datos en la [Política de privacidad](/privacidad).
+Si rechazas todo, Dream funciona igual: puedes estudiar, chatear y hacer exámenes. Lo único que necesita permiso es el chat de ayuda, y siempre puedes escribirnos a hellodream@edudream.es.
+
+## Cómo cambiar tu elección
+
+Cuando quieras, pulsa **«Configurar cookies»** al pie de esta página o en **Ajustes > Privacidad**. Retirar el permiso es igual de fácil que darlo. Si lo retiras, borramos las cookies del chat de ayuda.
+
+Tu elección se guarda en la cookie **CookieConsent** de Cookiebot, nuestro gestor de cookies, durante 12 meses. Después te lo volveremos a preguntar, y también antes si cambian las cookies o para qué las usamos.
+
+## Cómo borrar las cookies
+
+En tu navegador: **Ajustes > Privacidad > Borrar datos de navegación** (Chrome, Edge), **Ajustes > Safari > Borrar historial y datos** (iPhone) o **Preferencias > Privacidad > Gestionar datos** (Firefox). Si borras las de Dream, tendrás que iniciar sesión de nuevo.
+
+Más información sobre tus datos en la [Política de privacidad](/privacidad).
+
+## Detalle de cada cookie
+
+La lista siguiente la mantiene Cookiebot a partir de un análisis de la web.
+`;
+
+/** Respaldo si la declaración de Cookiebot no carga (bloqueador, sin conexión). */
+export const cookiesTabla = String.raw`| Nombre | De quién | Para qué | Duración | Tipo |
+| --- | --- | --- | --- | --- |
+| CookieConsent | Cookiebot (en edudream.es) | Guardar tu elección sobre las cookies | Hasta 12 meses | Necesaria |
+| sb-…-auth-token (y su code-verifier al iniciar sesión) | Dream (Supabase) | Mantenerte conectado de forma segura | Hasta que cierres sesión | Necesaria |
+| dream-login-pending | Dream | Terminar el inicio de sesión | Mientras la pestaña esté abierta | Necesaria |
+| dream-theme, dream-reading, dream-ai-mode | Dream | Recordar el tema, la lectura fácil y el modo de la IA que eliges | Hasta que las borres | Necesaria (preferencia elegida) |
+| dream-privacy-v1, dream-crisp-notice | Dream | Recordar tus decisiones sobre datos de uso y el aviso del chat | Hasta que las borres | Necesaria |
+| dream-qr-token, dream-qr-device | Dream (solo al subir por QR) | Que el móvil pueda subir los archivos | Mientras la pestaña esté abierta | Necesaria |
+| dream-static-v3 (caché) | Dream (app instalable) | Abrir más rápido y mostrar una página sin conexión. No guarda tus conversaciones | Hasta la siguiente versión | Necesaria |
+| crisp-client/… | Crisp (chat de ayuda) | Mantener tu conversación con soporte | 6 meses | Preferencias, solo con tu permiso |
+| Identificador anónimo de PostHog | PostHog | Estadísticas anónimas de uso | Hasta que las borres | Estadísticas, solo si lo activas en Ajustes |
+| (nada en tu navegador) | Sentry | Informes de errores | — | Solo si lo activas en Ajustes |
+
+Las cookies de Google al iniciar sesión las pone Google en su propio dominio (accounts.google.com), con su política.
 `;

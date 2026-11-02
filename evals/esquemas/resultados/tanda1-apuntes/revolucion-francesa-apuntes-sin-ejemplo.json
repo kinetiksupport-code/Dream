@@ -1,0 +1,182 @@
+{
+  "title": "Revolución Francesa",
+  "subtitle": "Causas, etapas y consecuencias del proceso revolucionario",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Causas de la crisis",
+      "period": "1789-1799",
+      "kind": "list",
+      "intro": "Factores económicos, sociales e ideológicos que provocaron el estallido revolucionario.",
+      "bullets": [
+        {
+          "text": "Sociedad estamental dividida en **clero**, **nobleza** y **tercer estado**.",
+          "quote": "Francia vivía bajo el Antiguo Régimen, una sociedad estamental dividida en clero, nobleza y tercer estado"
+        },
+        {
+          "text": "El **tercer estado** soportaba la carga fiscal principal.",
+          "quote": "El tercer estado pagaba casi todos los impuestos"
+        },
+        {
+          "text": "**Bancarrota** real y encarecimiento del pan por malas cosechas.",
+          "quote": "La Hacienda estaba en bancarrota y las malas cosechas encarecieron el pan"
+        },
+        {
+          "text": "La **Ilustración** cuestionaba el poder absoluto del rey.",
+          "quote": "Las ideas de la Ilustración criticaban el absolutismo"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A dim, 18th-century French town square with a bakery window showing high bread prices, and a background of a royal palace under a cloudy sky.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Inicio de la Revolución",
+      "period": "1789",
+      "kind": "dates",
+      "intro": "Hitos fundamentales de los primeros meses de 1789.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1789",
+          "text": "Convocatoria de los **Estados Generales** por Luis XVI.",
+          "quote": "En mayo de 1789 Luis XVI convoca los Estados Generales"
+        },
+        {
+          "year": "1789",
+          "text": "Toma de la **Bastilla** por el pueblo parisino.",
+          "quote": "El 14 de julio de 1789 el pueblo de París toma la Bastilla"
+        },
+        {
+          "year": "1789",
+          "text": "Aprobación de la **Declaración de los Derechos del Hombre**.",
+          "quote": "En agosto de 1789 la Asamblea aprueba la Declaración de los Derechos del Hombre y del Ciudadano"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A stone fortress gate with a broken chain and a small crowd of silhouettes in the distance, symbolizing the fall of the Bastille.",
+      "illustration_caption": "La Bastilla, fortaleza parisina símbolo del absolutismo."
+    },
+    {
+      "heading": "Etapas políticas",
+      "period": "1789-1799",
+      "kind": "subcards",
+      "intro": "Evolución del régimen político desde la monarquía hasta el Directorio.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Monarquía constitucional",
+          "period": "1789-1792",
+          "bullets": [
+            {
+              "text": "Constitución de **1791**: separación de poderes y sufragio censitario.",
+              "quote": "la Constitución de 1791 establece la separación de poderes y el sufragio censitario"
+            }
+          ]
+        },
+        {
+          "title": "Convención y Terror",
+          "period": "1792-1794",
+          "bullets": [
+            {
+              "text": "Proclamación de la **República** en 1792.",
+              "quote": "en 1792 se proclama la República"
+            },
+            {
+              "text": "Ejecución de **Luis XVI** en 1793.",
+              "quote": "Luis XVI es ejecutado en 1793"
+            },
+            {
+              "text": "**Terror** jacobino dirigido por Robespierre.",
+              "quote": "Los jacobinos, dirigidos por Robespierre, imponen el Terror"
+            },
+            {
+              "text": "Ejecución de **Robespierre** en 1794.",
+              "quote": "Robespierre es ejecutado en 1794"
+            }
+          ]
+        },
+        {
+          "title": "Directorio",
+          "period": "1795-1799",
+          "bullets": [
+            {
+              "text": "Gobierno de la **burguesía moderada**.",
+              "quote": "gobierna la burguesía moderada"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fin de la Revolución",
+      "period": "1799",
+      "kind": "list",
+      "intro": "El golpe de Estado que puso fin al proceso revolucionario.",
+      "bullets": [
+        {
+          "text": "Golpe de Estado del **18 de brumario** (1799).",
+          "quote": "En 1799 Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, y pone fin a la Revolución"
+        },
+        {
+          "text": "**Napoleón Bonaparte** asume el poder y cierra la fase revolucionaria.",
+          "quote": "Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, y pone fin a la Revolución"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Consecuencias y legado",
+      "period": "",
+      "kind": "legacy",
+      "intro": "Impacto duradero de la Revolución en la política europea.",
+      "bullets": [
+        {
+          "text": "Fin del **Antiguo Régimen** en Francia.",
+          "quote": "fin del Antiguo Régimen en Francia"
+        },
+        {
+          "text": "Establecimiento de la **igualdad ante la ley**.",
+          "quote": "igualdad ante la ley"
+        },
+        {
+          "text": "Reconocimiento de la **soberanía nacional**.",
+          "quote": "soberanía nacional"
+        },
+        {
+          "text": "Difusión del **liberalismo** por toda Europa.",
+          "quote": "difusión del liberalismo por Europa"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La igualdad ante la ley y la soberanía nacional se convirtieron en pilares de las democracias modernas.",
+      "illustration_prompt": "A map of Europe with lines radiating from Paris, symbolizing the spread of liberal ideas across the continent.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El Tercer Estado lideró la ruptura con el absolutismo.",
+    "La Declaración de 1789 estableció derechos fundamentales.",
+    "El Terror jacobino marcó la fase más radical.",
+    "Napoleón puso fin al proceso revolucionario."
+  ],
+  "summary": "La Revolución Francesa (1789-1799) derrocó el Antiguo Régimen tras una crisis económica y social profunda. Pasó por etapas de monarquía constitucional, república radical y directorio burgués. Sus ideas de libertad e igualdad transformaron la política europea.",
+  "closing": "La Revolución Francesa destruyó el Antiguo Régimen y sembró las semillas del liberalismo en Europa."
+}

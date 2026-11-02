@@ -87,6 +87,9 @@ export const MODES = Object.freeze({
     // 8B). La respuesta visible sigue corta por el prompt (≤120 palabras).
     maxOutputTokens: 900,
     longOutputTokens: 1400,
+    // Conversación y deberes (P2, docs/HABLA_NATURAL.md): 120 palabras son
+    // ~200 tokens; el resto es margen para el razonamiento oculto.
+    chatOutputTokens: 700,
     reasoningEffort: 'low',
     temperature: 0.4,
     tools: true,
@@ -102,6 +105,8 @@ export const MODES = Object.freeze({
     model: GROQ_NORMAL_MODEL,
     maxOutputTokens: 1200,
     longOutputTokens: 2048,
+    // Salida real medida en producción: 19-247 tokens (29/10/2026).
+    chatOutputTokens: 800,
     reasoningEffort: null, // Qwen 3.8: esfuerzo por defecto (ver reasoningParams)
     temperature: 0.5,
     tools: true,
@@ -117,6 +122,7 @@ export const MODES = Object.freeze({
     model: CLOUDFLARE_MODEL,
     maxOutputTokens: 1500,
     longOutputTokens: 2048,
+    chatOutputTokens: 1000,
     reasoningEffort: null, // Cloudflare: sin parámetros de razonamiento
     temperature: 0.3,
     tools: false,
@@ -143,7 +149,7 @@ export const CLOUDFLARE_FALLBACK = Object.freeze({
 // corto para quedar muy por debajo de los 8.000 tokens por minuto de Groq.
 export const SEARCH_TURN = Object.freeze({
   plannerMaxTokens: 600, // cabe el razonamiento oculto + la llamada a la herramienta
-  answerMaxTokens: 1000,
+  answerMaxTokens: 800, // el corte es a 120 palabras (260 si pide teoría): ~450 tokens bastan
   history: Object.freeze({ maxMessages: 2, recentFull: 2, recentChars: 1200, olderChars: 200, totalChars: 2400 }),
 });
 
@@ -201,7 +207,11 @@ export function fallbackAvailable(mode, { flags = AI_FLAGS, cloudflareConfigured
 
 // Salida limitada por modo; respuesta larga solo si el alumno pide apuntes,
 // un resumen o algo para imprimir (misma regla que answerTokenBudget).
-export function outputTokensFor(mode, prompt) {
+/** @param {any} mode @param {string} prompt @param {'chat'|'homework'|'theory'|null} [kind] */
+export function outputTokensFor(mode, prompt, kind = null) {
+  // Con el tipo de petición (reply-shape.mjs › replyKind): teoría, el máximo
+  // largo; conversación y deberes, el máximo corto del chat.
+  if (kind) return kind === 'theory' ? (mode.longOutputTokens ?? mode.maxOutputTokens) : (mode.chatOutputTokens ?? mode.maxOutputTokens);
   return answerTokenBudget(prompt, { short: mode.maxOutputTokens, long: mode.longOutputTokens ?? mode.maxOutputTokens });
 }
 

@@ -1,0 +1,187 @@
+{
+  "title": "Revolución Francesa",
+  "subtitle": "Causas, etapas y consecuencias del proceso revolucionario",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Sociedad del Antiguo Régimen",
+      "period": "1789-1799",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "El **Tercer Estado** representaba al 97 % de la población.",
+          "quote": "El tercer estado estaba integrado por el 97 % de la población"
+        },
+        {
+          "text": "Nobleza y clero concentraban los **privilegios** políticos y económicos.",
+          "quote": "la nobleza y el alto clero, que concentraban los privilegios políticos y económicos"
+        },
+        {
+          "text": "El Tercer Estado soportaba la carga de **todos los impuestos**.",
+          "quote": "sobre él recaían todos los impuestos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A cross-section of a pyramid with three distinct layers, the bottom layer being the largest and textured like rough stone, the top layers smooth and gold, set a",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología de la Revolución",
+      "period": "1789-1804",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1789",
+          "text": "Toma de la **Bastilla**.",
+          "quote": "La Toma de la Bastilla (14 de julio de 1789)"
+        },
+        {
+          "year": "1789",
+          "text": "Se aprueba la **Declaración de Derechos**.",
+          "quote": "Declaración de los Derechos del Hombre y del Ciudadano (agosto de 1789)"
+        },
+        {
+          "year": "1793",
+          "text": "Ejecución de **Luis XVI**.",
+          "quote": "Luis XVI fue juzgado por traición y ejecutado en la guillotina en 1793"
+        },
+        {
+          "year": "1793",
+          "text": "Inicio del **Reinado del Terror**.",
+          "quote": "El Reinado del Terror (1793-1794)"
+        },
+        {
+          "year": "1795",
+          "text": "Establecimiento del **Directorio**.",
+          "quote": "El Directorio (1795-1799)"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Etapas Políticas",
+      "period": "1789-1799",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Asambleas",
+          "period": "1789-1792",
+          "bullets": [
+            {
+              "text": "Gobierno de la **Asamblea Nacional**.",
+              "quote": "La Asamblea Nacional (1789-1791)"
+            },
+            {
+              "text": "Transición a la **Asamblea Legislativa**.",
+              "quote": "La Asamblea Legislativa (1791-1792)"
+            }
+          ]
+        },
+        {
+          "title": "República y Terror",
+          "period": "1792-1795",
+          "bullets": [
+            {
+              "text": "Instauración de la **República**.",
+              "quote": "La República (1792-1795)"
+            },
+            {
+              "text": "**Robespierre** lidera el Terror.",
+              "quote": "Bajo el liderazgo de Robespierre, el Comité de Salud Pública llevó a cabo una política de represión"
+            }
+          ]
+        },
+        {
+          "title": "Directorio y Napoleón",
+          "period": "1795-1799",
+          "bullets": [
+            {
+              "text": "Gobierno del **Directorio**.",
+              "quote": "El Directorio (1795-1799)"
+            },
+            {
+              "text": "Ascenso de **Napoleón**.",
+              "quote": "que allanó el camino para el ascenso de Napoleón Bonaparte"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A grand neoclassical assembly hall with wooden benches and a central podium, empty of people, bathed in soft natural light from tall windows.",
+      "illustration_caption": "La Asamblea Nacional, órgano precursor de la república."
+    },
+    {
+      "heading": "Ideales y Protagonistas",
+      "period": "",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Ideales de **libertad, igualdad y fraternidad**.",
+          "quote": "los ideales que guiaron la revolución fueron la libertad, la igualdad y la fraternidad"
+        },
+        {
+          "text": "Proceso marcado por la **violencia**.",
+          "quote": "fue un proceso marcado por la violencia y la imposición de diferentes grupos sociales sobre otros"
+        },
+        {
+          "text": "Líderes: **Robespierre, Danton y Marat**.",
+          "quote": "Entre los líderes revolucionarios más importantes estaban Maximilian Robespierre, Georges Danton, Jean-Paul Marat"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Three abstract pillars standing side by side, one white, one blue, one red, against a plain background, symbolizing unity and ideals.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Consecuencias y Legado",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Abolición de los **privilegios feudales**.",
+          "quote": "La Asamblea Nacional decretó el fin de los privilegios feudales, acabando con el sistema de estamentos"
+        },
+        {
+          "text": "Fin del **absolutismo** monárquico.",
+          "quote": "La monarquía fue abolida y se instauró un gobierno republicano"
+        },
+        {
+          "text": "Inicio de la **era moderna** democrática.",
+          "quote": "marcó el inicio de una nueva era basada en los principios de libertad, igualdad y fraternidad"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La revolución inspiró movimientos de independencia en América y Europa, extendiendo los ideales de soberanía popular.",
+      "illustration_prompt": "A map of Europe with radiating lines from France, symbolizing the spread of revolutionary ideas, in a muted historical map style.",
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El Tercer Estado representaba al 97 % de la población.",
+    "La toma de la Bastilla ocurrió el 14 de julio de 1789.",
+    "Robespierre lideró el Reinado del Terror entre 1793 y 1794."
+  ],
+  "summary": "La Revolución Francesa (1789-1799) destruyó el Antiguo Régimen y estableció principios democráticos. Fue un proceso violento liderado por el Tercer Estado que culminó con el ascenso de Napoleón.",
+  "closing": "La Revolución Francesa derrocó el absolutismo y sembró las semillas de la democracia moderna."
+}

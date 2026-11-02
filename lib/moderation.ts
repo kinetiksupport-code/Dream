@@ -31,16 +31,17 @@ export interface Notice {
 export const getBanInfo = (signal?: AbortSignal) => callDream<BanInfo>("mod_ban_info", {}, signal);
 export const getNotices = (signal?: AbortSignal) => callDream<{ items: Notice[] }>("mod_notices", {}, signal);
 export const ackNotice = (id: string) => callDream<{ ok: boolean }>("mod_ack", { id });
-export const sendAppeal = (body: string, sanctionId?: string) =>
+export const sendAppeal = (body: string, sanctionId?: string, turnstileToken?: string) =>
   callDream<{ ok: boolean; code: string; due_at: string; deadline_days: number }>("mod_appeal_create", {
     body,
     ...(sanctionId ? { sanction_id: sanctionId } : {}),
+    ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
   });
 
 const dateFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long", year: "numeric" });
-// Día y hora por separado: con los dos juntos, el ICU de Node 24 escribe
-// «22 de octubre a las 11:30» y el de Node 22, «22 de octubre, 11:30».
-const dayFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" });
+// Fecha y hora por separado: con las dos juntas, el texto depende de la
+// versión de ICU (Node 22 escribe «22 de octubre, 11:30»; Node 24, «… a las 11:30»).
+const dayMonthFormat = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "long" });
 const timeFormat = new Intl.DateTimeFormat("es-ES", { hour: "2-digit", minute: "2-digit" });
 
 /** «hasta el 12 de noviembre de 2026» o «de forma permanente». */
@@ -51,8 +52,8 @@ export function untilText(until: string | null, permanent: boolean): string {
 /** Límite corto de una limitación: «hasta el 22 de octubre, 11:30». */
 export function limitText(until: string | null): string {
   if (!until) return "durante un tiempo";
-  const at = new Date(until);
-  return `hasta el ${dayFormat.format(at)}, ${timeFormat.format(at)}`;
+  const date = new Date(until);
+  return `hasta el ${dayMonthFormat.format(date)}, ${timeFormat.format(date)}`;
 }
 export const isModerationBlock = (code: string) => code === "mod_ip_blocked" || code === "mod_user_limited";
 

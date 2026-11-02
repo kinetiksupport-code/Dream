@@ -9,7 +9,7 @@ import {
   validateIdentity,
 } from "../supabase/functions/dream-api/exam-identify.mjs";
 import { KNOWN_SUBJECTS } from "../lib/subject-objects";
-import { consumingActions } from "../supabase/functions/dream-api/admission.mjs";
+import { admissionOperation, consumingActions } from "../supabase/functions/dream-api/admission.mjs";
 import { draftFields } from "../supabase/functions/dream-api/validation";
 
 test("the server's subject list is the client's (one list, two runtimes)", () => {
@@ -83,7 +83,8 @@ test("every consuming action is admitted by the latest dream_admit (exam_identif
     .at(-1)!;
   const sql = readFileSync(`supabase/migrations/${latest}`, "utf8");
   const list = sql.match(/p_operation not in \(([\s\S]*?)\)/)![1];
-  for (const action of consumingActions) assert.match(list, new RegExp(`'${action}'`), `${latest}: ${action}`);
+  for (const action of consumingActions)
+    assert.match(list, new RegExp(`'${admissionOperation(action)}'`), `${latest}: ${action}`);
 });
 
 test("draft updates: partial, a grade in 0,5 steps, no past dates", () => {

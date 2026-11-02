@@ -191,7 +191,9 @@ export default function Login() {
           <p className={s.legal} data-glide>
             Al continuar, aceptas los{" "}
             <Link href="/terminos">Términos y condiciones</Link> y la{" "}
-            <Link href="/privacidad">Política de privacidad</Link>.
+            <Link href="/privacidad">Política de privacidad</Link>. Usamos
+            cookies necesarias para iniciar sesión:{" "}
+            <Link href="/cookies">Política de cookies</Link>.
           </p>
           <Link className={`press text-link ${s.back}`} href="/" data-glide>
             Volver al inicio

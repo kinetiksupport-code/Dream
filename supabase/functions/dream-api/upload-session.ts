@@ -9,6 +9,10 @@
 // - El token y la llave del móvil nunca se guardan ni se registran: solo su
 //   SHA-256. Los errores de token son siempre el mismo (no dicen por qué).
 
+import { getClientIp, ipFingerprint } from './moderation.mjs';
+
+export interface IpEnv { MOD_IP_HEADER?: string; MOD_IP_XFF_HOPS?: string; MOD_IP_PEPPER?: string }
+
 export const UPLOAD_QR = {
   /** Vida de cada tramo; el ordenador lo renueva mientras el QR está a la vista. */
   ttlSeconds: 600,
@@ -61,11 +65,16 @@ export async function sha256Hex(value: string): Promise<string> {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** IP del cliente tal y como la ve la pasarela de Supabase. Solo se usa hasheada. */
-export function clientIp(headers: Headers): string {
-  const direct = headers.get('cf-connecting-ip') || headers.get('x-real-ip');
-  const forwarded = headers.get('x-forwarded-for')?.split(',')[0];
-  return (direct || forwarded || 'unknown').trim().slice(0, 64) || 'unknown';
+/**
+ * Huella de la IP para los límites de la subida por QR. La IP sale de la lectura
+ * única de dream-api (getClientIp) y nunca se guarda en claro: HMAC con
+ * MOD_IP_PEPPER si existe y, si no, SHA-256 con prefijo propio. Sin IP de
+ * confianza se usa un cubo común «unknown»: limita, pero no apunta a nadie.
+ */
+export async function qrIpHash(headers: Headers, env: IpEnv = {}): Promise<string> {
+  const ip = getClientIp(headers, env) ?? 'unknown';
+  if (typeof env.MOD_IP_PEPPER === 'string' && env.MOD_IP_PEPPER.length >= 32) return ipFingerprint(`dream-qr-ip:${ip}`, env.MOD_IP_PEPPER);
+  return sha256Hex(`dream-qr-ip:${ip}`);
 }
 
 /** Nombre para mostrar: sin rutas ni caracteres de control. Nunca se usa para rutas. */
@@ -151,6 +160,13 @@ export type Dispatch = (owner: string, payload: Row) => Promise<{ status: number
 export interface MobileDeps {
   db: UploadDb;
   headers: Headers;
+  /** Configuración de la lectura de IP (MOD_IP_HEADER, MOD_IP_XFF_HOPS, MOD_IP_PEPPER). */
+  ipEnv?: IpEnv;
+  /**
+   * Comprobación «no soy un robot» (Turnstile) al conectar el móvil. La valida
+   * turnstile.mjs; sin clave configurada deja pasar. Ver docs/turnstile.md.
+   */
+  humanCheck?: (token: unknown) => Promise<{ ok: boolean; status?: number; code?: string; message?: string }>;
   /** Ejecuta una acción normal de dream-api como el dueño del examen. */
   dispatch: Dispatch;
   /** Borra un adjunto que no se pudo asociar al examen. */
@@ -162,7 +178,7 @@ export interface MobileDeps {
 async function gate(deps: MobileDeps, body: Row, kind: 'connect' | 'upload', device: string, file?: { name: string; bytes: number }) {
   const row = await call(deps.db, 'dream_upload_qr_gate', {
     p_token_hash: await sha256Hex(String(body.token)),
-    p_ip_hash: await sha256Hex(`dream-qr-ip:${clientIp(deps.headers)}`),
+    p_ip_hash: await qrIpHash(deps.headers, deps.ipEnv),
     p_device_hash: await sha256Hex(device),
     p_kind: kind,
     p_file_name: file?.name ?? null,
@@ -197,6 +213,11 @@ export async function mobileUploadAction(deps: MobileDeps, body: Row): Promise<R
     if (body.device_key !== undefined && (typeof body.device_key !== 'string' || !SECRET_PATTERN.test(body.device_key))) throw invalidLink();
 
     if (action === 'upload_qr_connect') {
+      // Antes de tocar la base de datos: un bot no llega ni a probar códigos.
+      if (deps.humanCheck) {
+        const human = await deps.humanCheck(body.turnstile_token);
+        if (!human.ok) throw new UploadSessionError(human.status ?? 403, human.code ?? 'turnstile_failed', human.message ?? 'No hemos podido comprobar que eres una persona, vuelve a intentarlo.');
+      }
       const device = typeof body.device_key === 'string' ? body.device_key : randomSecret();
       const row = await gate(deps, body, 'connect', device);
       log('connected');

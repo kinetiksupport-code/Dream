@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ChevronIcon,
+  DreamsIcon,
   ExamsIcon,
   HistoryIcon,
   NotesIcon,
@@ -25,6 +26,13 @@ export default function More() {
           <Link className="group-row group-link press" href="/exams">
             <ExamsIcon />
             <span>Exámenes</span>
+            <ChevronIcon />
+          </Link>
+        </li>
+        <li>
+          <Link className="group-row group-link press" href="/dreams">
+            <DreamsIcon />
+            <span>Dreams</span>
             <ChevronIcon />
           </Link>
         </li>

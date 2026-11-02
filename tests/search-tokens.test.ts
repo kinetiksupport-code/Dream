@@ -69,7 +69,9 @@ test("each call of a search turn stays well under Groq's 8,000 tokens per minute
   // Both together fit in one minute of one key, with room for other students.
   assert.ok(plan < 2500, `plan ${plan}`);
   // Measured in production: 1,760. The tone and no-invent layers (26/10/2026)
-  // add ~420 real tokens to the answer call (scripts/ia/medir-tokens.py).
+  // add ~420 real tokens to the answer call (scripts/ia/medir-tokens.py);
+  // «Cómo hablas y escribes» (29/10/2026) ~360 more, paid back by the lower
+  // output cap (1,000 → 800: the answer is cut at 120 words anyway).
   assert.ok(answer < 4100, `answer ${answer}`);
   assert.ok(plan + answer < 6000, `total ${plan + answer}`);
   // Before: the full Normal prompt went in both calls.

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { fakeCookiebot } from "./cookiebot-fixture";
 
 // B6, lado del alumno, en un navegador real con datos sintéticos y dream-api
 // simulado (no se llama a Supabase, Groq ni Crisp). Capturas en
@@ -107,14 +108,18 @@ test("the appeal button asks first, then loads Crisp; Crisp gets nothing from th
       body: "window.$crisp={push(){},is(){return true}};window.CRISP_READY_TRIGGER&&window.CRISP_READY_TRIGGER();",
     });
   });
+  await fakeCookiebot(page);
   await setup(page, { banned: true });
   await page.goto("/chat");
+  // Dentro de la app no hay banner de cookies.
+  await expect(page.locator("#CybotCookiebotDialog")).toHaveCount(0);
   await page.getByRole("button", { name: "Hacer una apelación" }).click();
   const dialog = page.getByRole("alertdialog");
   await expect(dialog).toContainText("Dream no le pasa tu correo ni tu nombre");
+  await expect(dialog).toContainText("necesitamos tu permiso para las cookies de preferencias de Crisp");
   expect(crispScript).toBe(0);
   await page.screenshot({ path: `${SHOTS}/baneo-aviso-crisp.png` });
-  await dialog.getByRole("button", { name: "Abrir chat" }).click();
+  await dialog.getByRole("button", { name: "Permitir y abrir" }).click();
   await expect.poll(() => crispScript).toBe(1);
   // Lo único que Crisp conoce es lo que el alumno escriba: ni correo, ni nombre, ni id.
   const sent = await page.evaluate(() => JSON.stringify((window as unknown as Record<string, unknown>).CRISP_WEBSITE_ID ?? ""));
@@ -123,6 +128,7 @@ test("the appeal button asks first, then loads Crisp; Crisp gets nothing from th
 
 test("if the chat cannot open, a calm one-liner appears and the written claim is still there", async ({ page }) => {
   await page.route("https://client.crisp.chat/**", (route) => route.abort());
+  await fakeCookiebot(page, { preferences: true });
   await setup(page, { banned: true });
   await page.addInitScript(() => localStorage.setItem("dream-crisp-notice", "1"));
   await page.goto("/chat");

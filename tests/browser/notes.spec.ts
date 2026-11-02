@@ -212,15 +212,15 @@ test("upload error: says the cause, offers Reintentar and it opens the picker", 
   const chooser = page.waitForEvent("filechooser");
   await alert.getByRole("button", { name: "Reintentar" }).click();
   await chooser;
-  // Too many files is an error too, not a silent cut to four.
+  // Too many files is an error too, not a silent cut to eight.
   await page.getByTestId("notes-file-input").setInputFiles(
-    [1, 2, 3, 4, 5].map((n) => ({
+    [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({
       name: `Tema ${n}.pdf`,
       mimeType: "application/pdf",
       buffer: Buffer.from("%PDF-1.4"),
     })),
   );
-  await expect(alert).toContainText("Puedes subir 4 archivos a la vez.");
+  await expect(alert).toContainText("Puedes subir 8 archivos a la vez.");
 });
 
 test("loading skeleton has the grid's shape and announces itself", async ({

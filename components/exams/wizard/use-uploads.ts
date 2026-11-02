@@ -5,7 +5,7 @@
 // con el file-guard de #31 → exam_material_add), una detrás de otra.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { callDream, errorMessage } from "@/lib/dream-api";
-import { toBase64, validateFile } from "@/lib/attachments";
+import { prepareFile, toBase64, validateFile, withUploadRetry } from "@/lib/attachments";
 import {
   MAX_EXAM_MATERIALS,
   getExam,
@@ -97,16 +97,18 @@ export function useUploads(
                 exam_id: examNow.id,
               })
             ).conversation_id;
-          const content_base64 = await toBase64(item.file);
+          // Las fotos del móvil se reducen antes de subirlas (lib/attachments.ts).
+          const ready = await prepareFile(item.file);
+          const content_base64 = await toBase64(ready);
           patch(item.key, { status: "processing" });
-          const { attachment } = await callDream<{ attachment: { id: string } }>(
-            "attachment_upload",
-            {
-              conversation_id: conversation.current,
-              file_name: item.file.name,
-              mime_type: item.file.type,
+          const conversationId = conversation.current;
+          const { attachment } = await withUploadRetry(() =>
+            callDream<{ attachment: { id: string } }>("attachment_upload", {
+              conversation_id: conversationId,
+              file_name: ready.name,
+              mime_type: ready.type,
               content_base64,
-            },
+            }),
           );
           const updated = await updateExam("exam_material_add", examNow.id, {
             attachment_id: attachment.id,

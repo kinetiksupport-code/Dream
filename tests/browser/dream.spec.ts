@@ -809,7 +809,8 @@ test("real UI states from stream events and failed upload recovery", async ({
     .getByRole("textbox", { name: "Mensaje para Dream" })
     .fill("Una idea actual");
   await page.getByRole("button", { name: "Enviar mensaje" }).click();
-  await expect(page.locator(".activity-thinking")).toBeVisible();
+  // P5: «Dream está escribiendo…» until the first character.
+  await expect(page.locator(".typing-indicator")).toBeVisible();
   // "Thinking" shows before the chat request starts: wait for the simulated
   // stream to exist so the events below are not dropped.
   await page.waitForFunction(
@@ -843,7 +844,8 @@ test("real UI states from stream events and failed upload recovery", async ({
     type: "delta",
     text: "## Una idea que empieza a encajar.\n\nBuscamos información actual.",
   });
-  await expect(page.locator(".activity-composing")).toBeVisible();
+  // Writing: the text and its cursor, no status line (P5).
+  await expect(page.locator(".message-assistant.is-typing")).toBeVisible();
   await page.screenshot({
     path: "test-results/figma-composing.png",
     animations: "disabled",

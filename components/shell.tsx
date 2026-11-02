@@ -20,6 +20,7 @@ import {
   BackIcon,
   ChatIcon,
   ExamsIcon,
+  DreamsIcon,
   HistoryIcon,
   HomeIcon,
   MoreIcon,
@@ -252,6 +253,7 @@ export function Shell({ children }: { children: ReactNode }) {
     { key: "tasks", label: "Tareas", href: "/tasks", icon: TasksIcon },
     { key: "notes", label: "Apuntes", href: "/notes", icon: NotesIcon },
     { key: "exams", label: "Exámenes", href: "/exams", icon: ExamsIcon },
+    { key: "dreams", label: "Dreams", href: "/dreams", icon: DreamsIcon },
     {
       key: "history",
       label: "Historial",
@@ -275,6 +277,7 @@ export function Shell({ children }: { children: ReactNode }) {
     current === "more" ||
     current === "notes" ||
     current === "exams" ||
+    current === "dreams" ||
     current === "history" ||
     current === "settings";
   const showChatHeader =

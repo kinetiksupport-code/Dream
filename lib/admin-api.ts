@@ -66,6 +66,21 @@ export interface InboxObservation extends UserRef { id: string; status: string; 
 export interface InboxSanction extends UserRef { id: string; kind: string; rule: string; until: string | null; decided_by: string; created_at: string }
 export interface InboxIpBlock { ip_prefix: string; until: string; rule: string }
 export interface InboxEvent extends UserRef { rule: string; origin: string; severity: string; created_at: string }
+/** Memoria del chat: totales de un día (docs/MEMORIA-CHAT.md, Bloque 4). */
+export interface MemoryDay {
+  day: string;
+  turns: number;
+  with_files: number;
+  material: number;
+  reupload_retries: number;
+  routes: number;
+  router_llm: number;
+  router_asks: number;
+  dreams: number;
+  index_tokens: number;
+  board_tokens: number;
+  router_tokens: number;
+}
 export interface Inbox {
   appeals: InboxAppeal[];
   observations: InboxObservation[];

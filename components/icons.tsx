@@ -59,6 +59,12 @@ export const ExamsIcon = (p: P) => (
     <path d="M4 10h16M8 3v4M16 3v4" />
   </Icon>
 );
+export const DreamsIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M12 3.5 13.9 9l5.6 1.5-5.6 1.6L12 17.5l-1.9-5.4-5.6-1.6L10.1 9z" />
+    <path d="M18.5 16v4M16.5 18h4" />
+  </Icon>
+);
 export const HistoryIcon = (p: P) => (
   <Icon {...p}>
     <circle cx="12" cy="12" r="9" />

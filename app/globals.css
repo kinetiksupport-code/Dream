@@ -993,6 +993,10 @@ svg.lucide {
   .sidebar .brand {
     display: none;
   }
+  /* Con «Dreams» son 8 entradas: sin hueco entre ellas (siguen de 44 px). */
+  .sidebar-links {
+    gap: 0;
+  }
 }
 @media (max-width: 639.98px) {
   .tabbar {
@@ -2027,6 +2031,54 @@ svg.lucide {
   }
 }
 
+/* «Dream está escribiendo…» (P5, docs/HABLA_NATURAL.md): before the first
+   character. Three dots that rise and fade in turn, opacity and transform
+   only; fades in on mount (it already waited 400 ms in JS). */
+.typing-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+  transition: opacity var(--dur-base) var(--ease);
+}
+@starting-style {
+  .typing-indicator {
+    opacity: 0;
+  }
+}
+.typing-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.35;
+  animation: typing-dot 1.2s var(--ease-in-out) infinite;
+}
+.typing-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 /* Message actions: on hover/focus with a pointer, always visible on touch
    and on the last answer (where «Regenerar» lives). */
 .icon-action {
@@ -2324,6 +2376,10 @@ svg.lucide {
   }
   .message-assistant:is(.is-typing, .is-revealing) .markdown .is-caret::after {
     animation: none; /* fixed cursor, no blinking */
+  }
+  .typing-dots span {
+    animation: none; /* still dots, no movement */
+    opacity: 0.6;
   }
   .quiz-skeleton-icon,
   .quiz-skeleton-lines span {
@@ -3124,6 +3180,21 @@ fieldset:disabled .test-option {
   .legal-head nav a:hover {
     color: var(--primary-ink);
   }
+}
+.legal-foot {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 16px calc(32px + var(--safe-bottom));
+}
+.cookie-settings-missing {
+  display: block;
+  font-size: var(--text-small);
+  color: var(--text-secondary);
+}
+/* Cookiebot only on the landing and the legal pages (COOKIEBOT_PAGES). */
+html[data-cookiebot="off"] #CybotCookiebotDialog,
+html[data-cookiebot="off"] #CookiebotWidget {
+  display: none !important;
 }
 .legal-body {
   max-width: 760px;
@@ -4679,4 +4750,13 @@ fieldset:disabled .test-option {
   align-items: center;
   gap: 8px;
   min-height: 44px;
+}
+
+/* Esquemas (components/esquema/esquema-page.tsx): al imprimir o guardar en
+   PDF sale solo el esquema, en color y sin el menú de Dream. */
+@media print {
+  body:has(.esquema-print) * { visibility: hidden; }
+  .esquema-print, .esquema-print * { visibility: visible; }
+  .esquema-print { position: absolute; inset: 0; }
+  .esquema-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

@@ -11,6 +11,19 @@ reales buenas y malas (el caso de los sintagmas del 22/10/2026).
 | `tutor.json` | Un paso por mensaje sin dar la solución. Incluye el caso real de los sintagmas: ≤ 60 palabras, sin lista numerada, una sola pregunta al final, sin «¿Te queda claro», «¿lo entiendes» ni «Sin embargo», y sin decir cuál es el núcleo del segundo grupo. |
 | `no-inventar.json` | 21 casos: fechas, autores, fórmulas, artículos de la Constitución, PAU, preguntas imposibles («qué pasó en el examen de mi clase de ayer») y ejercicios poco comunes. Busca cuando debe, no afirma lo que no encontró, dice «no lo sé» cuando procede y no pega el enunciado en la búsqueda. Incluye la fracción generatriz (3/7, 123/50, 37/30 y sin números duplicados). |
 
+| `conversacion.json` | Dos conversaciones completas simuladas (fracción generatriz de 2,46): un alumno que acierta cada paso y otro que falla el paso 2. Cada turno: un paso, sin lista, ≤ 120 palabras; al final, resultado correcto y ningún paso repetido. |
+
+Además de los criterios de cada caso, el informe da la **forma** de todas las
+respuestas (P1, `docs/HABLA_NATURAL.md`):
+- palabras (media, mediana y percentil 90);
+- el % con listas, títulos, negritas, frases de robot y procedimiento entero;
+- caracteres de otras escrituras;
+- legibilidad Fernández-Huerta;
+- ortografía con hunspell en español, en errores por 100 palabras.
+
+Las frases de robot y el escáner son los mismos que usa dream-api
+(`supabase/functions/dream-api/reply-shape.mjs`).
+
 ## Cómo se ejecuta
 
 Hace falta una clave de Groq (no hay ninguna en el repositorio ni en este
@@ -20,7 +33,7 @@ Dream cuando no puede comprobar.
 ```bash
 GROQ_API_KEY=… TAVILY_API_KEY_1=… node evals/comparar-modelos.mjs \
   --models qwen/qwen3.8-27b,openai/gpt-oss-120b,openai/gpt-oss-20b \
-  --files tono,tutor,no-inventar
+  --files tono,tutor,no-inventar,conversacion
 # Variantes para comparar cada medida por separado:
 #   --no-forced-search          sin la búsqueda que lanza el servidor
 #   --reasoning none|low|medium razonamiento

@@ -2,11 +2,15 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { flushSync } from "react-dom";
 import { Sun, Moon, Monitor, Info } from "lucide-react";
+import Link from "next/link";
 import { PrivacySettings } from "@/components/observability";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
+import { SupportChatButton } from "@/components/moderation/support-chat-button";
 import { Modal } from "@/components/modal";
 import { Toast } from "@/components/toast";
 import { InstallDream } from "@/components/install-dream";
 import { AiPermission, WelcomeProfile } from "@/components/welcome/profile-settings";
+import { StudySettings } from "@/components/welcome/study-settings";
 import { UsageLimits } from "@/components/usage-limits";
 import { MemorySettings } from "@/components/memory-settings";
 import { DownloadMyData } from "@/components/data-export";
@@ -201,7 +205,10 @@ export default function Settings() {
             Tu nombre y tu correo vienen de tu cuenta de Google.
           </p>
         ) : (
-          <WelcomeProfile />
+          <>
+            <WelcomeProfile />
+            <StudySettings />
+          </>
         )}
       </section>
 
@@ -292,6 +299,12 @@ export default function Settings() {
             Eliminar mi cuenta
           </button>
         </div>
+        <div className="button-row">
+          <CookieSettingsButton className="secondary press" />
+          <Link className="text-link" href="/cookies">
+            Política de cookies
+          </Link>
+        </div>
         {(historyBlocked || accountBlocked) && (
           <p className="settings-why" id="privacy-why">
             <Info size={18} aria-hidden="true" />
@@ -305,6 +318,18 @@ export default function Settings() {
       <PrivacySettings />
 
       <InstallDream />
+
+      <section className="group" aria-labelledby="help-title">
+        <h2 className="section-title" id="help-title">
+          Ayuda
+        </h2>
+        <p className="page-intro">
+          ¿Algo no funciona o tienes una duda? Escríbenos por el chat de ayuda.
+        </p>
+        <div className="button-row">
+          <SupportChatButton context="help" label="Hablar con soporte" />
+        </div>
+      </section>
 
       <section className="group" aria-labelledby="account-title">
         <h2 className="section-title" id="account-title">

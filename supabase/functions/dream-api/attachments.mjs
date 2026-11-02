@@ -5,9 +5,9 @@ import { groqProvider } from './groq.mjs';
 import {
   UploadError, assertCoherent, decodeUtf8Text, sanitizeExtractedText, assertImageDimensions,
   stripImageMetadata, inspectPdfBytes, hasActiveAnnotation, inspectOfficeNames,
-  inspectContentTypes, inspectRelationships,
+  inspectContentTypes, inspectRelationships, MAX_VISION_BYTES,
 } from './file-guard.mjs';
-export { UploadError } from './file-guard.mjs';
+export { UploadError, MAX_MESSAGE_ATTACHMENTS, MAX_VISION_BYTES } from './file-guard.mjs';
 
 export const TEXT_EXTENSIONS = new Set([
   'txt', 'md', 'markdown', 'json', 'csv', 'tsv',
@@ -210,6 +210,9 @@ export async function extractAttachment({ fileName, mimeType, base64, signal, ad
     assertImageDimensions(bytes, kind);
     const clean = stripImageMetadata(bytes, kind);
     bytes = undefined;
+    // La IA de imágenes (Groq) solo acepta hasta 4 MB por imagen en base64:
+    // por encima fallaría sin explicación. La web ya reduce las fotos.
+    if (clean.length > MAX_VISION_BYTES) throw new UploadError('image_too_heavy');
     text = await vision(bytesToBase64(clean), mime, signal, admission);
   } else if (family === 'pdf') text = await extractPdf(bytes, pdfTimeoutMs);
   else text = await extractOffice(bytes, ext);

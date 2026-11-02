@@ -1,0 +1,175 @@
+{
+  "title": "La Fotosíntesis",
+  "subtitle": "Proceso de conversión de energía lumínica",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Definición general",
+      "period": "",
+      "kind": "list",
+      "intro": "Proceso fundamental en organismos autótrofos.",
+      "bullets": [
+        {
+          "text": "Transforma la **energía lumínica** en energía química.",
+          "quote": "transforman la energía de la luz en energía química"
+        },
+        {
+          "text": "Ocurre en los **cloroplastos** gracias a la clorofila.",
+          "quote": "se realiza en los cloroplastos, gracias a la clorofila"
+        },
+        {
+          "text": "Es un proceso **anabólico** de síntesis.",
+          "quote": "Es un proceso anabólico"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A close-up of a green leaf with visible chloroplasts, bright sunlight hitting the surface, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Ecuación global",
+      "period": "",
+      "kind": "formula",
+      "intro": "Resumen químico del proceso completo.",
+      "bullets": [],
+      "subcards": [],
+      "dates": [],
+      "formula": "6 CO_2 + 6 H_2O + luz \\rightarrow C_6H_{12}O_6 + 6 O_2",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fase luminosa",
+      "period": "",
+      "kind": "list",
+      "intro": "Primera etapa del proceso fotosintético.",
+      "bullets": [
+        {
+          "text": "Se realiza en los **tilacoides** y requiere luz.",
+          "quote": "ocurre en los tilacoides del cloroplasto y necesita luz"
+        },
+        {
+          "text": "La **fotólisis** del agua libera oxígeno.",
+          "quote": "el agua se rompe (fotólisis) y se libera oxígeno"
+        },
+        {
+          "text": "Genera moléculas de **ATP** y NADPH.",
+          "quote": "Se producen ATP y NADPH"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Cross-section of a chloroplast showing thylakoid membranes absorbing light energy, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fase oscura",
+      "period": "",
+      "kind": "list",
+      "intro": "Segunda etapa, también llamada ciclo de Calvin.",
+      "bullets": [
+        {
+          "text": "Tiene lugar en el **estroma** sin luz directa.",
+          "quote": "ocurre en el estroma y no necesita luz directamente"
+        },
+        {
+          "text": "Consume el **ATP** y NADPH previos.",
+          "quote": "Usa el ATP y el NADPH de la fase luminosa"
+        },
+        {
+          "text": "La enzima **rubisco** fija el CO2.",
+          "quote": "La enzima que fija el CO2 es la rubisco"
+        },
+        {
+          "text": "El producto final es la **glucosa**.",
+          "quote": "para fijar el CO2 y fabricar glucosa"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Stroma area of a chloroplast with carbon dioxide molecules being fixed into sugar chains, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Factores influyentes",
+      "period": "",
+      "kind": "list",
+      "intro": "Variables que afectan la velocidad del proceso.",
+      "bullets": [
+        {
+          "text": "Depende de la **luz**, CO2, temperatura y agua.",
+          "quote": "intensidad de la luz, concentración de CO2, temperatura y disponibilidad de agua"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Importancia ecológica",
+      "period": "",
+      "kind": "list",
+      "intro": "Impacto global del proceso.",
+      "bullets": [
+        {
+          "text": "Genera el **oxígeno** atmosférico.",
+          "quote": "produce el oxígeno de la atmósfera"
+        },
+        {
+          "text": "Base de las **cadenas alimentarias**.",
+          "quote": "es la base de casi todas las cadenas alimentarias"
+        },
+        {
+          "text": "Elimina el **CO2** de la atmósfera.",
+          "quote": "retira CO2 del aire"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "Sin fotosíntesis no existiría el oxígeno que respiramos ni la base de la alimentación.",
+      "illustration_prompt": "A lush green forest with a clear blue sky, representing oxygen production, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Error típico",
+      "period": "",
+      "kind": "mistakes",
+      "intro": "Confusión frecuente en el estudio.",
+      "bullets": [
+        {
+          "text": "Confundir la **fase oscura** con la noche.",
+          "quote": "pensar que la fase oscura ocurre de noche"
+        },
+        {
+          "text": "Ocurre de **día** aunque no use luz.",
+          "quote": "Se llama así porque no usa la luz directamente, pero ocurre de día"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "La fase luminosa produce ATP y NADPH.",
+    "La fase oscura fija el CO2 para crear glucosa.",
+    "El oxígeno liberado proviene de la fotólisis del agua."
+  ],
+  "summary": "La fotosíntesis convierte luz en glucosa mediante dos fases. La luminosa produce energía y la oscura fija carbono. Es vital para la atmósfera y la vida.",
+  "closing": "La fotosíntesis es el motor biológico que sostiene la vida en la Tierra."
+}

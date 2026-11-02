@@ -4,6 +4,7 @@ import {
   AUTH_ERRORS,
   callbackError,
   canonicalRedirect,
+  refuseSecondaryHost,
   exchangeError,
   getAuthRedirectUrl,
   isAuthErrorCode,
@@ -112,12 +113,13 @@ test("secondary production hosts redirect to www, keeping path and query", () =>
   );
 });
 
-test("the canonical host, APIs, non-GET, previews and local are never redirected", () => {
+test("the canonical host, build files, non-GET, previews and local are never redirected", () => {
   assert.equal(redirect("https://www.edudream.es/login"), null);
   assert.equal(redirect("https://www.edudream.es:8443/login"), null);
+  // *.vercel.app no longer skips Cloudflare: GET to the API goes to www too.
   assert.equal(
-    redirect("https://edudream.vercel.app/api/auth/verify-maintenance"),
-    null,
+    redirect("https://edudream.vercel.app/api/ip-check"),
+    "https://www.edudream.es/api/ip-check",
   );
   assert.equal(redirect("https://edudream.vercel.app/_next/data/x.json"), null);
   assert.equal(
@@ -168,4 +170,16 @@ test("callback errors become short codes with a Spanish message", () => {
   }
   assert.equal(isAuthErrorCode("<script>"), false);
   assert.equal(isAuthErrorCode("toString"), false);
+});
+
+test("writes on a secondary production host are refused; previews, local and www are not", () => {
+  const refuse = (href: string, method = "POST", extra: Record<string, string> = {}) =>
+    refuseSecondaryHost({ url: new URL(href), method, siteUrl: SITE, environment: "production", ...extra });
+  assert.equal(refuse("https://edudream.vercel.app/api/auth/verify-maintenance"), true);
+  assert.equal(refuse("https://dream-abc123-kinetik1.vercel.app/api/x", "PUT"), true);
+  assert.equal(refuse("https://edudream.es/api/x"), true);
+  assert.equal(refuse("https://edudream.vercel.app/api/x", "GET"), false);
+  assert.equal(refuse("https://www.edudream.es/api/auth/verify-maintenance"), false);
+  assert.equal(refuse("https://dream-git-x-kinetik1.vercel.app/api/x", "POST", { environment: "preview" }), false);
+  assert.equal(refuse("http://localhost:3000/api/x"), false);
 });

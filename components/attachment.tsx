@@ -97,12 +97,15 @@ export function AttachmentItem({
 export function FileCard({
   attachment,
   onAnalyze,
+  onScheme,
   onRemove,
   onRetry,
   busy,
 }: {
   attachment: Attachment;
   onAnalyze: () => void;
+  /** «Esquema de estos apuntes» (docs/ESQUEMAS.md). */
+  onScheme?: () => void;
   onRemove: () => void;
   onRetry: () => void;
   busy: boolean;
@@ -117,15 +120,26 @@ export function FileCard({
       />
       <h2>Tus apuntes, más claros.</h2>
       <p>
-        Puedes pedir un resumen, preguntar por un concepto o preparar un test.
+        Puedes pedir un resumen, un esquema, preguntar por un concepto o preparar un test.
       </p>
-      <button
-        className="primary"
-        disabled={busy || attachment.status !== "ready"}
-        onClick={onAnalyze}
-      >
-        Analizar archivo <span aria-hidden="true">→</span>
-      </button>
+      <div className="button-row">
+        <button
+          className="primary"
+          disabled={busy || attachment.status !== "ready"}
+          onClick={onAnalyze}
+        >
+          Analizar archivo <span aria-hidden="true">→</span>
+        </button>
+        {onScheme ? (
+          <button
+            className="secondary"
+            disabled={busy || attachment.status !== "ready"}
+            onClick={onScheme}
+          >
+            Esquema de estos apuntes
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }

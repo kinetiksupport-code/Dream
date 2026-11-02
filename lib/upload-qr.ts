@@ -4,7 +4,7 @@
  * `X-Dream-Channel: qr` header. Nothing here touches analytics or
  * diagnostics, and the token is never logged or stored.
  */
-import { toBase64, validateFile } from "./attachments";
+import { prepareFile, toBase64, validateFile, withUploadRetry } from "./attachments";
 
 export const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 export const tokenLooksValid = (token: string) => TOKEN_PATTERN.test(token);
@@ -83,6 +83,8 @@ export async function qrConnect(
   token: string,
   deviceKey?: string,
   signal?: AbortSignal,
+  /** Token de Turnstile (docs/turnstile.md); lo valida dream-api. */
+  humanToken?: string,
 ): Promise<QrConnection> {
   if (!tokenLooksValid(token))
     throw new UploadQrError("", 404, "upload_link_invalid");
@@ -96,6 +98,7 @@ export async function qrConnect(
       action: "upload_qr_connect",
       token,
       ...(deviceKey ? { device_key: deviceKey } : {}),
+      ...(humanToken ? { turnstile_token: humanToken } : {}),
     },
     signal,
   );
@@ -122,17 +125,32 @@ export async function qrUploadFile(
       "upload_file_rejected",
     );
   }
-  const content = await toBase64(file);
-  const data = await post<{ uploads: number; max_uploads: number }>(
-    {
-      action: "upload_qr_file",
-      token,
-      device_key: deviceKey,
-      file_name: file.name || "foto.jpg",
-      mime_type: file.type,
-      content_base64: content,
-    },
-    signal,
+  // Las fotos se reducen en el móvil antes de subirlas (lib/attachments.ts).
+  let ready: File;
+  try {
+    ready = await prepareFile(file);
+  } catch (error) {
+    throw new UploadQrError(
+      error instanceof Error ? error.message : "Este archivo no vale.",
+      400,
+      "upload_file_rejected",
+    );
+  }
+  const content = await toBase64(ready);
+  const data = await withUploadRetry(
+    () =>
+      post<{ uploads: number; max_uploads: number }>(
+        {
+          action: "upload_qr_file",
+          token,
+          device_key: deviceKey,
+          file_name: ready.name || "foto.jpg",
+          mime_type: ready.type,
+          content_base64: content,
+        },
+        signal,
+      ),
+    { signal },
   );
   return { uploads: data.uploads, maxUploads: data.max_uploads };
 }

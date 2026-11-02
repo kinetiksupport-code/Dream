@@ -1,0 +1,174 @@
+{
+  "title": "Guerra Civil Española",
+  "subtitle": "1936-1939",
+  "subject": "Historia",
+  "sections": [
+    {
+      "heading": "Contexto y origen",
+      "period": "1936-1939",
+      "kind": "list",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Inicio del conflicto con un **golpe de Estado** en julio de 1936.",
+          "quote": "La Guerra Civil española se inició en julio de 1936 con un golpe de Estado"
+        },
+        {
+          "text": "Finalización en abril de 1939 tras un **golpe interno** republicano.",
+          "quote": "finalizó en abril de 1939, tras otro golpe de Estado realizado dentro del bando republicano"
+        },
+        {
+          "text": "Enfrentamiento entre **posturas ideológicas** irreconciliables durante la República.",
+          "quote": "enfrento a dos posturas ideológicas irreconciliables tras sus continuos enfrentamientos durante la República"
+        },
+        {
+          "text": "Raíces en las medidas de **modernización** de la Segunda República.",
+          "quote": "Sus raíces se sumergen en las medidas tomadas por la Segunda República para conseguir la modernización"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Cronología clave",
+      "period": "1936-1939",
+      "kind": "dates",
+      "intro": "",
+      "bullets": [],
+      "subcards": [],
+      "dates": [
+        {
+          "year": "1936",
+          "text": "Sublevación militar y paso del Estrecho.",
+          "quote": "Julio 1936: Sublevación militar (17-18 julio)"
+        },
+        {
+          "year": "1936",
+          "text": "Batalla de Madrid y llegada de brigadas.",
+          "quote": "Noviembre 1936: Batalla de Madrid – Llegan las Brigadas Internacionales"
+        },
+        {
+          "year": "1937",
+          "text": "Caída definitiva de la zona norte.",
+          "quote": "A finales de octubre de 1937 toda la zona norte estaba en manos de los sublevados"
+        },
+        {
+          "year": "1938",
+          "text": "Batalla del Ebro, gran desgaste republicano.",
+          "quote": "19 de julio de 1938 – Batalla del Ebro: La ofensiva republicana alcanza su punto culminante"
+        },
+        {
+          "year": "1939",
+          "text": "Caída de Cataluña y éxodo de La Retirada.",
+          "quote": "Diciembre 1938 – febrero 1939: Caída de Cataluña – «La Retirada»"
+        },
+        {
+          "year": "1939",
+          "text": "Fin oficial de la guerra civil.",
+          "quote": "1 de abril de 1939: Fin de la guerra"
+        }
+      ],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Fases del conflicto",
+      "period": "1936-1939",
+      "kind": "subcards",
+      "intro": "",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Fase inicial",
+          "period": "1936-1937",
+          "bullets": [
+            {
+              "text": "Avance de columnas militares tras la sublevación.",
+              "quote": "fase inicial de la sublevación y la guerra de columnas (julio-noviembre de 1936)"
+            },
+            {
+              "text": "Represión brutal en Badajoz y avance hacia Madrid.",
+              "quote": "Brutal represión tras la conquista de Badajoz (agosto 1936) por parte de los sublevados"
+            }
+          ]
+        },
+        {
+          "title": "Fase intermedia",
+          "period": "1936-1937",
+          "bullets": [
+            {
+              "text": "Defensa de Madrid y conquista del frente norte.",
+              "quote": "batalla de Madrid y la conquista del Norte (noviembre 1936 – octubre 1937)"
+            },
+            {
+              "text": "Bombardeo de Guernica como símbolo de la guerra.",
+              "quote": "bombardeo de Guernica... se convierte en un símbolo de la brutalidad de la guerra"
+            }
+          ]
+        },
+        {
+          "title": "Fase final",
+          "period": "1938-1939",
+          "bullets": [
+            {
+              "text": "Batalla del Ebro y ofensiva sobre Cataluña.",
+              "quote": "batalla del Ebro y la caída de Cataluña (1938 – febrero 1939)"
+            },
+            {
+              "text": "Golpe de Casado y fin de la resistencia.",
+              "quote": "golpe de Casado – Combates en Madrid republicano"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "Aerial view of a divided landscape with a fortified city on one side and open fields on the other, dramatic sky, no people.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Consecuencias y legado",
+      "period": "1939",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Fin del liberalismo e imposición de una **dictadura militar**.",
+          "quote": "la victoria del bando nacional supone el final del liberalismo político en España al imponerse una dictadura militar"
+        },
+        {
+          "text": "Establecimiento de un **régimen confesional** vinculado a la Iglesia.",
+          "quote": "Régimen confesional: subvención de la Iglesia, eliminación del divorcio y el matrimonio civil"
+        },
+        {
+          "text": "Represión a los vencidos mediante la **Ley de Responsabilidades**.",
+          "quote": "Ley de Responsabilidades Políticas: (1939) establecía el tipo de represión que debería llevarse contra los vencidos"
+        },
+        {
+          "text": "Exilio de medio millón de personas tras la guerra.",
+          "quote": "se estima que en torno a medio millón"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La dictadura franquista pervivió adaptándose a los cambios internacionales hasta la transición democrática.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El conflicto enfrentó a dos posturas ideológicas irreconciliables durante la República.",
+    "La victoria nacional impuso una dictadura militar unipersonal y confesional.",
+    "La guerra dejó más de 500.000 muertos y un exilio de medio millón de personas."
+  ],
+  "summary": "La Guerra Civil enfrentó a dos Españas tras la República. La victoria nacional instauró una dictadura unipersonal y confesional. El conflicto causó más de 500.000 muertos y un exilio masivo.",
+  "closing": "La Guerra Civil no solo dividió a España, sino que sentó las bases de la dictadura franquista y del posterior proceso de transición democrática."
+}

@@ -1,0 +1,194 @@
+{
+  "title": "La célula eucariota",
+  "subtitle": "Estructura y orgánulos",
+  "subject": "Biología",
+  "sections": [
+    {
+      "heading": "Definición y tipos",
+      "period": "",
+      "kind": "list",
+      "intro": "La célula es la base de la vida y se clasifica según su complejidad estructural.",
+      "bullets": [
+        {
+          "text": "La célula es la **unidad funcional** más pequeña del organismo.",
+          "quote": "Una célula es la unidad funcional más pequeña de un organismo, la cual funciona de forma independiente."
+        },
+        {
+          "text": "Existen dos tipos generales: **procariotas** y **eucariotas**.",
+          "quote": "Existen dos tipos generales de células: las células simples autosuficientes, conocidas como células procariotas"
+        },
+        {
+          "text": "Las eucariotas se encuentran en **animales**, plantas y algas.",
+          "quote": "Las células eucariotas suelen encontrarse en los animales, plantas, algas y"
+        },
+        {
+          "text": "El **núcleo** está definido y delimitado por una membrana.",
+          "quote": "Una célula eucariota es untipo de célula cuyo núcleo está definido y delimitado por una membrana nuclear."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A simple, stylized diagram of a single cell with a distinct nucleus, no text, soft colors, educational style.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Estructura general",
+      "period": "",
+      "kind": "subcards",
+      "intro": "La célula eucariota posee una estructura compleja con componentes coordinados.",
+      "bullets": [],
+      "subcards": [
+        {
+          "title": "Membrana y núcleo",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Capa externa que **delimita** la célula.",
+              "quote": "La célula está formada por la membrana plasmática, una capa externa que la delimita"
+            },
+            {
+              "text": "Contiene el **material genético** en cromosomas lineales.",
+              "quote": "La principal característica de las células eucariotas es que todas tienen un núcleo claramente definido"
+            }
+          ]
+        },
+        {
+          "title": "Citoplasma",
+          "period": "",
+          "bullets": [
+            {
+              "text": "Contiene los **orgánulos** celulares.",
+              "quote": "el citoplasma, que contiene diversos orgánulos, encargados de realizar las diferentes funciones de la célula"
+            },
+            {
+              "text": "Sede de la **mayor parte** de los organelos.",
+              "quote": "donde se encuentra la mayor cantidad de organelos celulares"
+            }
+          ]
+        }
+      ],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A cross-section of a eukaryotic cell showing the plasma membrane, cytoplasm, and nucleus, clean vector style, no labels.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Orgánulos principales",
+      "period": "",
+      "kind": "list",
+      "intro": "Cada orgánulo cumple una función específica dentro de la célula.",
+      "bullets": [
+        {
+          "text": "Los **ribosomas** sintetizan proteínas a partir del ADN.",
+          "quote": "Sus funciones son sintetizar proteínas a partir de la información contenida en el ADN."
+        },
+        {
+          "text": "El **aparato de Golgi** transporta y embala proteínas.",
+          "quote": "Su función es transportar y embalar proteínas."
+        },
+        {
+          "text": "La **mitocondria** produce energía mediante la respiración.",
+          "quote": "respiración ocurre dentro de la mitocondria y mediante este proceso se produce la energía necesaria"
+        },
+        {
+          "text": "Los orgánulos membranosos procesan **lípidos** y proteínas.",
+          "quote": "Estos llevan a cabo funciones específicas en la síntesis de proteínas, el procesamiento de lípidos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A collection of colorful, abstract shapes representing mitochondria, ribosomes, and Golgi apparatus, floating in a clear background, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Características distintivas",
+      "period": "",
+      "kind": "list",
+      "intro": "La célula eucariota se distingue por su tamaño y complejidad interna.",
+      "bullets": [
+        {
+          "text": "Miden entre **10 y 100 micrómetros** de diámetro.",
+          "quote": "Entre 10 y 100 micrómetros con ese tamaño son más grandes que las células procariotas"
+        },
+        {
+          "text": "Comparten **membrana**, citoplasma y ribosomas con procariotas.",
+          "quote": "Las células procariotas comparten con la célula eucariota la membrana, el citoplasma, los ribosomas y el material genético."
+        },
+        {
+          "text": "Son más **especializadas** que las células procariotas.",
+          "quote": "Los organelos les permiten a las células eucariotas ser más especializadas que las células procariotas."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A comparison of two cells, one simple and one complex with internal structures, side by side, minimalistic style, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Funciones vitales",
+      "period": "",
+      "kind": "list",
+      "intro": "Todas las funciones celulares se coordinan para sostener la vida.",
+      "bullets": [
+        {
+          "text": "La función principal es **mantener** al organismo con vida.",
+          "quote": "la principal función es mantener al organismo con vida para hacerlo todas las funciones deben completarse"
+        },
+        {
+          "text": "La respiración produce la **energía** necesaria.",
+          "quote": "mediante este proceso se produce la energía necesaria para los"
+        },
+        {
+          "text": "Las células se unen para formar **órganos**.",
+          "quote": "Las células con las mismas funciones se unen para formar los órganos"
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "",
+      "illustration_prompt": "A glowing energy symbol inside a cell structure, representing energy production, abstract and clean, no text.",
+      "illustration_caption": ""
+    },
+    {
+      "heading": "Legado y síntesis",
+      "period": "",
+      "kind": "legacy",
+      "intro": "",
+      "bullets": [
+        {
+          "text": "Los orgánulos gestionan el **metabolismo** y la energía.",
+          "quote": "Los orgánulos llevan a cabo diferentes funciones de la célula, desde el metabolismo hasta la producción de energía"
+        },
+        {
+          "text": "El **ADN** está protegido dentro del núcleo.",
+          "quote": "Las células eucariotas son aquellas que poseen un núcleo celular que contiene el ADN."
+        },
+        {
+          "text": "Es la **unidad funcional** independiente del organismo.",
+          "quote": "Una célula es la unidad funcional más pequeña de un organismo, la cual funciona de forma independiente."
+        }
+      ],
+      "subcards": [],
+      "dates": [],
+      "formula": "",
+      "highlight": "La célula eucariota permite la formación de tejidos y órganos, como el parénquima pulmonar, gracias a la especialización de sus orgánulos.",
+      "illustration_prompt": null,
+      "illustration_caption": ""
+    }
+  ],
+  "key_ideas": [
+    "El núcleo definido por membrana es la característica principal de la célula eucariota.",
+    "Los orgánulos membranosos permiten especialización funcional superior a las procariotas.",
+    "La célula es la unidad funcional más pequeña que funciona de forma independiente."
+  ],
+  "summary": "La célula eucariota se define por su núcleo delimitado por membrana y sus orgánulos especializados. Estos orgánulos permiten funciones complejas como la producción de energía y la síntesis de proteínas. Su estructura compleja la diferencia de las células procariotas más simples.",
+  "closing": "La célula eucariota es la unidad básica de la vida compleja, donde cada orgánulo cumple una función específica para mantener al organismo con vida."
+}

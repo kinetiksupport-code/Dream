@@ -4,7 +4,10 @@ import { captureDiagnostic } from "./observability/diagnostics";
 import type { Outcome } from "./observability/policy";
 import { getSupabase } from "./supabase";
 import { readNDJSON, DreamStreamError } from "./streaming";
+import { askHuman } from "./human-check";
+import { TURNSTILE_ACTIONS } from "./turnstile";
 import type { DreamProfile, DreamStreamEvent } from "./types";
+import type { StudyProfile } from "./onboarding";
 export type DreamAction =
   | "exams"
   // Ruta de estudio (tras DREAM_STUDY_STEPS_ENABLED)
@@ -77,6 +80,16 @@ export type DreamAction =
   | "chat"
   | "attachment_upload"
   | "test_generate"
+  | "scheme_generate"
+  | "scheme_get"
+  | "scheme_update"
+  | "scheme_refine"
+  | "scheme_illustrate"
+  | "game_generate"
+  | "game_get"
+  | "game_result"
+  | "dreams_list"
+  | "chat_route"
   | "test_get"
   | "test_check_answer"
   | "test_submit"
@@ -118,21 +131,39 @@ async function request(
   }
   const url = process.env.NEXT_PUBLIC_DREAM_API_URL;
   if (!url) throw new Error("Falta configurar dream-api.");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${data.session.access_token}`,
-      apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...payload,
-      action,
-      request_id: crypto.randomUUID(),
-    }),
-    signal,
-    cache: "no-store",
-  });
+  const send = (extra: Record<string, unknown> = {}) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${data.session!.access_token}`,
+        apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        ...extra,
+        action,
+        request_id: crypto.randomUUID(),
+      }),
+      signal,
+      cache: "no-store",
+    });
+  let response = await send();
+  // Cuenta nueva y algo raro: dream-api pide Turnstile antes de la primera
+  // acción de IA (docs/turnstile.md). Se muestra la comprobación y se repite
+  // una sola vez con el token; si el alumno cancela, sale el error normal.
+  // «Reclamar» lleva su propio widget (components/moderation/appeal-form.tsx).
+  if (response.status === 428 && action !== "mod_appeal_create" && typeof window !== "undefined") {
+    const code = await response
+      .clone()
+      .json()
+      .then((d: { code?: unknown }) => d.code)
+      .catch(() => "");
+    if (code === "turnstile_required") {
+      const token = await askHuman(TURNSTILE_ACTIONS.firstAi);
+      if (token) response = await send({ turnstile_token: token });
+    }
+  }
   if (!response.ok) {
     let code = "";
     let retryAfter = Number(response.headers.get("Retry-After")) || 0;
@@ -323,6 +354,20 @@ export async function getDreamProfile(signal?: AbortSignal) {
     profile.onboarding_step =
       typeof p.onboarding_step === "number" ? p.onboarding_step : 0;
   }
+  if (typeof p.academic_level === "string" || p.academic_level === null)
+    profile.academic_level = p.academic_level;
+  const study = (p as { study_profile?: unknown }).study_profile;
+  if (study && typeof study === "object" && !Array.isArray(study)) {
+    const sp = study as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+    profile.study_profile = {
+      hard: Array.isArray(sp.hard) ? sp.hard.filter((x): x is string => typeof x === "string") : [],
+      region: str(sp.region),
+      goal: str(sp.goal),
+      style: str(sp.style),
+      time: str(sp.time),
+    };
+  }
   // Solo la cuenta administradora recibe esto; la ruta se valida para que nunca
   // sea un enlace raro (el enlace ni es la seguridad ni se fía del servidor a ciegas).
   const panel = (p as { admin_panel?: { path?: unknown } }).admin_panel;
@@ -371,6 +416,9 @@ export function saveOnboarding(input: {
   display_name?: string;
   interests?: string[];
   nickname?: string;
+  /** Ajustes › Perfil › Cómo estudias (listas cerradas). */
+  academic_level?: string | null;
+  study_profile?: StudyProfile;
 }) {
   return callDream<{ profile?: unknown }>("onboarding_save", input);
 }

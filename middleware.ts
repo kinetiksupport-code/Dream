@@ -5,9 +5,13 @@ import {
   MAINTENANCE_COOKIE_NAME,
   verifyMaintenanceAccessToken,
 } from "@/lib/maintenance";
-import { canonicalRedirect } from "@/lib/auth-redirect";
+import { canonicalRedirect, refuseSecondaryHost } from "@/lib/auth-redirect";
 import { PANEL_HEADERS, PANEL_INTERNAL, classifyPanelRoute, cspHash, panelCsp, panelPath } from "@/lib/admin-route";
 import { HEAD_BOOT } from "@/lib/theme";
+import { GAME_SCRIPT } from "@/lib/dream-games";
+import { appCsp, cspHeaderName } from "@/lib/csp";
+import { COOKIEBOT, cookiebotPage } from "@/lib/cookie-consent";
+import { turnstileOn } from "@/lib/turnstile";
 
 const PUBLIC_ROUTES = new Set([
   "/maintenance",
@@ -64,6 +68,12 @@ async function route(request: NextRequest): Promise<NextResponse> {
     method: request.method,
   });
   if (canonical) return NextResponse.redirect(canonical, 308);
+  // *.vercel.app would skip Cloudflare: production writes there are refused.
+  if (refuseSecondaryHost({ url: requested, method: request.method }))
+    return NextResponse.json(
+      { error: "Usa www.edudream.es." },
+      { status: 421, headers: { "Cache-Control": "no-store" } },
+    );
 
   if (!isMaintenanceMode()) {
     return panel(request);
@@ -119,9 +129,10 @@ async function panel(request: NextRequest): Promise<NextResponse> {
     const url = request.nextUrl.clone();
     url.pathname = "/no-existe-404";
     url.search = "";
-    return NextResponse.rewrite(url);
+    // Same headers as any other missing page.
+    return app(request, url);
   }
-  if (kind !== "panel") return NextResponse.next();
+  if (kind !== "panel") return app(request);
   const nonce = btoa(crypto.randomUUID());
   // El único script en línea propio del diseño (tema y lectura fácil) no lleva nonce:
   // se permite por su hash, y solo ese.
@@ -134,6 +145,7 @@ async function panel(request: NextRequest): Promise<NextResponse> {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
+  headers.set(COOKIEBOT_HEADER, "off");
   const url = request.nextUrl.clone();
   url.pathname = PANEL_INTERNAL;
   url.search = "";
@@ -142,6 +154,47 @@ async function panel(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.rewrite(url, { request: { headers }, status: 404 });
   response.headers.set("Content-Security-Policy", csp);
   for (const [key, value] of Object.entries(PANEL_HEADERS)) response.headers.set(key, value);
+  return response;
+}
+
+/**
+ * Every other page: CSP with a fresh nonce (lib/csp.ts). The nonce travels in
+ * the request headers so Next.js puts it on its scripts and app/layout.tsx on
+ * Cookiebot's; x-dream-cookiebot says whether this page shows Cookiebot.
+ */
+const COOKIEBOT_HEADER = "x-dream-cookiebot";
+let gameHash: Promise<string> | undefined;
+async function app(request: NextRequest, rewrite?: URL): Promise<NextResponse> {
+  const header = cspHeaderName();
+  const headers = new Headers(request.headers);
+  // Never trust these from the browser.
+  headers.delete("x-nonce");
+  headers.delete(COOKIEBOT_HEADER);
+  const shown = COOKIEBOT.enabled && !rewrite && cookiebotPage(request.nextUrl.pathname);
+  headers.set(COOKIEBOT_HEADER, shown ? "on" : "off");
+  const pass = () =>
+    rewrite ? NextResponse.rewrite(rewrite, { request: { headers } }) : NextResponse.next({ request: { headers } });
+  if (!header) return pass();
+  const nonce = btoa(crypto.randomUUID());
+  readingBootHash ??= cspHash(HEAD_BOOT);
+  gameHash ??= cspHash(GAME_SCRIPT);
+  const csp = appCsp(
+    nonce,
+    {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      dreamApiUrl: process.env.NEXT_PUBLIC_DREAM_API_URL,
+      posthogHost: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+      sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      development: process.env.NODE_ENV === "development",
+      turnstile: turnstileOn(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+    },
+    [await readingBootHash, await gameHash],
+  );
+  headers.set("x-nonce", nonce);
+  // Next.js reads the nonce from this request header (only when enforced).
+  if (header === "Content-Security-Policy") headers.set(header, csp);
+  const response = pass();
+  response.headers.set(header, csp);
   return response;
 }
 

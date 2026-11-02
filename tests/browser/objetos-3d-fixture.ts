@@ -44,7 +44,8 @@ export function watch(page: Page) {
     if (/WebGLRenderer|webglcontextlost/.test(body)) chunks.push(url);
   });
   page.on("console", (m) => {
-    if (m.type() === "error") errors.push(m.text());
+    // Cookiebot no está autorizado en localhost: su 404 de configuración no es de la página.
+    if (m.type() === "error" && !/\.cookiebot\.(com|eu)\//.test(m.location().url)) errors.push(m.text());
   });
   page.on("pageerror", (e) => errors.push(e.message));
   return { chunks, errors };

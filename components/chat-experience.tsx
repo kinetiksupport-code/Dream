@@ -49,7 +49,10 @@ import {
   type LimitState,
 } from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
-import { validateFile, toBase64 } from "@/lib/attachments";
+import { wantsScheme } from "@/lib/esquema";
+import { gameKindFor, wantsGame } from "@/lib/dream-games";
+import { routeCandidate } from "../supabase/functions/dream-api/conversation-memory.mjs";
+import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
 import { takePendingFiles } from "@/lib/pending-files";
 import { AI_NOTICE } from "@/lib/consent";
 import estilo from "./chat-estilo.module.css";
@@ -113,6 +116,8 @@ export function ChatExperience({
     null,
   );
   const [dailyLimit, setDailyLimit] = useState(false);
+  // «Generando Dreams…» mientras se crea un esquema o un juego.
+  const [dreaming, setDreaming] = useState(false);
   // Modo de la IA: el elegido en este navegador si sigue disponible.
   const { usage, refresh: refreshUsage } = useAiUsage();
   const [preferredMode, setPreferredMode] = useState<string | null>(null);
@@ -353,20 +358,26 @@ export function ChatExperience({
         queued: false,
         error: undefined,
       });
-      const content = await toBase64(a.file);
+      // Las fotos del móvil se reducen antes de subirlas (lib/attachments.ts).
+      const ready = await prepareFile(a.file);
+      const content = await toBase64(ready);
       if (controller.signal.aborted) return;
       const id = await ensureConversation();
       if (controller.signal.aborted) return;
       patchAttachment(a.localId, { status: "processing" });
-      const r = await callDream<{ attachment: { id: string } }>(
-        "attachment_upload",
-        {
-          conversation_id: id,
-          file_name: a.file.name,
-          mime_type: a.file.type,
-          content_base64: content,
-        },
-        controller.signal,
+      const r = await withUploadRetry(
+        () =>
+          callDream<{ attachment: { id: string } }>(
+            "attachment_upload",
+            {
+              conversation_id: id,
+              file_name: ready.name,
+              mime_type: ready.type,
+              content_base64: content,
+            },
+            controller.signal,
+          ),
+        { signal: controller.signal },
       );
       patchAttachment(a.localId, { id: r.attachment.id, status: "ready" });
     } catch (e) {
@@ -382,7 +393,7 @@ export function ChatExperience({
       uploadQueue.current.some((f) => f.localId === file.localId)
     )
       return;
-    if (uploadQueue.current.length >= 4) return;
+    if (uploadQueue.current.length >= MAX_CHAT_FILES) return;
     patchAttachment(file.localId, {
       status: "uploading",
       queued: true,
@@ -405,9 +416,9 @@ export function ChatExperience({
   }
   function addFiles(files: File[]) {
     if (lock.current || loading) return;
-    const remaining = 4 - filesRef.current.length;
+    const remaining = MAX_CHAT_FILES - filesRef.current.length;
     if (files.length > remaining)
-      setError("Puedes adjuntar hasta cuatro archivos por mensaje.");
+      setError(`Puedes adjuntar hasta ${MAX_CHAT_FILES} archivos por mensaje.`);
     const next: Attachment[] = [];
     for (const file of files.slice(0, remaining)) {
       try {
@@ -470,6 +481,68 @@ export function ChatExperience({
       },
     ]);
   }
+  // Esquema de los apuntes adjuntos (docs/ESQUEMAS.md): dream-api lo crea y
+  // devuelve el mensaje con la tarjeta «Dreams».
+  async function generateScheme(
+    id: string,
+    prompt: string,
+    signal: AbortSignal,
+    attachmentIds: string[],
+  ) {
+    setDreaming(true);
+    setState("shaping");
+    const r = await callDream<{ assistant_message: string }>(
+      "scheme_generate",
+      {
+        conversation_id: id,
+        context: prompt,
+        attachment_ids: attachmentIds,
+        persist_user_message: true,
+      },
+      signal,
+    );
+    const messageId = crypto.randomUUID();
+    fresh.current.add(messageId);
+    setMessages((s) => [
+      ...s,
+      { id: messageId, role: "assistant", content: r.assistant_message },
+    ]);
+  }
+  // Juego interactivo de los apuntes adjuntos (docs/ESQUEMAS.md, Bloque 7).
+  async function generateGame(
+    id: string,
+    prompt: string,
+    signal: AbortSignal,
+    attachmentIds: string[],
+    kind: "classify" | "match" = gameKindFor(prompt),
+  ) {
+    setDreaming(true);
+    setState("shaping");
+    const r = await callDream<{ assistant_message: string }>(
+      "game_generate",
+      {
+        conversation_id: id,
+        context: prompt,
+        kind,
+        attachment_ids: attachmentIds,
+        persist_user_message: true,
+      },
+      signal,
+    );
+    const messageId = crypto.randomUUID();
+    fresh.current.add(messageId);
+    setMessages((s) => [
+      ...s,
+      { id: messageId, role: "assistant", content: r.assistant_message },
+    ]);
+  }
+  type ChatRoute = {
+    intent: "chat" | "dreams_scheme" | "dreams_game" | "test";
+    kind: "classify" | "match" | null;
+    topic: string;
+    ask: string | null;
+    attachment_ids: string[];
+  };
   async function send(
     promptOverride?: string,
     retryIds?: string[],
@@ -488,6 +561,7 @@ export function ChatExperience({
     setError("");
     setDailyLimit(false);
     setRetry(null);
+    setDreaming(false);
     setWaitSince(Date.now());
     setState("thinking");
     pinned.current = true;
@@ -553,8 +627,39 @@ export function ChatExperience({
         /\b(hazme (?:un |una )?(?:test|examen)|quiero practicar|ponme preguntas|pregúntame|genera (?:un )?(?:test|examen))\b/i.test(
           prompt,
         ) && !/imprimir/i.test(prompt);
-      if (directTest) {
-        await generateTest(id, prompt, controller.signal, true, attachmentIds);
+      // Router (docs/MEMORIA-CHAT.md): los mensajes cortos, con referencias
+      // («eso», «un juego») o que piden crear algo pasan antes por dream-api,
+      // que mira la conversación entera (archivos y pizarra). Si falla, se
+      // sigue como antes, solo con este mensaje.
+      let route: ChatRoute | null = null;
+      if (!study && routeCandidate(prompt)) {
+        try {
+          route = (
+            await callDream<{ route: ChatRoute }>(
+              "chat_route",
+              { conversation_id: id, prompt, attachment_ids: attachmentIds },
+              controller.signal,
+            )
+          ).route;
+        } catch (e) {
+          if (controller.signal.aborted) throw e;
+          route = null;
+        }
+      }
+      if (route?.ask) {
+        // Una sola pregunta útil (ya guardada en la conversación).
+        const ask = route.ask;
+        setMessages((s) => [...s, { id: assistantId, role: "assistant", content: ask }]);
+      } else if (route?.intent === "dreams_game") {
+        await generateGame(id, prompt, controller.signal, route.attachment_ids, route.kind ?? gameKindFor(prompt));
+      } else if (route?.intent === "dreams_scheme") {
+        await generateScheme(id, prompt, controller.signal, route.attachment_ids);
+      } else if (route?.intent === "test" || (!route && directTest)) {
+        await generateTest(id, prompt, controller.signal, true, route?.attachment_ids ?? attachmentIds);
+      } else if (!route && attachmentIds.length && !study && wantsGame(prompt)) {
+        await generateGame(id, prompt, controller.signal, attachmentIds);
+      } else if (!route && attachmentIds.length && !study && wantsScheme(prompt)) {
+        await generateScheme(id, prompt, controller.signal, attachmentIds);
       } else {
         setMessages((s) => [
           ...s,
@@ -934,6 +1039,7 @@ export function ChatExperience({
                   "Analiza este archivo y ayúdame a entender sus ideas principales.",
                 )
               }
+              onScheme={() => void send("Hazme un esquema de estos apuntes.")}
               onRemove={() => removeFile(attachments[0].localId)}
               onRetry={() => enqueueUpload(attachments[0])}
             />
@@ -1009,7 +1115,11 @@ export function ChatExperience({
               />
             ))}
             {busy && last?.role !== "assistant" && (
-              <AiStatus state={state} since={waitSince} />
+              <AiStatus
+                state={state}
+                since={waitSince}
+                label={dreaming && state === "shaping" ? "Generando Dreams…" : undefined}
+              />
             )}
             {busy && state === "shaping" && (
               <div

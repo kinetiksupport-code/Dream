@@ -1,9 +1,13 @@
-// Crisp support chat (Ajustes > Ayuda). Loaded only when the student asks for
-// it, never on page load: many students are minors and Crisp is an outside
-// service that stores messages and may set cookies. Nothing about the student
-// (email, name, id) is sent to Crisp; they type what they want to share.
+// Crisp support chat (Ajustes > Ayuda and the ban screen). Loaded only when the
+// student asks for it, never on page load: many students are minors and Crisp
+// is an outside service that stores messages and sets cookies. Nothing about
+// the student (email, name, id) is sent to Crisp; they type what they want to
+// share. It also needs consent for Preferences cookies (Cookiebot): `allowed`
+// is checked inside load(), so no caller can skip it.
 // Commands from docs.crisp.chat (Web SDK, $crisp): "chat:hide", "chat:show",
 // "chat:open", the "chat:closed" event and window.CRISP_READY_TRIGGER.
+
+import { readConsent, type ConsentWindow } from "./cookie-consent";
 
 export const CRISP_SCRIPT = "https://client.crisp.chat/l.js";
 // Public site id (not a secret). NEXT_PUBLIC_CRISP_WEBSITE_ID overrides it.
@@ -33,6 +37,8 @@ export interface CrispDeps {
   createScript: () => ScriptLike;
   appendScript: (script: ScriptLike) => void;
   websiteId: string;
+  /** Consent for Crisp's cookies. Without it nothing is inserted. */
+  allowed: () => boolean;
   /** Wait for Crisp to be ready before giving up (ad blocker, offline). */
   loadTimeoutMs?: number;
   /** Time between checks that the chat really opened. */
@@ -43,7 +49,7 @@ export interface CrispDeps {
 }
 
 export class CrispUnavailable extends Error {
-  constructor(public reason: "load_failed" | "timeout" | "not_opened") {
+  constructor(public reason: "no_consent" | "load_failed" | "timeout" | "not_opened") {
     super(reason);
     this.name = "CrispUnavailable";
   }
@@ -56,6 +62,7 @@ export function createCrisp({
   createScript,
   appendScript,
   websiteId,
+  allowed,
   loadTimeoutMs = 10_000,
   checkMs = 1_200,
   attempts = 3,
@@ -70,6 +77,7 @@ export function createCrisp({
   /** Inserts the script once and resolves when Crisp is fully ready. */
   function load(): Promise<void> {
     if (loading) return loading;
+    if (!allowed()) return Promise.reject(new CrispUnavailable("no_consent"));
     loading = new Promise<void>((resolve, reject) => {
       let done = false;
       const finish = (error?: CrispUnavailable) => {
@@ -131,6 +139,14 @@ export function createCrisp({
 }
 
 let browserCrisp: ReturnType<typeof createCrisp> | null = null;
+/**
+ * Explicit «Permitir y abrir» when Cookiebot is not on the page (a blocker):
+ * valid for this visit only, never saved.
+ */
+let grantedThisVisit = false;
+export function allowCrispThisVisit() {
+  grantedThisVisit = true;
+}
 /** The page's single Crisp loader (created on first use, in the browser). */
 export function crisp() {
   browserCrisp ??= createCrisp({
@@ -140,6 +156,8 @@ export function crisp() {
       document.head.appendChild(script as unknown as HTMLScriptElement),
     websiteId:
       process.env.NEXT_PUBLIC_CRISP_WEBSITE_ID || CRISP_DEFAULT_WEBSITE_ID,
+    allowed: () =>
+      grantedThisVisit || readConsent(window as unknown as ConsentWindow, document.cookie).preferences,
   });
   return browserCrisp;
 }
