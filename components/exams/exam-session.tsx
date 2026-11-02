@@ -36,6 +36,10 @@ import {
   useExam,
   styles,
 } from "./exam-ui";
+import { BottomSheet } from "../bottom-sheet";
+import { StepFrame } from "./step-frame";
+import sf from "./step-frame.module.css";
+import { studyStepsEnabled } from "@/lib/study-steps";
 export function ExamSessionView({
   id,
   sessionId,
@@ -58,6 +62,8 @@ export function ExamSessionView({
   const [showTime, setShowTime] = useState(true);
   const [retry, setRetry] = useState(0);
   const [dirty, setDirty] = useState(false);
+  // Hoja «Preguntas» de la pantalla rediseñada (0.7).
+  const [nav, setNav] = useState(false);
   // Timer warnings are announced once each (aria-live polite), never per tick.
   const [announcement, setAnnouncement] = useState("");
   const announced = useRef<string[]>([]);
@@ -560,6 +566,132 @@ export function ExamSessionView({
         <ErrorNotice error={error} />
       </ExamFrame>
     );
+  // Pantalla rediseñada (0.6 y 0.7), detrás de DREAM_STUDY_STEPS_ENABLED:
+  // X, barra, contador, reloj, enunciado, respuestas y Anterior/Siguiente.
+  if (studyStepsEnabled()) {
+    const total = test.questions.length;
+    const last = index === total - 1 || expired;
+    const checking = practice && !evaluation[q.id] && hasAnswer(q, answers[q.id]);
+    const leave = () => {
+      void persist()
+        .catch(() => undefined)
+        .finally(() => router.push(`/exams/${id}/ruta`));
+    };
+    return (
+      <>
+        <StepFrame
+          label={practice ? "Test" : "Simulacro"}
+          position={index + 1}
+          total={total}
+          remaining={remaining}
+          warning={!!warning}
+          onCounter={() => setNav(true)}
+          onExit={leave}
+          footer={
+            confirm ? (
+              <>
+                <button className={`secondary press ${sf.small}`} disabled={busy} onClick={() => setConfirm(false)}>
+                  Seguir revisando
+                </button>
+                <button className="primary press" disabled={busy} aria-busy={busy || undefined} onClick={() => void submit()}>
+                  {busy ? "Corrigiendo…" : practice ? "Terminar" : "Entregar"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className={`secondary press ${sf.small}`}
+                  aria-label="Anterior"
+                  disabled={busy || index === 0}
+                  onClick={() => void navigate(index - 1)}
+                >
+                  <ArrowLeft size={18} aria-hidden="true" />
+                </button>
+                {checking ? (
+                  <button className="primary press" disabled={busy} aria-busy={busy || undefined} onClick={() => void check()}>
+                    {busy ? "Comprobando…" : "Comprobar"}
+                  </button>
+                ) : (
+                  <button
+                    className="primary press"
+                    disabled={busy}
+                    aria-busy={busy || undefined}
+                    onClick={() => void (last ? review() : navigate(index + 1))}
+                  >
+                    {last ? "Revisar y entregar" : "Siguiente"}
+                  </button>
+                )}
+              </>
+            )
+          }
+        >
+          {confirm ? (
+            <section className={sf.body}>
+              <h1 className={sf.prompt}>{practice ? "¿Terminar el test?" : "¿Entregar el simulacro?"}</h1>
+              <p>
+                <span className="num">{answered}</span> de <span className="num">{total}</span> respondidas.{" "}
+                {answered < total ? "Las que faltan cuentan como incorrectas." : "Puedes volver y revisarlas."}
+              </p>
+              {expired && <p>Se han guardado tus respuestas antes de acabar el tiempo.</p>}
+            </section>
+          ) : (
+            <>
+              <p className={sf.topic}>{test.topic}</p>
+              <section className={styles.question} key={q.id} ref={questionRef} data-direction={direction}>
+                <div className={`question-prompt ${sf.prompt}`}>
+                  <Markdown content={q.prompt} />
+                </div>
+                {q.type === "multiple_select" && <p className={styles.muted}>Puedes elegir varias respuestas.</p>}
+                <AnswerInput
+                  question={q}
+                  value={answers[q.id]}
+                  disabled={busy || expired || !!evaluation[q.id]}
+                  busy={busy}
+                  evaluation={practice ? evaluation[q.id] : undefined}
+                  onChange={(value) => {
+                    const next = { ...answersRef.current, [q.id]: value };
+                    answersRef.current = next;
+                    changeVersion.current++;
+                    setAnswers(next);
+                    setDirty(true);
+                  }}
+                />
+                {practice && evaluation[q.id] && <AnswerFeedback evaluation={evaluation[q.id]} />}
+              </section>
+            </>
+          )}
+          {/* El guardado es silencioso: solo se avisa si falla. */}
+          {dirty && error ? (
+            <p className={sf.saveError} role="alert">
+              No se ha podido guardar.{" "}
+              <button className={styles.inlineLink} disabled={busy || expired} onClick={() => void persist().catch(() => undefined)}>
+                Reintentar
+              </button>
+            </p>
+          ) : (
+            <ErrorNotice error={error} />
+          )}
+          <p className="visually-hidden" aria-live="polite">
+            {announcement}
+          </p>
+        </StepFrame>
+        {nav && (
+          <BottomSheet labelledBy="hoja-preguntas" onClose={() => setNav(false)}>
+            <h2 id="hoja-preguntas">Preguntas</h2>
+            <p className={styles.muted}>
+              <span className="num">{answered}</span> de <span className="num">{total}</span> respondidas
+            </p>
+            <div onClickCapture={() => setNav(false)}>{palette}</div>
+            <div className="modal-actions">
+              <button className="secondary press" onClick={() => setNav(false)}>
+                Cerrar
+              </button>
+            </div>
+          </BottomSheet>
+        )}
+      </>
+    );
+  }
   const typeTitle =
     q?.type === "math"
       ? "Resuelve y comprueba."

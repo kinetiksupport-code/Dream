@@ -15,6 +15,9 @@ await admin.query("create database dream_cards_test");
 const url = new URL(process.env.DREAM_TEST_DATABASE_URL || "postgresql://postgres:isolated-test-only@127.0.0.1:55432/postgres");
 url.pathname = "/dream_cards_test";
 const pool = new pg.Pool({ connectionString: url.toString(), max: 2, statement_timeout: 5000 });
+// Al final se borra esta base con «with (force)»: Postgres corta sus conexiones y
+// una que siga en el pool emitiría «error» sin nadie que lo recoja.
+pool.on("error", () => {});
 await pool.query(`
   do $$ begin
     if not exists(select 1 from pg_roles where rolname='anon') then create role anon nologin; end if;

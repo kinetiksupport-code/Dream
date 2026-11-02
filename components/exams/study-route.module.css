@@ -1,0 +1,530 @@
+/* Ruta de estudio rediseñada (study-route.tsx). Tokens de Dream: --bg,
+   --card, --chip-hover, --text, --text-secondary, --primary, --border.
+   Móvil primero; escritorio desde 1024 px. Solo se animan transform y
+   opacity; con movimiento reducido, solo fundidos. */
+.screen {
+  --step: 30px;
+  position: relative;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-bottom: 210px; /* hueco para «A continuación» fija */
+}
+
+/* ── Barra superior (móvil) ── */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.round {
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.back {
+  text-decoration: none;
+}
+.backText {
+  display: none;
+}
+.barTabs {
+  flex: 0 1 220px;
+}
+.moreWrap {
+  position: relative;
+}
+
+/* ── Pestañas Ruta / Progreso ── */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  block-size: 44px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--card);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tab svg {
+  display: none;
+}
+.tab[aria-selected="true"] {
+  background: var(--elevated);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(8, 11, 20, 0.12);
+}
+
+/* ── Menú «⋯» (sale del botón) ── */
+.menu {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + 8px);
+  z-index: 20;
+  inline-size: 280px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--elevated);
+  box-shadow: 0 24px 60px rgba(8, 11, 20, 0.22);
+  display: flex;
+  flex-direction: column;
+  transform-origin: top right;
+  animation: menuIn var(--dur-base) var(--ease);
+}
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+}
+.menuItem {
+  min-block-size: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-inline: 12px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+.menuItem svg {
+  color: var(--text-secondary);
+}
+.menuItem:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .menuItem:hover {
+    background: var(--chip-hover);
+  }
+}
+
+/* ── Cabecera ── */
+.side {
+  display: none;
+}
+.mobileHead {
+  margin-block: 20px 8px;
+}
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.subject {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.subjectPiece {
+  inline-size: 36px;
+  block-size: 36px;
+}
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.title {
+  margin: 0;
+  font-size: 1.875rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+}
+.facts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.facts strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ── Camino ── */
+.pill {
+  margin-block-start: 20px;
+  min-block-size: 44px;
+  padding: 0 14px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.center {
+  display: flex;
+  margin-inline: auto;
+}
+.path {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.finalPath {
+  margin-block-start: 22px;
+}
+.stepItem {
+  margin-inline-start: calc(var(--o, 0) * var(--step));
+  max-inline-size: calc(100% - var(--o, 0) * var(--step));
+}
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-block-size: 72px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  border-radius: 20px;
+  max-inline-size: 100%;
+}
+.step:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 4px;
+}
+.piece {
+  position: relative;
+  inline-size: 72px;
+  block-size: 72px;
+  flex: none;
+}
+.piece > img {
+  position: relative;
+  display: block;
+}
+/* Lo hecho, apagado; lo pendiente, más tenue (forma e icono, no solo color). */
+.step[data-state="hecha"] .piece > img:first-of-type {
+  opacity: 0.85;
+}
+.step[data-state="actual"] {
+  margin-block-start: 40px; /* sitio para la placa del tipo */
+}
+.badge {
+  position: absolute !important;
+  inset-inline-start: 13px;
+  inset-block-start: -44px;
+  filter: drop-shadow(0 6px 10px rgba(8, 11, 20, 0.25));
+}
+.halo {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(21, 91, 255, 0.35), rgba(21, 91, 255, 0));
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Un único bucle en el nodo actual (0.8 · 12): el halo respira, solo opacity. */
+  .halo {
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+}
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+.now {
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--primary-tint);
+  color: var(--primary-ink);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.stepText {
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stepType {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.stepTitle {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* ── Gema de preparación ── */
+.gem {
+  margin-block-start: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.gemRing {
+  position: relative;
+  inline-size: 150px;
+  block-size: 150px;
+  display: grid;
+  place-items: center;
+}
+.gemRing svg {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  transform: rotate(-90deg);
+}
+.gemTrack,
+.gemFill {
+  fill: none;
+  stroke-width: 6;
+}
+.gemTrack {
+  stroke: var(--chip-hover);
+}
+.gemFill {
+  stroke: var(--primary);
+  stroke-linecap: round;
+}
+.gemTitle {
+  margin: 4px 0 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* ── «A continuación» ── */
+.next {
+  position: fixed;
+  z-index: 15;
+  inset-inline: 12px;
+  inset-block-end: calc(var(--tabbar-space) + 12px);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--elevated);
+  box-shadow: 0 -10px 40px rgba(8, 11, 20, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.nextText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: swap var(--dur-base) var(--ease);
+}
+@keyframes swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.nextEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary-ink);
+}
+.nextTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.nextActions {
+  display: flex;
+  gap: 10px;
+}
+.other {
+  flex: none;
+}
+.go {
+  flex: 1;
+  min-block-size: 52px;
+  justify-content: center;
+}
+
+/* ── Hoja de un nodo ── */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sheet p {
+  margin: 0;
+}
+.sheetHead {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.sheetTitle {
+  margin: 2px 0 4px;
+  font-size: 1.375rem;
+  font-weight: 650;
+}
+.reason {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--primary-tint);
+  font-size: 0.875rem;
+}
+.sheetActions {
+  display: flex;
+  gap: 12px;
+}
+.sheetActions > :last-child {
+  flex: 1;
+  justify-content: center;
+}
+
+.progress {
+  margin-block-start: 16px;
+}
+
+/* ── Escritorio: dos columnas como en el diseño ── */
+@media (min-width: 1024px) {
+  .screen {
+    --step: 56px;
+    display: grid;
+    grid-template-columns: minmax(340px, 400px) minmax(0, 1fr);
+    gap: 48px 72px;
+    padding-bottom: 180px;
+  }
+  .bar {
+    grid-column: 1 / -1;
+  }
+  .barTabs,
+  .barMore {
+    display: none;
+  }
+  .back {
+    display: inline-flex;
+    align-self: flex-start;
+    inline-size: auto;
+    padding-inline: 16px;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .backText {
+    display: inline;
+  }
+  .side {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    align-self: start;
+    position: sticky;
+    top: 24px;
+    padding: 32px;
+    border: 1px solid var(--border);
+    border-radius: 28px;
+    background: var(--card);
+  }
+  .side .subjectPiece {
+    inline-size: 60px;
+    block-size: 60px;
+  }
+  .side .title {
+    font-size: 2.25rem;
+  }
+  .side .facts {
+    font-size: 0.9375rem;
+  }
+  .side .tabs {
+    block-size: 52px;
+    border-radius: 16px;
+    background: var(--chip-hover);
+  }
+  .side .tab svg {
+    display: inline;
+  }
+  .sideMore .round {
+    inline-size: 56px;
+  }
+  .mobileHead {
+    display: none;
+  }
+  .stepTitle {
+    font-size: 1rem;
+  }
+  .next {
+    inset-inline: auto 40px;
+    inset-block-end: 32px;
+    inline-size: 440px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(8, 11, 20, 0.18);
+  }
+  .nextTitle {
+    font-size: 1.375rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation-name: fade;
+  }
+  .nextText {
+    animation-name: fade;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
