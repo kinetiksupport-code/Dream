@@ -50,6 +50,8 @@ const sql = readFileSync(new URL("../../supabase/migrations/20261102090000_study
 await pool.query(sql);
 await pool.query(sql); // se puede aplicar dos veces
 await pool.query("grant all on all tables in schema public to service_role; grant usage on schema dream_private to service_role");
+// Entrega 4: la clave de las lecciones, solo para dream-api.
+const privateAnswers = readFileSync(new URL("../../supabase/migrations/20261102120000_study_answers_private.sql", import.meta.url), "utf8");
 
 const A = randomUUID(), B = randomUUID(), L = randomUUID();
 const EA = randomUUID(), EB = randomUUID(), EL = randomUUID();
@@ -85,7 +87,13 @@ for (const [s, e, u] of [[A, EA, UA], [B, EB, UB]]) {
   await as("service_role", null, "insert into public.dream_error_bank(student_id, exam_id, unit_id, question_ref, cause) values ($1, $2, $3, 'q1', 'concepto')", [s, e, u]);
   await as("service_role", null, "insert into public.dream_exam_blueprints(exam_id, student_id, blueprint, inputs_hash) values ($1, $2, '{}', 'hash12345')", [e, s]);
 }
-const tables = ["dream_unit_content", "dream_unit_progress", "dream_cards", "dream_card_reviews", "dream_error_bank", "dream_exam_blueprints"];
+// Antes de aplicar la migración de la Entrega 4, el alumno leía su propia lección (y su clave).
+assert.equal((await as("authenticated", A, "select quiz from public.dream_unit_content")).rows.length, 1);
+await pool.query(privateAnswers);
+await pool.query(privateAnswers); // se puede aplicar dos veces
+await assert.rejects(as("authenticated", A, "select quiz from public.dream_unit_content"), /permission denied/);
+assert.ok((await as("service_role", null, "select count(*)::int as n from public.dream_unit_content")).rows[0].n >= 2, "dream-api sigue leyendo");
+const tables = ["dream_unit_progress", "dream_cards", "dream_card_reviews", "dream_error_bank", "dream_exam_blueprints"];
 let checks = 0;
 
 // 1. Cada alumno ve solo lo suyo; el otro, nada (ni contado).

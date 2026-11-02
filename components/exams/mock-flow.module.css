@@ -1,0 +1,208 @@
+/* Simulacro (mock-flow.tsx): Claude Design PantallaSimulacro*. Solo transform y opacity. */
+.preview,
+.results {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  animation: rise 240ms var(--ease) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 650;
+}
+.line {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.sub {
+  margin: 0;
+  color: var(--text-secondary);
+  max-inline-size: 40ch;
+}
+.small {
+  margin: 0;
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.link {
+  min-block-size: 44px;
+  border: 0;
+  background: none;
+  padding: 0 4px;
+  font: inherit;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.toggle {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  margin-block-start: 8px;
+}
+.seg {
+  min-block-size: 44px;
+  padding-inline: 18px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.seg[data-on] {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(8, 11, 20, 0.12);
+}
+.eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.grade {
+  margin: 0;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.list,
+.fails,
+.criteria {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.list span {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.fails {
+  gap: 16px;
+  max-block-size: 60dvh;
+  overflow: auto;
+}
+.fail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--card);
+}
+.failQ :global(p) {
+  margin: 0;
+  font-weight: 600;
+}
+.criteria {
+  gap: 4px;
+  font-size: 0.875rem;
+}
+.details summary {
+  /* Se queda como elemento de lista para conservar el triángulo de abrir. */
+  padding-block: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+}
+.criteria li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cause {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+.cause select {
+  min-block-size: 44px;
+  font: inherit;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  padding-inline: 8px;
+}
+.argue label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.argue textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.smallBtn {
+  align-self: flex-start;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+}
+.cell {
+  min-block-size: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cell[data-done] {
+  background: var(--card);
+  border-color: transparent;
+}
+.cell[aria-current] {
+  outline: 2px solid var(--primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview,
+  .results {
+    animation-name: fade;
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+  }
+}

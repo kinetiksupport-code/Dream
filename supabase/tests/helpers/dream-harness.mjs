@@ -99,7 +99,9 @@ export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}
         return Response.json(selected, { headers: { "content-range": `0-${Math.max(0, selected.length - 1)}/${selected.length}` } });
       }
       if (req.method === "POST") {
-        const added = Array.isArray(body) ? body : [body];
+        const added = (Array.isArray(body) ? body : [body]).map((row) =>
+          // Opt-in (patchable): como Postgres, las filas nuevas reciben un id.
+          state.patchable && row && typeof row === "object" && !("id" in row) && !table.endsWith("_progress") && table !== "dream_exam_blueprints" ? { id: crypto.randomUUID(), ...row } : row);
         // Opt-in: upsert (on_conflict) mezcla con la fila que ya existe.
         const conflict = state.patchable ? url.searchParams.get("on_conflict") : null;
         if (conflict) {

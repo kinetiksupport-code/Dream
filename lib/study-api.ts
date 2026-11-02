@@ -149,3 +149,86 @@ export function flushReviews(): Promise<number> {
   });
   return flushing;
 }
+
+// ── Simulacro (Bloque 5) ──
+export type MockKind = "diagnostic" | "block" | "final";
+export interface MockPlan {
+  kind: MockKind;
+  count: number;
+  minutes: number | null;
+  timer: "none" | "optional" | "required";
+  mix: { mcq: number; tf: number; written: number };
+}
+export interface Blueprint {
+  enough_material: boolean;
+  based_on: string;
+  previous_exams: number;
+  topics: { name: string; weight: number }[];
+  candidates: { topic: string; type: string; hint: string; reason: string }[];
+}
+export interface MockQuestion {
+  id: string;
+  position: number;
+  type: "mcq" | "tf" | "written";
+  prompt: string;
+  options: string[];
+  topic: string;
+}
+export interface MockSession {
+  id: string;
+  kind: MockKind;
+  status: "generating" | "failed" | "active" | "grading" | "completed";
+  answers: Record<string, string>;
+  question_index: number;
+  revision: number;
+  remaining_seconds: number | null;
+  time_limit_seconds: number | null;
+  estimated_grade: number | null;
+}
+export interface MockReviewItem extends MockQuestion {
+  answer: string | null;
+  correct_answer: string;
+  reason: string;
+  rubric: string[];
+  score: number;
+  points: number;
+  annulled: boolean;
+  disputes: number;
+  criteria: { criterion: string; met: boolean }[] | null;
+  feedback: string;
+  improved: string;
+  cause: string | null;
+  cause_confirmed: boolean;
+  solution: string;
+  dispute: { accepted: boolean; message: string } | null;
+}
+export type MockState =
+  | { session: MockSession; questions: MockQuestion[] }
+  | { session: MockSession; review: MockReviewItem[]; target_grade: number | null; starting_point: { known: string[]; start: string[] } | null };
+
+export const mockPreview = (examId: string, kind: MockKind) =>
+  callDream<{ plan: MockPlan; blueprint: Blueprint | null; quota: { ok: boolean; used: number; cap: number; unlimited: boolean }; target_grade: number | null }>(
+    "mock_preview",
+    { exam_id: examId, kind },
+  );
+export const mockCreate = (examId: string, sessionId: string, kind: MockKind, timed: boolean) =>
+  callDream<{ session: { id: string } }>("mock_create", { exam_id: examId, session_id: sessionId, kind, timed });
+export const mockGet = (examId: string, sessionId: string) => callDream<MockState>("mock_get", { exam_id: examId, session_id: sessionId });
+export const mockSave = (examId: string, sessionId: string, answers: Record<string, string>, questionIndex: number, revision: number) =>
+  callDream<{ session: { revision: number } }>("exam_session_save", {
+    exam_id: examId,
+    session_id: sessionId,
+    answers,
+    question_index: questionIndex,
+    revision,
+  });
+export const mockSubmit = (examId: string, sessionId: string) => callDream<{ ok: true }>("mock_submit", { exam_id: examId, session_id: sessionId });
+export const mockDispute = (examId: string, sessionId: string, questionId: string, argument: string) =>
+  callDream<{ accepted: boolean; message: string; score: number; annulled: boolean; estimated_grade: number; disputes_left: number }>("mock_dispute", {
+    exam_id: examId,
+    session_id: sessionId,
+    question_id: questionId,
+    argument,
+  });
+export const mockCause = (examId: string, sessionId: string, questionId: string, cause: string) =>
+  callDream<{ ok: true }>("mock_cause", { exam_id: examId, session_id: sessionId, question_id: questionId, cause });

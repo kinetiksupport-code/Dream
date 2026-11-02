@@ -95,6 +95,12 @@ export function ExamSessionView({
     setError("");
     getExamSession(id, sessionId, c.signal)
       .then(async (s) => {
+        // Los simulacros de la ruta tienen su pantalla (corrección con rúbrica y nota estimada).
+        if (s.kind) {
+          const tipo = s.kind === "final" ? "final" : s.kind === "block" ? "bloque" : "diagnostico";
+          router.replace(`/exams/${id}/simulacro?tipo=${tipo}&s=${s.id}`);
+          return;
+        }
         const { test: t } = s.test_id
           ? await callDream<{ test: DreamTest }>(
               "test_get",
@@ -117,7 +123,7 @@ export function ExamSessionView({
         if (!c.signal.aborted) setError(errorMessage(e));
       });
     return () => c.abort();
-  }, [id, sessionId, retry, setError]);
+  }, [id, sessionId, retry, setError, router]);
   // Con el flag, la espera de las preguntas se comprueba sola cada 5 s.
   const waiting = !!session && !session.test_id && session.status === "generating";
   useEffect(() => {
