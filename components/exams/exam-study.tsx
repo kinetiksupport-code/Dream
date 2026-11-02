@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, X } from "lucide-react";
 import { studyStepsEnabled } from "@/lib/study-steps";
+import { LessonFlow } from "./lesson-flow";
 import sf from "./step-frame.module.css";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
@@ -21,12 +22,18 @@ import {
   styles,
 } from "./exam-ui";
 import { ExamDetailSkeleton, LoadError, examStyles } from "./exam-page";
+function useTutorMode() {
+  const [on, setOn] = useState(false);
+  useEffect(() => setOn(new URLSearchParams(window.location.search).get("tutor") === "1"), []);
+  return on;
+}
 export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   const { exam, setExam, error, setError, loading, reload } = useExam(id);
   const [unit, setUnit] = useState<ExamUnit | null>(null);
   const [busy, setBusy] = useState(false);
   const [startRetry, setStartRetry] = useState(0);
   const router = useRouter();
+  const tutorMode = useTutorMode();
   const requestId = useRef<string | null>(null);
   const lock = useRef(false);
   useEffect(() => {
@@ -86,6 +93,10 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   // Lección rediseñada (0.6), detrás de DREAM_STUDY_STEPS_ENABLED: pantalla
   // completa sin panel lateral. Hoy la lección es la conversación con el
   // tutor; Leer y el test dentro de la lección llegan en la entrega 2.
+  // Con el flag, la lección es Leer → Test (Entrega 2); ?tutor=1 abre el tutor
+  // («Explícame por qué», «Pregúntale a Dream») con el contexto de la unidad.
+  if (studyStepsEnabled() && !tutorMode)
+    return <LessonFlow examId={id} unitId={unitId} title={unit.title} />;
   if (studyStepsEnabled()) {
     const done = unit.status === "completed";
     function finish() {

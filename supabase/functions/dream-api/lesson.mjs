@@ -192,3 +192,37 @@ export function unitNotes(materials, unit, maxChars = LIMITS.materialChars) {
   // El reparto entre archivos y el tope total los hace wrapStudentMaterial.
   return out.map((n) => ({ ...n, text: n.text.slice(0, maxChars) }));
 }
+
+/**
+ * Corrige una pregunta del banco en código, sin IA (Bloque 5.5).
+ * - mcq: la opción exacta. - tf: verdadero/falso.
+ * - written (provisional, hasta la corrección con rúbrica de la Entrega 4):
+ *   cuenta si recoge al menos la mitad de las ideas de la rúbrica, por sus
+ *   palabras importantes.
+ * @param {LessonQuestion} q
+ * @param {unknown} answer
+ */
+export function gradeQuestion(q, answer) {
+  if (q.type === "mcq") return { correct: typeof answer === "string" && answer.trim() === q.answer, correct_answer: q.answer };
+  if (q.type === "tf") return { correct: answer === q.answer, correct_answer: q.answer };
+  const text = fold(typeof answer === "string" ? answer.slice(0, LIMITS.writtenChars) : "");
+  const ideas = (q.rubric ?? []).map((idea) => {
+    const keys = fold(idea).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 3 && !STOP.has(w));
+    const hit = keys.filter((k) => text.includes(k)).length;
+    return keys.length ? hit / keys.length >= 0.5 : false;
+  });
+  const met = ideas.filter(Boolean).length;
+  return { correct: (q.rubric?.length ?? 0) > 0 && met >= Math.ceil((q.rubric?.length ?? 1) / 2), correct_answer: q.answer, rubric: q.rubric ?? [], met };
+}
+
+/** La pregunta tal y como la ve el alumno: sin respuesta, sin explicación, sin rúbrica. */
+export function publicQuestion(q, index) {
+  return { index, type: q.type, prompt: q.prompt, ...(q.type === "mcq" ? { options: q.options } : {}) };
+}
+
+/** Una tarjeta por cada fallo (Bloque 3), sin IA y sin pasar de 300 caracteres. */
+export function mistakeCard(q) {
+  const answer = q.type === "tf" ? (q.answer ? "Verdadero" : "Falso") : String(q.answer ?? "");
+  const back = `${answer}${q.explanation ? `. ${q.explanation}` : ""}`.slice(0, LIMITS.cardChars);
+  return { front: String(q.prompt).slice(0, LIMITS.cardChars), back: back || "Revisa la lectura." };
+}
