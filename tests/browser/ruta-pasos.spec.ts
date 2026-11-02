@@ -149,3 +149,68 @@ test("con movimiento reducido, nada se desplaza ni escala en la ruta", async ({ 
   );
   expect(moving).toBe(0);
 });
+
+// ── Entrega 0b: microinteracciones ──
+
+test("«Continuar» pasa a cargando en su sitio: mismo tamaño, «Elige otra» atenuada y anuncio", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  let release: () => void = () => {};
+  const held = new Promise<void>((r) => (release = r));
+  await routeFixture(page);
+  // La creación del test no responde: el botón se queda cargando.
+  await page.route("**/functions/v1/dream-api", async (route) => {
+    if (route.request().postDataJSON().action === "exam_session_create") {
+      await held;
+      return route.abort();
+    }
+    return route.fallback();
+  });
+  await page.goto(`/exams/${eid}/ruta`);
+  const go = page.getByRole("button", { name: "Continuar" });
+  const before = await go.boundingBox();
+  await go.click();
+  await expect(go).toHaveAttribute("aria-busy", "true");
+  const after = await go.boundingBox();
+  expect(after?.width).toBeCloseTo(before!.width, 0);
+  expect(after?.height).toBeCloseTo(before!.height, 0);
+  await expect(page.getByRole("button", { name: "Elige otra" })).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: "Preparando tu test" })).toHaveCount(1);
+  release();
+});
+
+test("↓ aparece cuando la lección actual sale de la vista y la vuelve a traer", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await routeFixture(page);
+  await page.goto(`/exams/${eid}/ruta`);
+  const down = page.getByRole("button", { name: "Ir a la lección actual" });
+  await expect(down).toHaveCount(0); // oculto (aria-hidden) mientras se ve
+  await page.getByRole("button", { name: /lecciones más/ }).click();
+  await page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>(".workspace-main");
+    (main ?? document.scrollingElement)?.scrollBy(0, 1400);
+  });
+  await expect(down).toBeVisible();
+  await down.click();
+  await expect(page.locator("[data-current] button")).toBeFocused();
+  await expect(page.locator("[data-current] button")).toBeInViewport();
+});
+
+test("pestañas: el fondo de la elegida se desliza; la gema dibuja su anillo al verse", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await routeFixture(page);
+  await page.goto(`/exams/${eid}/ruta`);
+  await expect(page.getByTestId("ruta-pasos")).toBeVisible();
+  // Posición del fondo respecto a su barra (la columna cambia de ancho entre pestañas).
+  const offset = () =>
+    page.evaluate(() => {
+      const list = [...document.querySelectorAll<HTMLElement>("[data-tab]")].find((el) => el.getBoundingClientRect().width > 0)!;
+      return list.querySelector("span")!.getBoundingClientRect().x - list.getBoundingClientRect().x;
+    });
+  expect(await offset()).toBeLessThan(10);
+  await page.getByRole("tab", { name: "Progreso" }).first().click();
+  await expect.poll(offset).toBeGreaterThan(100);
+  await page.getByRole("tab", { name: "Ruta" }).first().click();
+  const gem = page.getByRole("img", { name: /Preparación/ });
+  await gem.scrollIntoViewIfNeeded();
+  await expect(page.locator("section[data-seen]")).toHaveCount(1);
+});

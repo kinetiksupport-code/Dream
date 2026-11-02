@@ -39,10 +39,11 @@ export function StepFrame({
   footer: ReactNode;
 }) {
   const [asking, setAsking] = useState(false);
+  // El contador cambia con un fundido corto (0.8 · 7): la clave lo vuelve a montar.
   const counter = (
-    <>
+    <span className={s.count} key={position}>
       <span className="num">{position}</span> / <span className="num">{total}</span>
-    </>
+    </span>
   );
   return (
     <div className={s.frame} data-testid="step-frame">
