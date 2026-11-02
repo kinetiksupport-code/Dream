@@ -1,0 +1,375 @@
+/* La lección (lesson-flow.tsx): Claude Design PantallaGenerarMovil,
+   PantallaLeerMovil y PantallaTestMovil. Solo transform y opacity. */
+.dark {
+  /* «Preparando»: fondo azul oscuro del diseño, en claro y en oscuro. */
+  --text: #f3f5fa;
+  --text-secondary: rgba(243, 245, 250, 0.72);
+  --card: rgba(255, 255, 255, 0.09);
+  --chip-hover: rgba(255, 255, 255, 0.14);
+  --border: rgba(255, 255, 255, 0.14);
+  color: var(--text);
+  background: radial-gradient(120% 90% at 50% 110%, #0e2470 0%, #081033 45%, #04050a 80%);
+  max-width: none;
+  min-block-size: 100dvh;
+  margin-block: -16px;
+  padding-inline: max(16px, calc((100% - 760px) / 2));
+}
+.prep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+  padding-block-end: 32px;
+  animation: prepIn 400ms var(--ease) both;
+}
+@keyframes prepIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.prepTitle {
+  margin: 8px 0 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+.prepSub {
+  margin: 0;
+  color: var(--text-secondary);
+}
+.steps {
+  list-style: none;
+  margin: 8px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: start;
+  inline-size: min(320px, 100%);
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.9375rem;
+}
+.steps li[data-state="next"] {
+  opacity: 0.45;
+}
+.dot {
+  inline-size: 20px;
+  block-size: 20px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid rgba(243, 245, 250, 0.4);
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.steps li[data-state="done"] .dot {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.steps li[data-state="now"] .dot {
+  border-color: #93aaff;
+  border-top-color: transparent;
+  animation: spin 800ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Leer */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: sectionIn 320ms var(--ease) both;
+}
+@keyframes sectionIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+.sectionTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.body {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+.why {
+  border-radius: 16px;
+  background: var(--card);
+  padding: 4px 14px;
+}
+.whyToggle {
+  inline-size: 100%;
+  min-block-size: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.why p {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+}
+.checkCard {
+  padding: 18px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--elevated);
+}
+.checkCard[data-state="ok"] {
+  border-color: var(--success);
+}
+.checkCard[data-state="ko"] {
+  border-color: var(--danger);
+}
+.checkLabel {
+  margin: 0 0 6px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.statement {
+  margin: 0;
+  font-size: 1.1875rem;
+  font-weight: 600;
+}
+.tf {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  inline-size: 100%;
+}
+.tf > button {
+  min-block-size: 56px;
+  justify-content: center;
+}
+.feedback {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  animation: feedbackIn 220ms var(--ease) both;
+}
+.feedback[data-ok] {
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+.feedback p {
+  margin: 4px 0 0;
+}
+.feedbackIcon {
+  inline-size: 28px;
+  block-size: 28px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--danger);
+}
+.feedback[data-ok] .feedbackIcon {
+  background: var(--success);
+}
+@keyframes feedbackIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.sources {
+  min-block-size: 44px;
+  padding-inline: 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sourceList {
+  margin: 0;
+  padding-inline-start: 20px;
+}
+.note {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Test */
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option {
+  min-block-size: 60px;
+  padding-inline: 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: var(--elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: start;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+}
+.option[data-picked] {
+  border-color: var(--primary);
+}
+.option[data-right] {
+  border-color: var(--success);
+}
+.option[data-wrong] {
+  border-color: var(--danger);
+}
+.option:disabled {
+  cursor: default;
+}
+.written {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.written textarea {
+  min-block-size: 160px;
+  padding: 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 18px;
+  background: var(--elevated);
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.written small {
+  color: var(--text-secondary);
+}
+.hint {
+  align-self: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Resultados: degradado de ánimo, nunca rojo (0.8 · 10) */
+.results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 32px 16px;
+  border-radius: 28px;
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 70%);
+}
+.results[data-mastered] {
+  background: radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--success) 18%, transparent), transparent 70%);
+}
+.big {
+  margin: 0;
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.resultTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+.resultText {
+  margin: 0;
+  max-inline-size: 36ch;
+  color: var(--text-secondary);
+}
+.facts {
+  margin: 8px 0 0;
+  display: flex;
+  gap: 28px;
+}
+.facts dt {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.facts dd {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+.chips {
+  display: flex;
+  gap: 8px;
+  min-block-size: 44px;
+  align-items: center;
+}
+.chip {
+  min-block-size: 44px;
+}
+.thanks {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success);
+  font-weight: 600;
+  animation: feedbackIn 200ms var(--ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prep,
+  .section,
+  .feedback,
+  .thanks {
+    animation-name: fade;
+  }
+  .steps li[data-state="now"] .dot {
+    animation: pulse 900ms ease-in-out infinite alternate;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pulse {
+  to {
+    opacity: 0.4;
+  }
+}

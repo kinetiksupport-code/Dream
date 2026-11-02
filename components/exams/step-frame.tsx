@@ -23,7 +23,10 @@ export function StepFrame({
   onExit,
   children,
   footer,
+  extra,
 }: {
+  /** Un control pequeño a la derecha de la cabecera (p. ej. «1 fuente»). */
+  extra?: ReactNode;
   /** Nombre de lo que se hace, para el lector de pantalla («Simulacro»). */
   label: string;
   position: number;
@@ -69,6 +72,7 @@ export function StepFrame({
         ) : (
           <span className={s.counter}>{counter}</span>
         )}
+        {extra}
         {remaining !== null && (
           <span className={s.clock} role="timer" data-warning={warning || undefined} aria-label={`Quedan ${clockText(remaining)}`}>
             {clockText(remaining)}

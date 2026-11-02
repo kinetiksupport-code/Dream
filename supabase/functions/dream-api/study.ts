@@ -5,7 +5,7 @@
 // códigos, nunca texto de lecciones, respuestas ni tarjetas.
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.95.0';
 import { ExamError, id, type Body } from './validation.ts';
-import { DIFFICULTIES, LESSON_MAX_TOKENS, lessonContext, lessonSystem, unitNotes, validateLesson } from './lesson.mjs';
+import { DIFFICULTIES, LESSON_MAX_TOKENS, MASTERY_THRESHOLD, gradeQuestion, lessonContext, lessonSystem, mistakeCard, pickLessonTest, publicQuestion, unitNotes, validateLesson } from './lesson.mjs';
 import { schedule } from './srs.mjs';
 
 interface LessonValue {
@@ -18,6 +18,7 @@ type JsonAI = (system: string, context: string, operation: string, signal?: Abor
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
+  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish',
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
 
@@ -145,6 +146,60 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
       check = { correct: c.answer === right.is_true, is_true: right.is_true, explanation: right.explanation };
     }
     return { ok: true, check };
+  }
+
+  // ── Test de la lección (Bloque 3): del banco ya generado, corregido aquí, sin IA ──
+  if (action === 'unit_quiz_get' || action === 'unit_quiz_answer' || action === 'unit_quiz_finish') {
+    const unit = await ownedUnit(db, owner, b.exam_id, b.unit_id);
+    const content = checked(await db.from('dream_unit_content').select('quiz').eq('unit_id', unit.id).eq('student_id', owner).eq('status', 'ready').maybeSingle()) as { quiz: Parameters<typeof gradeQuestion>[0][] } | null;
+    if (!content) throw new ExamError('Esta lección aún no está preparada.', 409);
+    const bank = content.quiz;
+    const question = (i: unknown) => {
+      const n = Number(i);
+      if (!Number.isInteger(n) || n < 0 || n >= bank.length) throw new ExamError('Pregunta no válida.');
+      return bank[n];
+    };
+    if (action === 'unit_quiz_get') {
+      // Repetir: primero las preguntas que no salieron la otra vez.
+      const first = pickLessonTest(bank, 7);
+      // Pretest opcional (Bloque 2): 2-3 rápidas del banco que no salen en el test, sin puntuar.
+      if (b.pretest === true) {
+        const rest = [...bank.keys()].filter((i) => !first.includes(i) && bank[i].type !== 'written').slice(0, 3);
+        return { questions: rest.length >= 2 ? rest.map((i) => publicQuestion(bank[i], i)) : [] };
+      }
+      const round = Math.max(0, Math.min(10, Number(b.round) || 0));
+      const order = round ? [...bank.keys()].filter((i) => !first.includes(i)).concat(first) : first;
+      const chosen = (round ? order.slice(0, Math.min(8, Math.max(6, order.length))) : first).sort((x, y) => x - y);
+      return { questions: chosen.map((i) => publicQuestion(bank[i], i)) };
+    }
+    if (action === 'unit_quiz_answer') {
+      const q = question(b.index);
+      const graded = gradeQuestion(q, b.answer);
+      // La corrección llega solo después de contestar.
+      return { ...graded, explanation: q.explanation ?? '' };
+    }
+    const answers = b.answers && typeof b.answers === 'object' && !Array.isArray(b.answers) ? b.answers as Record<string, unknown> : null;
+    const keys = answers ? Object.keys(answers) : [];
+    if (!answers || keys.length < 1 || keys.length > 12) throw new ExamError('Respuestas no válidas.');
+    const results = keys.map((k) => ({ q: question(k), ok: gradeQuestion(question(k), answers[k]).correct }));
+    const right = results.filter((r) => r.ok).length;
+    const pct = Math.round((100 * right) / results.length);
+    const mastered = pct >= MASTERY_THRESHOLD;
+    const prev = checked(await db.from('dream_unit_progress').select('quiz_best_pct,mastered_at,reading_done_at').eq('unit_id', unit.id).eq('student_id', owner).maybeSingle()) as { quiz_best_pct: number | null; mastered_at: string | null; reading_done_at: string | null } | null;
+    const now = new Date().toISOString();
+    checked(await db.from('dream_unit_progress').upsert({ unit_id: unit.id, student_id: owner, exam_id: unit.exam_id, updated_at: now,
+      quiz_best_pct: Math.max(pct, prev?.quiz_best_pct ?? 0), ...(mastered && !prev?.mastered_at ? { mastered_at: now } : {}) }, { onConflict: 'unit_id,student_id' }));
+    // Cada fallo, una tarjeta para el repaso (si cabe en el tope).
+    const misses = results.filter((r) => !r.ok).map((r) => ({ student_id: owner, exam_id: unit.exam_id, unit_id: unit.id, origin: 'mistake', ...mistakeCard(r.q) }));
+    if (misses.length) await db.from('dream_cards').insert(misses);
+    // La lección cuenta como hecha al terminar Leer + Test (Bloque 1).
+    let completed = false;
+    if (prev?.reading_done_at && unit.status !== 'completed') {
+      checked(await db.from('dream_exam_units').update({ status: 'completed', completed_at: now }).eq('id', unit.id).eq('owner_id', owner));
+      completed = true;
+    }
+    console.log(JSON.stringify({ event: 'lesson_quiz_done', total: results.length, right, mastered, mistakes: misses.length }));
+    return { right, total: results.length, pct, mastered, completed: completed || unit.status === 'completed', mistake_cards: misses.length };
   }
 
   // ── Tarjetas ──

@@ -7,6 +7,21 @@ import { readNDJSON, DreamStreamError } from "./streaming";
 import type { DreamProfile, DreamStreamEvent } from "./types";
 export type DreamAction =
   | "exams"
+  // Ruta de estudio (tras DREAM_STUDY_STEPS_ENABLED)
+  | "unit_content_get"
+  | "unit_progress_save"
+  | "unit_quiz_get"
+  | "unit_quiz_answer"
+  | "unit_quiz_finish"
+  | "cards_due"
+  | "card_review"
+  | "card_create"
+  | "card_update"
+  | "card_delete"
+  | "cards_import"
+  | "card_report"
+  | "error_bank_list"
+  | "study_quota"
   | "special_welcome_seen"
   | "memory_list"
   | "memory_toggle"

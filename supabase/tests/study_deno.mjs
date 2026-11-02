@@ -163,6 +163,44 @@ Deno.test("tarjetas: repaso con FSRS en el servidor, sin duplicados por review_i
   assertEquals(harness.state.tables.dream_cards.some((c) => c.id === own.id), false);
 });
 
+Deno.test("test de la lección: preguntas sin respuestas, corrección tras contestar, 80 %, tarjetas de los fallos y lección hecha", async () => {
+  const got = await call({ action: "unit_quiz_get", exam_id: EXAM, unit_id: UNIT });
+  assertEquals(got.status, 200, got.text);
+  const qs = got.json.questions;
+  assert(qs.length >= 6 && qs.length <= 8, `${qs.length}`);
+  assertNotMatch(got.text, /"answer"|"explanation"|"rubric"/);
+  assertEquals(new Set(qs.map((q) => q.index)).size, qs.length);
+  // Una respuesta: la corrección llega después.
+  const mcq = qs.find((q) => q.type === "mcq");
+  const one = await call({ action: "unit_quiz_answer", exam_id: EXAM, unit_id: UNIT, index: mcq.index, answer: "A" });
+  assertEquals(one.json.correct, false);
+  assertEquals(one.json.correct_answer, "B");
+  // Terminar: todo bien salvo una → 86 % (≥ 80): «Dominado».
+  const answers = Object.fromEntries(qs.map((q) => [q.index, q.type === "mcq" ? "B" : q.type === "tf" ? true : "idea 1 idea 2"]));
+  answers[mcq.index] = "A";
+  const cardsBefore = harness.state.tables.dream_cards.filter((c) => c.origin === "mistake").length;
+  const fin = await call({ action: "unit_quiz_finish", exam_id: EXAM, unit_id: UNIT, answers });
+  assertEquals(fin.status, 200, fin.text);
+  assertEquals(fin.json.total, qs.length);
+  assertEquals(fin.json.right, qs.length - 1);
+  assertEquals(fin.json.mastered, fin.json.pct >= 80);
+  assertEquals(harness.state.tables.dream_cards.filter((c) => c.origin === "mistake").length, cardsBefore + 1);
+  // Leer ya estaba hecho (test anterior): la lección queda completada.
+  assertEquals(fin.json.completed, true);
+  assertEquals(harness.state.tables.dream_exam_units.find((u) => u.id === UNIT).status, "completed");
+  const p = harness.state.tables.dream_unit_progress.find((r) => r.unit_id === UNIT);
+  assertEquals(p.quiz_best_pct, fin.json.pct);
+  // Pretest: 2-3 del banco que no están en el test, sin respuestas.
+  const pre = await call({ action: "unit_quiz_get", exam_id: EXAM, unit_id: UNIT, pretest: true });
+  assertNotMatch(pre.text, /"answer"|"explanation"|"rubric"/);
+  for (const p of pre.json.questions) assert(!qs.some((x) => x.index === p.index) && p.type !== "written");
+  // Repetir: otras preguntas primero.
+  const again = await call({ action: "unit_quiz_get", exam_id: EXAM, unit_id: UNIT, round: 1 });
+  assert(again.json.questions.some((q) => !qs.some((x) => x.index === q.index)));
+  assertEquals((await call({ action: "unit_quiz_answer", exam_id: EXAM, unit_id: UNIT, index: 99, answer: "B" })).status, 400);
+  assertNotMatch(logs.join("\n"), /idea 1 idea 2|Pregunta 0/);
+});
+
 Deno.test("con el flag apagado, las acciones no existen", async () => {
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "false");
   const res = await call({ action: "cards_due" });

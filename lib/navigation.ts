@@ -1,3 +1,4 @@
+import { studyStepsEnabled } from "./study-steps";
 // Route → navigation mapping shared by the sidebar and the mobile tab bar.
 export type NavKey =
   | "home"
@@ -31,7 +32,9 @@ export function isFocusRoute(pathname: string) {
     pathname.startsWith("/tests/") ||
     // Asistente de crear examen a pantalla completa (§5.1).
     pathname === "/exams/new" ||
-    /^\/exams\/[^/]+\/sessions\//.test(pathname)
+    /^\/exams\/[^/]+\/sessions\//.test(pathname) ||
+    // La lección de la ruta (0.6), a pantalla completa con el flag encendido.
+    (studyStepsEnabled() && /^\/exams\/[^/]+\/study\//.test(pathname))
   );
 }
 

@@ -90,3 +90,19 @@ test("apuntes de la unidad: los párrafos que hablan del tema, sin IA", async ()
   const none = unitNotes([{ file_name: "x.pdf", extracted_text: text }], { title: "Química", topic: "Enlaces" });
   assert.ok(none[0].text.length > 0, "sin coincidencias, el principio");
 });
+
+test("corrección en código: test, V/F y escrita por ideas de la rúbrica; tarjeta del fallo", async () => {
+  const { gradeQuestion, publicQuestion, mistakeCard } = await import("../supabase/functions/dream-api/lesson.mjs");
+  const mcq = { type: "mcq" as const, prompt: "¿Capital?", options: ["Roma", "Constantinopla"], answer: "Constantinopla", explanation: "Sección 1.", section_index: 0, difficulty: "medio" };
+  assert.equal(gradeQuestion(mcq, "Constantinopla").correct, true);
+  assert.equal(gradeQuestion(mcq, "Roma").correct, false);
+  assert.deepEqual(Object.keys(publicQuestion(mcq, 3)).sort(), ["index", "options", "prompt", "type"]);
+  const tf = { type: "tf" as const, prompt: "Cayó en 1453.", answer: true, explanation: "", section_index: 0, difficulty: "medio" };
+  assert.equal(gradeQuestion(tf, true).correct, true);
+  assert.equal(gradeQuestion(tf, "true").correct, false, "solo booleanos");
+  const written = { type: "written" as const, prompt: "¿Por qué 1453?", answer: "x", rubric: ["Toma de Constantinopla por los otomanos", "Fin de la Edad Media"], explanation: "", section_index: 0, difficulty: "medio" };
+  assert.equal(gradeQuestion(written, "Los otomanos tomaron Constantinopla y acabó la Edad Media").correct, true);
+  assert.equal(gradeQuestion(written, "No lo sé").correct, false);
+  assert.equal(mistakeCard(tf).back, "Verdadero");
+  assert.ok(mistakeCard({ ...mcq, prompt: "p".repeat(400) }).front.length <= 300);
+});
