@@ -10,7 +10,7 @@
 // - Movimiento: solo transform y opacity (globals.css › .press, hoja).
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText } from "lucide-react";
+import { ArrowDown, ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
 import { PIECE, STEP_LABEL, STEP_PIECE, masteryOf, stepGroups, subjectPiece } from "@/lib/study-steps";
@@ -42,7 +42,12 @@ function Step({
   const state = done ? "hecha" : current ? "actual" : "bloq";
   const status = done ? "hecha" : current ? "ahora" : "pendiente";
   return (
-    <li className={s.stepItem} style={{ ["--o" as string]: OFFSETS[index % 4] }}>
+    <li
+      className={s.stepItem}
+      data-current={current || undefined}
+      // Zigzag y escalonado de entrada (0.8 · 17): 40 ms entre nodos, máx. 4.
+      style={{ ["--o" as string]: OFFSETS[index % 4], ["--i" as string]: Math.min(index, 4) }}
+    >
       <button
         type="button"
         className={`${s.step} press`}
@@ -95,6 +100,11 @@ export function StudyRoute(p: StudyRouteProps) {
   const [showAll, setShowAll] = useState(false);
   const [open, setOpen] = useState<RouteViewNode | null>(null);
   const pathRef = useRef<HTMLOListElement>(null);
+  const gemRef = useRef<HTMLElement>(null);
+  // ↓ «Ir a la lección actual» cuando el nodo actual sale de la vista (0.8 · 13).
+  const [away, setAway] = useState(false);
+  // La gema dibuja su anillo la primera vez que se ve (lámina, 18).
+  const [gemSeen, setGemSeen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const id = useId();
   // 3 siguientes, como en el diseño (presupuesto de 12 con el simulacro final a la vista).
@@ -117,6 +127,37 @@ export function StudyRoute(p: StudyRouteProps) {
     };
   }, [menu]);
 
+  useEffect(() => {
+    if (tab !== "ruta" || typeof IntersectionObserver === "undefined") return;
+    const current = pathRef.current?.querySelector("[data-current]");
+    const gem = gemRef.current;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === gem && e.isIntersecting) setGemSeen(true);
+        if (e.target === current) setAway(!e.isIntersecting);
+      }
+    }, { threshold: 0.4 });
+    if (current) io.observe(current);
+    if (gem) io.observe(gem);
+    return () => io.disconnect();
+  }, [tab, showDone, showAll]);
+
+  // Vuelta de una lección terminada (?hecho=…): el camino se desplaza solo hasta
+  // dejar a la vista la siguiente lección (0.8 · 11). Con movimiento reducido, sin animar.
+  useEffect(() => {
+    if (!p.celebrating) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    pathRef.current?.querySelector("[data-current]")?.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+  }, [p.celebrating]);
+
+  function goCurrent() {
+    const el = pathRef.current?.querySelector<HTMLElement>("[data-current] button");
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+    el.focus({ preventScroll: true });
+  }
+
   function primary(node: RouteViewNode) {
     const href = p.hrefFor(node);
     return href ? (
@@ -124,8 +165,11 @@ export function StudyRoute(p: StudyRouteProps) {
         Continuar
       </Link>
     ) : (
-      <button type="button" className={`primary press ${s.go}`} disabled={p.busy || !p.online} aria-busy={p.busy || undefined} onClick={() => p.onPractice(node)}>
-        {p.busy ? "Preparando…" : "Continuar"}
+      // El botón pasa a «cargando» en su sitio (0.8 · 2): mismo tamaño, el texto
+      // se funde con un indicador y «Elige otra» se atenúa.
+      <button type="button" className={`primary press ${s.go}`} data-busy={p.busy || undefined} disabled={p.busy || !p.online} aria-busy={p.busy || undefined} onClick={() => p.onPractice(node)}>
+        <span className={s.goText}>Continuar</span>
+        <span className={s.spinner} aria-hidden="true" />
       </button>
     );
   }
@@ -154,7 +198,9 @@ export function StudyRoute(p: StudyRouteProps) {
   );
 
   const tabs = (
-    <div className={s.tabs} role="tablist" aria-label="Vista">
+    <div className={s.tabs} role="tablist" aria-label="Vista" data-tab={tab}>
+      {/* Indicador que se desliza entre pestañas (lámina, 24). */}
+      <span className={s.tabThumb} aria-hidden="true" />
       {(["ruta", "progreso"] as const).map((t) => (
         <button
           key={t}
@@ -266,11 +312,19 @@ export function StudyRoute(p: StudyRouteProps) {
                 <Step node={g.final} index={1} current={g.current === null} onOpen={setOpen} />
               </ol>
             )}
-            <section className={s.gem} aria-labelledby={`${id}-gema`}>
+            <section className={s.gem} aria-labelledby={`${id}-gema`} ref={gemRef} data-seen={gemSeen || undefined}>
               <span className={s.gemRing} role="img" aria-label={`Preparación ${p.units.percentage} %`}>
                 <svg viewBox="0 0 160 160" aria-hidden="true">
                   <circle cx="80" cy="80" r="72" className={s.gemTrack} />
-                  <circle cx="80" cy="80" r="72" className={s.gemFill} pathLength={100} strokeDasharray={`${p.units.percentage} 100`} />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="72"
+                    className={s.gemFill}
+                    pathLength={100}
+                    strokeDasharray="100 100"
+                    style={{ ["--off" as string]: 100 - p.units.percentage }}
+                  />
                 </svg>
                 <Piece name="gema" size={96} />
               </span>
@@ -312,6 +366,22 @@ export function StudyRoute(p: StudyRouteProps) {
         </section>
       )}
 
+      {tab === "ruta" && (
+        <button
+          type="button"
+          className={`${s.toCurrent} press`}
+          data-show={away || undefined}
+          aria-hidden={!away || undefined}
+          tabIndex={away ? 0 : -1}
+          aria-label="Ir a la lección actual"
+          onClick={goCurrent}
+        >
+          <ArrowDown size={22} aria-hidden="true" />
+        </button>
+      )}
+      <p className="visually-hidden" role="status">
+        {p.busy ? "Preparando tu test" : ""}
+      </p>
       {open && (
         <BottomSheet labelledBy={`${id}-sheet`} onClose={() => setOpen(null)}>
           <div className={s.sheet} data-testid="route-sheet">

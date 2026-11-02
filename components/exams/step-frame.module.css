@@ -156,3 +156,13 @@ span.counter {
   min-block-size: 44px;
   justify-content: center;
 }
+
+/* 0.8 · 7: el número del contador entra con un fundido (solo opacity). */
+.count {
+  animation: countIn 150ms var(--ease) both;
+}
+@keyframes countIn {
+  from {
+    opacity: 0;
+  }
+}
