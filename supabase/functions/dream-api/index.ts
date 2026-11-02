@@ -8,6 +8,7 @@ import { BAN_ALLOWED_ACTIONS, banState, bannedResponse, moderationEntry, moderat
 import { tavilyProvider, TavilyError } from './tavily.mjs';
 import { limitMessage, searchCanBeSkipped, SEARCH_UNAVAILABLE_NOTICE, SEARCH_UNAVAILABLE_PROMPT } from './limit-messages.mjs';
 import { examAction, examContext, ExamError } from './exams.ts';
+import { STUDY_ACTIONS, studyAction, studyEnabled } from './study.ts';
 import { chatShortcut, type ChatShortcut } from './validation.ts';
 import {
   DESKTOP_UPLOAD_ACTIONS, MOBILE_UPLOAD_ACTIONS, QR_CHANNEL_HEADER, UploadSessionError,
@@ -373,6 +374,16 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   if (DESKTOP_UPLOAD_ACTIONS.has(String(body.action))) {
     try { return json(await desktopUploadAction({ rpc: (name, args) => admin.rpc(name, args) }, user.id, body)); }
     catch (error) { return uploadFailure(error); }
+  }
+
+  // Ruta de estudio (Leer, Test, tarjetas): solo con DREAM_STUDY_STEPS_ENABLED.
+  if (STUDY_ACTIONS.has(String(body.action))) {
+    if (!studyEnabled()) return json({ error: 'Acción no disponible.' }, 404);
+    try { return json(await studyAction(admin, user.id, body, jsonAI, req.signal, { course: profile.academic_level ?? null })); }
+    catch (error) {
+      if (error instanceof AdmissionError || isProviderError(error)) return safeFailure(error);
+      return json({ error: error instanceof ExamError ? error.message : 'No se pudo completar la operación. Tus datos guardados se conservan.' }, error instanceof ExamError ? error.status : 503);
+    }
   }
 
   if (body.action === 'exams' || String(body.action).startsWith('exam_')) {

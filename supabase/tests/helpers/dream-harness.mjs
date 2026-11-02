@@ -12,9 +12,9 @@ export function makeToken(claims) {
   return `${b64url({ alg: "none", typ: "JWT" })}.${b64url(claims)}.${"s".repeat(16)}`;
 }
 
-export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {} } = {}) {
+export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}, patchable = false } = {}) {
   const requests = [];
-  const state = { users, tables, rpc };
+  const state = { users, tables, rpc, patchable };
   const fake = Deno.serve({ hostname: "127.0.0.1", port: 0, onListen: () => {} }, async (req) => {
     const url = new URL(req.url);
     const bodyText = req.method === "GET" || req.method === "HEAD" ? "" : await req.text();
@@ -50,6 +50,27 @@ export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}
       const table = url.pathname.slice("/rest/v1/".length);
       const rows = (state.tables[table] ??= []);
       const wantsObject = (req.headers.get("accept") || "").includes("vnd.pgrst.object");
+      const matches = (row) => {
+        for (const [key, value] of url.searchParams) {
+          if (["select", "order", "limit", "offset", "on_conflict", "columns"].includes(key)) continue;
+          const m = /^eq\.(.*)$/.exec(value);
+          if (m && String(row[key]) !== m[1]) return false;
+          const n = /^in\.\((.*)\)$/.exec(value);
+          if (n && !n[1].split(",").includes(String(row[key]))) return false;
+          const not = /^neq\.(.*)$/.exec(value);
+          if (not && String(row[key]) === not[1]) return false;
+        }
+        return true;
+      };
+      // Opt-in (patchable: true): PATCH actualiza y DELETE borra las filas que
+      // coinciden, como PostgREST. Sin la opción, el comportamiento de siempre.
+      if (state.patchable && (req.method === "PATCH" || req.method === "DELETE")) {
+        const hit = rows.filter(matches);
+        if (req.method === "PATCH") for (const row of hit) Object.assign(row, body);
+        else state.tables[table] = rows.filter((row) => !hit.includes(row));
+        if (wantsObject) return hit.length === 1 ? Response.json(hit[0]) : Response.json({ code: "PGRST116", message: "0 rows" }, { status: 406 });
+        return Response.json(hit, { status: 200 });
+      }
       if (req.method === "GET" || req.method === "HEAD") {
         let selected = rows.filter((row) => {
           for (const [key, value] of url.searchParams) {
@@ -79,6 +100,18 @@ export async function startHarness({ users = {}, tables = {}, rpc = {}, env = {}
       }
       if (req.method === "POST") {
         const added = Array.isArray(body) ? body : [body];
+        // Opt-in: upsert (on_conflict) mezcla con la fila que ya existe.
+        const conflict = state.patchable ? url.searchParams.get("on_conflict") : null;
+        if (conflict) {
+          const cols = conflict.split(",");
+          const out = added.map((row) => {
+            const found = rows.find((r) => cols.every((c) => String(r[c]) === String(row[c])));
+            if (found) return Object.assign(found, row);
+            rows.push(row);
+            return row;
+          });
+          return Response.json(wantsObject ? out[0] : out, { status: 201 });
+        }
         rows.push(...added);
         return Response.json(wantsObject ? added[0] : added, { status: 201 });
       }
