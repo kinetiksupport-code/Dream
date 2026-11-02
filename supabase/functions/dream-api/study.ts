@@ -18,7 +18,7 @@ type JsonAI = (system: string, context: string, operation: string, signal?: Abor
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
-  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish',
+  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list',
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
 
@@ -212,6 +212,12 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     const when = new Map((exams as { id: string; exam_date: string }[]).map((e) => [e.id, e.exam_date]));
     const sorted = [...(cards as { exam_id: string; unit_id: string | null }[])].sort((x, y) => String(when.get(x.exam_id)).localeCompare(String(when.get(y.exam_id))));
     return { cards: sorted, total: sorted.length };
+  }
+  if (action === 'cards_list') {
+    // Las tarjetas de un examen, para gestionarlas y exportarlas (Bloque 4).
+    const cards = checked(await db.from('dream_cards').select('id,unit_id,front,back,origin,due,suspended')
+      .eq('student_id', owner).eq('exam_id', id(b.exam_id)).order('created_at').limit(500)) ?? [];
+    return { cards };
   }
   if (action === 'card_review') {
     const rating = Number(b.rating);
