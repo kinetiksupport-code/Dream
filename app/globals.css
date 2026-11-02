@@ -3584,6 +3584,22 @@ fieldset:disabled .test-option {
   background: var(--state-press);
   animation: shimmer 1.4s ease-in-out 500ms infinite;
 }
+/* Repaso de hoy y meta diaria suave (ruta de estudio, Bloque 6), bajo los atajos. */
+.home-study-today {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-block-start: 14px;
+}
+.home-study-goal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
 .home-chip {
   gap: 8px;
   padding: 0 18px 0 14px;

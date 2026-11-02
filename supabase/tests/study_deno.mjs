@@ -204,6 +204,29 @@ Deno.test("test de la lección: preguntas sin respuestas, corrección tras conte
   assertNotMatch(logs.join("\n"), /idea 1 idea 2|Pregunta 0/);
 });
 
+Deno.test("Bloque 6: repaso de hoy y meta diaria (solo contadores), «Ya me sé este tema» y «Difícil» adelanta las tarjetas", async () => {
+  Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "true");
+  const today = await call({ action: "study_today" });
+  assertEquals(today.status, 200, today.text);
+  assert(Number.isInteger(today.json.due) && Number.isInteger(today.json.reviewed_today) && Number.isInteger(today.json.lessons_today));
+  assertEquals(today.json.goal, { lessons: 1, cards: 10 });
+  assertNotMatch(today.text, /front|back|Concepto/);
+  // «Ya me sé este tema»: test directo sin leer; si lo supera, la lección cuenta.
+  harness.state.tables.dream_unit_content.push({ unit_id: UNIT2, exam_id: EXAM, student_id: USER_ID, status: "ready", reading: goodLesson.reading, quiz: goodLesson.quiz });
+  const qs = (await call({ action: "unit_quiz_get", exam_id: EXAM, unit_id: UNIT2 })).json.questions;
+  const answers = Object.fromEntries(qs.map((q) => [q.index, q.type === "mcq" ? "B" : q.type === "tf" ? true : "idea 1 idea 2"]));
+  const fin = await call({ action: "unit_quiz_finish", exam_id: EXAM, unit_id: UNIT2, answers, known: true });
+  assertEquals(fin.json.mastered, true);
+  assertEquals(fin.json.completed, true);
+  assertEquals(harness.state.tables.dream_exam_units.find((u) => u.id === UNIT2).status, "completed");
+  // «Difícil»: la tarjeta lejana vuelve como muy tarde mañana.
+  harness.state.tables.dream_cards.push({ id: crypto.randomUUID(), student_id: USER_ID, exam_id: EXAM, unit_id: UNIT2, front: "f", back: "b", origin: "ai", due: "2027-01-01T00:00:00Z", suspended: false });
+  await call({ action: "unit_progress_save", exam_id: EXAM, unit_id: UNIT2, felt_difficulty: "dificil" });
+  const far = harness.state.tables.dream_cards.filter((c) => c.unit_id === UNIT2);
+  assert(far.every((c) => Date.parse(c.due) <= Date.now() + 86_400_000 + 5000));
+});
+
+
 Deno.test("con el flag apagado, las acciones no existen", async () => {
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "false");
   const res = await call({ action: "cards_due" });

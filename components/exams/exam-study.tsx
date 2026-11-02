@@ -22,11 +22,12 @@ import {
   styles,
 } from "./exam-ui";
 import { ExamDetailSkeleton, LoadError, examStyles } from "./exam-page";
-function useTutorMode() {
+function useQueryFlag(name: string) {
   const [on, setOn] = useState(false);
-  useEffect(() => setOn(new URLSearchParams(window.location.search).get("tutor") === "1"), []);
+  useEffect(() => setOn(new URLSearchParams(window.location.search).get(name) === "1"), [name]);
   return on;
 }
+const useTutorMode = () => useQueryFlag("tutor");
 export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   const { exam, setExam, error, setError, loading, reload } = useExam(id);
   const [unit, setUnit] = useState<ExamUnit | null>(null);
@@ -34,6 +35,7 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   const [startRetry, setStartRetry] = useState(0);
   const router = useRouter();
   const tutorMode = useTutorMode();
+  const knownMode = useQueryFlag("ya");
   const requestId = useRef<string | null>(null);
   const lock = useRef(false);
   useEffect(() => {
@@ -96,7 +98,7 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   // Con el flag, la lección es Leer → Test (Entrega 2); ?tutor=1 abre el tutor
   // («Explícame por qué», «Pregúntale a Dream») con el contexto de la unidad.
   if (studyStepsEnabled() && !tutorMode)
-    return <LessonFlow examId={id} unitId={unitId} title={unit.title} />;
+    return <LessonFlow examId={id} unitId={unitId} title={unit.title} known={knownMode} />;
   if (studyStepsEnabled()) {
     const done = unit.status === "completed";
     function finish() {

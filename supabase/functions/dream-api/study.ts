@@ -19,9 +19,18 @@ type JsonAI = (system: string, context: string, operation: string, signal?: Abor
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
-  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list', ...MOCK_ACTIONS,
+  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list', 'study_today', ...MOCK_ACTIONS,
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
+
+/** Medianoche de hoy en Madrid (los días del alumno). */
+export function madridDayStart(now: Date) {
+  const day = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  const utcMidnight = new Date(`${day}T00:00:00Z`);
+  // Desfase de Madrid a esa hora (CET/CEST).
+  const offset = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', hour: '2-digit', hour12: false }).format(utcMidnight)) || 0;
+  return new Date(utcMidnight.getTime() - offset * 3_600_000);
+}
 
 /** Candado de generación: dos pestañas no generan la misma lección. */
 const LOCK_MS = 120_000;
@@ -64,6 +73,22 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
   };
 
   if (action === 'study_quota') return { lessons: await quota('lesson') };
+  // Repaso de hoy y meta diaria suave (Bloque 6.1 y 6.7): solo contadores, sin IA.
+  if (action === 'study_today') {
+    const now = new Date();
+    const dayStart = madridDayStart(now).toISOString();
+    const count = async (q: PromiseLike<{ count: number | null; error: unknown }>) => {
+      const r = await q;
+      if (r.error) throw new ExamError('No se pudo leer tu repaso.', 503);
+      return r.count ?? 0;
+    };
+    const [due, reviewed, lessons] = await Promise.all([
+      count(db.from('dream_cards').select('id', { count: 'exact', head: true }).eq('student_id', owner).eq('suspended', false).lte('due', now.toISOString())),
+      count(db.from('dream_card_reviews').select('review_id', { count: 'exact', head: true }).eq('student_id', owner).gte('reviewed_at', dayStart)),
+      count(db.from('dream_unit_progress').select('unit_id', { count: 'exact', head: true }).eq('student_id', owner).gte('reading_done_at', dayStart)),
+    ]);
+    return { due, minutes: Math.max(1, Math.round((due * 20) / 60)), reviewed_today: reviewed, lessons_today: lessons, goal: { lessons: 1, cards: 10 } };
+  }
   // Simulacro (Bloque 5): diagnóstico, de bloque y final.
   if (MOCK_ACTIONS.has(action)) return mockAction(db, owner, b, ai, signal, quota);
 
@@ -139,6 +164,11 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     if (section === sections) patch.reading_done_at = new Date().toISOString();
     if (felt) patch.felt_difficulty = felt;
     checked(await db.from('dream_unit_progress').upsert(patch, { onConflict: 'unit_id,student_id' }));
+    // «Cómo lo noto» (Bloque 6.5): si le ha costado, sus tarjetas vuelven mañana como muy tarde.
+    if (felt === 'dificil') {
+      const tomorrow = new Date(Date.now() + 86_400_000).toISOString();
+      await db.from('dream_cards').update({ due: tomorrow }).eq('unit_id', unit.id).eq('student_id', owner).gt('due', tomorrow);
+    }
     let check = null;
     if (b.check && typeof b.check === 'object') {
       const c = b.check as { section?: unknown; answer?: unknown };
@@ -195,9 +225,15 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     // Cada fallo, una tarjeta para el repaso (si cabe en el tope).
     const misses = results.filter((r) => !r.ok).map((r) => ({ student_id: owner, exam_id: unit.exam_id, unit_id: unit.id, origin: 'mistake', ...mistakeCard(r.q) }));
     if (misses.length) await db.from('dream_cards').insert(misses);
+    // «Ya me sé este tema» (Bloque 6.8): si supera el test sin leer, la lección cuenta.
+    if (b.known === true && mastered && !prev?.reading_done_at) {
+      checked(await db.from('dream_unit_progress').update({ reading_done_at: now }).eq('unit_id', unit.id).eq('student_id', owner));
+      if (prev) prev.reading_done_at = now;
+    }
+    const readingDone = prev?.reading_done_at ?? (b.known === true && mastered ? now : null);
     // La lección cuenta como hecha al terminar Leer + Test (Bloque 1).
     let completed = false;
-    if (prev?.reading_done_at && unit.status !== 'completed') {
+    if (readingDone && unit.status !== 'completed') {
       checked(await db.from('dream_exam_units').update({ status: 'completed', completed_at: now }).eq('id', unit.id).eq('owner_id', owner));
       completed = true;
     }

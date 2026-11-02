@@ -1,4 +1,5 @@
 "use client";
+import { HomeStudyToday } from "./study-today";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { useDream } from "@/components/providers";
 import { PencilIcon, QuizIcon, UploadIcon } from "@/components/icons";
@@ -173,6 +174,7 @@ export function ChatHome({
             </button>
           ))}
         </div>
+        <HomeStudyToday />
         {children}
       </div>
     </div>

@@ -13,6 +13,9 @@ import Link from "next/link";
 import { ArrowDown, ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
+import { DueLink, goalText, useStudyToday } from "../study-today";
+import { LiveSubjectObject } from "../subject-object-live";
+import { hasWebGL2, readDevice, wants3D } from "@/lib/subject-3d";
 import { PIECE, STEP_LABEL, STEP_PIECE, masteryOf, stepGroups, subjectPiece } from "@/lib/study-steps";
 import { BottomSheet } from "../bottom-sheet";
 import { ProgressView } from "../progress/progress-view";
@@ -25,6 +28,25 @@ function Piece({ name, size = 72, className }: { name: string; size?: number; cl
   // Decorativas: el estado y el nombre se leen en el texto del botón.
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={PIECE(name)} alt="" width={size} height={size} className={className} draggable={false} />;
+}
+
+/**
+ * Objeto 3D de la cabecera (Entrega 3): en ordenador (≥ 1024 px, ratón, WebGL 2,
+ * sin movimiento reducido ni ahorro de datos) el modelo vivo, que se carga
+ * después de pintar, se pausa fuera de pantalla y vuelve a la pieza plana si
+ * va a menos de 40 fps. En móvil, tableta o sin WebGL, la pieza de siempre,
+ * con el mismo tamaño: no se mueve nada.
+ */
+function SubjectHeaderObject({ subject, className }: { subject: string; className?: string }) {
+  const [live, setLive] = useState(false);
+  useEffect(() => setLive(wants3D(readDevice(window)) && hasWebGL2(document)), []);
+  return live ? (
+    <span className={className} data-testid="ruta-3d" style={{ display: "inline-grid", width: 60, height: 60 }}>
+      <LiveSubjectObject subject={subject} size={60} float={false} />
+    </span>
+  ) : (
+    <Piece name={subjectPiece(subject)} size={60} className={className} />
+  );
 }
 
 function Step({
@@ -107,10 +129,15 @@ export function StudyRoute(p: StudyRouteProps) {
   const [gemSeen, setGemSeen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const id = useId();
+  const today = useStudyToday();
   // 3 siguientes, como en el diseño (presupuesto de 12 con el simulacro final a la vista).
-  const g = stepGroups(route.nodes, route.next, 3);
+  // Con el repaso de hoy en la cabecera, 2: el resto va en «+N lecciones más» (Bloque 6.1).
+  const g = stepGroups(route.nodes, route.next, today?.due ? 2 : 3);
   const next = g.current ?? g.final;
   const mastery = masteryOf(exam.sessions);
+  // Meta de dominio con fecha (Bloque 6.4): minutos al día que quedan, en el cliente, sin IA.
+  const left = exam.units.filter((u) => u.status !== "completed").reduce((a, u) => a + (u.estimated_minutes ?? 0), 0);
+  const perDay = p.days !== null && p.days > 0 && left > 0 ? Math.max(5, Math.round(left / p.days)) : null;
   const upcoming = showAll ? [...g.upcoming, ...g.hidden] : g.upcoming;
 
   // El menú «⋯» se cierra con Esc o al pulsar fuera.
@@ -177,7 +204,7 @@ export function StudyRoute(p: StudyRouteProps) {
   const header = (
     <header className={s.head}>
       <div className={s.subject}>
-        <Piece name={subjectPiece(exam.subject)} size={60} className={s.subjectPiece} />
+        <SubjectHeaderObject subject={exam.subject} className={s.subjectPiece} />
         <span className={s.eyebrow}>{exam.subject}</span>
       </div>
       <h1 className={s.title}>{exam.title}</h1>
@@ -193,7 +220,18 @@ export function StudyRoute(p: StudyRouteProps) {
             Dominio <strong className="num">{mastery} %</strong>
           </span>
         )}
+        {perDay !== null && (
+          <span>
+            ≈ <strong className="num">{perDay} min</strong> al día
+          </span>
+        )}
       </p>
+      {today && (
+        <p className={s.today}>
+          <DueLink today={today} className={`${s.dueLink} press`} from={exam.id} />
+          <span className={s.goal}>{goalText(today)}</span>
+        </p>
+      )}
     </header>
   );
 
@@ -420,6 +458,12 @@ export function StudyRoute(p: StudyRouteProps) {
               <button type="button" className="secondary press" onClick={() => setOpen(null)}>
                 Cerrar
               </button>
+              {/* «Ya me sé este tema» (Bloque 6.8): el test directo; si lo supera, la lección cuenta. */}
+              {open.type === "study" && open.state !== "completed" && p.hrefFor(open) && (
+                <Link className="secondary press" href={`${p.hrefFor(open)}?ya=1`}>
+                  Ya me sé este tema
+                </Link>
+              )}
               {open.type !== "study" && open.type !== "mock" ? (
                 <button type="button" className="primary press" disabled={p.busy || !p.online} onClick={() => p.onPractice(open)}>
                   {p.busy ? "Preparando…" : "Hacer el test"}

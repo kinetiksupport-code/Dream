@@ -57,7 +57,7 @@ function Feedback({ ok, children }: { ok: boolean; children: React.ReactNode }) 
   );
 }
 
-export function LessonFlow({ examId, unitId, title }: { examId: string; unitId: string; title: string }) {
+export function LessonFlow({ examId, unitId, title, known = false }: { examId: string; unitId: string; title: string; known?: boolean }) {
   const ids = { exam_id: examId, unit_id: unitId };
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
@@ -90,7 +90,8 @@ export function LessonFlow({ examId, unitId, title }: { examId: string; unitId: 
         setSources(r.reading.sources);
         const at = Math.min(r.progress?.reading_section ?? 0, r.reading.sections.length);
         // «Seguir donde lo dejaste»: si ya leyó todo, va al test.
-        if (at >= r.reading.sections.length) await startQuiz();
+        // «Ya me sé este tema» (Bloque 6.8): directo al test, sin leer.
+        if (known || at >= r.reading.sections.length) await startQuiz();
         else if (at === 0 && !r.progress) {
           // Pretest opcional (Bloque 2): solo la primera vez, y se puede saltar.
           const pre = await getPretest(ids).catch(() => ({ questions: [] as QuizQuestion[] }));
@@ -169,7 +170,7 @@ export function LessonFlow({ examId, unitId, title }: { examId: string; unitId: 
     if (i + 1 < questions.length) return setPhase({ kind: "quiz", question: i + 1 });
     setBusy(true);
     try {
-      const result = await finishQuiz(ids, answers);
+      const result = await finishQuiz(ids, answers, known);
       setPhase({ kind: "results", result });
     } catch (e) {
       setError(errorMessage(e));
@@ -260,9 +261,11 @@ export function LessonFlow({ examId, unitId, title }: { examId: string; unitId: 
           <p className={s.big}>
             <span className="num">{r.right}</span>/<span className="num">{r.total}</span>
           </p>
-          <h1 className={s.resultTitle}>{r.mastered ? "Dominado" : "Repasa tus fallos"}</h1>
+          <h1 className={s.resultTitle}>{r.mastered ? "Dominado" : known ? "Mejor haz la lección" : "Repasa tus fallos"}</h1>
           <p className={s.resultText}>
-            {r.mastered
+            {known && !r.mastered
+              ? "Aún no lo dominas, y no pasa nada: la lección te lo explica paso a paso."
+              : r.mastered
               ? "Te lo sabes. Las tarjetas de esta lección volverán cuando toque."
               : `Ya tienes ${r.mistake_cards} ${r.mistake_cards === 1 ? "tarjeta" : "tarjetas"} con tus fallos. Mañana podrás repetir el test con otras preguntas.`}
           </p>
@@ -302,9 +305,16 @@ export function LessonFlow({ examId, unitId, title }: { examId: string; unitId: 
           <Link className={`secondary press ${sf.small}`} href={tutor}>
             Pregúntale a Dream
           </Link>
-          <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
-            Continuar
-          </Link>
+          {known && !r.mastered ? (
+            // Carga completa: la lección se abre desde el principio, ya sin «Ya me sé este tema».
+            <a className="primary press" href={`/exams/${examId}/study/${unitId}`}>
+              Hacer la lección
+            </a>
+          ) : (
+            <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
+              Continuar
+            </Link>
+          )}
         </footer>
       </div>
     );
