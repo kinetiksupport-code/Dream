@@ -1,0 +1,298 @@
+/* Tarjetas (card-review.tsx y exam-cards.tsx): Claude Design
+   PantallaTarjetasMovil/Escritorio. Solo transform y opacity. */
+.card {
+  position: relative;
+  flex: 1;
+  min-block-size: 320px;
+  max-block-size: 520px;
+  inline-size: 100%;
+  border: 0;
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  perspective: 1200px;
+  border-radius: 24px;
+  animation: cardIn 220ms var(--ease) both;
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 28px 24px;
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 1px 0 var(--border) inset, 0 12px 32px rgba(8, 11, 20, 0.08);
+  text-align: center;
+  backface-visibility: hidden;
+  transition: transform 280ms var(--ease);
+}
+.back {
+  transform: rotateY(180deg);
+}
+.card[data-flipped] .face {
+  transform: rotateY(-180deg);
+}
+.card[data-flipped] .back {
+  transform: rotateY(0deg);
+}
+.card:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+}
+.label {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.answer {
+  color: var(--primary);
+}
+.main {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.main :global(p) {
+  margin: 0;
+}
+.tap {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.hint {
+  flex: 1;
+  align-self: center;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.ratings {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.rating {
+  min-block-size: 56px;
+  padding-inline: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.rating small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.offline {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+.end {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  animation: cardIn 240ms var(--ease) both;
+}
+.endIcon {
+  inline-size: 56px;
+  block-size: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--success-bg, var(--card));
+  color: var(--success, var(--primary));
+}
+.endTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 650;
+}
+.endText {
+  margin: 0;
+  color: var(--text-secondary);
+  max-inline-size: 34ch;
+}
+
+/* Gestión de las tarjetas de un examen */
+.page {
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.head h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 1.375rem;
+}
+.round {
+  inline-size: 44px;
+  block-size: 44px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  color: var(--text);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card);
+}
+.item[data-hidden] {
+  opacity: 0.6;
+}
+.itemText {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.itemText strong {
+  font-weight: 600;
+}
+.itemText span {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+.tag {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+.iconBtn {
+  inline-size: 44px;
+  block-size: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.form textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  resize: vertical;
+}
+.form small {
+  align-self: flex-end;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.preview {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-block-size: 240px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+.note {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+@media (hover: hover) and (pointer: fine) {
+  .iconBtn:hover {
+    background: var(--chip-hover);
+    color: var(--text);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* El giro pasa a ser instantáneo: se cambia de cara con un fundido. */
+  .face {
+    transition: opacity 150ms linear;
+    transform: none;
+  }
+  .back,
+  .card[data-flipped] .face {
+    transform: none;
+    opacity: 0;
+  }
+  .card[data-flipped] .back {
+    opacity: 1;
+  }
+  .card,
+  .end {
+    animation-name: fadeIn;
+  }
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+  }
+}

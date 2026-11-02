@@ -152,6 +152,9 @@ Deno.test("tarjetas: repaso con FSRS en el servidor, sin duplicados por review_i
   const imported = await call({ action: "cards_import", exam_id: EXAM, rows: [{ front: "a", back: "b" }, { front: "c", back: "d" }] });
   assertEquals(imported.json.created, 2);
   assertEquals((await call({ action: "cards_import", exam_id: EXAM, rows: Array.from({ length: 501 }, () => ({ front: "a", back: "b" })) })).status, 400);
+  const listed = await call({ action: "cards_list", exam_id: EXAM });
+  assertEquals(listed.status, 200, listed.text);
+  assert(listed.json.cards.some((c) => c.origin === "import"));
   const own = harness.state.tables.dream_cards.find((c) => c.origin === "own");
   own.id = "88888888-8888-4888-8888-888888888888";
   const edited = await call({ action: "card_update", card_id: own.id, front: "¿Capital?", back: "Constantinopla" });

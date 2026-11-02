@@ -14,6 +14,7 @@ export type DreamAction =
   | "unit_quiz_answer"
   | "unit_quiz_finish"
   | "cards_due"
+  | "cards_list"
   | "card_review"
   | "card_create"
   | "card_update"
