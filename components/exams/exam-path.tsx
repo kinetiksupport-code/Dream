@@ -53,6 +53,8 @@ import { Modal } from "../modal";
 import { Toast } from "../toast";
 import { ExamFrame, ExamLoad, ErrorNotice, ProgressLine, useExam } from "./exam-ui";
 import styles from "./route.module.css";
+import { StudyRoute } from "./study-route";
+import { studyStepsEnabled } from "@/lib/study-steps";
 
 const TYPE_ICONS: Record<RouteNodeType, LucideIcon> = {
   study: BookOpen,
@@ -487,6 +489,31 @@ export function ExamPath({ id }: { id: string }) {
     else setOpen(node);
   }
 
+  // Ruta rediseñada (Entrega 0), detrás de DREAM_STUDY_STEPS_ENABLED.
+  if (studyStepsEnabled())
+    return (
+      <StudyRoute
+        exam={exam}
+        route={route}
+        units={units}
+        days={days}
+        busy={busy}
+        online={online}
+        canRegenerate={canRegenerate}
+        celebrating={!!celebrate && !played}
+        announce={announce || pathAnnouncement(units)}
+        onRegenerate={() => void regenerate()}
+        onPractice={(node) => void practice(node)}
+        hrefFor={(node) =>
+          node.type === "mock"
+            ? `/exams/${id}#simulacro`
+            : node.type === "study" && node.unit
+              ? `/exams/${id}/study/${node.unit.id}`
+              : null
+        }
+        error={<ErrorNotice error={error} />}
+      />
+    );
   return (
     <ExamFrame
       eyebrow="TU RUTA"

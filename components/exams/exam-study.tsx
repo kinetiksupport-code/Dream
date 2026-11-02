@@ -2,7 +2,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check, X } from "lucide-react";
+import { studyStepsEnabled } from "@/lib/study-steps";
+import sf from "./step-frame.module.css";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
   updateExam,
@@ -81,6 +83,48 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
       />
     );
   if (loading || !exam || !unit?.conversation_id) return <ExamDetailSkeleton />;
+  // Lección rediseñada (0.6), detrás de DREAM_STUDY_STEPS_ENABLED: pantalla
+  // completa sin panel lateral. Hoy la lección es la conversación con el
+  // tutor; Leer y el test dentro de la lección llegan en la entrega 2.
+  if (studyStepsEnabled()) {
+    const done = unit.status === "completed";
+    function finish() {
+      if (done) return router.push(`/exams/${id}/ruta`);
+      setBusy(true);
+      void updateExam("exam_unit_complete", id, { unit_id: unitId })
+        .then(() => router.push(`/exams/${id}/ruta?hecho=${unitId}`))
+        .catch((e) => {
+          setError(errorMessage(e));
+          setBusy(false);
+        });
+    }
+    return (
+      <div className={sf.frame} data-testid="leccion">
+        <header className={sf.top}>
+          <Link className={`${sf.close} press`} href={`/exams/${id}/ruta`} aria-label="Volver a la ruta">
+            <X size={20} aria-hidden="true" />
+          </Link>
+          <div className={sf.lessonHead}>
+            <p className={sf.topic}>Lección · {exam.subject}</p>
+            <h1 className={sf.lessonTitle}>{unit.title}</h1>
+          </div>
+        </header>
+        <div className={sf.lessonActions}>
+          <button className={`secondary press ${sf.small}`} disabled={busy} aria-busy={busy || undefined} onClick={() => void practice()}>
+            Hacer el test
+          </button>
+          {/* La acción principal es estudiar con el tutor (su botón); estas dos, secundarias. */}
+          <button className="secondary press" disabled={busy} aria-busy={busy || undefined} onClick={finish}>
+            {done ? "Volver a la ruta" : busy ? "Guardando…" : "He terminado la lección"}
+          </button>
+        </div>
+        <div className={styles.studyLayout}>
+          <ChatExperience study={{ examId: id, unitId, conversationId: unit.conversation_id, title: unit.title }} />
+        </div>
+        <ErrorNotice error={error} />
+      </div>
+    );
+  }
   return (
     <ExamFrame
       eyebrow={`Estudiar · ${exam.subject}`}
