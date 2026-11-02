@@ -10,6 +10,7 @@ import {
   Clock3,
   RotateCcw,
   TriangleAlert,
+  X,
 } from "lucide-react";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import {
@@ -40,6 +41,8 @@ import { BottomSheet } from "../bottom-sheet";
 import { StepFrame } from "./step-frame";
 import sf from "./step-frame.module.css";
 import { studyStepsEnabled } from "@/lib/study-steps";
+import { PlayWhileWaiting } from "../games/play-while-waiting";
+import { DreamActivity } from "../dream-mark";
 export function ExamSessionView({
   id,
   sessionId,
@@ -64,6 +67,8 @@ export function ExamSessionView({
   const [dirty, setDirty] = useState(false);
   // Hoja «Preguntas» de la pantalla rediseñada (0.7).
   const [nav, setNav] = useState(false);
+  // Jugando mientras se preparan las preguntas (0.10): no se cambia de pantalla.
+  const [playing, setPlaying] = useState(false);
   // Timer warnings are announced once each (aria-live polite), never per tick.
   const [announcement, setAnnouncement] = useState("");
   const announced = useRef<string[]>([]);
@@ -113,6 +118,13 @@ export function ExamSessionView({
       });
     return () => c.abort();
   }, [id, sessionId, retry, setError]);
+  // Con el flag, la espera de las preguntas se comprueba sola cada 5 s.
+  const waiting = !!session && !session.test_id && session.status === "generating";
+  useEffect(() => {
+    if (!waiting || !studyStepsEnabled()) return;
+    const t = window.setInterval(() => setRetry((n) => n + 1), 5000);
+    return () => clearInterval(t);
+  }, [waiting]);
   const deadline = session?.time_limit_seconds
     ? Date.parse(session.started_at) + session.time_limit_seconds * 1000
     : null;
@@ -323,6 +335,32 @@ export function ExamSessionView({
           setRetry((n) => n + 1);
         }}
       />
+    );
+  // Espera rediseñada (0.10), con el flag: Dream prepara, el alumno puede jugar.
+  if (studyStepsEnabled() && (!session.test_id || !test || playing) && session.status !== "failed")
+    return (
+      <div className={sf.frame} data-testid="preparando">
+        <header className={sf.top}>
+          <Link className={`${sf.close} press`} href={`/exams/${id}/ruta`} aria-label="Volver a la ruta">
+            <X size={20} aria-hidden="true" />
+          </Link>
+        </header>
+        <main className={sf.body} aria-busy={!test || undefined}>
+          <DreamActivity state="thinking" label={test ? "Tus preguntas están listas" : "Dream está preparando tus preguntas"} />
+          <p className={styles.muted} role="status">
+            {test ? "Tus preguntas están listas." : "Preparando tus preguntas con tus temas y apuntes. Suele tardar menos de un minuto."}
+          </p>
+          <PlayWhileWaiting
+            expectedMs={20000}
+            ready={!!test}
+            readyText={session.mode === "exam" ? "Tu simulacro está listo" : "Tu test está listo"}
+            startText="Empezar"
+            onOpenChange={setPlaying}
+            onStart={() => setPlaying(false)}
+          />
+          <ErrorNotice error={error} />
+        </main>
+      </div>
     );
   if (!session.test_id || !test)
     return (
