@@ -1,4 +1,10 @@
 import { requestAbort } from "./request-abort";
+import {
+  SLOW_AFTER_MS,
+  isReadAction,
+  retryDelay,
+  slowNotice,
+} from "./slow-requests";
 import { track } from "./observability/analytics";
 import { captureDiagnostic } from "./observability/diagnostics";
 import type { Outcome } from "./observability/policy";
@@ -184,22 +190,45 @@ export async function callDream<T>(
   payload: Record<string, unknown> = {},
   signal?: AbortSignal,
 ): Promise<T> {
-  const start = performance.now();
-  const lifecycle = requestAbort(signal);
-  try {
-    const response = await request(action, payload, lifecycle.signal);
-    const result = (await response.json()) as T;
-    reportRequest(action, start, "success", response.status);
-    if (action === "conversation_create")
-      track("conversation_started", { action, section: "chat" });
-    if (action === "exam_create")
-      track("exam_created", { action, section: "exams" });
-    return result;
-  } catch (error) {
-    reportFailure(action, start, error, signal);
-    throw error;
-  } finally {
-    lifecycle.dispose();
+  // Lecturas: aviso si tardan y reintento solo ante un fallo pasajero
+  // (lib/slow-requests.ts). Todo lo demás se envía una única vez.
+  const reads = isReadAction(action);
+  for (let attempt = 0; ; attempt++) {
+    const start = performance.now();
+    const lifecycle = requestAbort(signal);
+    let endSlow: (() => void) | undefined;
+    const slowTimer = reads
+      ? setTimeout(() => {
+          endSlow = slowNotice.slowStarted();
+        }, SLOW_AFTER_MS)
+      : undefined;
+    try {
+      const response = await request(action, payload, lifecycle.signal);
+      const result = (await response.json()) as T;
+      reportRequest(action, start, "success", response.status);
+      if (action === "conversation_create")
+        track("conversation_started", { action, section: "chat" });
+      if (action === "exam_create")
+        track("exam_created", { action, section: "exams" });
+      return result;
+    } catch (error) {
+      reportFailure(action, start, error, signal);
+      const delay = reads
+        ? retryDelay(error, attempt, Boolean(signal?.aborted))
+        : null;
+      if (delay === null) throw error;
+      // Se reintenta tras la cuenta atrás (10 s, luego 20 s).
+      clearTimeout(slowTimer);
+      endSlow?.();
+      endSlow = undefined;
+      lifecycle.dispose();
+      await slowNotice.wait(delay, signal);
+      if (signal?.aborted) throw error;
+    } finally {
+      clearTimeout(slowTimer);
+      endSlow?.();
+      lifecycle.dispose();
+    }
   }
 }
 export async function streamDreamChat(

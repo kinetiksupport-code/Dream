@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
 import { ConnectionStatus } from "@/components/connection-status";
+import { SlowNotice } from "@/components/slow-notice";
 import { ConsentWatcher } from "@/components/consent-watcher";
 import { HumanCheckHost } from "@/components/human-check/human-check-host";
 import { cloudflareChallenge } from "@/lib/maintenance-check";
@@ -292,6 +293,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ConsentWatcher />
       <HumanCheckHost />
       <ConnectionStatus />
+      <SlowNotice />
       <Fragment key={session?.user.id ?? "signed-out"}>{children}</Fragment>
     </DreamContext.Provider>
   );
