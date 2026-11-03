@@ -28,6 +28,7 @@ import { groqProvider, groqModel, groqConfigured, GroqProviderError } from './gr
 import { cloudflareProvider, CloudflareProviderError } from './cloudflare.mjs';
 import { compactHistory } from './capacity.mjs';
 import { AI_FLAGS, CLOUDFLARE_FALLBACK, SEARCH_TURN, DEFAULT_MODE, aiContextFor, availableModes, reasoningParams, fallbackAvailable, outputTokensFor, resolveMode } from './models.mjs';
+import { fitGroqBudget } from './groq-budget.mjs';
 import { createWindowLimiter, promptBreakdown, studentWindowTokens, usageSummary, WINDOW_LIMIT_CODE } from './usage-window.mjs';
 import { createAttemptTracker, shouldFallback, streamWithFallback, withoutReasoning } from './ai-router.mjs';
 import { webSearchTool, collectToolCalls, validateToolCall, searchWeb, wantsWebSearch } from './tools.mjs';
@@ -479,7 +480,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ profile: panel ? { ...publicProfile, admin_panel: panel } : publicProfile, service_ready: groqConfigured(),
       ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null, ...features,
       // Ruta de estudio encendida para esta cuenta (por fases): la web la enseña solo entonces.
-      ...(studyEnabledFor(user, !!specialDomain(user)) ? { study_steps: true } : {}), ...(specialAccount ? { special_account: specialAccount } : {}) });
+      ...(studyEnabledFor(user, !!specialDomain(user)) ? { study_steps: true } : {}), ...(Deno.env.get('DREAM_AI_ROUTE_ENABLED') === 'true' ? { ai_route: true } : {}), ...(specialAccount ? { special_account: specialAccount } : {}) });
   }
 
   // Descargar mis datos: como mucho una vez por minuto en cada instancia.
@@ -1394,10 +1395,16 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // prompt completo del modo.
   const searchHistory = compactHistory(storedHistory.slice(-SEARCH_TURN.history.maxMessages), SEARCH_TURN.history);
   const planSearch = searchAvailable && searchRequested;
+  // Que quepa en el límite de Groq por petición (groq-budget.mjs): si no, Groq da 413.
+  const fitted = !planSearch && mode.provider === 'groq'
+    ? fitGroqBudget({ system: systemMessages, history: priorMessages, tail: [reminder, { role: 'user', content: prompt }], maxTokens: answerTokens })
+    : null;
+  if (fitted && (fitted.trimmed.history || fitted.trimmed.materialChars || fitted.trimmed.answer))
+    console.log(JSON.stringify({ event: 'groq_budget_trimmed', ...fitted.trimmed, fits: fitted.fits }));
   const initialMessages = planSearch
     ? [...searchPlannerMessages({ today: madridToday() }), ...searchHistory, { role: 'user', content: prompt }]
-    : [...systemMessages, ...priorMessages, reminder, { role: 'user', content: prompt }];
-  const firstBody = { ...baseBody, messages: initialMessages, ...(planSearch ? { max_tokens: SEARCH_TURN.plannerMaxTokens } : {}) };
+    : fitted ? fitted.messages : [...systemMessages, ...priorMessages, reminder, { role: 'user', content: prompt }];
+  const firstBody = { ...baseBody, messages: initialMessages, ...(planSearch ? { max_tokens: SEARCH_TURN.plannerMaxTokens } : fitted ? { max_tokens: fitted.maxTokens } : {}) };
   // Contabilidad por partes (Bloque 8 bis): tamaños estimados, nunca texto.
   console.log(JSON.stringify({ event: 'dream_prompt_breakdown', generation_mode: mode.id, search_plan: planSearch, forced_search: forcedSearch,
     ...promptBreakdown({ messages: [...systemMessages, ...priorMessages, { role: 'user', content: prompt }] }), max_tokens: answerTokens, student_tokens: studentWindowTokens(firstBody) }));

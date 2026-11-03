@@ -53,9 +53,10 @@ test("«Ya me sé este tema»: test directo sin leer y, si lo supera, la lecció
   await page.getByTestId("route-sheet").getByRole("link", { name: "Ya me sé este tema" }).click();
   await expect(page.getByRole("heading", { name: "Bizancio era la parte oriental." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No se ve" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Verdadero" }).click();
+  await page.getByRole("radio", { name: "Verdadero" }).click();
+  await page.getByRole("button", { name: "Comprobar" }).click();
   await page.getByRole("button", { name: "Ver resultados" }).click();
-  await expect(page.getByTestId("leccion-resultados")).toContainText("Dominado");
+  await expect(page.getByTestId("leccion-resultados")).toContainText("Lo dominas");
   expect(calls.find((c) => c.action === "unit_quiz_finish")).toMatchObject({ known: true });
 });
 
@@ -69,10 +70,10 @@ test("3D: en ordenador con WebGL, el modelo vivo; sin WebGL o en móvil, la piez
   await page.setViewportSize({ width: 1440, height: 900 });
   await routeFixture(page);
   await page.goto(`/exams/${eid}/ruta`);
-  const head = page.locator("aside").getByTestId("ruta-3d");
+  const head = page.getByRole("tabpanel").getByTestId("ruta-3d");
   await expect(head).toBeVisible();
   const box = await head.boundingBox();
-  expect(box && Math.round(box.width)).toBe(60);
+  expect(box && Math.round(box.width)).toBe(40);
   expect(errors).toEqual([]);
 });
 
@@ -89,7 +90,7 @@ test("3D: con WebGL bloqueado o en móvil, la pieza plana del mismo tamaño", as
   await page.setViewportSize({ width: 1440, height: 900 });
   await routeFixture(page);
   await page.goto(`/exams/${eid}/ruta`);
-  await expect(page.locator("aside img[src$='.svg']").first()).toBeVisible();
+  await expect(page.getByRole("tabpanel").locator("header img[src*='/estudio/']").first()).toBeVisible();
   await expect(page.getByTestId("ruta-3d")).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();

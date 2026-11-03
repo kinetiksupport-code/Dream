@@ -11,7 +11,7 @@ import { MATERIAL_GUARD, wrapStudentMaterial } from "./file-guard.mjs";
 export const DIFFICULTIES = Object.freeze(["facil", "medio", "dificil"]);
 export const LIMITS = Object.freeze({
   sections: [3, 6],
-  sectionWords: 140, // pedimos ≤ 120; margen para no tirar una lección por poco
+  sectionWords: 65, // pedimos ≤ 50 (tarjeta «Qué saber», 0.11); margen para no tirar una lección por poco
   quiz: [8, 12],
   cards: [8, 12],
   cardChars: 300,
@@ -32,11 +32,15 @@ export function lessonSystem() {
     "Eres el profesor de Dream. Preparas UNA lección privada para un alumno de España, en español de España, con tildes y signos de apertura.",
     "Devuelve SOLO JSON con esta forma exacta:",
     '{"reading":{"sections":[{"title":"…","body_markdown":"…","why_it_matters":"…","check":{"statement":"…","is_true":true,"explanation":"…"}}],"sources":["…"]},',
-    '"quiz":[{"type":"mcq|tf|written","prompt":"…","options":["…"],"answer":"…","explanation":"…","rubric":["…"],"section_index":0,"difficulty":"facil|medio|dificil"}],',
+    '"quiz":[{"type":"mcq|tf|written|numeric","prompt":"…","options":["…"],"answer":"…","unit":"…","explanation":"…","rubric":["…"],"section_index":0,"difficulty":"facil|medio|dificil"}],',
     '"cards":[{"front":"…","back":"…","section_index":0}]}',
     "Reglas:",
-    "- reading.sections: de 3 a 6 secciones cortas (≤ 120 palabras cada una), una idea por sección, conceptos clave en **negrita**, fórmulas en KaTeX ($…$). check: una afirmación de verdadero/falso sobre esa sección.",
-    "- quiz: de 8 a 12 preguntas que se contestan con la lectura. mcq: 3 o 4 opciones y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave. explanation en 1-2 frases.",
+    "- reading.sections: de 3 a 6 tarjetas «Qué saber» muy cortas (≤ 50 palabras cada una, 3-4 líneas), una idea por tarjeta, conceptos clave en **negrita**, fórmulas en KaTeX ($…$). check: una afirmación de verdadero/falso sobre esa tarjeta.",
+    "- quiz: de 8 a 12 preguntas que se contestan con la lectura, mezclando todas las tarjetas: definición, relación, escenario y, si el tema tiene fechas o etapas, ordenar la cronología (mcq con 4 opciones del tipo «A → B → C»). mcq: 4 opciones (3 si no hay más) y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave. explanation en 1-2 frases.",
+    // Pautas sacadas de cómo preguntan las apps de estudio y de la investigación
+    // sobre práctica de recuperación (docs/diseno/ruta/PREGUNTAS.md).
+    "- Cómo preguntar (varía los formatos en cada lección): ordena de más fácil a más difícil; las opciones incorrectas son errores típicos de alumnos, creíbles y de longitud parecida a la correcta; nunca «todas las anteriores» ni «ninguna de las anteriores»; como mucho UNA pregunta en negativo («¿Cuál de estas NO…?», con el NO en mayúsculas) y nunca dobles negaciones; incluye al menos una pregunta de aplicar la idea a un caso nuevo, no solo de recordar.",
+    "- Matemáticas, física, química y todo lo que se calcula: la lectura enseña UN ejemplo resuelto paso a paso; en el quiz, preguntas de completar el paso que falta de un ejercicio parecido (mcq con el paso siguiente) y preguntas numeric: answer es SOLO el número (con punto decimal), unit la unidad si la hay, y el enunciado dice cuántos decimales. explanation dice el paso clave, no solo el resultado.",
     "- cards: de 8 a 12 tarjetas de concepto (pregunta corta / respuesta corta, ≤ 300 caracteres). Ninguna tarjeta resuelve un ejercicio: pregunta por ideas, definiciones o relaciones.",
     "- sources: «De tus apuntes» si usas los apuntes; si no, el tema y la asignatura. No inventes datos, fechas ni citas: si no estás seguro, no lo pongas.",
     "- Nunca des la solución de un ejercicio del alumno.",
@@ -128,6 +132,10 @@ export function validateLesson(raw) {
       const rubric = Array.isArray(q.rubric) ? q.rubric.map((r) => str(r, 200)).filter(Boolean) : [];
       if (rubric.length < 2 || rubric.length > 4) return fail("written_rubric");
       quiz.push({ type, prompt, answer: str(q.answer, LIMITS.writtenChars), rubric, explanation, section_index: index, difficulty });
+    } else if (type === "numeric") {
+      const answer = Number(typeof q.answer === "string" ? q.answer.replace(",", ".") : q.answer);
+      if (!Number.isFinite(answer)) return fail("numeric_answer");
+      quiz.push({ type, prompt, answer, unit: str(q.unit, 20), explanation, section_index: index, difficulty });
     } else return fail("quiz_type");
   }
   const cardsRaw = Array.isArray(raw.cards) ? raw.cards : [];
@@ -205,6 +213,15 @@ export function unitNotes(materials, unit, maxChars = LIMITS.materialChars) {
 export function gradeQuestion(q, answer) {
   if (q.type === "mcq") return { correct: typeof answer === "string" && answer.trim() === q.answer, correct_answer: q.answer };
   if (q.type === "tf") return { correct: answer === q.answer, correct_answer: q.answer };
+  if (q.type === "numeric") {
+    // Coma o punto, sin espacios ni unidad; vale un redondeo de 0,5 % (o 0,01 si es 0).
+    const raw = typeof answer === "string" ? answer : typeof answer === "number" ? String(answer) : "";
+    const n = Number(raw.replace(/\s/g, "").replace(/[^\d,.\-eE+]/g, "").replace(",", "."));
+    const want = Number(q.answer);
+    const tol = Math.max(Math.abs(want) * 0.005, want === 0 ? 0.01 : 1e-9);
+    const unit = q.unit ? ` ${q.unit}` : "";
+    return { correct: raw.trim() !== "" && Number.isFinite(n) && Math.abs(n - want) <= tol, correct_answer: `${String(want).replace(".", ",")}${unit}` };
+  }
   const text = fold(typeof answer === "string" ? answer.slice(0, LIMITS.writtenChars) : "");
   const ideas = (q.rubric ?? []).map((idea) => {
     const keys = fold(idea).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 3 && !STOP.has(w));
@@ -217,12 +234,12 @@ export function gradeQuestion(q, answer) {
 
 /** La pregunta tal y como la ve el alumno: sin respuesta, sin explicación, sin rúbrica. */
 export function publicQuestion(q, index) {
-  return { index, type: q.type, prompt: q.prompt, ...(q.type === "mcq" ? { options: q.options } : {}) };
+  return { index, type: q.type, prompt: q.prompt, ...(q.type === "mcq" ? { options: q.options } : {}), ...(q.type === "numeric" && q.unit ? { unit: q.unit } : {}) };
 }
 
 /** Una tarjeta por cada fallo (Bloque 3), sin IA y sin pasar de 300 caracteres. */
 export function mistakeCard(q) {
-  const answer = q.type === "tf" ? (q.answer ? "Verdadero" : "Falso") : String(q.answer ?? "");
+  const answer = q.type === "tf" ? (q.answer ? "Verdadero" : "Falso") : q.type === "numeric" ? `${String(q.answer).replace(".", ",")}${q.unit ? ` ${q.unit}` : ""}` : String(q.answer ?? "");
   const back = `${answer}${q.explanation ? `. ${q.explanation}` : ""}`.slice(0, LIMITS.cardChars);
   return { front: String(q.prompt).slice(0, LIMITS.cardChars), back: back || "Revisa la lectura." };
 }

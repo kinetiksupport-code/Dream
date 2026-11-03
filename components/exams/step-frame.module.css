@@ -1,5 +1,6 @@
 /* Pantalla completa de pregunta (step-frame.tsx). Solo transform y opacity. */
 .frame {
+  inline-size: 100%;
   max-width: 760px;
   margin-inline: auto;
   padding: 12px 16px 0;
@@ -33,6 +34,22 @@
   border-radius: 3px;
   background: var(--chip-hover);
   overflow: hidden;
+}
+/* La barra aparece con un fundido al empezar el test (0.12 · 10). */
+.bar {
+  transition: opacity 150ms var(--ease);
+}
+.bar[data-hidden] {
+  opacity: 0;
+}
+.frame {
+  transition: transform 200ms var(--ease);
+}
+/* 0.12 · 8: con el panel «¿Por qué?» abierto, la lección se aparta (transform, no width). */
+@media (min-width: 1024px) {
+  .frame[data-shifted] {
+    transform: translateX(-17vw);
+  }
 }
 .fill {
   display: block;

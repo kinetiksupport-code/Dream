@@ -305,6 +305,99 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+/* 0.11 · 1: anillo de progreso alrededor del nodo actual. */
+.ring {
+  position: absolute;
+  inset: -8px;
+  inline-size: calc(100% + 16px);
+  block-size: calc(100% + 16px);
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.ringTrack,
+.ringFill {
+  fill: none;
+  stroke-width: 5;
+}
+.ringTrack {
+  stroke: var(--chip-hover);
+}
+.ringFill {
+  stroke: var(--primary);
+  stroke-linecap: round;
+  stroke-dashoffset: var(--off, 100);
+}
+@media (prefers-reduced-motion: no-preference) {
+  /* Entra girando un poco con un fundido (200-300 ms; solo transform y opacity). */
+  .ring {
+    animation: ringIn 280ms var(--ease) both;
+  }
+}
+@keyframes ringIn {
+  from {
+    opacity: 0;
+    transform: rotate(-150deg);
+  }
+}
+/* Barra de sección y separadores entre temas (0.11 · 1). */
+.sectionBar {
+  margin-block-start: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
+  border-radius: 18px;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.sectionName {
+  flex: 1;
+  min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.sectionEyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.book {
+  inline-size: 44px;
+  block-size: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.18);
+  color: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.sep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.sep::before,
+.sep::after {
+  content: "";
+  flex: 1;
+  block-size: 1px;
+  background: var(--border);
+}
+.sep > span {
+  max-inline-size: 70%;
+  text-align: center;
+}
 .stepText {
   min-inline-size: 0;
   display: flex;
@@ -753,5 +846,210 @@
 @keyframes pulse {
   to {
     opacity: 0.4;
+  }
+}
+
+/* ── Ruta como en las capturas de Knowunity (estado-14; Carlos, 3-nov-2026) ──
+   Una sola columna centrada (también en escritorio), cabecera centrada,
+   barra de sección oscura con el libro y círculos grandes con icono. */
+.head {
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+.subject {
+  justify-content: center;
+}
+.title {
+  font-size: 1.5rem;
+  font-weight: 750;
+}
+.examName {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.facts {
+  justify-content: center;
+  gap: 6px 16px;
+}
+.facts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.today {
+  justify-content: center;
+}
+.sectionBar {
+  max-inline-size: 600px;
+  margin-inline: auto;
+  padding: 0 0 0 20px;
+  min-block-size: 50px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+  color: var(--text);
+  overflow: hidden;
+}
+.sectionName {
+  font-weight: 700;
+  text-align: start;
+}
+.book {
+  inline-size: 60px;
+  block-size: 50px;
+  border-radius: 0;
+  border-inline-start: 1px solid var(--border);
+  background: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  .book:hover {
+    background: var(--chip-hover);
+  }
+}
+.path {
+  --step: 84px;
+  inline-size: min(340px, 100%);
+  margin-inline: auto;
+  gap: 30px;
+}
+.sep {
+  inline-size: min(600px, 100vw - 32px);
+  margin-inline: calc((min(340px, 100%) - min(600px, 100vw - 32px)) / 2);
+}
+.stepItem {
+  max-inline-size: none;
+}
+.step {
+  gap: 16px;
+}
+.step[data-state="actual"] {
+  margin-block-start: 0;
+}
+.node {
+  position: relative;
+  inline-size: 76px;
+  block-size: 76px;
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+.node .ring {
+  inset: -10px;
+  inline-size: calc(100% + 20px);
+  block-size: calc(100% + 20px);
+}
+.disc {
+  inline-size: 72px;
+  block-size: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--card);
+  color: var(--text-secondary);
+  border: 5px solid var(--chip-hover);
+  box-sizing: border-box;
+  transition: transform 120ms var(--ease);
+}
+/* Hecho: relleno claro con check. */
+.step[data-state="hecha"] .disc {
+  background: color-mix(in srgb, var(--primary) 18%, var(--card));
+  border-color: transparent;
+  color: var(--primary);
+}
+/* Actual: color de Dream, rayado diagonal y estrella (como «Fechas clave»). */
+.step[data-state="actual"] .disc {
+  border: 0;
+  color: #fff;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0 10px, transparent 10px 20px),
+    var(--primary);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 40%, transparent);
+}
+/* Bloqueado: apagado (círculo y texto). */
+.step[data-state="bloq"] .disc {
+  opacity: 0.55;
+}
+.step[data-state="bloq"] .stepTitle {
+  color: var(--text-secondary);
+}
+.stepTitle {
+  font-size: 1.0625rem;
+  font-weight: 700;
+}
+.now {
+  align-self: flex-start;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .step:hover .disc {
+    transform: scale(1.04);
+  }
+}
+@media (min-width: 1024px) {
+  .screen {
+    display: block;
+    max-width: 760px;
+    padding-bottom: 200px;
+  }
+  .barTabs,
+  .barMore {
+    display: block;
+  }
+  .side {
+    display: none;
+  }
+  .mobileHead {
+    display: block;
+    margin-block-start: 28px;
+  }
+  .title {
+    font-size: 1.75rem;
+  }
+  .next {
+    inset-inline: auto 40px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disc {
+    transition: none;
+  }
+}
+.subjectPiece {
+  inline-size: 40px;
+  block-size: 40px;
+}
+/* Fichas 3D de la lámina (sustituyen a los círculos con icono). */
+.ficha {
+  position: relative;
+  display: block;
+  transition: transform 120ms var(--ease);
+}
+.step[data-state="bloq"] .ficha {
+  opacity: 0.7;
+}
+.placa {
+  position: absolute !important;
+  inset-inline-end: -14px;
+  inset-block-start: -16px;
+  filter: drop-shadow(0 4px 8px rgba(8, 11, 20, 0.3));
+  animation: placa 3.2s var(--ease-pulse) infinite;
+}
+@keyframes placa {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .step:hover .ficha {
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .placa {
+    animation: none;
+  }
+  .ficha {
+    transition: none;
   }
 }

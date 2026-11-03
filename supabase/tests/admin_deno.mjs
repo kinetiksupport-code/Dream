@@ -233,7 +233,7 @@ Deno.test("grave actions: fresh code + two-step confirmation bound to who, what 
     }
     assertEquals(calls.filter((c) => c[0] === "mod_ban_set" && c[1].p_until === null).length, 0);
     // Un token manipulado o caducado tampoco.
-    assertEquals((await h.call(adminToken, { ...body, confirm_token: token.replace(/.$/, "0") })).json.needs_confirmation, true);
+    assertEquals((await h.call(adminToken, { ...body, confirm_token: token.replace(/.$/, (c) => (c === "0" ? "1" : "0")) })).json.needs_confirmation, true);
     assertEquals((await h.call(adminToken, { ...body, confirm_token: `1.${"0".repeat(64)}` })).json.needs_confirmation, true);
     // Sin un código reciente no se llega ni al primer paso.
     assertEquals((await h.call(staleToken, body)).json.code, "reauth_required");

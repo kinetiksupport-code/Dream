@@ -21,9 +21,11 @@ export type LessonState =
   | { status: "failed"; message: string };
 export interface QuizQuestion {
   index: number;
-  type: "mcq" | "tf" | "written";
+  type: "mcq" | "tf" | "written" | "numeric";
   prompt: string;
   options?: string[];
+  /** Unidad de una pregunta numérica («cm», «€»…). */
+  unit?: string;
 }
 export interface QuizCheck {
   correct: boolean;
@@ -52,6 +54,7 @@ export const getQuiz = (ids: Ids, round = 0) => callDream<{ questions: QuizQuest
 export const getPretest = (ids: Ids) => callDream<{ questions: QuizQuestion[] }>("unit_quiz_get", { ...ids, pretest: true });
 export const answerQuiz = (ids: Ids, index: number, answer: string | boolean) =>
   callDream<QuizCheck>("unit_quiz_answer", { ...ids, index, answer });
+export const rateQuestion = (ids: Ids, index: number, up: boolean) => callDream<{ ok: true }>("unit_quiz_rate", { ...ids, index, up });
 export const finishQuiz = (ids: Ids, answers: Record<number, string | boolean>, known = false) =>
   callDream<QuizResult>("unit_quiz_finish", { ...ids, answers, ...(known ? { known: true } : {}) });
 /** Repaso de hoy y meta diaria suave (Bloque 6.1 y 6.7): solo contadores. */

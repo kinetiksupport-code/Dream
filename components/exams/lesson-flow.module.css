@@ -352,7 +352,93 @@
   animation: feedbackIn 200ms var(--ease) both;
 }
 
+/* 0.11 · 3: tarjeta «Qué saber». */
+.cardEyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.square {
+  inline-size: 54px;
+  min-block-size: 54px;
+  flex: none;
+  padding: 0;
+  justify-content: center;
+}
+/* Con la hoja de corrección abierta, sitio abajo para que no tape las respuestas. */
+.qWrap[data-sheet] {
+  padding-block-end: 200px;
+}
+
+/* 0.11 · 8 y 0.12 · 12: Orb grande, titular, dos pastillas con borde de color;
+   entrada escalonada de 40 ms (opacity + translateY(6px)). */
+.resultOrb {
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+}
+.results > * {
+  animation: stagger 220ms var(--ease) both;
+}
+.results > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.results > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.results > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.results > :nth-child(5) {
+  animation-delay: 160ms;
+}
+@keyframes stagger {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.pills {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+}
+.pill {
+  min-inline-size: 112px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  border: 2px solid var(--success);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pill[data-kind="time"] {
+  border-color: var(--primary);
+}
+.pill strong {
+  font-size: 1.375rem;
+  font-weight: 750;
+}
+.pillLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .results > * {
+    animation-name: fade;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+  }
   .prep,
   .section,
   .feedback,
@@ -372,4 +458,306 @@
   to {
     opacity: 0.4;
   }
+}
+
+/* ── Estilo de las capturas de Knowunity (Carlos, 3-nov-2026) ──
+   La lección es siempre oscura, a pantalla completa y en una columna
+   centrada de ~640 px; botones blancos gruesos con labio inferior. */
+.kw {
+  --bg: #0b0e1a;
+  --text: #f4f5fa;
+  --text-secondary: rgba(244, 245, 250, 0.64);
+  --card: #1f2231;
+  --chip-hover: #2a2d3c;
+  --elevated: #151827;
+  --border: rgba(255, 255, 255, 0.13);
+  color-scheme: dark;
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--bg);
+  color: var(--text);
+}
+.kw :global(.primary) {
+  min-block-size: 56px;
+  border-radius: var(--radius-pill);
+  background: #ecedf5;
+  color: #0b0e1a;
+  font-size: 1.0625rem;
+  font-weight: 800;
+  box-shadow: 0 4px 0 #a5a8b8;
+}
+.kw :global(.primary:active:not(:disabled):not([aria-disabled="true"])) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #a5a8b8;
+}
+.kw :global(.secondary) {
+  min-block-size: 56px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: #23263a;
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 4px 0 #14162a;
+}
+.kw :global(.secondary:active:not(:disabled)) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #14162a;
+}
+@media (hover: hover) and (pointer: fine) {
+  .kw :global(.primary:hover:not(:disabled):not([aria-disabled="true"])) {
+    background: #ffffff;
+  }
+  .kw :global(.secondary:hover:not(:disabled)) {
+    background: #2b2e43;
+  }
+}
+.kw .section {
+  max-inline-size: 640px;
+  margin-inline: auto;
+  inline-size: 100%;
+}
+.kwEyebrow {
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #6ea0ff;
+  font-size: 0.875rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.kwTitle {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-hero), var(--font-stack);
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+.kw .body {
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: rgba(244, 245, 250, 0.9);
+}
+.kw .body strong {
+  color: #fff;
+}
+.cardTools {
+  display: flex;
+  gap: 4px;
+}
+.cardTool {
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cardTool:hover {
+    background: var(--card);
+    color: var(--text);
+  }
+}
+.kw .square {
+  inline-size: 56px;
+  min-block-size: 56px;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+}
+/* Resultados (estado-13): Orb grande, titular, pastillas con banda de color. */
+.kwTitleBig {
+  margin: 0;
+  font-family: var(--font-hero), var(--font-stack);
+  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  text-align: center;
+}
+.stat {
+  --c: #3ddc84;
+  min-inline-size: 150px;
+  border: 2px solid var(--c);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--bg);
+}
+.stat[data-kind="time"] {
+  --c: #9b7bf0;
+}
+.statLabel {
+  padding: 4px 8px;
+  background: var(--c);
+  color: #0b0e1a;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.statValue {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--c);
+  font-size: 1.375rem;
+  font-weight: 800;
+}
+.stack {
+  inline-size: min(500px, 100%);
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.stack > * {
+  inline-size: 100%;
+}
+.kwResults {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 24px 0;
+  text-align: center;
+}
+.kwResults > * {
+  animation: stagger 220ms var(--ease) both;
+}
+.kwResults > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.kwResults > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.kwResults > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.kwResults > :nth-child(5) {
+  animation-delay: 160ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kwResults > * {
+    animation-name: fade;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+  }
+}
+.chipKw {
+  min-block-size: 44px;
+  padding-inline: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .chipKw:hover {
+    background: var(--card);
+    color: var(--text);
+  }
+}
+.kw .resultText {
+  max-inline-size: 40ch;
+}
+/* Pie y cabecera de StepFrame dentro de la lección oscura: columna de 640 px
+   y la X sin fondo, como en las capturas. */
+.kw footer {
+  inline-size: 100%;
+  max-inline-size: 640px;
+  margin-inline: auto;
+  box-sizing: border-box;
+}
+.kw header > button:first-child,
+.kw header > a:first-child {
+  background: transparent;
+}
+.kw [role="progressbar"] {
+  block-size: 14px;
+  border-radius: 7px;
+  background: #23263a;
+}
+.kw [role="progressbar"] > span {
+  border-radius: 7px;
+  background: #8b7cf6;
+}
+.prize img {
+  display: block;
+  animation: prizeIn 320ms var(--ease) both;
+}
+@keyframes prizeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prize img {
+    animation-name: fade;
+    animation-duration: 100ms;
+  }
+}
+/* Respuesta numérica: un campo grande, centrado, con la unidad al lado. */
+.numeric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.numericRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.numeric input {
+  inline-size: min(260px, 70vw);
+  min-block-size: 64px;
+  padding: 0 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.numeric input:focus-visible {
+  outline: 3px solid #6ea0ff;
+  outline-offset: 2px;
+}
+.unit {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
 }

@@ -1,5 +1,5 @@
 "use client";
-import { setStudyStepsForAccount } from "@/lib/study-steps";
+import { setStudyStepsForAccount, setAiRouteForAccount } from "@/lib/study-steps";
 import {
   Fragment,
   createContext,
@@ -44,7 +44,10 @@ export function Providers({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<DreamProfile | null>(null);
   // Al cerrar sesión o cambiar de cuenta, la ruta nueva vuelve a apagarse.
   useEffect(() => {
-    if (!profile) setStudyStepsForAccount(false);
+    if (!profile) {
+      setStudyStepsForAccount(false);
+      setAiRouteForAccount(false);
+    }
   }, [profile]);
   const [bootError, setBootError] = useState("");
   const [serviceReady, setServiceReady] = useState(true);
@@ -67,6 +70,7 @@ export function Providers({ children }: { children: ReactNode }) {
         if (currentUser.current !== owner) return;
         // Antes de pintar la app: ¿tiene esta cuenta la ruta de estudio nueva?
         setStudyStepsForAccount(r.study_steps);
+        setAiRouteForAccount(r.ai_route);
         setProfile(r.profile);
         setServiceReady(r.service_ready);
       } catch (e) {

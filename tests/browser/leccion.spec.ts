@@ -38,6 +38,10 @@ async function lesson(page: Page, { slow = 0, generating = 0, pre = false } = {}
         const ok = i === 2 ? true : b.answer === right[i];
         return { correct: ok, correct_answer: right[i], explanation: "Explicación corta.", ...(i === 2 ? { rubric: ["Caída de Constantinopla", "Fin de la Edad Media"] } : {}) };
       },
+      unit_quiz_rate: (b) => {
+        calls.push(b);
+        return { ok: true };
+      },
       unit_quiz_finish: (b) => {
         calls.push(b);
         return { right: 2, total: 3, pct: 67, mastered: false, completed: true, mistake_cards: 1 };
@@ -52,7 +56,7 @@ async function lesson(page: Page, { slow = 0, generating = 0, pre = false } = {}
   return calls;
 }
 
-test("ruta → lección: preparando, leer con V/F, test, resultados y vuelta con el check", async ({ page }) => {
+test("ruta → lección (0.11): tarjetas «Qué saber», test con la Orb y «Comprobar», hoja de color, repaso de fallos y resultados", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   const calls = await lesson(page, { slow: 1500 });
   await page.goto(`/exams/${eid}/ruta`);
@@ -63,46 +67,104 @@ test("ruta → lección: preparando, leer con V/F, test, resultados y vuelta con
   await expect(prep).toBeVisible();
   await expect(prep.getByText("Escribiendo la lectura, las preguntas y las tarjetas")).toBeVisible();
   await expect(prep.getByRole("button", { name: "Juega mientras esperas" })).toBeVisible();
-  // Sección 1: la respuesta no se ve antes de contestar.
-  await expect(page.getByRole("heading", { name: "Qué fue Bizancio" })).toBeVisible();
-  await expect(page.getByText("Es falso")).toHaveCount(0);
+  // Tarjeta 1: «Qué saber», sin barra de progreso (aparece en el test) y con «Saltar».
+  const card = page.getByTestId("tarjeta-que-saber");
+  await expect(card.getByRole("heading", { name: "Qué fue Bizancio" })).toBeVisible();
+  await expect(card).toContainText("Qué saber");
+  await expect(page.getByRole("button", { name: "Saltar" })).toBeVisible();
   await page.getByRole("button", { name: "¿Por qué es importante?" }).click();
   await expect(page.getByText("Explica cómo sobrevivió Roma.")).toBeVisible();
-  await page.getByRole("button", { name: "Verdadero" }).click();
-  await expect(page.getByText("No es así")).toBeVisible();
-  await expect(page.getByText(/Es falso\. Lo dice la sección\./)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Explícame por qué" })).toHaveAttribute("href", `/exams/${eid}/study/${UNIT}?tutor=1`);
   await page.getByRole("button", { name: "Continuar" }).click();
-  // Sección 2.
-  await page.getByRole("button", { name: "Verdadero" }).click();
-  await expect(page.getByText("¡Correcto!")).toBeVisible();
+  // Última tarjeta: «Empezar test» en el mismo sitio y la flecha para volver a leer.
+  await expect(card.getByRole("heading", { name: "Justiniano" })).toBeVisible();
+  await page.getByRole("button", { name: "Volver a la tarjeta anterior" }).click();
+  await expect(card.getByRole("heading", { name: "Qué fue Bizancio" })).toBeVisible();
   await page.getByRole("button", { name: "Continuar" }).click();
-  // Test: una barra para todo (2 secciones + 3 preguntas).
+  await page.getByRole("button", { name: "Empezar test" }).click();
+  // Test: las V/F de las tarjetas van mezcladas con las del banco (2 + 3 = 5).
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuemax", "5");
-  await page.getByRole("button", { name: "Roma" }).click();
-  await expect(page.getByText("La correcta es «Constantinopla».")).toBeVisible();
-  // Botones bloqueados tras contestar.
-  await expect(page.getByRole("button", { name: "Atenas" })).toBeDisabled();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: "Verdadero" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
+  const check = page.getByRole("button", { name: "Comprobar" });
+  await expect(check).toHaveAttribute("aria-disabled", "true");
+  await page.getByRole("radio", { name: "Roma" }).click();
+  await expect(page.getByRole("radio", { name: "Roma" })).toHaveAttribute("aria-checked", "true");
+  await expect(check).not.toHaveAttribute("aria-disabled", "true");
+  await check.click();
+  const sheet = page.getByTestId("hoja-correccion");
+  await expect(sheet.getByRole("status")).toContainText("Incorrecto");
+  await expect(sheet).toContainText("La correcta es «Constantinopla».");
+  await expect(page.getByRole("radio", { name: /Atenas/ })).toHaveAttribute("aria-disabled", "true");
+  await sheet.getByRole("button", { name: "Mala pregunta" }).click();
+  await expect.poll(() => calls.find((c) => c.action === "unit_quiz_rate")).toMatchObject({ index: 0, up: false });
+  // «¿Por qué?» abre el tutor con la pregunta ya escrita; Esc lo cierra.
+  await sheet.getByRole("button", { name: "¿Por qué?" }).click();
+  const panel = page.getByTestId("panel-por-que");
+  await expect(panel).toBeVisible();
+  await expect(panel.getByRole("textbox").first()).toHaveValue(/contesté «Roma» y la respuesta es «Constantinopla»/);
+  await page.keyboard.press("Escape");
+  await expect(panel).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Entendido" }).click();
+  // V/F de la tarjeta 1, con su etiqueta.
+  await expect(page.getByText("¿Verdadero o falso?")).toBeVisible();
+  await page.getByRole("radio", { name: "Verdadero" }).click();
+  await check.click();
+  await expect(sheet.getByRole("status")).toContainText("Incorrecto");
+  await expect(sheet.getByRole("button", { name: "Mala pregunta" })).toHaveCount(0);
+  await sheet.getByRole("button", { name: "Entendido" }).click();
+  // Teclado: 1 elige, Intro comprueba y continúa.
+  await expect(page.getByRole("heading", { name: "Justiniano reunió las leyes." })).toBeVisible();
+  await page.keyboard.press("1");
+  await expect(page.getByRole("radio", { name: "Verdadero" })).toHaveAttribute("aria-checked", "true");
+  await page.keyboard.press("Enter");
+  await expect(sheet.getByRole("status")).toContainText("¡Genial!");
+  await page.keyboard.press("Enter");
+  await page.getByRole("radio", { name: "Verdadero" }).click();
+  await check.click();
+  await sheet.getByRole("button", { name: "Continuar" }).click();
   await page.getByRole("textbox", { name: "Tu respuesta" }).fill("Cayó Constantinopla y terminó la Edad Media.");
-  await page.getByRole("button", { name: "Comprobar" }).click();
-  await expect(page.getByText(/Ideas clave: Caída de Constantinopla · Fin de la Edad Media/)).toBeVisible();
-  await page.getByRole("button", { name: "Ver resultados" }).click();
-  // Resultados: número grande, frase, 2 datos, opinión sin cambiar la altura y Continuar.
+  await check.click();
+  await expect(sheet).toContainText("Ideas clave: Caída de Constantinopla · Fin de la Edad Media.");
+  await sheet.getByRole("button", { name: "Continuar" }).click();
+  // Ronda de repaso: la fallada vuelve con «Error anterior» hasta acertarla.
+  await expect(page.getByRole("heading", { name: "¡Repasemos las preguntas que fallaste!" })).toBeVisible();
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page.getByText("Error anterior")).toBeVisible();
+  await page.getByRole("radio", { name: "Constantinopla" }).click();
+  await check.click();
+  await sheet.getByRole("button", { name: "Ver resultados" }).click();
+  // Resultados: Orb, titular, aciertos y tiempo, opinión, Repetir y Continuar.
   const results = page.getByTestId("leccion-resultados");
-  await expect(results.getByText("Repasa tus fallos")).toBeVisible();
-  await expect(results.getByText("67 %")).toBeVisible();
+  await expect(results.getByRole("heading", { name: "Casi" })).toBeVisible();
+  await expect(results.getByRole("list", { name: "Tu resultado" })).toContainText("2/3");
+  await expect(results.getByRole("list", { name: "Tu resultado" })).toContainText(/\d+:\d{2}/);
+  await expect(results).not.toContainText("XP");
   const box = await results.getByRole("group", { name: "¿Cómo lo has notado?" }).boundingBox();
   await results.getByRole("button", { name: "Bien" }).click();
   await expect(results.getByText("Gracias")).toBeVisible();
   const after = await results.getByRole("group", { name: "¿Cómo lo has notado?" }).boundingBox();
   expect(after!.height).toBeCloseTo(box!.height, 0);
+  // La nota sale del primer intento: el repaso no la cambia.
   expect(calls.find((c) => c.action === "unit_quiz_finish")).toMatchObject({ answers: { 0: "Roma", 1: true, 2: "Cayó Constantinopla y terminó la Edad Media." } });
   expect(calls.some((c) => c.felt_difficulty === "bien")).toBe(true);
+  await expect(results.getByRole("button", { name: "Repetir" })).toBeVisible();
   await results.getByRole("link", { name: "Continuar" }).click();
   await expect(page).toHaveURL(`/exams/${eid}/ruta`);
+});
+
+test("movimiento reducido: la hoja de corrección no se desliza ni hay saltos", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await lesson(page);
+  await page.goto(`/exams/${eid}/study/${UNIT}`);
+  await page.getByRole("button", { name: "Saltar" }).click();
+  await page.getByRole("button", { name: "Empezar test" }).click();
+  await page.getByRole("radio", { name: "Roma" }).click();
+  await page.getByRole("button", { name: "Comprobar" }).click();
+  const sheet = page.getByTestId("hoja-correccion");
+  await expect(sheet).toBeVisible();
+  const anim = await sheet.evaluate((el) => getComputedStyle(el).animationName);
+  expect(anim).not.toMatch(/sheetUp/);
+  const wrong = await page.getByRole("radio", { name: /Roma/ }).evaluate((el) => getComputedStyle(el).animationName);
+  expect(wrong).toBe("none");
 });
 
 test("otra pestaña la está preparando: se vuelve a mirar sola; fuentes en una hoja", async ({ page }) => {
@@ -143,7 +205,7 @@ test("presupuesto: lección ≤ 6 elementos y pregunta ≤ 7", async ({ page }) 
         if (el.closest(".sidebar, .tabbar, .topbar, .skip-link")) continue;
         const r = el.getBoundingClientRect();
         if (!r.width || r.bottom <= 0 || r.top >= innerHeight) continue;
-        const g = el.closest("[role='group'], footer");
+        const g = el.closest("[role='group'], [role='radiogroup'], footer, [data-testid='hoja-correccion']");
         if (g) {
           if (groups.has(g)) continue;
           groups.add(g);
@@ -152,13 +214,17 @@ test("presupuesto: lección ≤ 6 elementos y pregunta ≤ 7", async ({ page }) 
       }
       return n;
     });
-  // X, barra, contador, «1 fuente», título, «¿Por qué es importante?», V/F (grupo) = 7 → la lección cuenta el contenido como 1.
-  expect(await count()).toBeLessThanOrEqual(8);
-  await page.getByRole("button", { name: "Falso" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await page.getByRole("button", { name: "Verdadero" }).click();
-  await page.getByRole("button", { name: "Continuar" }).click();
-  await expect(page.getByRole("button", { name: "Roma" })).toBeVisible();
+  // Tarjeta: X, «1 fuente», título, «¿Por qué es importante?», pie (Saltar + Continuar) = 5.
+  expect(await count()).toBeLessThanOrEqual(6);
+  await page.getByRole("button", { name: "Saltar" }).click();
+  await page.getByRole("button", { name: "Empezar test" }).click();
+  await expect(page.getByRole("radio", { name: "Roma" })).toBeVisible();
+  // Pregunta: X, barra, burbuja, respuestas (grupo), «Comprobar» = 5-6 antes de comprobar.
+  expect(await count()).toBeLessThanOrEqual(6);
+  await page.getByRole("radio", { name: "Roma" }).click();
+  await page.getByRole("button", { name: "Comprobar" }).click();
+  await expect(page.getByTestId("hoja-correccion")).toBeVisible();
+  // Después: la hoja y sus botones; nunca más de 7 a la vez.
   expect(await count()).toBeLessThanOrEqual(7);
 });
 
@@ -166,9 +232,10 @@ test("pretest opcional: es normal fallarlas, no puntúa y se puede saltar", asyn
   await page.setViewportSize({ width: 390, height: 844 });
   const calls = await lesson(page, { pre: true });
   await page.goto(`/exams/${eid}/study/${UNIT}`);
-  await expect(page.getByTestId("leccion-pretest")).toContainText("Es normal fallarlas");
-  await page.getByRole("button", { name: "Roma" }).click();
-  await expect(page.getByText("Lo verás en la lectura.")).toBeVisible();
+  await expect(page.getByTestId("leccion-pretest")).toContainText("es normal fallarlas");
+  await page.getByRole("radio", { name: "Roma" }).click();
+  await page.getByRole("button", { name: "Comprobar" }).click();
+  await expect(page.getByTestId("hoja-correccion")).toContainText("Lo verás en la lectura");
   await page.getByRole("button", { name: "Siguiente" }).click();
   await page.getByRole("button", { name: "Saltar" }).click();
   await expect(page.getByRole("heading", { name: "Qué fue Bizancio" })).toBeVisible();
@@ -183,27 +250,49 @@ test("capturas de la lección", async ({ page }) => {
     for (const scheme of ["light", "dark"] as const) {
       await page.setViewportSize({ width: w, height: h });
       await page.emulateMedia({ colorScheme: scheme });
-      await lesson(page, { pre: true });
+      await lesson(page);
       await page.goto(`/exams/${eid}/study/${UNIT}`);
-      await expect(page.getByTestId("leccion-pretest")).toBeVisible();
-      await page.screenshot({ path: `${dir}/leccion-pretest-${name}-${scheme}.png` });
-      await page.getByRole("button", { name: "Saltar" }).click();
-      await page.getByRole("button", { name: "Verdadero" }).click();
-      await expect(page.getByRole("status").filter({ hasText: "No es así" })).toBeVisible();
-      await page.screenshot({ path: `${dir}/leccion-leer-${name}-${scheme}.png` });
+      await expect(page.getByTestId("tarjeta-que-saber")).toBeVisible();
+      await page.screenshot({ path: `${dir}/leccion-que-saber-${name}-${scheme}.png` });
       await page.getByRole("button", { name: "Continuar" }).click();
-      await page.getByRole("button", { name: "Verdadero" }).click();
+      await page.screenshot({ path: `${dir}/leccion-empezar-test-${name}-${scheme}.png` });
+      await page.getByRole("button", { name: "Empezar test" }).click();
+      await page.getByRole("radio", { name: "Roma" }).click();
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: `${dir}/leccion-pregunta-${name}-${scheme}.png` });
+      await page.getByRole("button", { name: "Comprobar" }).click();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${dir}/leccion-hoja-roja-${name}-${scheme}.png` });
+      await page.getByRole("button", { name: "¿Por qué?" }).click();
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: `${dir}/leccion-por-que-${name}-${scheme}.png` });
+      await page.getByRole("button", { name: "Cerrar la explicación" }).click();
+      await page.getByRole("button", { name: "Entendido" }).click();
+      await page.getByRole("radio", { name: "Falso" }).click();
+      await page.getByRole("button", { name: "Comprobar" }).click();
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: `${dir}/leccion-hoja-verde-${name}-${scheme}.png` });
       await page.getByRole("button", { name: "Continuar" }).click();
-      await page.getByRole("button", { name: "Roma" }).click();
-      await expect(page.getByRole("status").filter({ hasText: "No es así" })).toBeVisible();
-      await page.screenshot({ path: `${dir}/leccion-test-${name}-${scheme}.png` });
+      await page.getByRole("radio", { name: "Verdadero" }).click();
+      await page.getByRole("button", { name: "Comprobar" }).click();
       await page.getByRole("button", { name: "Continuar" }).click();
-      await page.getByRole("button", { name: "Verdadero" }).click();
+      await page.getByRole("radio", { name: "Verdadero" }).click();
+      await page.getByRole("button", { name: "Comprobar" }).click();
       await page.getByRole("button", { name: "Continuar" }).click();
-      await page.getByRole("textbox").fill("Cayó Constantinopla.");
+      await page.getByRole("textbox", { name: "Tu respuesta" }).fill("Cayó Constantinopla.");
+      await page.getByRole("button", { name: "Comprobar" }).click();
+      await page.getByRole("button", { name: "Continuar" }).click();
+      await expect(page.getByTestId("leccion-repaso")).toBeVisible();
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: `${dir}/leccion-repasemos-${name}-${scheme}.png` });
+      await page.getByRole("button", { name: "Continuar" }).click();
+      await page.waitForTimeout(200);
+      await page.screenshot({ path: `${dir}/leccion-error-anterior-${name}-${scheme}.png` });
+      await page.getByRole("radio", { name: "Constantinopla" }).click();
       await page.getByRole("button", { name: "Comprobar" }).click();
       await page.getByRole("button", { name: "Ver resultados" }).click();
       await expect(page.getByTestId("leccion-resultados")).toBeVisible();
+      await page.waitForTimeout(400);
       await page.screenshot({ path: `${dir}/leccion-resultados-${name}-${scheme}.png` });
     }
 });

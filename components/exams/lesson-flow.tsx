@@ -1,14 +1,17 @@
 "use client";
-// La lección de la ruta (prompt de la ruta, 0.6 y Bloques 1-3; Claude Design
-// PantallaGenerarMovil, PantallaLeerMovil y PantallaTestMovil): un flujo
-// lineal a pantalla completa con UNA barra de progreso: preparando → secciones
-// de lectura con su mini-pregunta V/F → test de la lección (6-8) → resultados.
+// La lección de la ruta «tipo Knowunity» (prompt de la ruta, 0.11 y 0.12;
+// Bloques 1-3): preparando → tarjetas «Qué saber» cortas (Continuar / Saltar;
+// en la última, «Empezar test» con flecha para volver) → test con la Orb, en
+// el que van mezcladas las V/F de las tarjetas y las preguntas del banco, cada
+// una con «Comprobar» y la hoja de corrección de color → «Repasemos las
+// preguntas que fallaste» (vuelven con «ERROR ANTERIOR» hasta acertarlas) →
+// resultados (acierto y tiempo; Continuar y Repetir).
 // El servidor genera, corrige y guarda; aquí solo se pinta. Nunca se ve una
-// respuesta antes de contestar.
-import { useEffect, useRef, useState } from "react";
+// respuesta antes de contestar. La nota sale del primer intento.
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, FileText, X as XIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, FileText, Lightbulb, SkipForward, Target, Timer, X as XIcon } from "lucide-react";
 import { errorMessage } from "@/lib/dream-api";
 import {
   answerQuiz,
@@ -16,17 +19,22 @@ import {
   getLesson,
   getPretest,
   getQuiz,
+  rateQuestion,
   saveProgress,
   type LessonSection,
-  type QuizCheck,
   type QuizQuestion,
   type QuizResult,
 } from "@/lib/study-api";
 import { BottomSheet } from "../bottom-sheet";
 import { DreamActivity } from "../dream-mark";
 import { Markdown } from "../markdown";
+import { Orb } from "../orb";
 import { PlayWhileWaiting } from "../games/play-while-waiting";
+import { mixItems, type Item } from "@/lib/lesson-items";
+import { PIECE } from "@/lib/study-steps";
 import { StepFrame } from "./step-frame";
+import { CheckButton, CorrectionSheet, QuizQuestion as QuestionView, type Answer, type Verdict } from "./quiz-question";
+import { WhyPanel } from "./why-panel";
 import sf from "./step-frame.module.css";
 import s from "./lesson-flow.module.css";
 
@@ -37,41 +45,59 @@ type Phase =
   | { kind: "failed"; message: string }
   | { kind: "pretest"; question: number }
   | { kind: "read"; section: number }
-  | { kind: "quiz"; question: number }
+  | { kind: "quiz"; at: number }
+  | { kind: "review" }
   | { kind: "results"; result: QuizResult };
+
+interface Checked extends Verdict {
+  explanation: string;
+  rubric?: string[];
+}
+
+const TF = [
+  { label: "Verdadero", value: true },
+  { label: "Falso", value: false },
+];
+const clock = (ms: number) => {
+  const t = Math.max(1, Math.round(ms / 1000));
+  return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`;
+};
 
 const STEPS = ["Pidiendo tu lección", "Escribiendo la lectura, las preguntas y las tarjetas", "Comprobando que todo cuadre"];
 const POLL_MS = 4000;
 
-function Feedback({ ok, children }: { ok: boolean; children: React.ReactNode }) {
-  return (
-    <div className={s.feedback} data-ok={ok || undefined} role="status">
-      <span className={s.feedbackIcon} aria-hidden="true">
-        {ok ? <Check size={18} /> : <XIcon size={18} />}
-      </span>
-      <div>
-        <strong>{ok ? "¡Correcto!" : "No es así"}</strong>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-export function LessonFlow({ examId, unitId, title, known = false }: { examId: string; unitId: string; title: string; known?: boolean }) {
+function LessonScreens({
+  examId,
+  unitId,
+  title,
+  known = false,
+  conversationId = null,
+}: {
+  examId: string;
+  unitId: string;
+  title: string;
+  known?: boolean;
+  /** Conversación de la unidad, para el panel «¿Por qué?». */
+  conversationId?: string | null;
+}) {
   const ids = { exam_id: examId, unit_id: unitId };
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [sections, setSections] = useState<LessonSection[]>([]);
   const [sources, setSources] = useState<string[]>([]);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [pretest, setPretest] = useState<QuizQuestion[]>([]);
-  const [check, setCheck] = useState<{ correct: boolean; explanation: string; isTrue?: boolean } | null>(null);
-  const [quizCheck, setQuizCheck] = useState<QuizCheck | null>(null);
+  const [items, setItems] = useState<Item[]>([]);
+  const [missed, setMissed] = useState<QuizQuestion[]>([]);
+  const [reviewing, setReviewing] = useState(false);
+  const [picked, setPicked] = useState<Answer | null>(null);
+  const [verdict, setVerdict] = useState<Checked | null>(null);
   const [answers, setAnswers] = useState<Record<number, string | boolean>>({});
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [openWhy, setOpenWhy] = useState(false);
+  const [why, setWhy] = useState<string | null>(null);
+  const [round, setRound] = useState(0);
   const [showSources, setShowSources] = useState(false);
   const [felt, setFelt] = useState<"facil" | "bien" | "dificil" | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -91,7 +117,7 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
         const at = Math.min(r.progress?.reading_section ?? 0, r.reading.sections.length);
         // «Seguir donde lo dejaste»: si ya leyó todo, va al test.
         // «Ya me sé este tema» (Bloque 6.8): directo al test, sin leer.
-        if (known || at >= r.reading.sections.length) await startQuiz();
+        if (known || at >= r.reading.sections.length) await startQuiz(known ? 0 : r.reading.sections.length);
         else if (at === 0 && !r.progress) {
           // Pretest opcional (Bloque 2): solo la primera vez, y se puede saltar.
           const pre = await getPretest(ids).catch(() => ({ questions: [] as QuizQuestion[] }));
@@ -114,60 +140,64 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId, unitId]);
 
-  async function startQuiz() {
-    const { questions: qs } = await getQuiz(ids);
-    setQuestions(qs);
+  /** Empieza el test: `withChecks` = cuántas V/F de las tarjetas van mezcladas (0 sin leer). */
+  async function startQuiz(withChecks = sections.length, nextRound = 0) {
+    const { questions: qs } = await getQuiz(ids, nextRound);
+    if (!alive.current) return;
+    setItems(mixItems(withChecks, qs));
     setAnswers({});
-    setQuizCheck(null);
+    setMissed([]);
+    setReviewing(false);
+    setPicked(null);
+    setVerdict(null);
     setDraft("");
     started.current = Date.now();
-    setPhase({ kind: "quiz", question: 0 });
+    setPhase({ kind: "quiz", at: 0 });
   }
-  async function answerCheck(section: number, answer: boolean) {
+  async function begin() {
     setBusy(true);
     try {
-      const r = await saveProgress(ids, { check: { section, answer } });
-      if (r.check) setCheck({ correct: r.check.correct, explanation: r.check.explanation, isTrue: r.check.is_true });
+      void saveProgress(ids, { reading_section: sections.length }).catch(() => undefined);
+      await startQuiz();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
-  async function nextSection(section: number) {
-    setCheck(null);
+  function goSection(next: number) {
     setOpenWhy(false);
-    const next = section + 1;
     void saveProgress(ids, { reading_section: next }).catch(() => undefined);
-    if (next < sections.length) setPhase({ kind: "read", section: next });
-    else {
-      setBusy(true);
-      try {
-        await startQuiz();
-      } catch (e) {
-        setError(errorMessage(e));
-      } finally {
-        setBusy(false);
-      }
-    }
+    setPhase({ kind: "read", section: next });
   }
-  async function answerQuestion(q: QuizQuestion, answer: string | boolean) {
-    if (busy || quizCheck) return; // botones bloqueados tras pulsar (0.8 · 5)
+  /** «Comprobar» (0.12 · 4): bloquea las respuestas y pide la corrección. */
+  async function check(item: Item) {
+    const typed = item.kind === "quiz" && (item.q.type === "written" || item.q.type === "numeric");
+    const value: Answer | null = typed ? draft : picked;
+    if (busy || verdict || value === null || value === "") return;
     setBusy(true);
+    setError("");
     try {
-      const r = await answerQuiz(ids, q.index, answer);
-      setAnswers((a) => ({ ...a, [q.index]: answer }));
-      setQuizCheck(r);
+      if (item.kind === "check") {
+        const r = await saveProgress(ids, { check: { section: item.section, answer: value === true } });
+        if (r.check) setVerdict({ correct: r.check.correct, correctAnswer: !!r.check.is_true, explanation: r.check.explanation });
+      } else {
+        const r = await answerQuiz(ids, item.q.index, value);
+        // La nota sale del primer intento; la ronda de repaso no la cambia.
+        if (!item.retry) setAnswers((a) => ({ ...a, [item.q.index]: value }));
+        setVerdict({ correct: r.correct, correctAnswer: r.correct_answer, explanation: r.explanation, rubric: r.rubric });
+        if (!r.correct && item.q.type !== "written") {
+          if (reviewing) setItems((list) => [...list, { kind: "quiz", q: item.q, retry: true }]);
+          else setMissed((m) => [...m, item.q]);
+        }
+      }
     } catch (e) {
       setError(errorMessage(e));
     } finally {
       setBusy(false);
     }
   }
-  async function nextQuestion(i: number) {
-    setQuizCheck(null);
-    setDraft("");
-    if (i + 1 < questions.length) return setPhase({ kind: "quiz", question: i + 1 });
+  async function finish() {
     setBusy(true);
     try {
       const result = await finishQuiz(ids, answers, known);
@@ -178,9 +208,19 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
       setBusy(false);
     }
   }
+  /** «Continuar»/«Entendido»: la hoja se va y llega la siguiente casi a la vez (0.12 · 7). */
+  function advance(at: number) {
+    setVerdict(null);
+    setPicked(null);
+    setDraft("");
+    setOpenWhy(false);
+    setWhy(null);
+    if (at + 1 < items.length) return setPhase({ kind: "quiz", at: at + 1 });
+    if (!reviewing && missed.length) return setPhase({ kind: "review" });
+    void finish();
+  }
+  const onPick = useCallback((a: Answer) => setPicked(a), []);
   const leave = () => router.push(`/exams/${examId}/ruta`);
-  const tutor = `/exams/${examId}/study/${unitId}?tutor=1`;
-  const total = sections.length + (questions.length || 7);
 
   // ── Preparando (Orb y pasos reales) ──
   if (phase.kind === "loading" || phase.kind === "generating" || playing)
@@ -251,34 +291,79 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
       </div>
     );
 
-  // ── Resultados ──
+  // ── Resultados (0.11 · 8): dos datos útiles, «Continuar» y «Repetir» ──
   if (phase.kind === "results") {
     const r = phase.result;
-    const minutes = Math.max(1, Math.round((Date.now() - started.current) / 60000));
     return (
       <div className={sf.frame} data-testid="leccion-resultados">
-        <main className={s.results} data-mastered={r.mastered || undefined}>
-          <p className={s.big}>
-            <span className="num">{r.right}</span>/<span className="num">{r.total}</span>
-          </p>
-          <h1 className={s.resultTitle}>{r.mastered ? "Dominado" : known ? "Mejor haz la lección" : "Repasa tus fallos"}</h1>
-          <p className={s.resultText}>
+        <main className={s.kwResults} data-mastered={r.mastered || undefined}>
+          <span aria-hidden="true" className={s.prize}>
+            {r.mastered ? (
+              // La medalla «Dominado» de la lámina de objetos.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={PIECE("dominado")} alt="" width={132} height={132} draggable={false} />
+            ) : (
+              <Orb size={120} breathing />
+            )}
+          </span>
+          <h1 className={s.kwTitleBig}>{r.mastered ? "¡Lo dominas!" : known ? "Mejor haz la lección" : "¡Casi lo tienes!"}</h1>
+          <ul className={s.pills} aria-label="Tu resultado">
+            <li className={s.stat} data-kind="score">
+              <span className={s.statLabel}>Puntuación total</span>
+              <strong className={`${s.statValue} num`}>
+                <Target size={22} aria-hidden="true" />
+                {r.right}/{r.total}
+              </strong>
+            </li>
+            <li className={s.stat} data-kind="time">
+              <span className={s.statLabel}>Tiempo</span>
+              <strong className={`${s.statValue} num`}>
+                <Timer size={22} aria-hidden="true" />
+                {clock(Date.now() - started.current)}
+              </strong>
+            </li>
+          </ul>
+          <div className={s.stack}>
+            {known && !r.mastered ? (
+              <>
+                {/* Carga completa: la lección se abre desde el principio, ya sin «Ya me sé este tema». */}
+                <a className="primary press" href={`/exams/${examId}/study/${unitId}`}>
+                  Hacer la lección
+                </a>
+                <Link className="secondary press" href={`/exams/${examId}/ruta`}>
+                  Volver
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
+                  Continuar
+                </Link>
+                <button
+                  type="button"
+                  className="secondary press"
+                  disabled={busy}
+                  onClick={() => {
+                    const next = round + 1;
+                    setRound(next);
+                    setBusy(true);
+                    void startQuiz(0, next)
+                      .catch((e) => setError(errorMessage(e)))
+                      .finally(() => setBusy(false));
+                  }}
+                >
+                  Repetir
+                </button>
+              </>
+            )}
+          </div>
+          <p className={s.resultText} role="status">
             {known && !r.mastered
               ? "Aún no lo dominas, y no pasa nada: la lección te lo explica paso a paso."
               : r.mastered
-              ? "Te lo sabes. Las tarjetas de esta lección volverán cuando toque."
-              : `Ya tienes ${r.mistake_cards} ${r.mistake_cards === 1 ? "tarjeta" : "tarjetas"} con tus fallos. Mañana podrás repetir el test con otras preguntas.`}
+              ? "Las tarjetas de esta lección volverán cuando toque."
+              : `Intento guardado. Repasa tus fallos y vuelve a intentarlo: ya tienes ${r.mistake_cards} ${r.mistake_cards === 1 ? "tarjeta" : "tarjetas"} con ellos.`}
           </p>
-          <dl className={s.facts}>
-            <div>
-              <dt>Precisión</dt>
-              <dd className="num">{r.pct} %</dd>
-            </div>
-            <div>
-              <dt>Tiempo</dt>
-              <dd className="num">{minutes} min</dd>
-            </div>
-          </dl>
           <div className={s.chips} role="group" aria-label="¿Cómo lo has notado?">
             {felt ? (
               <p className={s.thanks} role="status">
@@ -289,7 +374,7 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
                 <button
                   key={f}
                   type="button"
-                  className={`secondary press ${s.chip}`}
+                  className={s.chipKw}
                   onClick={() => {
                     setFelt(f);
                     void saveProgress(ids, { felt_difficulty: f }).catch(() => undefined);
@@ -300,34 +385,55 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
               ))
             )}
           </div>
+          {error && <p className={sf.saveError} role="alert">{error}</p>}
         </main>
-        <footer className={sf.foot}>
-          <Link className={`secondary press ${sf.small}`} href={tutor}>
-            Pregúntale a Dream
-          </Link>
-          {known && !r.mastered ? (
-            // Carga completa: la lección se abre desde el principio, ya sin «Ya me sé este tema».
-            <a className="primary press" href={`/exams/${examId}/study/${unitId}`}>
-              Hacer la lección
-            </a>
-          ) : (
-            <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
-              Continuar
-            </Link>
-          )}
-        </footer>
       </div>
     );
   }
 
+  // ── «Repasemos las preguntas que fallaste» (0.11 · 7) ──
+  if (phase.kind === "review")
+    return (
+      <div className={sf.frame} data-testid="leccion-repaso">
+        <main className={s.kwResults}>
+          <span aria-hidden="true">
+            <Orb size={120} breathing />
+          </span>
+          <h1 className={s.kwTitleBig}>¡Repasemos las preguntas que fallaste!</h1>
+          <p className={s.resultText}>
+            {missed.length === 1 ? "Es solo una" : `Son ${missed.length}`}. Vuelven hasta que las aciertes; tu nota no cambia.
+          </p>
+        </main>
+        <footer className={`${sf.foot} ${s.stack}`}>
+          <button
+            type="button"
+            className="primary press"
+            autoFocus
+            onClick={() => {
+              setItems(missed.map((q) => ({ kind: "quiz", q, retry: true })));
+              setReviewing(true);
+              setPhase({ kind: "quiz", at: 0 });
+            }}
+          >
+            Continuar
+          </button>
+        </footer>
+      </div>
+    );
+
   // ── Pretest: no puntúa ni cuenta para el dominio ──
   if (phase.kind === "pretest") {
     const pq = pretest[phase.question];
-    const picked = answers[pq.index];
     const skip = () => {
-      setQuizCheck(null);
-      setAnswers({});
+      setVerdict(null);
+      setPicked(null);
       setPhase({ kind: "read", section: 0 });
+    };
+    const nextPre = () => {
+      setVerdict(null);
+      setPicked(null);
+      if (phase.question + 1 < pretest.length) setPhase({ kind: "pretest", question: phase.question + 1 });
+      else skip();
     };
     return (
       <StepFrame
@@ -335,74 +441,61 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
         position={phase.question + 1}
         total={pretest.length}
         remaining={null}
+        showCounter={false}
         onExit={leave}
         footer={
-          quizCheck ? (
-            <button
-              className="primary press"
-              onClick={() => {
-                setQuizCheck(null);
-                if (phase.question + 1 < pretest.length) setPhase({ kind: "pretest", question: phase.question + 1 });
-                else skip();
-              }}
-            >
-              {phase.question + 1 < pretest.length ? "Siguiente" : "Empezar a leer"}
-            </button>
-          ) : (
-            <button className={`secondary press ${sf.small}`} onClick={skip}>
-              Saltar
-            </button>
+          verdict ? null : (
+            <>
+              <button className={`secondary press ${sf.small}`} onClick={skip}>
+                Saltar
+              </button>
+              <CheckButton
+                ready={picked !== null}
+                busy={busy}
+                onCheck={() => {
+                  if (picked === null) return;
+                  setBusy(true);
+                  void answerQuiz(ids, pq.index, picked)
+                    .then((r) => setVerdict({ correct: r.correct, correctAnswer: r.correct_answer, explanation: "" }))
+                    .catch((e) => setError(errorMessage(e)))
+                    .finally(() => setBusy(false));
+                }}
+              />
+            </>
           )
         }
       >
-        <section className={s.question} key={pq.index} data-testid="leccion-pretest">
-          <p className={s.checkLabel}>Antes de leer. Es normal fallarlas: así sabes qué buscar.</p>
-          <h1 className={sf.prompt}>
-            <Markdown content={pq.prompt} />
-          </h1>
-          <div className={s.options} role="group" aria-label="Respuestas">
-            {(pq.type === "tf" ? ["Falso", "Verdadero"] : pq.options ?? []).map((label) => {
-              const value = pq.type === "tf" ? label === "Verdadero" : label;
-              const right = quizCheck && quizCheck.correct_answer === value;
-              const mine = picked === value;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  className={`${s.option} press`}
-                  data-picked={mine || undefined}
-                  data-right={right || undefined}
-                  data-wrong={(mine && quizCheck && !quizCheck.correct) || undefined}
-                  disabled={busy || !!quizCheck}
-                  onClick={() => void answerQuestion(pq, value)}
-                >
-                  {label}
-                  {right && <Check size={18} aria-label="Respuesta correcta" />}
-                  {mine && quizCheck && !quizCheck.correct && <XIcon size={18} aria-label="Tu respuesta" />}
-                </button>
-              );
-            })}
-          </div>
-          {quizCheck && (
-            <Feedback ok={quizCheck.correct}>
-              <p>{quizCheck.correct ? "Ya sabes algo de esto." : "Lo verás en la lectura."}</p>
-            </Feedback>
-          )}
-        </section>
+        <div data-testid="leccion-pretest" key={pq.index}>
+          <QuestionView
+            eyebrow="Antes de leer · es normal fallarlas"
+            prompt={pq.prompt}
+            options={pq.type === "tf" ? TF : (pq.options ?? []).map((o) => ({ label: o, value: o }))}
+            picked={picked}
+            onPick={onPick}
+            verdict={verdict}
+          />
+        </div>
+        {verdict && (
+          <CorrectionSheet ok={verdict.correct} title={verdict.correct ? "¡Ya sabes algo de esto!" : "Lo verás en la lectura"} onNext={nextPre} nextLabel={phase.question + 1 < pretest.length ? "Siguiente" : "Empezar a leer"} />
+        )}
+        {error && <p className={sf.saveError} role="alert">{error}</p>}
       </StepFrame>
     );
   }
 
-  // ── Leer ──
+  // ── Leer: tarjetas «Qué saber» (0.11 · 3 y 0.12 · 10) ──
   if (phase.kind === "read") {
     const sec = sections[phase.section];
+    const last = phase.section + 1 >= sections.length;
     return (
       <>
         <StepFrame
           label="Lección"
           position={phase.section + 1}
-          total={total}
+          total={sections.length}
           remaining={null}
+          showBar={false}
+          showCounter={false}
           onExit={leave}
           extra={
             <button type="button" className={`${s.sources} press`} onClick={() => setShowSources(true)}>
@@ -410,29 +503,32 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
             </button>
           }
           footer={
-            check ? (
-              <>
-                <Link className={`secondary press ${sf.small}`} href={tutor}>
-                  Explícame por qué
-                </Link>
-                <button className="primary press" onClick={() => void nextSection(phase.section)} disabled={busy}>
-                  Continuar
+            <>
+              {/* Mismo sitio: «Saltar» y, en la última tarjeta, la flecha para volver a leer. */}
+              {last && phase.section > 0 ? (
+                <button type="button" className={`secondary press ${s.square}`} aria-label="Volver a la tarjeta anterior" onClick={() => goSection(phase.section - 1)}>
+                  <ArrowLeft size={20} aria-hidden="true" />
                 </button>
-              </>
-            ) : (
-              <div className={s.tf} role="group" aria-label="¿Verdadero o falso?">
-                <button className="secondary press" disabled={busy} onClick={() => void answerCheck(phase.section, false)}>
-                  Falso
+              ) : !last ? (
+                <button type="button" className={`secondary press ${s.square}`} aria-label="Saltar" title="Saltar" onClick={() => goSection(sections.length - 1)}>
+                  <SkipForward size={20} aria-hidden="true" />
                 </button>
-                <button className="secondary press" disabled={busy} onClick={() => void answerCheck(phase.section, true)}>
-                  Verdadero
-                </button>
-              </div>
-            )
+              ) : null}
+              {/* El botón no se mueve: solo cambia el texto (0.12 · 10). */}
+              <button className="primary press" disabled={busy} aria-busy={busy || undefined} onClick={() => (last ? void begin() : goSection(phase.section + 1))}>
+                {last ? "Empezar test" : "Continuar"}
+              </button>
+            </>
           }
         >
-          <article className={s.section} key={phase.section}>
-            <h1 className={s.sectionTitle}>{sec.title}</h1>
+          <article className={s.section} key={phase.section} data-testid="tarjeta-que-saber">
+            <p className={s.kwEyebrow}>
+              <Lightbulb size={18} aria-hidden="true" /> Qué saber
+              <span className="visually-hidden">
+                , tarjeta {phase.section + 1} de {sections.length}
+              </span>
+            </p>
+            <h1 className={s.kwTitle}>{sec.title}</h1>
             <div className={s.body}>
               <Markdown content={sec.body_markdown} />
             </div>
@@ -443,17 +539,6 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
                 </button>
                 {openWhy && <p>{sec.why_it_matters}</p>}
               </div>
-            )}
-            <div className={s.checkCard} data-state={check ? (check.correct ? "ok" : "ko") : undefined}>
-              <p className={s.checkLabel}>¿Verdadero o falso?</p>
-              <p className={s.statement}>{sec.check.statement}</p>
-            </div>
-            {check && (
-              <Feedback ok={check.correct}>
-                <p>
-                  Es {check.isTrue ? "verdadero" : "falso"}. {check.explanation}
-                </p>
-              </Feedback>
             )}
             {error && <p className={sf.saveError} role="alert">{error}</p>}
           </article>
@@ -478,82 +563,104 @@ export function LessonFlow({ examId, unitId, title, known = false }: { examId: s
     );
   }
 
-  // ── Test de la lección ──
-  const q = questions[phase.question];
-  const chosen = answers[q.index];
+  // ── Test: la pregunta con la Orb y la hoja de corrección (0.11 · 4-6) ──
+  const item = items[phase.at];
+  const isCheck = item.kind === "check";
+  const prompt = isCheck ? sections[item.section].check.statement : item.q.prompt;
+  const options = isCheck
+    ? TF
+    : item.q.type === "tf"
+    ? TF
+    : item.q.type === "mcq"
+    ? (item.q.options ?? []).map((o) => ({ label: o, value: o }))
+    : null;
+  const label = (a: Answer) => (typeof a === "boolean" ? (a ? "Verdadero" : "Falso") : a);
+  const whyDraft = () => {
+    if (!verdict) return "";
+    const mine = isCheck || item.q.type !== "written" ? picked : draft;
+    return `En la pregunta «${prompt.replace(/\s+/g, " ").slice(0, 200)}»${
+      mine !== null && !verdict.correct && !(item.kind === "quiz" && item.q.type === "written") ? ` contesté «${label(mine)}» y` : ""
+    } la respuesta es «${label(verdict.correctAnswer)}». ¿Por qué?`;
+  };
   return (
-    <StepFrame
-      label="Test"
-      position={sections.length + phase.question + 1}
-      total={total}
-      remaining={null}
-      onExit={leave}
-      footer={
-        quizCheck ? (
-          <>
-            <Link className={`secondary press ${sf.small}`} href={tutor}>
-              Explícame por qué
-            </Link>
-            <button className="primary press" disabled={busy} aria-busy={busy || undefined} onClick={() => void nextQuestion(phase.question)}>
-              {phase.question + 1 < questions.length ? "Continuar" : "Ver resultados"}
-            </button>
-          </>
-        ) : q.type === "written" ? (
-          <button className="primary press" disabled={busy || !draft.trim()} onClick={() => void answerQuestion(q, draft)}>
-            Comprobar
-          </button>
-        ) : (
-          <span className={s.hint}>Elige una respuesta</span>
-        )
-      }
-    >
-      <section className={s.question} key={q.index}>
-        <h1 className={sf.prompt}>
-          <Markdown content={q.prompt} />
-        </h1>
-        {q.type === "written" ? (
-          <label className={s.written}>
-            <span>Tu respuesta</span>
-            <textarea value={draft} maxLength={1500} disabled={!!quizCheck} onChange={(e) => setDraft(e.target.value)} rows={6} />
-            <small className="num">{draft.trim() ? draft.trim().split(/\s+/).length : 0} palabras</small>
-          </label>
-        ) : (
-          <div className={s.options} role="group" aria-label="Respuestas">
-            {(q.type === "tf" ? ["Falso", "Verdadero"] : q.options ?? []).map((label) => {
-              const value = q.type === "tf" ? label === "Verdadero" : label;
-              const picked = chosen === value;
-              const right = quizCheck && quizCheck.correct_answer === value;
-              return (
-                <button
-                  key={label}
-                  type="button"
-                  className={`${s.option} press`}
-                  data-picked={picked || undefined}
-                  data-right={right || undefined}
-                  data-wrong={(picked && quizCheck && !quizCheck.correct) || undefined}
-                  disabled={busy || !!quizCheck}
-                  onClick={() => void answerQuestion(q, value)}
-                >
-                  {label}
-                  {right && <Check size={18} aria-label="Respuesta correcta" />}
-                  {picked && quizCheck && !quizCheck.correct && <XIcon size={18} aria-label="Tu respuesta" />}
-                </button>
-              );
-            })}
-          </div>
+    <>
+      <StepFrame
+        label="Test"
+        position={phase.at + (verdict ? 1 : 0)}
+        total={items.length}
+        remaining={null}
+        showCounter={false}
+        shifted={!!why}
+        onExit={leave}
+        footer={verdict ? null : <CheckButton ready={item.kind === "quiz" && (item.q.type === "written" || item.q.type === "numeric") ? !!draft.trim() : picked !== null} busy={busy} onCheck={() => void check(item)} />}
+      >
+        <div key={`${reviewing ? "r" : "t"}-${phase.at}`} className={s.qWrap} data-sheet={verdict ? "" : undefined}>
+          <QuestionView
+            eyebrow={isCheck ? "¿Verdadero o falso?" : undefined}
+            prompt={prompt}
+            options={options}
+            picked={picked}
+            onPick={onPick}
+            verdict={verdict}
+            retry={item.kind === "quiz" && item.retry}
+            written={
+              item.kind === "quiz" && item.q.type === "numeric" ? (
+                // Respuesta numérica (matemáticas, física, química): un número, con coma o punto.
+                <label className={s.numeric}>
+                  <span>Tu resultado</span>
+                  <span className={s.numericRow}>
+                    <input
+                      value={draft}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      maxLength={30}
+                      disabled={!!verdict}
+                      onChange={(e) => setDraft(e.target.value)}
+                    />
+                    {item.q.unit && <span className={s.unit}>{item.q.unit}</span>}
+                  </span>
+                </label>
+              ) : item.kind === "quiz" && item.q.type === "written" ? (
+                <label className={s.written}>
+                  <span>Tu respuesta</span>
+                  <textarea value={draft} maxLength={1500} disabled={!!verdict} onChange={(e) => setDraft(e.target.value)} rows={6} />
+                  <small className="num">{draft.trim() ? draft.trim().split(/\s+/).length : 0} palabras</small>
+                </label>
+              ) : undefined
+            }
+          />
+          {error && <p className={sf.saveError} role="alert">{error}</p>}
+        </div>
+        {verdict && (
+          <CorrectionSheet
+            ok={verdict.correct}
+            busy={busy}
+            onWhy={() => setWhy(whyDraft())}
+            onNext={() => advance(phase.at)}
+            nextLabel={phase.at + 1 >= items.length && (reviewing || !missed.length) ? "Ver resultados" : undefined}
+            onRate={item.kind === "quiz" ? (up) => void rateQuestion(ids, item.q.index, up).catch(() => undefined) : undefined}
+          >
+            {item.kind === "quiz" && item.q.type === "written" && verdict.rubric?.length ? (
+              <p>Ideas clave: {verdict.rubric.join(" · ")}.</p>
+            ) : !verdict.correct ? (
+              <p>La correcta es «{label(verdict.correctAnswer)}».</p>
+            ) : null}
+            {verdict.explanation && <p>{verdict.explanation}</p>}
+          </CorrectionSheet>
         )}
-        {quizCheck && (
-          <Feedback ok={quizCheck.correct}>
-            {q.type === "written" && quizCheck.rubric?.length ? (
-              <p>Ideas clave: {quizCheck.rubric.join(" · ")}.</p>
-            ) : (
-              !quizCheck.correct && <p>La correcta es «{q.type === "tf" ? (quizCheck.correct_answer ? "Verdadero" : "Falso") : String(quizCheck.correct_answer)}».</p>
-            )}
-            {quizCheck.explanation && <p>{quizCheck.explanation}</p>}
-          </Feedback>
-        )}
-        {error && <p className={sf.saveError} role="alert">{error}</p>}
-      </section>
-    </StepFrame>
+      </StepFrame>
+      {why !== null && (
+        <WhyPanel examId={examId} unitId={unitId} conversationId={conversationId} title={title} draft={why} onClose={() => setWhy(null)} />
+      )}
+    </>
+  );
+}
+
+/** La lección entera va en una pantalla oscura fija, como en las capturas de Knowunity. */
+export function LessonFlow(props: Parameters<typeof LessonScreens>[0]) {
+  return (
+    <div className={s.kw} data-testid="leccion-kw">
+      <LessonScreens {...props} />
+    </div>
   );
 }

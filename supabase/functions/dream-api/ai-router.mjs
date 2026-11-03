@@ -1,7 +1,8 @@
 // Elección de proveedor y respaldo para el chat.
 // - Rápido y Normal van primero a Groq. Si TODAS las claves de Groq fallan
-//   (5xx, caída o 429 en cada una), se prueba Cloudflare antes de mandar al
-//   alumno a la cola. Solo si el respaldo está activado.
+//   (5xx, caída o 429 en cada una), o si el mensaje es demasiado grande para
+//   Groq (413), se prueba Cloudflare antes de mandar al alumno a la cola. Solo
+//   si el respaldo está activado.
 // - «Pensar más» va directo a Cloudflare, sin respaldo.
 // - Nada de esto reintenta cuando ya ha llegado texto al alumno.
 import { actualTokens, estimateWindowTokens, studentActualTokens, studentWindowTokens } from './usage-window.mjs';
@@ -19,6 +20,11 @@ export function shouldFallback(error) {
   if (error.name !== 'GroqProviderError') return false;
   if (error.code === 'aborted' || error.code === 'missing_key' || error.code === 'stream_interrupted') return false;
   if (error.status === 429 || error.status >= 500) return true;
+  // 413: el mensaje entero (prompt + material + historial + respuesta) pasa
+  // del límite de tokens por minuto de la cuenta gratuita de Groq (8.000). Las
+  // otras claves tienen el mismo límite, así que se va directo al respaldo en
+  // vez de mostrar un error al alumno (registros del 01/11/2026: 3 de 9 chats).
+  if (error.status === 413) return true;
   return FALLBACK_CODES.has(error.code) || (error.retryable === true && /^http_/.test(error.code));
 }
 
