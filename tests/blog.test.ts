@@ -33,3 +33,10 @@ test("el sitemap del blog lleva al menos un <url> aunque no haya artículos", as
   const xml = await (await GET(new Request("https://www.edudream.es/blog/sitemap.xml"))).text();
   assert.match(xml, /<url>\s*<loc>https:\/\/www\.edudream\.es\/blog<\/loc>\s*<\/url>/);
 });
+
+test("la URL del sitio siempre lleva https:// aunque la variable venga sin esquema", async () => {
+  const { absoluteSiteUrl } = await import("../app/blog/constants");
+  assert.equal(absoluteSiteUrl("www.edudream.es"), "https://www.edudream.es");
+  assert.equal(absoluteSiteUrl("https://www.edudream.es/"), "https://www.edudream.es");
+  assert.equal(absoluteSiteUrl(undefined), "https://www.edudream.es");
+});

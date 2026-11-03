@@ -625,3 +625,162 @@
     opacity: 0;
   }
 }
+
+/* === Scroll cinematográfico (skill cinematic-scroll, 3-nov-2026) ==========
+   Arco: orientación (hero) → descubrimiento (funciones) → prueba (cifras,
+   descarga) → acción (FAQ y pie). Momento firma: al bajar, el panel azul se
+   queda atrás (se encoge un poco), el titular sube más rápido que el panel y
+   la Orb sube girando; al final, «Dream» sube desde detrás del pie.
+   Un solo reloj (el scroll), sin JavaScript ni librerías: animation-timeline
+   con @supports. Sin soporte o con movimiento reducido todo está quieto y
+   legible en su sitio. Solo transform y opacity; un dueño por propiedad
+   (el panel, el titular y la Orb son elementos distintos). Sin pines: el
+   contenido nunca espera a la animación. */
+.cine {
+  --cine-rise: 48px;
+}
+@media (max-width: 700px) {
+  .cine {
+    --cine-rise: 24px;
+  }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* Beat 1 · salida del hero: lectura completa en reposo; se transforma
+       solo mientras sale de la pantalla. */
+    .hero {
+      animation: cineHeroOut linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+      transform-origin: 50% 0%;
+    }
+    .heroInner {
+      animation: cineHeroText linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 80%;
+    }
+    .heroOrb {
+      animation: cineOrbRise linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 100%;
+    }
+
+    /* Beat 2 · títulos de sección y pegatina: suben y aparecen al entrar. */
+    .section > .sectionTitle,
+    .section > .sectionLead,
+    .section > .stickerIcon,
+    .downloadCopy,
+    .faq {
+      animation: cineRise linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 70%;
+    }
+    .section > .stickerIcon {
+      animation-name: cineSticker;
+    }
+
+    /* Beat 3 · tarjetas de cristal en cascada. */
+    .card {
+      animation: cineCard linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--cine-i, 0) * 6%) entry calc(55% + var(--cine-i, 0) * 6%);
+    }
+    .card:nth-child(2) {
+      --cine-i: 1;
+    }
+    .card:nth-child(3) {
+      --cine-i: 2;
+    }
+    .card:nth-child(4) {
+      --cine-i: 3;
+    }
+    .card:nth-child(5) {
+      --cine-i: 4;
+    }
+
+    /* Beat 4 · cifras: suben una detrás de otra. */
+    .stat {
+      animation: cineRise linear both;
+      animation-timeline: view();
+      animation-range: entry calc(var(--cine-i, 0) * 8%) entry calc(60% + var(--cine-i, 0) * 8%);
+    }
+    .stat:nth-child(2) {
+      --cine-i: 1;
+    }
+    .stat:nth-child(3) {
+      --cine-i: 2;
+    }
+    .stat:nth-child(4) {
+      --cine-i: 3;
+    }
+
+    /* Beat 5 · el QR se asienta. */
+    .qr {
+      animation: cineSettle linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 80%;
+    }
+
+    /* Cierre · «Dream» sube desde detrás del borde del pie. */
+    .giant {
+      animation: cineGiant linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
+@keyframes cineHeroOut {
+  to {
+    transform: scale(0.94);
+    opacity: 0.55;
+  }
+}
+@keyframes cineHeroText {
+  to {
+    transform: translateY(calc(var(--cine-rise) * -2.5));
+    opacity: 0;
+  }
+}
+@keyframes cineOrbRise {
+  from {
+    transform: rotate(-12deg);
+  }
+  to {
+    transform: translateY(calc(var(--cine-rise) * -3)) rotate(28deg);
+  }
+}
+@keyframes cineRise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--cine-rise));
+  }
+}
+@keyframes cineSticker {
+  from {
+    opacity: 0;
+    transform: translateY(var(--cine-rise)) rotate(-24deg) scale(0.9);
+  }
+  to {
+    transform: rotate(-6deg);
+  }
+}
+@keyframes cineCard {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--cine-rise) * 1.5)) scale(0.95);
+  }
+}
+@keyframes cineSettle {
+  from {
+    opacity: 0;
+    transform: scale(0.95) rotate(-4deg);
+  }
+}
+@keyframes cineGiant {
+  from {
+    transform: translateY(70%);
+  }
+  to {
+    transform: translateY(14%);
+  }
+}

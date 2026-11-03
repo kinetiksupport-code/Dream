@@ -136,7 +136,7 @@ export default function LandingPage() {
   const qr = encodeQr(SITE);
   const qrSize = qr.size + 8;
   return (
-    <div className={s.site}>
+    <div className={`${s.site} ${s.cine}`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(homeJsonLd()) }} />
       <a className="skip-link" href="#main">
         Ir al contenido
