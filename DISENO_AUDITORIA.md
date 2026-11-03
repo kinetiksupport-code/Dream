@@ -213,3 +213,16 @@ La auditoría de `app/globals.css` y `components/shell.tsx` está en `docs/disen
 - Resuelto: la fecha usaba `input type=date` nativo; ahora es un calendario propio accesible.
 - Encontrado y arreglado en la migración: `exam_route_regenerate` no estaba admitida por `dream_admit`.
 - Pendiente: recortar y enderezar fotos; modelos 3D (PR 6).
+
+## Rediseño «Dream design» (3-nov-2026): qué cambia por pantalla
+
+| Pantalla | Cambio |
+| --- | --- |
+| Landing | Nueva composición: hero azul de marca con titular en mayúsculas y la Orb, tira de chips, carrusel de tarjetas de cristal, bandas de texto en perspectiva (único momento atrevido), cifras reales, QR + «Instalar Dream», FAQ en acordeón, pie verde lima con «Dream» gigante. Cabecera flotante con menú circular. |
+| Login y bienvenida | Fondo oscuro, botón de Google en píldora blanca con relieve, panel de marca azul plano (sin cuadrícula). |
+| App (shell) | Sidebar oscuro con «Crear» blanco (lleva a crear examen), ítem activo en píldora; barra inferior de cristal en móvil; modales de cristal sobre fondo desenfocado. |
+| Inicio, Chat, Tareas, Apuntes, Exámenes, Historial | Tokens nuevos: superficies oscuras, burbuja del alumno en azul de marca, progreso en verde lima. |
+| Ajustes | Sin selector de tema (solo oscuro); grupos en tarjetas oscuras; «Cerrar sesión» en rojo en su grupo. |
+| Ruta, lección, test, simulacro | Mismo flujo; hoja verde/roja con icono y texto; colores de marca. |
+| Legales, 404, mantenimiento, sin conexión, error | Oscuras con los mismos tokens y botón con relieve. |
+| Blog (/blog) | Hereda los tokens de Dream. |

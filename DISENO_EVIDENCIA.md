@@ -289,3 +289,27 @@ Todas las grabaciones están en `docs/diseno/grabaciones/`. Cada PR enlaza su `R
   - `generative-ai.md`: al 100 % se dice qué pasa y cuándo vuelve. No se ofrece «Cambiar a Rápido», porque no funcionaría.
 - **emil-design-eng:** ningún elemento nuevo que se mueva. La pista de coste va en el nombre accesible y el `title` del selector, sin añadir ruido visual.
 - **libraries-dev:** sin efectos.
+
+## Rediseño «Dream design» (3-nov-2026)
+
+Skills leídas y reglas aplicadas:
+- **dream-design-system** (manda en el estilo): fondo `#0a0c19`, superficies `#1e2130`/`#252836`, botón primario píldora blanca con relieve sólido (`0 5px 0`), hover verde neón radial solo con ratón, `scale(0.97)` al pulsar, cristal azul solo en una familia de tarjetas de la landing y en lo flotante de la app (modales, barra inferior, menú), una tarjeta un color, titulares en grotesca 900 con tracking negativo.
+- **apple-design**: contraste medido (`node scripts/design/contrast.mjs`, 0 fallos), 44 px táctiles, foco visible, alternativa opaca con `prefers-reduced-transparency` y `prefers-contrast: more`.
+- **emil-design-eng**: `--ease-out` y `--ease-in-out` propios, solo `transform`/`opacity`/color, nada desde `scale(0)` (menús y modales desde 0.97), salidas más rápidas, `prefers-reduced-motion` deja fundidos.
+
+Decisiones de Carlos (3-nov): modo oscuro solamente; el logo (Orb azul `#155BFF` + lima `#C8F560`) no cambia; **nada morado**: el violeta de la skill se sustituye por el azul de marca `#155BFF` (texto blanco 5.29:1) y el verde lima `#C8F560` (tinta 15.7:1).
+
+Tipografía: Archivo (variable 100-900, OFL), elegida frente a Bricolage Grotesque e Inter Tight (`docs/diseno/dream-design/fuentes-hero.png`). Va dentro del proyecto (`app/fonts`), no se descarga al compilar.
+
+Checklist de la skill:
+- [x] Contraste AA con valores reales (contrast.mjs, 0 fallos).
+- [x] 44×44 px y foco visible.
+- [x] Sin `ease-in`, `transition: all` ni `scale(0)` (design:check).
+- [x] Hover solo con `(hover: hover) and (pointer: fine)` (design:check).
+- [x] `prefers-reduced-motion` y `prefers-reduced-transparency` resueltos.
+- [x] Cristal solo en una familia de tarjetas de la landing y en la capa flotante.
+- [ ] Un solo botón blanco por vista: se cumple en la landing y en las pantallas; en escritorio el «Crear» del sidebar es un segundo blanco (lo pide la propia skill).
+- [x] Nada copiado de las referencias; cifras reales (0 €, 17 comunidades, 3 etapas, 24 h).
+- [x] Sin scroll lateral de 360 a 1280 px (tests/browser/landing.spec.ts).
+
+Capturas (oscuro, móvil 390 y escritorio 1440): `docs/diseno/dream-design/capturas/`.

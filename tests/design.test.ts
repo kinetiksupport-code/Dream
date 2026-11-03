@@ -142,10 +142,10 @@ test("hover styles only apply to devices that can hover", () => {
   assert.deepEqual(bad, []);
 });
 
-test("fonts load on <html> so the font stack resolves (Archivo, latin-ext)", () => {
+test("fonts load on <html> so the font stack resolves (Archivo, local)", () => {
   const layout = readFileSync("app/layout.tsx", "utf8");
   assert.match(layout, /<html[\s\S]*?className=\{`\$\{archivo\.variable\}/);
-  assert.match(layout, /latin-ext/);
+  assert.match(layout, /Archivo-latin-variable\.woff2/);
   assert.doesNotMatch(layout, /<body className=\{archivo/);
   assert.match(globals, /--font-stack:[^;]*var\(--font-grotesk\)/);
 });

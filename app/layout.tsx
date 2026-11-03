@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { COOKIEBOT, cookiebotScript } from "@/lib/cookie-consent";
-import { Archivo, Lexend } from "next/font/google";
+import { Lexend } from "next/font/google";
+import localFont from "next/font/local";
 import { Providers } from "@/components/providers";
 import { HEAD_BOOT, THEME_COLORS } from "@/lib/theme";
 // KaTeX styles in the global stylesheet, on every page: without them each
@@ -15,10 +16,14 @@ import "./globals.css";
 // 100-900), elegida frente a Bricolage Grotesque e Inter Tight
 // (docs/diseno/dream-design/fuentes-hero.png). Las variables viven en <html>
 // para que --font-stack, definida en :root, pueda resolverlas.
-const archivo = Archivo({
-  subsets: ["latin", "latin-ext"],
+// Archivo va en app/fonts (OFL): la compilación no descarga nada para ella.
+const archivo = localFont({
+  src: "./fonts/Archivo-latin-variable.woff2",
+  weight: "100 900",
+  style: "normal",
   variable: "--font-grotesk",
   display: "swap",
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 // Easy-reading option in Ajustes (dyslexia-friendly). Downloaded only on use.
 const lexend = Lexend({
