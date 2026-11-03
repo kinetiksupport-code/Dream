@@ -449,7 +449,17 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
   // Ruta de estudio (Leer, Test, tarjetas): solo con DREAM_STUDY_STEPS_ENABLED.
   if (STUDY_ACTIONS.has(String(body.action))) {
     if (!studyEnabledFor(user, !!specialDomain(user))) return json({ error: 'Acción no disponible.' }, 404);
-    try { return json(await studyAction(admin, user.id, body, jsonAI, req.signal, { course: profile.academic_level ?? null })); }
+    // Las acciones de la ruta no estaban en consumingActions: llamaban a la IA
+    // sin permiso (lease) y dream_reserve respondía 503 «lease_expired» en
+    // menos de un segundo («Ha habido un error al crear tu lección», 3-nov).
+    // El permiso se pide solo cuando de verdad se llama a la IA (abrir una
+    // lección ya hecha no gasta nada). Se cuenta como una corrección, no como
+    // un examen nuevo: la ruta ya tiene sus propios topes (study_quota).
+    const studyAI = async (system: string, context: string, operation: string, signal?: AbortSignal) => {
+      if (!admitted && !inherited) { await admission.admit('test_check_answer'); admitted = true; }
+      return jsonAI(system, context, operation, signal);
+    };
+    try { return json(await studyAction(admin, user.id, body, studyAI, req.signal, { course: profile.academic_level ?? null })); }
     catch (error) {
       if (error instanceof AdmissionError || isProviderError(error)) return safeFailure(error);
       return json({ error: error instanceof ExamError ? error.message : 'No se pudo completar la operación. Tus datos guardados se conservan.' }, error instanceof ExamError ? error.status : 503);
