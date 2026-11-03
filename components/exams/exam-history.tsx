@@ -4,7 +4,8 @@
 // (color y texto) y barra de unidades; menú con «Marcar como hecho» y
 // «Borrar» (con confirmación y Deshacer). El objeto viaja al detalle con la
 // View Transition de las páginas (globals.css › Objeto de la asignatura).
-import { useId, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
+import { studyStepsEnabled } from "@/lib/study-steps";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -89,6 +90,11 @@ export function HistoryCard({
   const soon = days !== null && days >= 0 && days <= 3 && exam.status !== "completed";
   const title = examTitle(exam);
   const titleId = useId();
+  // Con la ruta nueva, la tarjeta solo dice tres cosas (0.11 · 2): cuánto falta,
+  // la asignatura y «N % completado · a/b lecciones» con su barra fina.
+  const [steps, setSteps] = useState(false);
+  useEffect(() => setSteps(studyStepsEnabled()), []);
+  const pct = p.total ? Math.round((100 * p.completed) / p.total) : 0;
   return (
     <article
       className={s.hCard}
@@ -116,14 +122,16 @@ export function HistoryCard({
             {title}
           </h3>
           <span className={s.hMeta}>
-            <Sticker tone={sticker.tone} shape="pill" className={s.hSticker}>
-              {sticker.label}
-            </Sticker>
+            {!(steps && showProgress) && (
+              <Sticker tone={sticker.tone} shape="pill" className={s.hSticker}>
+                {sticker.label}
+              </Sticker>
+            )}
             <span className={s.hWhen} data-soon={soon || undefined}>
               <CalendarDays size={16} aria-hidden="true" />
               <span>
                 {countdownText(exam.exam_date)}
-                {exam.exam_date && (
+                {exam.exam_date && !steps && (
                   <span className={s.hDate}> · {examDateLabel(exam.exam_date, true)}</span>
                 )}
               </span>
@@ -142,10 +150,20 @@ export function HistoryCard({
               >
                 <i style={{ transform: `scaleX(${p.completed / p.total})` }} />
               </span>
-              <span className={s.hUnits}>
-                <span className="num">{p.completed}</span> de{" "}
-                <span className="num">{p.total}</span> unidades
-              </span>
+              {steps ? (
+                <span className={s.hUnits} data-testid="tarjeta-examen-progreso">
+                  <span className="num">{pct} %</span> completado ·{" "}
+                  <span className="num">
+                    {p.completed}/{p.total}
+                  </span>{" "}
+                  lecciones
+                </span>
+              ) : (
+                <span className={s.hUnits}>
+                  <span className="num">{p.completed}</span> de{" "}
+                  <span className="num">{p.total}</span> unidades
+                </span>
+              )}
             </span>
           )}
         </span>

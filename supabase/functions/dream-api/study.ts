@@ -19,7 +19,7 @@ type JsonAI = (system: string, context: string, operation: string, signal?: Abor
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
-  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'cards_list', 'study_today', ...MOCK_ACTIONS,
+  'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'unit_quiz_rate', 'cards_list', 'study_today', ...MOCK_ACTIONS,
 ]);
 export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
 /**
@@ -196,7 +196,7 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
   }
 
   // ── Test de la lección (Bloque 3): del banco ya generado, corregido aquí, sin IA ──
-  if (action === 'unit_quiz_get' || action === 'unit_quiz_answer' || action === 'unit_quiz_finish') {
+  if (action === 'unit_quiz_get' || action === 'unit_quiz_answer' || action === 'unit_quiz_finish' || action === 'unit_quiz_rate') {
     const unit = await ownedUnit(db, owner, b.exam_id, b.unit_id);
     const content = checked(await db.from('dream_unit_content').select('quiz').eq('unit_id', unit.id).eq('student_id', owner).eq('status', 'ready').maybeSingle()) as { quiz: Parameters<typeof gradeQuestion>[0][] } | null;
     if (!content) throw new ExamError('Esta lección aún no está preparada.', 409);
@@ -218,6 +218,16 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
       const order = round ? [...bank.keys()].filter((i) => !first.includes(i)).concat(first) : first;
       const chosen = (round ? order.slice(0, Math.min(8, Math.max(6, order.length))) : first).sort((x, y) => x - y);
       return { questions: chosen.map((i) => publicQuestion(bank[i], i)) };
+    }
+    if (action === 'unit_quiz_rate') {
+      // Pulgar arriba/abajo de la hoja de corrección (0.11 · 5): se guarda en la
+      // propia pregunta del banco del alumno; sin contenido nuevo ni analítica.
+      const n = Number(b.index);
+      question(n);
+      if (typeof b.up !== 'boolean') throw new ExamError('Valoración no válida.');
+      const quiz = bank.map((q, i) => (i === n ? { ...q, rating: b.up ? 'up' : 'down' } : q));
+      checked(await db.from('dream_unit_content').update({ quiz, updated_at: new Date().toISOString() }).eq('unit_id', unit.id).eq('student_id', owner));
+      return { ok: true };
     }
     if (action === 'unit_quiz_answer') {
       const q = question(b.index);

@@ -1,0 +1,389 @@
+/* Pregunta con la Orb y hoja de corrección (quiz-question.tsx; prompt de la
+   ruta 0.11 · 4-5 y 0.12 · 1-7, docs/diseno/ruta/MICROINTERACCIONES-KNOWUNITY.md).
+   Movimiento: solo transform y opacity; color solo en estados de botón (≤ 150 ms). */
+.question {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  /* 0.12 · 4: al comprobar, la pregunta sube para dejar sitio a la hoja. */
+  transition: transform 180ms var(--ease);
+  animation: qIn 150ms var(--ease) both;
+}
+.question[data-checked] {
+  transform: translateY(-24px);
+}
+@keyframes qIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* 0.12 · 11: «ERROR ANTERIOR», con el hueco reservado. */
+.retry {
+  margin: 0;
+  min-block-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--danger);
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
+}
+.retry[data-on] {
+  opacity: 1;
+}
+
+.tutor {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.orb {
+  flex: none;
+  display: grid;
+  place-items: center;
+  inline-size: 52px;
+  block-size: 52px;
+  /* 0.12 · 9: un «parpadeo» de brillo cada pocos segundos. */
+  animation: blink 6s var(--ease) infinite;
+}
+@keyframes blink {
+  0%,
+  96%,
+  100% {
+    opacity: 1;
+  }
+  98% {
+    opacity: 0.55;
+  }
+}
+.bubble {
+  position: relative;
+  flex: 1;
+  min-inline-size: 0;
+  padding: 14px 16px;
+  border-radius: 6px 20px 20px 20px;
+  background: var(--card);
+}
+.eyebrow {
+  margin: 0 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.prompt {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.prompt p {
+  margin: 0;
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-block-size: 56px;
+  padding: 10px 16px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease,
+    opacity 150ms var(--ease),
+    transform 100ms var(--ease);
+}
+.option:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+.option:active:not([aria-disabled]) {
+  transform: scale(0.98);
+}
+@media (hover: hover) and (pointer: fine) {
+  /* 0.12 · 1: el fondo se aclara un tono; sin borde nuevo ni escala. */
+  .option:not([aria-disabled]):hover {
+    background: var(--chip-hover);
+  }
+}
+/* 0.12 · 2: la elegida se queda clara y con contorno (no solo color). */
+.option[data-picked] {
+  background: var(--chip-hover);
+  border-color: var(--primary);
+}
+.option[aria-disabled] {
+  cursor: default;
+}
+.key {
+  flex: none;
+  inline-size: 26px;
+  block-size: 26px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg);
+}
+.label {
+  flex: 1;
+  min-inline-size: 0;
+}
+/* 0.12 · 4: correcta verde oscuro / texto verde claro; mal elegida, rojo. */
+.option[data-right] {
+  background: #14432f;
+  border-color: #2f9e6b;
+  color: #c4f7da;
+}
+.option[data-right] .key {
+  background: #2f9e6b;
+  color: #04170e;
+}
+.option[data-wrong] {
+  background: #4a1820;
+  border-color: #d14b5a;
+  color: #ffd0d6;
+  animation: hop 160ms var(--ease) 1;
+}
+.option[data-wrong] .key {
+  background: #d14b5a;
+  color: #22060a;
+}
+.option[data-dim] {
+  opacity: 0.4;
+}
+@keyframes hop {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* «Comprobar»: gris hasta elegir (0.12 · 3). */
+.check:not([data-ready]) {
+  background: var(--chip-hover);
+  color: var(--text-secondary);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.check:not([data-ready]):active {
+  transform: none;
+}
+
+/* ── Hoja de corrección (0.12 · 5-6) ── */
+.sheet {
+  --sheet-bg: #4a1820;
+  --sheet-text: #ffd0d6;
+  --lip-bg: #ff8a80;
+  --lip: #c4554e;
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 40;
+  padding: 10px max(16px, calc((100% - 728px) / 2)) calc(16px + var(--safe-bottom, 0px));
+  border-radius: 24px 24px 0 0;
+  background: var(--sheet-bg);
+  color: var(--sheet-text);
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: sheetUp 400ms var(--ease-drawer) both;
+}
+.sheet[data-ok] {
+  --sheet-bg: #14432f;
+  --sheet-text: #c4f7da;
+  --lip-bg: #7ce8b0;
+  --lip: #3faa76;
+}
+@keyframes sheetUp {
+  from {
+    transform: translateY(100%);
+  }
+}
+.grip {
+  align-self: center;
+  inline-size: 40px;
+  block-size: 5px;
+  border-radius: 3px;
+  background: currentColor;
+  opacity: 0.35;
+}
+.sheetHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sheetIcon {
+  inline-size: 32px;
+  block-size: 32px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--lip-bg);
+  color: var(--sheet-bg);
+}
+.sheetTitle {
+  flex: 1;
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+.thumbs {
+  display: inline-flex;
+  gap: 4px;
+}
+.thumb {
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    background-color 120ms ease,
+    opacity 120ms ease,
+    transform 100ms var(--ease);
+}
+.thumb[aria-pressed="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.16);
+}
+.thumb:active {
+  transform: scale(0.92);
+}
+@media (hover: hover) and (pointer: fine) {
+  .thumb:hover {
+    opacity: 1;
+  }
+}
+.sheetBody {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+}
+.sheetBody p {
+  margin: 0 0 4px;
+}
+.sheetActions {
+  display: flex;
+  gap: 10px;
+}
+.why,
+.next {
+  min-block-size: 50px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 750;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    transform 80ms var(--ease),
+    background-color 120ms ease;
+}
+.why {
+  padding-inline: 20px;
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff;
+}
+/* «Continuar»/«Entendido»: píldora gruesa con labio inferior (0.12 · 6). */
+.next {
+  flex: 1;
+  background: var(--lip-bg);
+  color: #0d0f14;
+  box-shadow: 0 3px 0 var(--lip);
+}
+.why:focus-visible,
+.next:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+.why:active {
+  transform: translateY(2px);
+}
+.next:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--lip);
+}
+.next:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+@media (hover: hover) and (pointer: fine) {
+  .why:hover {
+    background: rgba(0, 0, 0, 0.36);
+  }
+}
+
+@media (min-width: 1024px) {
+  .prompt {
+    font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .question,
+  .option,
+  .retry,
+  .thumb,
+  .why,
+  .next {
+    transition-duration: 1ms;
+  }
+  .question[data-checked] {
+    transform: none;
+  }
+  .question {
+    animation-duration: 100ms;
+  }
+  .orb,
+  .option[data-wrong] {
+    animation: none;
+  }
+  .sheet {
+    animation: sheetFade 100ms linear both;
+  }
+  .option:active:not([aria-disabled]),
+  .why:active,
+  .next:active:not(:disabled),
+  .thumb:active {
+    transform: none;
+  }
+}
+@keyframes sheetFade {
+  from {
+    opacity: 0;
+  }
+}

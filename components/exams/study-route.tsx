@@ -10,7 +10,7 @@
 // - Movimiento: solo transform y opacity (globals.css › .press, hoja).
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeft, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
+import { ArrowDown, ArrowLeft, BookOpen, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
 import { DueLink, goalText, useStudyToday } from "../study-today";
@@ -53,11 +53,14 @@ function Step({
   node,
   index,
   current = false,
+  ring = 0,
   onOpen,
 }: {
   node: RouteViewNode;
   index: number;
   current?: boolean;
+  /** Anillo de progreso del nodo actual: lo hecho de su sección, 0-100 (0.11 · 1). */
+  ring?: number;
   onOpen: (n: RouteViewNode) => void;
 }) {
   const done = node.state === "completed";
@@ -80,19 +83,52 @@ function Step({
       >
         <span className={s.piece} aria-hidden="true">
           {current && <span className={s.halo} />}
+          {current && (
+            <svg className={s.ring} viewBox="0 0 88 88" aria-hidden="true">
+              <circle cx="44" cy="44" r="40" className={s.ringTrack} />
+              <circle cx="44" cy="44" r="40" className={s.ringFill} pathLength={100} strokeDasharray="100 100" style={{ ["--off" as string]: 100 - Math.max(6, ring) }} />
+            </svg>
+          )}
           <Piece name={state} />
           {current && <Piece name={STEP_PIECE[node.type]} size={44} className={s.badge} />}
         </span>
-        {current ? (
-          <span className={s.now}>Ahora</span>
-        ) : (
-          <span className={s.stepText}>
-            <span className={s.stepType}>{STEP_LABEL[node.type]}</span>
-            <span className={s.stepTitle}>{node.title}</span>
-          </span>
-        )}
+        {/* Una sola frase corta al lado del círculo (0.11 · 1). */}
+        <span className={s.stepText}>
+          {current ? <span className={s.now}>Ahora</span> : <span className={s.stepType}>{STEP_LABEL[node.type]}</span>}
+          <span className={s.stepTitle}>{node.title}</span>
+        </span>
       </button>
     </li>
+  );
+}
+
+/** Tema de un nodo: cada sección de la ruta es un tema del temario (0.11 · 1). */
+const topicOf = (n: RouteViewNode) => (n.type === "mock" ? "" : n.unit?.topic || n.topic || "");
+
+/**
+ * Pinta los nodos con un separador (línea + nombre) cada vez que empieza otro
+ * tema. El primer tema visible no lleva separador: su nombre va en la barra de
+ * sección de arriba.
+ */
+function Steps({ list, current, start, ring, onOpen, firstTopic }: { list: RouteViewNode[]; current: RouteViewNode | null; start: number; ring: number; onOpen: (n: RouteViewNode) => void; firstTopic: string }) {
+  let topic = firstTopic;
+  return (
+    <>
+      {list.flatMap((n, i) => {
+        const t = topicOf(n);
+        const out = [];
+        if (t && t !== topic) {
+          topic = t;
+          out.push(
+            <li key={`sep-${n.key}`} className={s.sep} data-testid="separador-seccion">
+              <span>{t}</span>
+            </li>,
+          );
+        }
+        out.push(<Step key={n.key} node={n} index={start + i} current={n === current} ring={n === current ? ring : 0} onOpen={onOpen} />);
+        return out;
+      })}
+    </>
   );
 }
 
@@ -132,13 +168,18 @@ export function StudyRoute(p: StudyRouteProps) {
   const today = useStudyToday();
   // 3 siguientes, como en el diseño (presupuesto de 12 con el simulacro final a la vista).
   // Con el repaso de hoy en la cabecera, 2: el resto va en «+N lecciones más» (Bloque 6.1).
-  const g = stepGroups(route.nodes, route.next, today?.due ? 2 : 3);
+  // La barra de sección (0.11 · 1) cuenta como un elemento más: un paso menos a la vista.
+  const g = stepGroups(route.nodes, route.next, today?.due ? 1 : 2);
   const next = g.current ?? g.final;
   const mastery = masteryOf(exam.sessions);
   // Meta de dominio con fecha (Bloque 6.4): minutos al día que quedan, en el cliente, sin IA.
   const left = exam.units.filter((u) => u.status !== "completed").reduce((a, u) => a + (u.estimated_minutes ?? 0), 0);
   const perDay = p.days !== null && p.days > 0 && left > 0 ? Math.max(5, Math.round(left / p.days)) : null;
   const upcoming = showAll ? [...g.upcoming, ...g.hidden] : g.upcoming;
+  // Sección actual = tema del paso actual; el anillo enseña lo hecho de esa sección.
+  const section = g.current ? topicOf(g.current) : "";
+  const inSection = section ? route.nodes.filter((n) => topicOf(n) === section) : [];
+  const sectionPct = inSection.length ? Math.round((100 * inSection.filter((n) => n.state === "completed").length) / inSection.length) : 0;
 
   // El menú «⋯» se cierra con Esc o al pulsar fuera.
   useEffect(() => {
@@ -327,6 +368,17 @@ export function StudyRoute(p: StudyRouteProps) {
             <p className="visually-hidden" role="status">
               {p.announce}
             </p>
+            {section && next && (
+              <div className={s.sectionBar} data-testid="barra-seccion">
+                <span className={s.sectionName}>
+                  <span className={s.sectionEyebrow}>Sección</span>
+                  {section}
+                </span>
+                <button type="button" className={`${s.book} press`} aria-label={`Resumen de «${section}»`} onClick={() => setOpen(g.current ?? next)}>
+                  <BookOpen size={20} aria-hidden="true" />
+                </button>
+              </div>
+            )}
             {g.done.length > 0 && (
               <button type="button" className={`${s.pill} press`} aria-expanded={showDone} onClick={() => setShowDone((v) => !v)}>
                 <Piece name="hecha" size={22} />
@@ -337,11 +389,14 @@ export function StudyRoute(p: StudyRouteProps) {
               </button>
             )}
             <ol className={s.path} ref={pathRef} aria-label="Tu camino" data-celebrating={p.celebrating ? "" : undefined}>
-              {showDone && g.done.map((n, i) => <Step key={n.key} node={n} index={i} onOpen={setOpen} />)}
-              {g.current && <Step node={g.current} index={showDone ? g.done.length : 0} current onOpen={setOpen} />}
-              {upcoming.map((n, i) => (
-                <Step key={n.key} node={n} index={(showDone ? g.done.length : 0) + i + 1} onOpen={setOpen} />
-              ))}
+              <Steps
+                list={[...(showDone ? g.done : []), ...(g.current ? [g.current] : []), ...upcoming]}
+                current={g.current}
+                start={0}
+                ring={sectionPct}
+                onOpen={setOpen}
+                firstTopic={showDone && g.done[0] ? topicOf(g.done[0]) : section}
+              />
             </ol>
             {g.hidden.length > 0 && !showAll && (
               <button type="button" className={`${s.pill} ${s.center} press`} onClick={() => setShowAll(true)}>

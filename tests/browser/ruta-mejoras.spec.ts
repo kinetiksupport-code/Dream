@@ -53,7 +53,8 @@ test("«Ya me sé este tema»: test directo sin leer y, si lo supera, la lecció
   await page.getByTestId("route-sheet").getByRole("link", { name: "Ya me sé este tema" }).click();
   await expect(page.getByRole("heading", { name: "Bizancio era la parte oriental." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "No se ve" })).toHaveCount(0);
-  await page.getByRole("button", { name: "Verdadero" }).click();
+  await page.getByRole("radio", { name: "Verdadero" }).click();
+  await page.getByRole("button", { name: "Comprobar" }).click();
   await page.getByRole("button", { name: "Ver resultados" }).click();
   await expect(page.getByTestId("leccion-resultados")).toContainText("Dominado");
   expect(calls.find((c) => c.action === "unit_quiz_finish")).toMatchObject({ known: true });

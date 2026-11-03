@@ -479,7 +479,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ profile: panel ? { ...publicProfile, admin_panel: panel } : publicProfile, service_ready: groqConfigured(),
       ban: ban ? { until: ban.until, permanent: ban.permanent, rule: ban.rule } : null, ...features,
       // Ruta de estudio encendida para esta cuenta (por fases): la web la enseña solo entonces.
-      ...(studyEnabledFor(user, !!specialDomain(user)) ? { study_steps: true } : {}), ...(specialAccount ? { special_account: specialAccount } : {}) });
+      ...(studyEnabledFor(user, !!specialDomain(user)) ? { study_steps: true } : {}), ...(Deno.env.get('DREAM_AI_ROUTE_ENABLED') === 'true' ? { ai_route: true } : {}), ...(specialAccount ? { special_account: specialAccount } : {}) });
   }
 
   // Descargar mis datos: como mucho una vez por minuto en cada instancia.

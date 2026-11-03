@@ -178,6 +178,12 @@ Deno.test("test de la lección: preguntas sin respuestas, corrección tras conte
   const one = await call({ action: "unit_quiz_answer", exam_id: EXAM, unit_id: UNIT, index: mcq.index, answer: "A" });
   assertEquals(one.json.correct, false);
   assertEquals(one.json.correct_answer, "B");
+  // Pulgar abajo (0.11 · 5): se guarda en la pregunta; valores raros, 400.
+  const rate = await call({ action: "unit_quiz_rate", exam_id: EXAM, unit_id: UNIT, index: mcq.index, up: false });
+  assertEquals(rate.status, 200, rate.text);
+  assertEquals(harness.state.tables.dream_unit_content.find((r) => r.unit_id === UNIT).quiz[mcq.index].rating, "down");
+  assertEquals((await call({ action: "unit_quiz_rate", exam_id: EXAM, unit_id: UNIT, index: mcq.index, up: "x" })).status, 400);
+  assertEquals((await call({ action: "unit_quiz_rate", exam_id: EXAM, unit_id: UNIT, index: 99, up: true })).status, 400);
   // Terminar: todo bien salvo una → 86 % (≥ 80): «Dominado».
   const answers = Object.fromEntries(qs.map((q) => [q.index, q.type === "mcq" ? "B" : q.type === "tf" ? true : "idea 1 idea 2"]));
   answers[mcq.index] = "A";

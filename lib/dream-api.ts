@@ -16,6 +16,7 @@ export type DreamAction =
   | "unit_quiz_get"
   | "unit_quiz_answer"
   | "unit_quiz_finish"
+  | "unit_quiz_rate"
   | "cards_due"
   | "cards_list"
   | "mock_preview"
@@ -328,6 +329,7 @@ export async function getDreamProfile(signal?: AbortSignal) {
     special_account?: { welcome?: unknown } | null;
     features?: { memory?: unknown; memory_import?: unknown };
     study_steps?: unknown;
+    ai_route?: unknown;
     memory_enabled?: unknown;
     memory_new?: unknown;
   }>("profile", {}, signal);
@@ -395,7 +397,7 @@ export async function getDreamProfile(signal?: AbortSignal) {
   const welcome = data.special_account?.welcome;
   if (typeof welcome === "string" && welcome.length <= 200)
     profile.special_welcome = welcome;
-  return { profile, service_ready: data.service_ready ?? true, study_steps: data.study_steps === true };
+  return { profile, service_ready: data.service_ready ?? true, study_steps: data.study_steps === true, ai_route: data.ai_route === true };
 }
 
 /** La bienvenida de Loyola ya se ha visto: no vuelve a salir. */

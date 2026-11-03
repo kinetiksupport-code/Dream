@@ -227,6 +227,19 @@ export function ExamPath({ id }: { id: string }) {
       `${window.location.pathname}${query ? `?${query}` : ""}`,
     );
   }, []);
+  // «Crear mi ruta de estudio» (pop-up del 0.13): /ruta?crear=1 la pide una vez si aún no hay.
+  const creating = useRef(false);
+  useEffect(() => {
+    if (!exam || creating.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("crear") !== "1") return;
+    creating.current = true;
+    params.delete("crear");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
+    if (exam.status === "ready" && !exam.route) void regenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exam]);
   useEffect(() => {
     if (!celebrate || played || !exam) return;
     let second = 0;

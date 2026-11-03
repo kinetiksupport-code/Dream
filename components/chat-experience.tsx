@@ -92,6 +92,8 @@ export function ChatExperience({
     unitId: string;
     conversationId: string;
     title: string;
+    /** Pregunta ya escrita (el «¿Por qué?» de la lección); el alumno la envía. */
+    draft?: string;
   };
 }) {
   const params = useSearchParams();
@@ -103,7 +105,7 @@ export function ChatExperience({
   const [conversationId, setConversationId] = useState<string | null>(
     study?.conversationId ?? params.get("c"),
   );
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(study?.draft ?? "");
   const [analysisView, setAnalysisView] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [state, setState] = useState<DreamState>("idle");
@@ -190,7 +192,7 @@ export function ChatExperience({
   const c = study?.conversationId ?? params.get("c");
   const newKey = study ? null : params.get("new");
   // Optional ?q= pre-fills (never sends) the composer, e.g. from Apuntes.
-  const prefill = study ? null : (params.get("q")?.slice(0, 2000) ?? null);
+  const prefill = study ? (study.draft?.slice(0, 2000) ?? null) : (params.get("q")?.slice(0, 2000) ?? null);
   const clearFiles = useCallback(() => {
     for (const a of filesRef.current)
       if (a.preview) URL.revokeObjectURL(a.preview);

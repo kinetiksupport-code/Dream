@@ -11,7 +11,7 @@ import { MATERIAL_GUARD, wrapStudentMaterial } from "./file-guard.mjs";
 export const DIFFICULTIES = Object.freeze(["facil", "medio", "dificil"]);
 export const LIMITS = Object.freeze({
   sections: [3, 6],
-  sectionWords: 140, // pedimos ≤ 120; margen para no tirar una lección por poco
+  sectionWords: 65, // pedimos ≤ 50 (tarjeta «Qué saber», 0.11); margen para no tirar una lección por poco
   quiz: [8, 12],
   cards: [8, 12],
   cardChars: 300,
@@ -35,8 +35,8 @@ export function lessonSystem() {
     '"quiz":[{"type":"mcq|tf|written","prompt":"…","options":["…"],"answer":"…","explanation":"…","rubric":["…"],"section_index":0,"difficulty":"facil|medio|dificil"}],',
     '"cards":[{"front":"…","back":"…","section_index":0}]}',
     "Reglas:",
-    "- reading.sections: de 3 a 6 secciones cortas (≤ 120 palabras cada una), una idea por sección, conceptos clave en **negrita**, fórmulas en KaTeX ($…$). check: una afirmación de verdadero/falso sobre esa sección.",
-    "- quiz: de 8 a 12 preguntas que se contestan con la lectura. mcq: 3 o 4 opciones y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave. explanation en 1-2 frases.",
+    "- reading.sections: de 3 a 6 tarjetas «Qué saber» muy cortas (≤ 50 palabras cada una, 3-4 líneas), una idea por tarjeta, conceptos clave en **negrita**, fórmulas en KaTeX ($…$). check: una afirmación de verdadero/falso sobre esa tarjeta.",
+    "- quiz: de 8 a 12 preguntas que se contestan con la lectura, mezclando todas las tarjetas: definición, relación, escenario y, si el tema tiene fechas o etapas, ordenar la cronología (mcq con 4 opciones del tipo «A → B → C»). mcq: 4 opciones (3 si no hay más) y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave. explanation en 1-2 frases.",
     "- cards: de 8 a 12 tarjetas de concepto (pregunta corta / respuesta corta, ≤ 300 caracteres). Ninguna tarjeta resuelve un ejercicio: pregunta por ideas, definiciones o relaciones.",
     "- sources: «De tus apuntes» si usas los apuntes; si no, el tema y la asignatura. No inventes datos, fechas ni citas: si no estás seguro, no lo pongas.",
     "- Nunca des la solución de un ejercicio del alumno.",

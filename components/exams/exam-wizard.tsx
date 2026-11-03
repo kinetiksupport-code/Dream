@@ -35,6 +35,7 @@ import { DatePicker } from "./wizard/date-picker";
 import { GradeWheel } from "./wizard/grade-wheel";
 import { StepIdentify, useIdentity } from "./wizard/step-identify";
 import { StepReady, startHref } from "./wizard/step-ready";
+import { RoutePrompt } from "./route-prompt";
 import { StepUpload } from "./wizard/step-upload";
 import { useUploads } from "./wizard/use-uploads";
 import s from "./wizard/wizard.module.css";
@@ -397,6 +398,7 @@ export function ExamWizard() {
           Tu examen está <span className="marker marker-draw">listo</span>
         </StepTitle>
         <StepReady exam={done} />
+        <RoutePrompt exam={done} moment="afterCreate" />
       </>
     );
     footer = (

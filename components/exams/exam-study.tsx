@@ -98,7 +98,7 @@ export function ExamStudy({ id, unitId }: { id: string; unitId: string }) {
   // Con el flag, la lección es Leer → Test (Entrega 2); ?tutor=1 abre el tutor
   // («Explícame por qué», «Pregúntale a Dream») con el contexto de la unidad.
   if (studyStepsEnabled() && !tutorMode)
-    return <LessonFlow examId={id} unitId={unitId} title={unit.title} known={knownMode} />;
+    return <LessonFlow examId={id} unitId={unitId} title={unit.title} known={knownMode} conversationId={unit.conversation_id} />;
   if (studyStepsEnabled()) {
     const done = unit.status === "completed";
     function finish() {

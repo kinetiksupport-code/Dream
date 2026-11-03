@@ -4,7 +4,7 @@
 // X para salir con confirmación, una barra de progreso, el contador (que
 // abre las preguntas en una hoja) y el reloj solo si hay tiempo. Sin panel
 // lateral ni tarjetas de ayuda. Menos interfaz, no un «modo foco».
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { Modal } from "../modal";
 import s from "./step-frame.module.css";
@@ -24,7 +24,16 @@ export function StepFrame({
   children,
   footer,
   extra,
+  showCounter = true,
+  showBar = true,
+  shifted = false,
 }: {
+  /** La pregunta de la lección no lleva contador (0.11, cifras). */
+  showCounter?: boolean;
+  /** En la lectura la barra no se ve; aparece al empezar el test (0.12 · 10). */
+  showBar?: boolean;
+  /** El panel «¿Por qué?» está abierto: la lección se aparta a la izquierda (0.12 · 8). */
+  shifted?: boolean;
   /** Un control pequeño a la derecha de la cabecera (p. ej. «1 fuente»). */
   extra?: ReactNode;
   /** Nombre de lo que se hace, para el lector de pantalla («Simulacro»). */
@@ -42,6 +51,14 @@ export function StepFrame({
   footer: ReactNode;
 }) {
   const [asking, setAsking] = useState(false);
+  // Esc abre «¿Salir?» (0.12, reglas), salvo si ya hay otro diálogo abierto.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.querySelector("[role='dialog']")) setAsking(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   // El contador cambia con un fundido corto (0.8 · 7): la clave lo vuelve a montar.
   const counter = (
     <span className={s.count} key={position}>
@@ -49,13 +66,14 @@ export function StepFrame({
     </span>
   );
   return (
-    <div className={s.frame} data-testid="step-frame">
+    <div className={s.frame} data-testid="step-frame" data-shifted={shifted || undefined}>
       <header className={s.top}>
         <button type="button" className={`${s.close} press`} aria-label={`Salir del ${label.toLowerCase()}`} onClick={() => setAsking(true)}>
           <X size={20} aria-hidden="true" />
         </button>
         <div
           className={s.bar}
+          data-hidden={!showBar || undefined}
           role="progressbar"
           aria-label={label}
           aria-valuemin={0}
@@ -65,7 +83,7 @@ export function StepFrame({
         >
           <span className={s.fill} style={{ transform: `scaleX(${total ? position / total : 0})` }} />
         </div>
-        {onCounter ? (
+        {!showCounter ? null : onCounter ? (
           <button type="button" className={`${s.counter} press`} aria-label={`Preguntas: ${position} de ${total}`} onClick={onCounter}>
             {counter}
           </button>

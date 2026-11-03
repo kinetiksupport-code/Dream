@@ -1,0 +1,89 @@
+/* Pop-up de la ruta (0.13): hoja inferior en móvil y diálogo centrado en
+   escritorio (Modal «sheet»); entra con opacity + translateY(8px) en 200 ms. */
+.popup {
+  position: relative;
+  text-align: center;
+}
+.popup > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding-block-start: 8px;
+  animation: popIn 200ms var(--ease) both;
+}
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.close {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.orb {
+  display: grid;
+  place-items: center;
+  inline-size: 80px;
+  block-size: 80px;
+}
+.title {
+  margin: 0;
+  max-inline-size: 22ch;
+  font-size: 1.375rem;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.text {
+  margin: 0;
+  max-inline-size: 34ch;
+  color: var(--text-secondary);
+}
+.actions {
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  margin-block-start: 8px;
+}
+.actions > :first-child {
+  min-block-size: 54px;
+  justify-content: center;
+}
+.later {
+  min-block-size: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .later:hover {
+    color: var(--text);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup > div {
+    animation: popFade 100ms linear both;
+  }
+}
+@keyframes popFade {
+  from {
+    opacity: 0;
+  }
+}

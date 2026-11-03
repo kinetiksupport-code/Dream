@@ -352,7 +352,93 @@
   animation: feedbackIn 200ms var(--ease) both;
 }
 
+/* 0.11 · 3: tarjeta «Qué saber». */
+.cardEyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.square {
+  inline-size: 54px;
+  min-block-size: 54px;
+  flex: none;
+  padding: 0;
+  justify-content: center;
+}
+/* Con la hoja de corrección abierta, sitio abajo para que no tape las respuestas. */
+.qWrap[data-sheet] {
+  padding-block-end: 200px;
+}
+
+/* 0.11 · 8 y 0.12 · 12: Orb grande, titular, dos pastillas con borde de color;
+   entrada escalonada de 40 ms (opacity + translateY(6px)). */
+.resultOrb {
+  display: grid;
+  place-items: center;
+  inline-size: 104px;
+  block-size: 104px;
+}
+.results > * {
+  animation: stagger 220ms var(--ease) both;
+}
+.results > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.results > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.results > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.results > :nth-child(5) {
+  animation-delay: 160ms;
+}
+@keyframes stagger {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.pills {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+}
+.pill {
+  min-inline-size: 112px;
+  padding: 10px 16px;
+  border-radius: 18px;
+  border: 2px solid var(--success);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.pill[data-kind="time"] {
+  border-color: var(--primary);
+}
+.pill strong {
+  font-size: 1.375rem;
+  font-weight: 750;
+}
+.pillLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .results > * {
+    animation-name: fade;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+  }
   .prep,
   .section,
   .feedback,

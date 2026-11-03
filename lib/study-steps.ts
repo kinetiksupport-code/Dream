@@ -8,6 +8,12 @@ import type { RouteNodeType } from "@/supabase/functions/dream-api/route-plan.mj
 // (cuenta de prueba, Fundación Loyola o todos). Lo fija providers.tsx al
 // cargar el perfil, antes de pintar nada de la app.
 let runtimeOn = false;
+let aiRouteOn = false;
+/** El servidor tiene la ruta con IA (DREAM_AI_ROUTE_ENABLED): lo dice el perfil. */
+export function setAiRouteForAccount(on: boolean) {
+  aiRouteOn = on;
+}
+export const aiRouteEnabled = () => aiRouteOn;
 export function setStudyStepsForAccount(on: boolean) {
   runtimeOn = on;
 }

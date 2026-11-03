@@ -1,4 +1,5 @@
 "use client";
+import { RoutePrompt } from "./route-prompt";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -444,6 +445,7 @@ export function ExamDetail({
           <Check size={16} aria-hidden="true" /> Examen completado
         </p>
       )}
+      <RoutePrompt exam={exam} moment="onOpenExam" />
     </ExamPage>
   );
 }
