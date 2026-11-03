@@ -26,3 +26,10 @@ test("sin clave, el blog devuelve listas vacías en lugar de fallar", async () =
   assert.equal(await blog.getArticleBySlug("x"), null);
   assert.deepEqual(await blog.getSitemapEntries(), []);
 });
+
+test("el sitemap del blog lleva al menos un <url> aunque no haya artículos", async () => {
+  delete process.env.BABYLOVEGROWTH_BLOG_API_KEY;
+  const { GET } = await import("../app/blog/sitemap.xml/route");
+  const xml = await (await GET(new Request("https://www.edudream.es/blog/sitemap.xml"))).text();
+  assert.match(xml, /<url>\s*<loc>https:\/\/www\.edudream\.es\/blog<\/loc>\s*<\/url>/);
+});

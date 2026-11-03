@@ -20,7 +20,10 @@ export async function GET(request: Request): Promise<Response> {
   const baseUrl = SITE_URL || new URL(request.url).origin;
   const entries = await blog.getSitemapEntries();
 
-  const urls = entries
+  // Google exige al menos un <url>: la portada del blog va siempre, aunque
+  // todavía no haya artículos (o falte la clave).
+  const index = `  <url>\n    <loc>${escapeXml(`${baseUrl}${BLOG_BASE_PATH}`)}</loc>\n  </url>`;
+  const articleUrls = entries
     .map((entry) => {
       const loc = escapeXml(`${baseUrl}${BLOG_BASE_PATH}/${entry.slug}`);
       const date = new Date(entry.updated_at);
@@ -30,6 +33,7 @@ export async function GET(request: Request): Promise<Response> {
       return `  <url>\n    <loc>${loc}</loc>${lastmod}\n  </url>`;
     })
     .join('\n');
+  const urls = [index, articleUrls].filter(Boolean).join('\n');
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
 
