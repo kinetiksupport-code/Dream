@@ -22,6 +22,13 @@ export interface CspEnv {
    * la primera página abierta. El script solo se carga donde se usa.
    */
   turnstile?: boolean;
+  /**
+   * Páginas del blog (/blog): las imágenes de los artículos de BabyLoveGrowth
+   * vienen de su CDN, así que ahí img-src admite cualquier https. Solo se
+   * pide al abrir /blog con carga completa (el enlace desde la landing es un
+   * <a> normal).
+   */
+  blogImages?: boolean;
 }
 
 const origin = (value?: string) => {
@@ -80,6 +87,7 @@ export function appCsp(
       cb.pixel,
       cb.consent,
       CRISP,
+      env.blogImages ? "https:" : "",
     ])}`,
     `font-src 'self' data: ${CRISP}`,
     `media-src 'self' blob: ${CRISP}`,
