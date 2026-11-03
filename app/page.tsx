@@ -18,7 +18,24 @@ import { OrbLink } from "@/components/orb-link";
 import { LandingHeader } from "@/components/landing/landing-header";
 import { InstallButton } from "@/components/landing/install-button";
 import { encodeQr, qrPath } from "@/lib/qr";
+import type { Metadata } from "next";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_URL, homeJsonLd, jsonLdScript } from "@/lib/seo";
 import s from "./landing.module.css";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/` },
+  openGraph: {
+    type: "website",
+    url: `${SITE_URL}/`,
+    siteName: "Dream",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    locale: "es_ES",
+    images: [{ url: `${SITE_URL}/icon-512.png`, width: 512, height: 512, alt: "Dream" }],
+  },
+};
 
 // Landing de Dream design (skill dream-design-system, 3-nov-2026). Componente
 // de servidor; las islas cliente son la cabecera (scroll y menú), OrbLink (la
@@ -120,6 +137,7 @@ export default function LandingPage() {
   const qrSize = qr.size + 8;
   return (
     <div className={s.site}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(homeJsonLd()) }} />
       <a className="skip-link" href="#main">
         Ir al contenido
       </a>
