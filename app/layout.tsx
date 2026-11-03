@@ -39,6 +39,7 @@ const lexend = Lexend({
   preload: false,
 });
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.edudream.es"),
   title: { default: "Dream — Tu compañero de estudio", template: "%s · Dream" },
   description:
     "Dream te ayuda a entender lo que estudias: pregunta, sube tus apuntes y practica con tests.",

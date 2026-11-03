@@ -1,0 +1,33 @@
+# Dream — Tu compañero de estudio
+
+> Plataforma educativa en español para estudiantes de ESO, Bachillerato y la PAU: sube tus apuntes, entiende cada tema con pistas y prepara el examen con tests y simulacros. Gratis.
+
+Dream ayuda a estudiantes a entender y practicar sus materias con cuestionarios, pistas y simulacros de examen, y fomenta un aprendizaje activo y autónomo. Dream no da los ejercicios resueltos: da pistas y pregunta hasta que el estudiante lo saca por sí mismo.
+
+## Core Content
+
+- Temas de estudio a partir de los apuntes del estudiante
+- Exámenes y preguntas de práctica
+- Pistas y explicaciones para entender conceptos
+- Ruta de estudio con lecciones cortas (Leer, Test y Tarjetas)
+- Seguimiento del progreso y preparación personalizada
+
+## Resources
+
+- [Dream — Tu compañero de estudio](https://www.edudream.es/): página principal
+- [Blog de Dream](https://www.edudream.es/blog): guías y consejos para estudiar mejor
+- [Entrar o probar Dream gratis](https://www.edudream.es/login)
+
+## Testing & Preparation Tools
+
+- Tests con preguntas sacadas de los apuntes
+- Simulacros de examen completos
+- Seguimiento del progreso
+- Corrección automática con explicación al momento
+
+## Optional
+
+- [Política de privacidad](https://www.edudream.es/privacidad)
+- [Términos y condiciones](https://www.edudream.es/terminos)
+- [Política de cookies](https://www.edudream.es/cookies)
+- [Aviso legal](https://www.edudream.es/aviso-legal)

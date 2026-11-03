@@ -4,7 +4,24 @@ import { Orb } from "@/components/orb";
 import { OrbLink } from "@/components/orb-link";
 import { Sticker } from "@/components/sticker";
 import { SubjectObject } from "@/components/subject-object";
+import type { Metadata } from "next";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_URL, homeJsonLd, jsonLdScript } from "@/lib/seo";
 import s from "./landing.module.css";
+
+export const metadata: Metadata = {
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
+  alternates: { canonical: `${SITE_URL}/` },
+  openGraph: {
+    type: "website",
+    url: `${SITE_URL}/`,
+    siteName: "Dream",
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
+    locale: "es_ES",
+    images: [{ url: `${SITE_URL}/icon-512.png`, width: 512, height: 512, alt: "Dream" }],
+  },
+};
 
 // Landing con scroll cinematográfico (docs/diseno/landing-storyboard.md).
 // Componente de servidor: el movimiento son CSS scroll-driven animations con
@@ -25,6 +42,7 @@ function Cta({ children = "Probar Dream", tone = "yellow" }: { children?: string
 export default function LandingPage() {
   return (
     <div className={s.site}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(homeJsonLd()) }} />
       <a className="skip-link" href="#main">
         Ir al contenido
       </a>
@@ -88,7 +106,7 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className={s.examCard}>
-                <SubjectObject object="microscope" size={56} float={false} />
+                <SubjectObject object="microscope" size={56} float={false} label />
                 <b>Examen de Biología</b>
                 <span>4 temas · 12 días</span>
                 <span className={s.examReady}>Ruta lista</span>
@@ -179,7 +197,7 @@ export default function LandingPage() {
             </div>
             <div className={s.progressCard}>
               <span className={s.example}>Ejemplo</span>
-              <SubjectObject object="cap" size={72} float={false} className={s.cap} />
+              <SubjectObject object="cap" size={72} float={false} className={s.cap} label />
               <p className={s.progressLabel}>Preparación del examen</p>
               <p className={s.bigNumber}>
                 <span className="visually-hidden">82 %</span>
