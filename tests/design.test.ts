@@ -142,12 +142,12 @@ test("hover styles only apply to devices that can hover", () => {
   assert.deepEqual(bad, []);
 });
 
-test("fonts load on <html> so the font stack resolves (Inter, latin-ext)", () => {
+test("fonts load on <html> so the font stack resolves (Archivo, latin-ext)", () => {
   const layout = readFileSync("app/layout.tsx", "utf8");
-  assert.match(layout, /<html[\s\S]*?className=\{`\$\{inter\.variable\}/);
+  assert.match(layout, /<html[\s\S]*?className=\{`\$\{archivo\.variable\}/);
   assert.match(layout, /latin-ext/);
-  assert.doesNotMatch(layout, /<body className=\{inter/);
-  assert.match(globals, /--font-stack:[^;]*var\(--font-inter\)/);
+  assert.doesNotMatch(layout, /<body className=\{archivo/);
+  assert.match(globals, /--font-stack:[^;]*var\(--font-grotesk\)/);
 });
 
 test("Spanish interface text keeps its accents", () => {
@@ -251,22 +251,13 @@ test("scripts never animate layout or `all` (inline styles and WAAPI)", () => {
   assert.deepEqual(bad, []);
 });
 
-test("dark tokens match in [data-theme=dark] and prefers-color-scheme", () => {
-  const block = (re: RegExp) => {
-    const m = globals.match(re);
-    assert.ok(m, `bloque ${re} encontrado`);
-    return Object.fromEntries(
-      [...m[1].matchAll(/--([\w-]+):\s*([^;]+);/g)].map((x) => [
-        x[1],
-        x[2].replace(/\s+/g, " ").trim(),
-      ]),
-    );
-  };
-  const forced = block(/:root\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/);
-  const system = block(
-    /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\)\s*\{([\s\S]*?)\n {2}\}/,
-  );
-  assert.deepEqual(system, forced);
+test("Dream is dark only: one palette, no light theme or theme switch", () => {
+  assert.doesNotMatch(globals, /@media \(prefers-color-scheme: dark\)/);
+  assert.match(globals, /:root \{\n  color-scheme: dark;/);
+  const layout = readFileSync("app/layout.tsx", "utf8");
+  assert.match(layout, /data-theme="dark"/);
+  const settings = readFileSync("app/(dream)/settings/page.tsx", "utf8");
+  assert.doesNotMatch(settings, /segmented-theme/);
 });
 
 test("the new style's tokens exist in light and dark", () => {

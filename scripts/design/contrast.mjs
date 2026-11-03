@@ -93,7 +93,7 @@ export const PAIRS = [
   ["danger", "danger-surface", 4.5, "Error"],
   ["danger", "bg", 4.5, "Error sobre fondo"],
   ["warning", "warning-surface", 4.5, "Aviso"],
-  ["accent", "primary", 3, "Lima sobre azul (números grandes)"],
+  ["accent", "bg", 3, "Verde sobre el fondo (números grandes)"],
   ["focus", "bg", 3, "Anillo de foco"],
   ["text", "home-halo", 4.5, "Titular sobre el halo de Inicio"],
   ["text-secondary", "home-halo", 4.5, "Saludo sobre el halo de Inicio"],
@@ -108,7 +108,7 @@ export const PAIRS = [
   ["on-pop-purple", "pop-purple", 4.5, "Texto sobre morado"],
   ["on-pop-green", "pop-green", 4.5, "Texto sobre verde"],
   ["on-pop-lime", "pop-lime", 4.5, "Texto sobre lima"],
-  ["on-primary", "pop-blue", 4.5, "Botón blanco sobre azul (texto)"],
+  ["on-primary", "primary", 4.5, "Texto del botón blanco"],
   // On a pop fill the focus ring takes the fill's text colour (.pop-* sets
   // --focus: var(--on-pop-*)), so the pairs above also cover the ring (≥ 3:1).
 ];

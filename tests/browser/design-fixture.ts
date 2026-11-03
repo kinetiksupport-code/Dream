@@ -304,7 +304,8 @@ export const VIEWPORTS = [
   { name: "movil", width: 390, height: 844 },
   { name: "escritorio", width: 1440, height: 900 },
 ] as const;
-export const SCHEMES = ["light", "dark"] as const;
+// Dream es solo oscuro desde el rediseño Dream design (3-nov-2026).
+export const SCHEMES = ["dark"] as const;
 
 export type Screen = {
   name: string;

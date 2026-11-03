@@ -1,236 +1,274 @@
-import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import Link from "next/link";
+import {
+  BookOpenCheck,
+  CalendarClock,
+  Camera,
+  GraduationCap,
+  Layers,
+  ListChecks,
+  MessagesSquare,
+  NotebookPen,
+  Route,
+  Sparkles,
+  Timer,
+} from "lucide-react";
+import { CookieSettingsButton } from "@/components/cookie-settings-button";
 import { Orb } from "@/components/orb";
 import { OrbLink } from "@/components/orb-link";
-import { Sticker } from "@/components/sticker";
-import { SubjectObject } from "@/components/subject-object";
+import { LandingHeader } from "@/components/landing/landing-header";
+import { InstallButton } from "@/components/landing/install-button";
+import { encodeQr, qrPath } from "@/lib/qr";
 import s from "./landing.module.css";
 
-// Landing con scroll cinematográfico (docs/diseno/landing-storyboard.md).
-// Componente de servidor: el movimiento son CSS scroll-driven animations con
-// @supports, sin JavaScript propio. La única isla cliente es OrbLink (el orbe
-// viaja al login, lib/orb-transition.ts). Sin soporte o con movimiento
-// reducido, cada escena se ve completa y quieta.
+// Landing de Dream design (skill dream-design-system, 3-nov-2026). Componente
+// de servidor; las islas cliente son la cabecera (scroll y menú), OrbLink (la
+// Orb viaja al login) y el botón de instalar. El único momento atrevido es la
+// banda de texto en perspectiva, con animation-timeline y @supports; sin
+// soporte o con movimiento reducido se ve quieta.
 
-const GRADES = ["5", "6", "7", "8", "8,5", "9", "10"];
+const SITE = "https://www.edudream.es/login";
 
-function Cta({ children = "Probar Dream", tone = "yellow" }: { children?: string; tone?: "yellow" | "blue" }) {
+const CHIPS = [
+  { icon: GraduationCap, label: "PAU", color: "var(--dd-blue-ink)" },
+  { icon: BookOpenCheck, label: "ESO y Bachillerato", color: "var(--dd-green)" },
+  { icon: Camera, label: "Tus apuntes", color: "var(--dd-orange)" },
+  { icon: Route, label: "Ruta de estudio", color: "var(--dd-blue)" },
+  { icon: ListChecks, label: "Tests", color: "var(--dd-pink)" },
+  { icon: Timer, label: "Simulacros", color: "var(--dd-green)" },
+  { icon: Layers, label: "Tarjetas de repaso", color: "var(--dd-orange)" },
+];
+
+const CARDS = [
+  {
+    title: "Sube tus apuntes",
+    text: "Hazles una foto o súbelos desde el móvil con un QR.",
+    icon: Camera,
+    mock: ["Tema 4 · La célula", "Foto 1 de 3", "Leyendo tus apuntes…"],
+  },
+  {
+    title: "Tu ruta de estudio",
+    text: "Dream ordena tus apuntes y tu fecha en lecciones cortas.",
+    icon: Route,
+    mock: ["Leer", "Test", "Tarjetas"],
+  },
+  {
+    title: "Entiende, no copies",
+    text: "Te da una pista y te pregunta hasta que lo sacas tú.",
+    icon: MessagesSquare,
+    mock: ["¿Me haces el ejercicio 4?", "Te doy una pista: ¿qué pasa si pasas el 6 al otro lado?"],
+  },
+  {
+    title: "Tests y simulacros",
+    text: "Practica con preguntas de tus apuntes y un simulacro final.",
+    icon: NotebookPen,
+    mock: ["Pregunta 3 de 10", "¿Qué orgánulo produce la energía de la célula?"],
+  },
+  {
+    title: "Repasa a tiempo",
+    text: "Tarjetas que vuelven justo cuando estás a punto de olvidarlas.",
+    icon: CalendarClock,
+    mock: ["Para hoy", "Mitocondria", "Ribosoma"],
+  },
+];
+
+const STATS = [
+  { value: "0 €", label: "Gratis, sin tarjeta" },
+  { value: "17", label: "Comunidades autónomas" },
+  { value: "3", label: "Etapas: ESO, Bachillerato y PAU" },
+  { value: "24 h", label: "Abierto cuando estudias" },
+];
+
+const BANDS = [
+  { text: "Apuntes · Tests · Ruta · Simulacros · ", tone: "brand" },
+  { text: "Entiende · Practica · Repasa · Aprueba · ", tone: "lime" },
+  { text: "Saca tu mejor nota · Saca tu mejor nota · ", tone: "green" },
+];
+
+const FAQ = [
+  {
+    q: "¿Dream es gratis?",
+    a: "Sí. Entras con tu cuenta de Google y no hace falta tarjeta ni suscripción.",
+  },
+  {
+    q: "¿Dream me hace los deberes?",
+    a: "No. Dream no te da el ejercicio resuelto: te da pistas y te pregunta hasta que lo entiendes y lo sacas tú.",
+  },
+  {
+    q: "¿Para qué cursos sirve?",
+    a: "Para ESO, Bachillerato y la PAU. Trabaja con tus propios apuntes, así que sigue el temario de tu clase.",
+  },
+  {
+    q: "¿Hay que descargar algo?",
+    a: "No. Dream funciona en el navegador. Si quieres, puedes instalarlo en tu móvil como una app desde el propio navegador.",
+  },
+  {
+    q: "¿Qué pasa con mis apuntes?",
+    a: "Solo los usa Dream para prepararte el examen. Puedes ver cómo tratamos tus datos en la política de privacidad.",
+  },
+];
+
+function Cta({ children = "Probar Dream", className = "" }: { children?: string; className?: string }) {
   return (
-    <OrbLink className={`button-3d tone-${tone} press ${s.cta}`} href="/login">
-      <span className="button-3d-face">{children}</span>
+    <OrbLink className={`primary press ${s.cta} ${className}`} href="/login">
+      {children}
     </OrbLink>
   );
 }
 
 export default function LandingPage() {
+  const qr = encodeQr(SITE);
+  const qrSize = qr.size + 8;
   return (
     <div className={s.site}>
       <a className="skip-link" href="#main">
         Ir al contenido
       </a>
-      <header className={`${s.nav} pop tone-blue`}>
-        <Link className={`press ${s.brand}`} href="/">
-          <Orb size={32} />
-          Dream
-        </Link>
-        <OrbLink className={`press ${s.navCta}`} href="/login">
-          Entrar
-        </OrbLink>
-      </header>
+      <LandingHeader />
       <main id="main">
-        {/* 1. Héroe */}
-        <section className={`${s.scene} ${s.hero} pop tone-blue pop-grid`} aria-labelledby="hero-title">
+        {/* Hero: panel azul de marca con titular en mayúsculas y la Orb asomando. */}
+        <section className={s.hero} aria-labelledby="hero-title">
           <div className={s.heroInner}>
-            <span className={s.heroSticker} aria-hidden="true">
-              <Sticker shape="round" tone="yellow" size={168} tilt={-6}>
-                <Orb size={104} breathing />
-              </Sticker>
-            </span>
-            <h1 id="hero-title" className={`hero-title ${s.heroTitle}`}>
-              Saca tu mejor <span className="marker marker-draw">nota</span>.
+            <h1 id="hero-title" className={s.heroTitle}>
+              <span>Saca</span> <span>tu mejor</span> <span>nota</span>
             </h1>
-            <p className={s.lead}>
+            <p className={s.heroLead}>
               Sube tus apuntes, entiende cada tema con pistas y prepárate el examen a tu ritmo.
             </p>
-            <div className={s.actions}>
+            <div className={s.heroActions}>
               <Cta />
               <span className={s.note}>Gratis. Entra con Google.</span>
             </div>
           </div>
+          <span className={s.heroOrb} aria-hidden="true">
+            <Orb size={260} breathing />
+          </span>
         </section>
 
-        {/* 2. Sube tus apuntes (momento firma: la foto se convierte en un examen) */}
-        <section className={`${s.scene} ${s.notes} pop tone-purple`} aria-labelledby="notes-title">
-          <div className={s.notesStage}>
-            <div className={s.copy}>
-              <span className={s.tag}>
-                <Sticker shape="pill" tone="yellow" tilt={-4}>
-                  Desde el móvil con QR
-                </Sticker>
-              </span>
-              <h2 id="notes-title" className={`hero-title ${s.sceneTitle}`}>
-                Sube tus <span className="marker">apuntes</span>.
-              </h2>
-              <p className={s.lead}>
-                Hazles una foto con el móvil y Dream los convierte en un examen con su ruta de estudio.
-              </p>
-            </div>
-            <div className={s.notesVisual} aria-hidden="true">
-              <div className={s.phone}>
-                <span className={s.phoneNotch} />
-                <div className={s.sheet}>
-                  <b>Tema 4 · La célula</b>
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </div>
-              </div>
-              <div className={s.examCard}>
-                <SubjectObject object="microscope" size={56} float={false} />
-                <b>Examen de Biología</b>
-                <span>4 temas · 12 días</span>
-                <span className={s.examReady}>Ruta lista</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Entiende, no copies */}
-        <section className={`${s.scene} ${s.chat}`} aria-labelledby="chat-title">
-          <div className={s.split}>
-            <div className={s.copy}>
-              <span className={s.tag}>
-                <Sticker shape="scalloped" tone="red" size={104} tilt={6}>
-                  Sin atajos
-                </Sticker>
-              </span>
-              <h2 id="chat-title" className={`hero-title ${s.sceneTitle}`}>
-                Entiende, no <span className="marker">copies</span>.
-              </h2>
-              <p className={s.lead}>
-                Dream no te da el ejercicio resuelto: te da una pista y te pregunta, hasta que lo sacas tú.
-              </p>
-            </div>
-            <ol className={s.bubbles} aria-label="Ejemplo de conversación">
-              <li className={s.me}>¿Me haces el ejercicio 4?</li>
-              <li className={s.dream}>
-                No te lo resuelvo, pero te doy una pista: ¿qué pasa si pasas el 6 al otro lado?
+        {/* Tira de chips */}
+        <section className={s.chipsRow} aria-label="Para quién es Dream">
+          <p className={s.chipsLabel}>Hecho para</p>
+          <ul className={s.chips}>
+            {CHIPS.map((c) => (
+              <li key={c.label} className={s.chip}>
+                <c.icon size={20} strokeWidth={2.5} aria-hidden="true" style={{ color: c.color }} />
+                {c.label}
               </li>
-              <li className={s.me}>¡Ah! Entonces 2x = 6, y x = 3.</li>
-              <li className={s.dream}>Eso es. ¿Probamos uno un poco más difícil?</li>
-            </ol>
-          </div>
+            ))}
+          </ul>
         </section>
 
-        {/* 4. Tests y simulacros */}
-        <section className={`${s.scene} ${s.tests} pop tone-orange pop-grid`} aria-labelledby="tests-title">
-          <div className={s.split}>
-            <div className={s.copy}>
-              <h2 id="tests-title" className={`hero-title ${s.sceneTitle}`}>
-                Tests y <span className="marker">simulacros</span>.
-              </h2>
-              <p className={s.lead}>
-                Practica con preguntas de tus apuntes, haz simulacros del examen y elige la nota que quieres sacar.
-              </p>
-            </div>
-            <div className={s.testsVisual} aria-hidden="true">
-              <div className={s.deck}>
-                <div className={s.card}>
-                  <small>Pregunta 1</small>
-                  <b>¿Qué orgánulo produce la energía de la célula?</b>
-                </div>
-                <div className={s.card}>
-                  <small>Pregunta 2</small>
-                  <b>Resuelve: 3x − 5 = 10</b>
-                </div>
-                <div className={s.card}>
-                  <small>Pregunta 3</small>
-                  <b>¿En qué año empezó la Revolución francesa?</b>
-                </div>
-              </div>
-              <div className={s.wheel}>
-                <ol className={s.wheelRing}>
-                  {GRADES.map((g, i) => (
-                    <li key={g} style={{ ["--i" as string]: i }}>
-                      {g}
-                    </li>
-                  ))}
-                </ol>
-                <span className={s.wheelValue}>
-                  8,5<small>/ 10</small>
-                </span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. Tu progreso */}
-        <section className={`${s.scene} ${s.progress} pop tone-green`} aria-labelledby="progress-title">
-          <div className={s.split}>
-            <div className={s.copy}>
-              <h2 id="progress-title" className={`hero-title ${s.sceneTitle}`}>
-                Mira cómo <span className="marker">avanzas</span>.
-              </h2>
-              <p className={s.lead}>
-                Dream te dice cuánto llevas preparado y qué te toca repasar antes del examen.
-              </p>
-            </div>
-            <div className={s.progressCard}>
-              <span className={s.example}>Ejemplo</span>
-              <SubjectObject object="cap" size={72} float={false} className={s.cap} />
-              <p className={s.progressLabel}>Preparación del examen</p>
-              <p className={s.bigNumber}>
-                <span className="visually-hidden">82 %</span>
-                <span className={s.odometer} aria-hidden="true">
-                  <span className={s.digit} style={{ ["--to" as string]: 8 }}>
-                    {Array.from({ length: 10 }, (_, d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </span>
-                  <span className={s.digit} style={{ ["--to" as string]: 2 }}>
-                    {Array.from({ length: 10 }, (_, d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </span>
-                  <span className={s.pct}>%</span>
-                </span>
-              </p>
-              <span className={s.bar} aria-hidden="true">
-                <i />
-              </span>
-            </div>
-          </div>
-        </section>
-
-        {/* 6. Gratis */}
-        <section className={`${s.scene} ${s.free} pop tone-yellow pop-grid`} aria-labelledby="free-title">
-          <div className={s.freeInner}>
-            <span className={s.freeSticker} aria-hidden="true">
-              <Sticker shape="scalloped" tone="blue" size={128} tilt={8}>
-                <Orb size={72} />
-              </Sticker>
+        {/* Carrusel de tarjetas de cristal azul (la única familia con cristal). */}
+        <section className={s.section} id="funciones" aria-labelledby="funciones-title">
+          <span className={`${s.stickerIcon} ${s.stickerGreen}`} aria-hidden="true">
+            <Sparkles size={34} strokeWidth={2.75} />
+          </span>
+          <h2 id="funciones-title" className={s.sectionTitle}>
+            Todo lo que necesitas para tu examen
+          </h2>
+          <p className={s.sectionLead}>Desde la foto de tus apuntes hasta el simulacro del último día.</p>
+          <div className={s.carouselWrap}>
+            <span className={s.blobs} aria-hidden="true">
+              <i />
+              <i />
+              <i />
             </span>
-            <h2 id="free-title" className={`hero-title ${s.sceneTitle}`}>
-              Dream es <span className="marker">gratis</span>.
-            </h2>
-            <p className={s.lead}>Sin tarjeta ni suscripción. Aprender mejor no debería depender de cuánto puedas pagar.</p>
-            <Cta tone="blue" />
+            <ul className={s.carousel} aria-label="Funciones de Dream">
+              {CARDS.map((c) => (
+                <li key={c.title} className={`glass-card ${s.card}`}>
+                  <h3 className={s.cardTitle}>{c.title}</h3>
+                  <div className={s.mock} aria-hidden="true">
+                    {c.mock.map((m) => (
+                      <span key={m}>{m}</span>
+                    ))}
+                  </div>
+                  <p className={s.cardText}>{c.text}</p>
+                  <c.icon className={s.cardIcon} size={52} strokeWidth={2.5} aria-hidden="true" />
+                </li>
+              ))}
+            </ul>
           </div>
+        </section>
+
+        {/* Momento atrevido: bandas de texto en perspectiva con el scroll. */}
+        <section className={s.bands} aria-hidden="true">
+          {BANDS.map((b) => (
+            <div key={b.tone} className={s.band} data-tone={b.tone}>
+              <span>{b.text.repeat(3)}</span>
+            </div>
+          ))}
+        </section>
+
+        {/* Cifras reales del producto, nada inventado. */}
+        <section className={s.section} id="cifras" aria-labelledby="cifras-title">
+          <h2 id="cifras-title" className={s.sectionTitle}>
+            Dream en cifras
+          </h2>
+          <p className={s.sectionLead}>Lo que ya puedes usar hoy.</p>
+          <dl className={s.stats}>
+            {STATS.map((st) => (
+              <div key={st.label} className={s.stat}>
+                <dt className={s.statLabel}>{st.label}</dt>
+                <dd className={s.statValue}>{st.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
+        {/* Bloque de descarga: Dream es web/PWA. QR para abrirla en el móvil. */}
+        <section className={s.download} id="instalar" aria-labelledby="instalar-title">
+          <div className={s.downloadCopy}>
+            <h2 id="instalar-title" className={s.sectionTitleLeft}>
+              Llévate Dream en el móvil
+            </h2>
+            <p className={s.sectionLeadLeft}>
+              Escanea el código con la cámara para abrir Dream en tu móvil. Luego puedes instalarlo como una app.
+            </p>
+            <div className={s.downloadActions}>
+              <InstallButton className={`${s.install} press`} />
+            </div>
+          </div>
+          <figure className={s.qr}>
+            <svg viewBox={`0 0 ${qrSize} ${qrSize}`} role="img" aria-label="Código QR para abrir Dream en el móvil" shapeRendering="crispEdges">
+              <path d={qrPath(qr)} fill="#0a0c19" />
+            </svg>
+          </figure>
+        </section>
+
+        {/* FAQ: acordeón con details/summary; el + rota a ×. */}
+        <section className={s.section} id="preguntas" aria-labelledby="preguntas-title">
+          <h2 id="preguntas-title" className={s.sectionTitle}>
+            Preguntas frecuentes
+          </h2>
+          <div className={s.faq}>
+            {FAQ.map((f) => (
+              <details key={f.q} className={s.faqItem}>
+                <summary>
+                  <span>{f.q}</span>
+                  <span className={s.plus} aria-hidden="true" />
+                </summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
+          <Cta className={s.faqCta} />
         </section>
       </main>
       <footer className={s.footer}>
-        <span>
-          <Orb size={20} /> Dream © 2026
-        </span>
-        <nav aria-label="Legal">
-          <Link href="/privacidad">Privacidad</Link>
-          <Link href="/terminos">Términos</Link>
-          <Link href="/cookies">Cookies</Link>
-          <Link href="/aviso-legal">Aviso legal</Link>
-          <CookieSettingsButton className={s.footerButton} />
-        </nav>
+        <div className={s.footerTop}>
+          <p className={s.footerBrand}>
+            <Orb size={28} /> Dream © 2026
+          </p>
+          <nav aria-label="Legal" className={s.footerLinks}>
+            <Link href="/privacidad">Privacidad</Link>
+            <Link href="/terminos">Términos</Link>
+            <Link href="/cookies">Cookies</Link>
+            <Link href="/aviso-legal">Aviso legal</Link>
+            <CookieSettingsButton className={s.footerButton} />
+          </nav>
+        </div>
+        <p className={s.giant} aria-hidden="true">
+          Dream
+        </p>
       </footer>
     </div>
   );

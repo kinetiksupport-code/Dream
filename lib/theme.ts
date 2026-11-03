@@ -1,7 +1,7 @@
 // Browser chrome colours (theme-color, manifest). Must match --bg in globals.css.
 export const THEME_COLORS = {
-  light: "#FFFFFF",
-  dark: "#0E1117",
+  light: "#0A0C19",
+  dark: "#0A0C19",
 } as const;
 
 /**
@@ -11,5 +11,6 @@ export const THEME_COLORS = {
  */
 import { READING_BOOT } from "@/lib/reading";
 export const HEAD_BOOT =
-  "try{var t=localStorage.getItem('dream-theme');document.documentElement.dataset.theme=t==='dark'||t==='light'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}" +
+  // Dream es solo oscuro (rediseño Dream design): el tema ya no se elige.
+  "document.documentElement.dataset.theme='dark';" +
   READING_BOOT;

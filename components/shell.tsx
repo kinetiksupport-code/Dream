@@ -9,6 +9,7 @@ import {
   type ReactNode,
   type ComponentType,
 } from "react";
+import { Plus as PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "./modal";
@@ -321,6 +322,11 @@ export function Shell({ children }: { children: ReactNode }) {
             <Link className="brand" href="/chat" title="Dream">
               <Orb size={32} />
               <span className="nav-label">Dream</span>
+            </Link>
+            {/* Dream design: botón «Crear» blanco en el sidebar (crea un examen). */}
+            <Link className="primary sidebar-create" href="/exams/new" title="Crear examen">
+              <PlusIcon size={20} strokeWidth={2.5} aria-hidden="true" />
+              <span className="nav-label">Crear</span>
             </Link>
             <div className="sidebar-links">
               {nav.map((n) => link(n, current === n.key, "nav-link press"))}

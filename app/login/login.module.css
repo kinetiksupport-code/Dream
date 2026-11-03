@@ -97,13 +97,14 @@
   width: 100%;
   min-height: 52px;
   padding: 0 24px;
-  border: 1px solid var(--border);
-  border-radius: 26px;
-  background: var(--elevated);
-  color: var(--text);
+  border: 0;
+  border-radius: var(--radius-pill);
+  /* Dream design: el botón blanco con relieve es la acción de la vista. */
+  background: var(--dd-button);
+  color: var(--dd-bg);
   font-size: var(--text-body);
-  font-weight: 600;
-  box-shadow: var(--shadow-composer);
+  font-weight: 750;
+  box-shadow: 0 5px 0 var(--dd-button-shadow);
   transition:
     transform var(--dur-press) var(--ease),
     background-color var(--dur-fast) ease,
@@ -118,7 +119,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .googleButton:hover:not(:disabled):not([aria-busy="true"]) {
-    background-color: var(--surface-hover);
+    background-color: #ffffff;
   }
   .brand:hover,
   .back:hover {

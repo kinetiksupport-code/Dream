@@ -1,0 +1,152 @@
+/* Cabecera flotante de la landing (dream-design-system). Movimiento: solo
+   transform y opacity, ease-out, 150-250 ms; reducido: fundidos. */
+.header {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(12px + var(--safe-top)) calc(16px + var(--safe-right)) 12px calc(16px + var(--safe-left));
+  pointer-events: none;
+}
+.header > * {
+  pointer-events: auto;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 48px;
+  padding: 6px 16px 6px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--dd-bg);
+  color: var(--text);
+  font-weight: 900;
+  font-size: 1.375rem;
+  letter-spacing: -0.04em;
+}
+/* Al bajar, el logo se reduce a solo el icono. */
+.word {
+  display: inline-block;
+  transform-origin: left center;
+  transition:
+    transform 200ms var(--ease),
+    opacity 160ms var(--ease);
+}
+.header[data-scrolled] .word {
+  opacity: 0;
+  transform: translateX(-8px) scale(0.95);
+}
+.header[data-scrolled] .brand {
+  padding-inline-end: 6px;
+}
+.header[data-scrolled] .word {
+  position: absolute;
+  pointer-events: none;
+}
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.enter {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: var(--dd-round);
+  color: var(--text);
+  font-weight: 700;
+}
+.start {
+  min-block-size: 44px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.95);
+  pointer-events: none;
+  transition:
+    transform 200ms var(--ease),
+    opacity 160ms var(--ease);
+}
+.header:not([data-scrolled]) .start {
+  position: absolute;
+  inset-inline-end: 64px;
+}
+.header[data-scrolled] .start {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.header[data-scrolled] .enter {
+  display: none;
+}
+.menuButton {
+  inline-size: 48px;
+  block-size: 48px;
+}
+.panel {
+  position: absolute;
+  inset-block-start: calc(68px + var(--safe-top));
+  inset-inline-end: calc(16px + var(--safe-right));
+  inline-size: min(320px, calc(100vw - 32px));
+  padding: 8px;
+  border-radius: 24px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  transform-origin: top right;
+  animation: menuIn 200ms var(--ease) both;
+}
+.panel[hidden] {
+  display: none;
+}
+.panel nav {
+  display: flex;
+  flex-direction: column;
+}
+.panelLink {
+  display: flex;
+  align-items: center;
+  min-block-size: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  font-size: 1.125rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .panelLink:hover,
+  .enter:hover {
+    background: var(--dd-surface);
+  }
+}
+@media (max-width: 380px) {
+  .enter {
+    padding: 0 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .word,
+  .start {
+    transition-property: opacity;
+  }
+  .header[data-scrolled] .word,
+  .start {
+    transform: none;
+  }
+  .panel {
+    animation: menuFade 120ms linear both;
+  }
+}
+@keyframes menuFade {
+  from {
+    opacity: 0;
+  }
+}

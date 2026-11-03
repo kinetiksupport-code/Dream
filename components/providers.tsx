@@ -22,6 +22,7 @@ import { ObservabilityRoutes } from "@/components/observability";
 import { track, resetAnalytics } from "@/lib/observability/analytics";
 import type { DreamProfile } from "@/lib/types";
 import { THEME_COLORS } from "@/lib/theme";
+import { installPressGlow } from "@/lib/press-glow";
 type Theme = "light" | "dark" | "system";
 interface Context {
   session: Session | null;
@@ -51,8 +52,7 @@ export function Providers({ children }: { children: ReactNode }) {
   }, [profile]);
   const [bootError, setBootError] = useState("");
   const [serviceReady, setServiceReady] = useState(true);
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [themeReady, setThemeReady] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
   const profileRequest = useRef<{
     owner: string | undefined;
     promise: Promise<void>;
@@ -212,32 +212,18 @@ export function Providers({ children }: { children: ReactNode }) {
       window.removeEventListener("dream:banned", ask);
     };
   }, [refreshProfile]);
+  // Dream es solo oscuro (rediseño Dream design, 3-nov-2026): se borra la
+  // elección antigua y la página se queda en oscuro.
   useEffect(() => {
-    let saved: string | null = null;
     try {
-      saved = localStorage.getItem("dream-theme");
+      localStorage.removeItem("dream-theme");
     } catch {}
-    if (saved === "light" || saved === "dark" || saved === "system")
-      setThemeState(saved);
-    setThemeReady(true);
+    document.documentElement.dataset.theme = "dark";
+    return installPressGlow();
+    document
+      .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
+      .forEach((meta) => (meta.content = THEME_COLORS.dark));
   }, []);
-  useEffect(() => {
-    if (!themeReady) return;
-    const media = matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const actual =
-        theme === "system" ? (media.matches ? "dark" : "light") : theme;
-      document.documentElement.dataset.theme = actual;
-      document
-        .querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')
-        .forEach(
-          (meta) => (meta.content = THEME_COLORS[actual]),
-        );
-    };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [theme, themeReady]);
   useEffect(() => {
     const viewport = window.visualViewport;
     const update = () => {

@@ -4,19 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0B0E16" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0A0C19">
 <title>Dream · Sin conexión</title>
 <style>
-:root{--bg:#FFFFFF;--surface:#F5F7FA;--text:#080B14;--muted:#5B6678;--primary:#155BFF;--hover:#246BFD;--focus:#155BFF;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0B0E16;--surface:#161A24;--text:#F2F4F8;--muted:#A3ADBF;--hover:#2F6DFF;--focus:#7AA2FF;color-scheme:dark}}
+:root{--bg:#0A0C19;--surface:#21212F;--text:#F5F0FF;--muted:#AAA5BD;--primary:#F5F0FF;--hover:#FFFFFF;--focus:#DDC4FF;color-scheme:dark}
 *{box-sizing:border-box}
 body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(24px,env(safe-area-inset-bottom));background:var(--bg);color:var(--text);font:17px/1.5 -apple-system,"SF Pro Text","SF Pro Display",Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 main{max-width:440px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center}
 h1{margin:8px 0 0;font-size:2.125rem;line-height:1.1;font-weight:700;letter-spacing:-.025em;text-wrap:balance}
 p{margin:0;color:var(--muted)}
-button{margin-top:8px;min-height:44px;padding:0 24px;border:0;border-radius:22px;background:var(--primary);color:#fff;font:600 15px/1 inherit;font-family:inherit;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease-out}
-button:hover{background:var(--hover)}
+button{margin-top:8px;min-height:44px;padding:0 24px;border:0;border-radius:999px;background:var(--primary);color:#0A0C19;box-shadow:0 5px 0 #D1CCD9;font:750 15px/1 inherit;font-family:inherit;cursor:pointer;transition:transform 160ms cubic-bezier(.23,1,.32,1),background-color 160ms ease-out}
+@media (hover:hover) and (pointer:fine){button:hover{background:var(--hover)}}
 button:active{transform:scale(.97)}
 button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){button{transition:none}button:active{transform:none}}

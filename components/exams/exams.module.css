@@ -76,11 +76,11 @@
   line-height: 1.5;
 }
 .blue {
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--pop-purple);
+  color: var(--on-pop-purple);
 }
 .blue small {
-  color: var(--on-primary-secondary);
+  color: var(--on-pop-purple);
 }
 .lime {
   background: var(--surface);
@@ -90,7 +90,7 @@
   color: var(--text-secondary);
 }
 .blue .countdown {
-  color: var(--accent);
+  color: var(--on-pop-purple);
 }
 .countdown {
   font-size: 4rem;
@@ -181,7 +181,7 @@
 .progress i {
   height: 100%;
   width: 100%;
-  background: var(--primary);
+  background: var(--accent);
   display: block;
   transform-origin: left center;
   transition: transform var(--dur-base) var(--ease);

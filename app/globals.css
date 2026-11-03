@@ -7,83 +7,101 @@
    structure (see DESIGN_IMPLEMENTATION.md for contrast ratios).
    ========================================================================== */
 :root {
-  color-scheme: light;
+  color-scheme: dark;
+  /* Dream design (skill dream-design-system, 3-nov-2026): modo oscuro
+     solamente. Fondo casi negro, bloques de color plano, un color por
+     sección. Contraste: node scripts/design/contrast.mjs. */
+  --dd-bg: #0a0c19;
+  --dd-surface: #1e2130;
+  --dd-round: #252836;
+  /* Colores de marca de siempre (Carlos, 3-nov-2026): azul #155BFF y verde
+     lima #C8F560, sin morados. */
+  --dd-brand-blue: #155bff; /* blanco encima: 5.29:1 */
+  --dd-on-blue: #ffffff;
+  --dd-lime: #c8f560; /* tinta encima: 15.7:1; sobre el fondo: 15.2:1 */
+  --dd-blue-ink: #6e93ff; /* azul como texto sobre el fondo */
+  --dd-button: #f4f7ff;
+  --dd-button-shadow: #cdd5e4;
+  --dd-orange: #f1735e;
+  --dd-blue: #659bf2;
+  --dd-green: #11d986;
+  --dd-neon: #3dff6b;
+  --dd-pink: #de66b8;
   /* Colour */
-  --bg: #ffffff;
-  --surface: #f5f7fa;
-  --surface-hover: #edf1f8;
-  --chip-hover: #eaeef5;
-  --elevated: #ffffff;
-  --panel: #f5f7fa; /* sidebar and other chrome */
-  --card: #f5f7fa; /* cards on the page (Claude Design) */
-  --text: #080b14;
-  --text-secondary: #5b6678;
-  --border: #e4e8ef;
-  --primary: #155bff;
-  --primary-hover: #246bfd;
-  --primary-ink: #155bff; /* primary used as text/icon on --bg */
-  --primary-ink-tint: #0e4fe0; /* text on --nav-active (AA, see docs) */
-  --primary-tint: rgba(21, 91, 255, 0.06);
-  --on-primary: #ffffff;
-  --on-primary-secondary: #dfe7ff;
+  --bg: #0a0c19;
+  --surface: #1e2130;
+  --surface-hover: #282c3c;
+  --chip-hover: #282c3c;
+  --elevated: #252836;
+  --panel: #0e1020; /* sidebar */
+  --card: #181a29; /* tarjetas oscuras de la app */
+  --text: #f4f6fb;
+  --text-secondary: #a3abbd;
+  --border: rgba(255, 255, 255, 0.1);
+  --primary: #f4f7ff; /* botón primario: píldora blanca */
+  --primary-hover: #ffffff;
+  --primary-ink: #6e93ff; /* azul de marca como texto sobre el fondo */
+  --primary-ink-tint: #8fb0ff;
+  --primary-tint: rgba(110, 147, 255, 0.14);
+  --on-primary: #0a0c19;
+  --on-primary-secondary: #3a3550;
   --accent: #c8f560;
-  --on-accent: #080b14;
-  --nav-active: rgba(21, 91, 255, 0.1);
-  --nav-hover: rgba(8, 11, 20, 0.05);
-  --success: #17692f;
-  --success-surface: #eaf6ee;
-  --danger: #b42318;
-  --danger-surface: #fdeceb;
-  --warning: #8a5a00;
-  --warning-surface: #fff4dc;
-  /* State layers for hover / press (8–12 %) */
-  --state-hover: rgba(8, 11, 20, 0.05);
-  --state-press: rgba(8, 11, 20, 0.08);
-  --focus: #155bff;
-  --switch-off: #868fa0; /* switch track, off: 3,03:1 on --surface */
-  --scrim: rgba(8, 11, 20, 0.32);
-  /* Bars over content. Claude Design uses .88; .90 keeps tab labels at AA
-     even with dark text right under the bar (4.68:1, see docs/diseno/navegacion). */
-  --translucent: rgba(255, 255, 255, 0.9);
-  /* Inicio: halo behind the headline. None in light (Claude Design is flat white). */
-  --home-halo: rgba(21, 91, 255, 0);
-  /* New style (PROMPT_EXAMEN_ESTILO.md §2): flat, saturated "pop" fills for
-     whole screens, stickers and 3D pills, each with the text colour that
-     passes AA on it (contrast.mjs). White on yellow/orange fails, so those
-     carry dark ink. */
-  --pop-blue: #1e40d8; /* white 7.55:1 */
+  --on-accent: #0a0c19;
+  --nav-active: #1e2130;
+  --nav-hover: rgba(255, 255, 255, 0.05);
+  --success: #11d986;
+  --success-surface: #0c2a20;
+  --danger: #ff8a8f;
+  --danger-surface: #2e1519;
+  --warning: #f7c75a;
+  --warning-surface: #2b2410;
+  /* State layers for hover / press */
+  --state-hover: rgba(255, 255, 255, 0.07);
+  --state-press: rgba(255, 255, 255, 0.11);
+  --focus: #7aa2ff;
+  --switch-off: #7a8399; /* pista del interruptor apagado: 3:1 sobre surface */
+  --scrim: rgba(5, 6, 14, 0.6);
+  --translucent: rgba(10, 12, 25, 0.84);
+  --home-halo: rgba(21, 91, 255, 0.14);
+  /* Bloques de color plano (cada uno con su tinta que pasa AA). */
+  --pop-blue: #155bff; /* azul de marca, blanco 5.29:1 */
   --on-pop-blue: #ffffff;
-  --pop-yellow: #ffc21a; /* ink 12.15:1 */
-  --on-pop-yellow: #080b14;
-  --pop-orange: #f05a1e; /* ink 5.79:1 */
-  --on-pop-orange: #080b14;
-  --pop-red: #d42a1f; /* white 5.06:1 */
-  --on-pop-red: #ffffff;
-  --pop-purple: #6d3ae0; /* white 6.30:1 */
+  --pop-yellow: #c8f560; /* verde lima de marca en lugar del amarillo */
+  --on-pop-yellow: #0a0c19;
+  --pop-orange: #f1735e; /* tinta 6.81:1 */
+  --on-pop-orange: #0a0c19;
+  --pop-red: #ff7b84;
+  --on-pop-red: #0a0c19;
+  --pop-purple: #155bff; /* sin morados: azul de marca, blanco 5.29:1 */
   --on-pop-purple: #ffffff;
-  --pop-green: #17803f; /* white 5.00:1 */
-  --on-pop-green: #ffffff;
-  --pop-lime: #c8f560; /* brand lime as a fill */
-  --on-pop-lime: #080b14;
-  /* Hand-drawn highlight under a key word (decorative, not text). */
-  --marker: #ffc21a;
-  /* Stickers: thick light ring and a soft drop shadow. */
-  --sticker-ring: #ffffff;
+  --pop-green: #11d986; /* tinta 10.46:1 */
+  --on-pop-green: #0a0c19;
+  --pop-lime: #c8f560;
+  --on-pop-lime: #0a0c19;
+  --pop-pink: #de66b8;
+  --on-pop-pink: #0a0c19;
+  --marker: #c8f560;
+  --sticker-ring: #f4f6fb;
   --shadow-sticker:
-    0 2px 4px rgba(8, 11, 20, 0.1), 0 8px 20px rgba(8, 11, 20, 0.16);
-  /* 3D pills: glossy top edge, darker base layer underneath. */
+    0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
   --gloss:
-    inset 0 2px 0 rgba(255, 255, 255, 0.32),
-    inset 0 -2px 0 rgba(8, 11, 20, 0.08);
-  --depth-3d: 4px;
-  /* Subtle grid on pop backgrounds. */
-  --grid-line: rgba(8, 11, 20, 0.07);
+    inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+  --depth-3d: 5px;
+  --grid-line: rgba(255, 255, 255, 0.06);
   --grid-size: 24px;
+  /* Cristal azul: solo en lo flotante de la app y una familia de tarjetas
+     de la landing (alternativa opaca en prefers-reduced-transparency). */
+  --glass-bg: linear-gradient(135deg, rgb(101 155 242 / 0.35), rgb(101 155 242 / 0.18));
+  --glass-float: rgba(28, 30, 48, 0.72);
+  --glass-border: rgb(255 255 255 / 0.16);
+  --glass-blur: blur(24px) saturate(1.4);
+  --glass-opaque: #25375a;
   /* Elevation */
   --shadow-composer:
-    0 1px 2px rgba(8, 11, 20, 0.04), 0 8px 24px rgba(8, 11, 20, 0.05);
+    0 0 0 1px rgba(255, 255, 255, 0.08), 0 8px 24px rgba(0, 0, 0, 0.35);
   --shadow-popover:
-    0 1px 2px rgba(8, 11, 20, 0.06), 0 12px 32px rgba(8, 11, 20, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08), 0 16px 40px rgba(0, 0, 0, 0.5);
   /* Radius */
   --radius-nav: 12px;
   --radius-card: 16px;
@@ -101,9 +119,8 @@
   --tabbar-space: max(var(--tabbar), calc(60px + var(--safe-bottom)));
   --reading: 720px;
   /* Type */
-  --font-stack:
-    -apple-system, "SF Pro Text", "SF Pro Display", var(--font-inter), Inter,
-    system-ui, sans-serif;
+  --font-stack: var(--font-grotesk), Archivo, system-ui, -apple-system, sans-serif;
+  --font-hero: var(--font-grotesk), Archivo;
   --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --text-display: clamp(2rem, 1.5rem + 2vw, 2.75rem); /* 32→44px */
   --text-title: clamp(1.75rem, 1.5rem + 1vw, 2.125rem); /* 28→34px */
@@ -114,9 +131,9 @@
   /* Huge, heavy headlines of the new style (40→72 px). Body text keeps the
      sizes above: long reading stays calm (§2.3). */
   --text-hero: clamp(2.5rem, 1.75rem + 3.75vw, 4.5rem);
-  --weight-hero: 800;
-  --leading-hero: 1.02;
-  --tracking-hero: -0.035em;
+  --weight-hero: 900;
+  --leading-hero: 0.92;
+  --tracking-hero: -0.045em;
   /* Motion (emil-design-eng) */
   --ease: cubic-bezier(0.23, 1, 0.32, 1); /* strong ease-out: entering */
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1); /* moving on screen */
@@ -163,148 +180,18 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
-/* Dark — layered surfaces (apple-design dark-mode.md: base and elevated):
-   bg #0E1117 → panel #141821 → card #1A1F2B → elevated #222838, hairline
-   borders at 8 %. Contrast: node scripts/design/contrast.mjs. */
+/* Dream es solo oscuro (prompt del rediseño, §1). El bloque se mantiene
+   para las reglas que dependen de [data-theme="dark"]. */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1117;
-  --panel: #141821;
-  --surface: #1a1f2b;
-  --card: #1a1f2b;
-  --surface-hover: #222838;
-  --chip-hover: #252b3b;
-  --elevated: #222838;
-  --text: #e8ecf4;
-  --text-secondary: #9aa3b5;
-  --border: rgba(255, 255, 255, 0.08);
-  --primary: #155bff;
-  --primary-hover: #2f6dff;
-  --primary-ink: #6e93ff;
-  --primary-ink-tint: #8fb0ff;
-  --primary-tint: rgba(110, 147, 255, 0.1);
-  --on-primary: #ffffff;
-  --on-primary-secondary: #dfe7ff;
-  --accent: #c8f560;
-  --on-accent: #080b14;
-  --nav-active: rgba(110, 147, 255, 0.14);
-  --nav-hover: rgba(255, 255, 255, 0.06);
-  --success: #6fd08c;
-  --success-surface: #13281b;
-  --danger: #ff8f84;
-  --danger-surface: #2e1716;
-  --warning: #f5c451;
-  --warning-surface: #2b2410;
-  --state-hover: rgba(255, 255, 255, 0.08);
-  --state-press: rgba(255, 255, 255, 0.12);
-  --focus: #7aa2ff;
-  --switch-off: #646d82;
-  --scrim: rgba(0, 0, 0, 0.56);
-  --translucent: rgba(14, 17, 23, 0.86);
-  --home-halo: rgba(110, 147, 255, 0.08);
-  --pop-blue: #1a37b8;
-  --on-pop-blue: #ffffff;
-  --pop-yellow: #e8a90c;
-  --on-pop-yellow: #080b14;
-  --pop-orange: #d9501a;
-  --on-pop-orange: #080b14;
-  --pop-red: #b3261e;
-  --on-pop-red: #ffffff;
-  --pop-purple: #5b2fc4;
-  --on-pop-purple: #ffffff;
-  --pop-green: #146c35;
-  --on-pop-green: #ffffff;
-  --pop-lime: #b5e04f;
-  --on-pop-lime: #080b14;
-  --marker: #f5b800;
-  --sticker-ring: #e8ecf4;
-  --shadow-sticker:
-    0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
-  --gloss:
-    inset 0 2px 0 rgba(255, 255, 255, 0.22),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.18);
-  --grid-line: rgba(255, 255, 255, 0.07);
-  --shadow-composer:
-    0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-popover:
-    0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) {
-    color-scheme: dark;
-    --bg: #0e1117;
-    --panel: #141821;
-    --surface: #1a1f2b;
-    --card: #1a1f2b;
-    --surface-hover: #222838;
-    --chip-hover: #252b3b;
-    --elevated: #222838;
-    --text: #e8ecf4;
-    --text-secondary: #9aa3b5;
-    --border: rgba(255, 255, 255, 0.08);
-    --primary: #155bff;
-    --primary-hover: #2f6dff;
-    --primary-ink: #6e93ff;
-    --primary-ink-tint: #8fb0ff;
-    --primary-tint: rgba(110, 147, 255, 0.1);
-    --on-primary: #ffffff;
-    --on-primary-secondary: #dfe7ff;
-    --accent: #c8f560;
-    --on-accent: #080b14;
-    --nav-active: rgba(110, 147, 255, 0.14);
-    --nav-hover: rgba(255, 255, 255, 0.06);
-    --success: #6fd08c;
-    --success-surface: #13281b;
-    --danger: #ff8f84;
-    --danger-surface: #2e1716;
-    --warning: #f5c451;
-    --warning-surface: #2b2410;
-    --state-hover: rgba(255, 255, 255, 0.08);
-    --state-press: rgba(255, 255, 255, 0.12);
-    --focus: #7aa2ff;
-    --switch-off: #646d82;
-    --scrim: rgba(0, 0, 0, 0.56);
-    --translucent: rgba(14, 17, 23, 0.86);
-    --home-halo: rgba(110, 147, 255, 0.08);
-    --pop-blue: #1a37b8;
-    --on-pop-blue: #ffffff;
-    --pop-yellow: #e8a90c;
-    --on-pop-yellow: #080b14;
-    --pop-orange: #d9501a;
-    --on-pop-orange: #080b14;
-    --pop-red: #b3261e;
-    --on-pop-red: #ffffff;
-    --pop-purple: #5b2fc4;
-    --on-pop-purple: #ffffff;
-    --pop-green: #146c35;
-    --on-pop-green: #ffffff;
-    --pop-lime: #b5e04f;
-    --on-pop-lime: #080b14;
-    --marker: #f5b800;
-    --sticker-ring: #e8ecf4;
-    --shadow-sticker:
-      0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.45);
-    --gloss:
-      inset 0 2px 0 rgba(255, 255, 255, 0.22),
-      inset 0 -2px 0 rgba(0, 0, 0, 0.18);
-    --grid-line: rgba(255, 255, 255, 0.07);
-    --shadow-composer:
-      0 0 0 1px rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.35);
-    --shadow-popover:
-      0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 32px rgba(0, 0, 0, 0.5);
-  }
 }
 /* Higher contrast on request: stronger separators and secondary text. */
 @media (prefers-contrast: more) {
   :root {
-    --text-secondary: #3e4757;
-    --border: #9aa4b5;
-    --translucent: #ffffff;
-  }
-  :root[data-theme="dark"] {
-    --text-secondary: #ccd3df;
-    --border: #5b6578;
-    --translucent: #0b0e16;
+    --text-secondary: #d3d8e4;
+    --border: #66708a;
+    --translucent: #0a0c19;
+    --glass-float: #1c1e30;
   }
 }
 
@@ -1433,8 +1320,8 @@ svg.lucide {
 }
 .switch[aria-checked="true"]::after {
   transform: translateX(20px);
-  /* Check in --primary (#155BFF, 5,29:1 on the white thumb). */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23155BFF' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+  /* Check in --bg (#0A0C19) on the thumb. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230A0C19' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
 }
 .switch:active:not(:disabled)::after {
   transform: scale(0.94);
@@ -1569,8 +1456,8 @@ svg.lucide {
   max-width: 80%;
   padding: 12px 18px;
   border-radius: 22px 22px 6px 22px;
-  background: var(--primary);
-  color: var(--on-primary);
+  background: var(--pop-purple);
+  color: var(--on-pop-purple);
   font-size: var(--text-body);
   line-height: 1.5;
   overflow-wrap: anywhere;
@@ -2452,7 +2339,7 @@ svg.lucide {
   height: 100%;
   border-radius: inherit;
   width: 100%;
-  background: var(--primary);
+  background: var(--accent);
   transform-origin: left center;
   /* Moving on screen: ease-in-out (emil-design-eng › easing). */
   transition: transform var(--dur-rise) var(--ease-in-out);
@@ -3293,11 +3180,6 @@ html[data-cookiebot="off"] #CookiebotWidget {
 :root[data-theme="dark"] .mode-option:has(input:checked) {
   background: var(--surface-hover);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme]) .mode-option:has(input:checked) {
-    background: var(--surface-hover);
-  }
-}
 .mode-option:has(input:focus-visible) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
@@ -3367,7 +3249,7 @@ html[data-cookiebot="off"] #CookiebotWidget {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--primary);
+  background: var(--accent);
   transform-origin: left center;
   transition: transform var(--dur-rise) var(--ease);
 }
@@ -3969,7 +3851,7 @@ html[data-cookiebot="off"] #CookiebotWidget {
    slant; Lexend (easy reading) keeps upright headlines. */
 .hero-title {
   font-family: var(--font-hero), var(--font-stack);
-  font-style: italic;
+  font-style: normal;
   font-synthesis: none;
   font-size: var(--text-hero);
   font-weight: var(--weight-hero);
@@ -4759,4 +4641,319 @@ html[data-cookiebot="off"] #CookiebotWidget {
   .esquema-print, .esquema-print * { visibility: visible; }
   .esquema-print { position: absolute; inset: 0; }
   .esquema-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ==========================================================================
+   Dream design (skill dream-design-system, 3-nov-2026)
+   Capa final: botones, cristal, chips, tarjetas y navegación con el lenguaje
+   nuevo. Va al final para mandar sobre los estilos anteriores sin tocar la
+   estructura de cada pantalla. Movimiento: transform y opacity, ease-out
+   propio; hover solo con ratón; alternativas para movimiento y transparencia
+   reducidos.
+   ========================================================================== */
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+h1 {
+  font-weight: 800;
+}
+
+/* --- Botón primario: píldora blanca con relieve sólido ------------------- */
+.primary,
+.quiz-start {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-pill);
+  background: var(--dd-button);
+  color: var(--dd-bg);
+  font-weight: 750;
+  box-shadow: 0 5px 0 var(--dd-button-shadow);
+  transition:
+    transform 140ms var(--ease),
+    background-color 200ms var(--ease),
+    color 160ms ease;
+}
+/* Relleno radial verde neón que nace donde entra el cursor
+   (--dd-x/--dd-y los pone lib/press-glow.ts; sin JS, nace del centro). */
+.primary::before,
+.quiz-start::before {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at var(--dd-x, 50%) var(--dd-y, 50%),
+    var(--dd-neon) 0 45%,
+    transparent 46%
+  );
+  opacity: 0;
+  transform: scale(0.6);
+  transform-origin: var(--dd-x, 50%) var(--dd-y, 50%);
+  transition:
+    transform 240ms var(--ease),
+    opacity 160ms var(--ease);
+  pointer-events: none;
+}
+.primary:active:not(:disabled):not([aria-disabled="true"]),
+.quiz-start:active:not(:disabled) {
+  transform: scale(0.97) translateY(3px);
+  box-shadow: 0 2px 0 var(--dd-button-shadow);
+}
+.primary:disabled,
+.primary[aria-disabled="true"] {
+  opacity: 1;
+  background: #2a2d3b;
+  color: #8c93a6;
+  box-shadow: 0 5px 0 #1c1e29;
+}
+@media (hover: hover) and (pointer: fine) {
+  .primary:hover:not(:disabled):not([aria-disabled="true"]),
+  .quiz-start:hover:not(:disabled) {
+    background: var(--dd-button);
+  }
+  .primary:hover:not(:disabled):not([aria-disabled="true"])::before,
+  .quiz-start:hover:not(:disabled)::before {
+    opacity: 1;
+    transform: scale(2.4);
+  }
+}
+
+/* --- Secundario: píldora transparente con borde fino ---------------------- */
+.secondary,
+.danger-outline {
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid rgba(244, 246, 251, 0.28);
+  font-weight: 650;
+  min-height: 48px;
+}
+.text-button {
+  border-radius: var(--radius-pill);
+  font-weight: 650;
+}
+@media (hover: hover) and (pointer: fine) {
+  .secondary:hover:not(:disabled),
+  .danger-outline:hover:not(:disabled) {
+    background: var(--dd-surface);
+  }
+}
+
+/* --- Circular: 44 px, fondo #272431 --------------------------------------- */
+.icon-button {
+  border-radius: var(--radius-pill);
+}
+.round-button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border-radius: 50%;
+  background: var(--dd-round);
+  color: var(--text);
+}
+
+/* --- Chips: píldoras #21212f con texto en negrita ------------------------- */
+.chip {
+  border-radius: var(--radius-pill);
+  background: var(--dd-surface);
+  font-weight: 650;
+}
+
+/* --- Botones 3D de color: mismo relieve sólido, sin brillo --------------- */
+.button-3d {
+  --face: var(--tone, var(--dd-button));
+  --on-face: var(--on-tone, var(--dd-bg));
+  background: color-mix(in srgb, var(--face) 78%, #000);
+}
+.button-3d:not([class*="tone-"]) {
+  background: var(--dd-button-shadow);
+}
+.button-3d-face {
+  box-shadow: none;
+  font-weight: 800;
+}
+
+/* --- Cristal azul (solo una familia de tarjetas de la landing) ------------ */
+.glass-card {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid rgb(255 255 255 / 0.22);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    0 12px 40px rgb(0 0 0 / 0.35);
+  border-radius: 28px;
+  color: var(--text);
+}
+/* Cristal de la capa flotante de la app: menús, modales, barras. */
+.glass-float {
+  background: var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .glass-card {
+    background: var(--glass-opaque);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: rgb(255 255 255 / 0.5);
+  }
+  .glass-float {
+    background: #1c1e30;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* --- Campos oscuros con borde de 1 px ------------------------------------- */
+.field input,
+.field textarea,
+.field select,
+input.field,
+textarea.field {
+  background: #12142a;
+  border: 1px solid rgba(244, 246, 251, 0.16);
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .quiz-start,
+  .primary::before,
+  .quiz-start::before {
+    transition-property: opacity, background-color, color;
+  }
+  .primary:active:not(:disabled):not([aria-disabled="true"]),
+  .quiz-start:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* --- App por dentro: sidebar oscuro, ítem activo en píldora #21212f ------- */
+.sidebar {
+  gap: 20px;
+  border-right-color: rgba(255, 255, 255, 0.06);
+}
+.brand {
+  font-weight: 900;
+  font-size: 1.375rem;
+  letter-spacing: -0.04em;
+}
+.sidebar-create {
+  justify-content: flex-start;
+  gap: 10px;
+  inline-size: 100%;
+  min-height: 48px;
+  padding-inline: 18px;
+  font-size: var(--text-body);
+}
+.nav-link,
+.nav-indicator {
+  border-radius: var(--radius-pill);
+}
+.nav-link {
+  color: var(--text-secondary);
+  font-weight: 650;
+}
+.nav-link[aria-current="page"] {
+  color: var(--text);
+  font-weight: 700;
+}
+@media (hover: hover) and (pointer: fine) {
+  .nav-link:hover:not([aria-current="page"]) {
+    color: var(--text);
+  }
+}
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .sidebar .sidebar-create {
+    justify-content: center;
+    inline-size: 52px;
+    min-height: 52px;
+    padding: 0;
+  }
+}
+@media (max-width: 639.98px) {
+  .tabbar {
+    background: var(--glass-float);
+    border-top-color: var(--glass-border);
+  }
+  .tab[aria-current="page"] {
+    color: var(--text);
+  }
+}
+.topbar {
+  background: var(--translucent);
+}
+
+/* --- Modales: tarjeta oscura sobre fondo desenfocado, escala desde 0.97 --- */
+.modal-backdrop {
+  background: rgba(5, 6, 14, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.modal {
+  background: var(--glass-float);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  animation: dd-pop 220ms var(--ease) both;
+}
+.modal h2 {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+@keyframes dd-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .modal,
+  .tabbar {
+    background: #1c1e30;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .modal-backdrop {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: rgba(5, 6, 14, 0.8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    animation: fade 120ms linear both;
+  }
+}
+
+/* --- Ajustes y listas: grupos en tarjetas oscuras de radio 16 px ---------- */
+.group-list {
+  background: var(--card);
+  border-radius: 16px;
+}
+.group-row-button {
+  inline-size: 100%;
+  text-align: start;
+  color: var(--danger);
+}
+@media (hover: hover) and (pointer: fine) {
+  .group-row-button:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/* --- Bloques de color plano: sin cuadrícula decorativa (una tarjeta, un
+   color). Azul y verde de marca; nada morado. -------------------------- */
+.pop-grid,
+.pop.pop-grid {
+  background-image: none;
 }

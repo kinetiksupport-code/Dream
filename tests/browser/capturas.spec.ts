@@ -28,7 +28,7 @@ for (const screen of SCREENS)
         if (screen.ready) await screen.ready(page).catch(() => {});
         await page.waitForTimeout(600);
         await page.screenshot({
-          path: `${OUT}/${screen.name}-${vp.name}-${scheme === "light" ? "claro" : "oscuro"}.png`,
+          path: `${OUT}/${screen.name}-${vp.name}-oscuro.png`,
           fullPage: true,
         });
       });

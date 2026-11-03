@@ -1,705 +1,627 @@
-/* === Landing con scroll cinematográfico =================================
-   Guion: docs/diseno/landing-storyboard.md. Tokens de globals.css (fondos
-   --pop-*, .hero-title, .marker, .button-3d, Sticker, Orb). Sin animaciones,
-   cada escena se ve completa: el movimiento se añade solo con
-   `animation-timeline` (@supports) y sin movimiento reducido. Solo
-   transform y opacity; el reloj es el propio scroll (sin JavaScript). */
+/* === Landing · Dream design (skill dream-design-system, 3-nov-2026) ======
+   Fondo #0a0c19, bloques de color plano, un color por sección. Cristal azul
+   solo en la familia de tarjetas del carrusel. Un momento atrevido: las
+   bandas en perspectiva (animation-timeline, @supports, sin movimiento
+   reducido). Movimiento: solo transform y opacity, ease-out propio. */
 
 .site {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+  background: var(--dd-bg);
   color: var(--text);
   overflow-x: clip;
 }
 
-/* --- Barra superior ------------------------------------------------------ */
-.nav {
+/* --- Hero: panel azul de marca, esquinas inferiores muy redondeadas ------------- */
+.hero {
+  position: relative;
+  overflow: hidden;
+  margin: 0 calc(10px + var(--safe-right)) 0 calc(10px + var(--safe-left));
+  min-height: min(92svh, 860px);
+  padding: calc(112px + var(--safe-top)) clamp(24px, 6vw, 88px) clamp(56px, 10vh, 96px);
+  border-radius: 0 0 52px 52px;
+  background: var(--dd-brand-blue);
+  color: var(--dd-on-blue);
+  display: flex;
+  align-items: flex-end;
+  --focus: var(--dd-lime);
+}
+.heroInner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  max-width: 900px;
+}
+.heroTitle {
+  margin: 0;
+  color: var(--dd-on-blue);
+  font-size: clamp(3.5rem, 1.5rem + 9vw, 9rem);
+  font-weight: 900;
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+}
+.heroTitle span {
+  display: block;
+}
+.heroLead {
+  max-width: 34ch;
+  margin: 0;
+  font-size: clamp(1.0625rem, 1rem + 0.5vw, 1.375rem);
+  font-weight: 650;
+  line-height: 1.4;
+}
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+.cta {
+  min-height: 56px;
+  padding-inline: 32px;
+  font-size: 1.0625rem;
+}
+.note {
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+/* La Orb asoma por abajo a la derecha (viaja al login: lib/orb-transition.ts). */
+.heroOrb {
+  position: absolute;
+  inset-inline-end: clamp(-60px, -3vw, -20px);
+  inset-block-end: -70px;
+  line-height: 0;
+  view-transition-name: dream-orb;
+  transform: rotate(-12deg);
+  /* La Orb es azul como el panel: un disco oscuro detrás la separa. */
+  padding: 16px;
+  border-radius: 50%;
+  background: var(--dd-bg);
+}
+
+/* --- Tira de chips -------------------------------------------------------- */
+.chipsRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px calc(20px + var(--safe-right)) 8px calc(20px + var(--safe-left));
+}
+.chipsLabel {
+  flex: none;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.chips {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, #000 85%, transparent);
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: var(--dd-surface);
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+/* --- Secciones ------------------------------------------------------------- */
+.section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: clamp(72px, 12vh, 128px) calc(20px + var(--safe-right)) 0 calc(20px + var(--safe-left));
+  text-align: center;
+  scroll-margin-top: 80px;
+}
+.sectionTitle,
+.sectionTitleLeft {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 4rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+  color: var(--text);
+}
+.sectionLead,
+.sectionLeadLeft {
+  max-width: 42ch;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+}
+.sectionTitleLeft,
+.sectionLeadLeft {
+  text-align: start;
+}
+/* Icono-pegatina sobre el titular: trazo grueso, color y volumen. */
+.stickerIcon {
+  display: grid;
+  place-items: center;
+  inline-size: 72px;
+  block-size: 72px;
+  margin-block-end: 8px;
+  border-radius: 22px;
+  color: var(--dd-bg);
+  box-shadow:
+    inset 0 -5px 0 rgba(0, 0, 0, 0.18),
+    0 10px 24px rgba(0, 0, 0, 0.35);
+  transform: rotate(-6deg);
+}
+.stickerGreen {
+  background: var(--dd-green);
+}
+
+/* --- Carrusel de cristal azul ---------------------------------------------- */
+.carouselWrap {
+  position: relative;
+  inline-size: 100vw;
+  margin-block-start: 32px;
+}
+/* Manchas de color detrás: el cristal solo se ve si hay algo detrás. */
+.blobs i {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.blobs i:nth-child(1) {
+  inset-block-start: 10%;
+  inset-inline-start: 8%;
+  inline-size: 280px;
+  block-size: 280px;
+  background: var(--dd-brand-blue);
+}
+.blobs i:nth-child(2) {
+  inset-block-start: 30%;
+  inset-inline-start: 46%;
+  inline-size: 240px;
+  block-size: 240px;
+  background: var(--dd-green);
+  opacity: 0.3;
+}
+.blobs i:nth-child(3) {
+  inset-block-start: 5%;
+  inset-inline-end: 6%;
+  inline-size: 260px;
+  block-size: 260px;
+  background: var(--dd-orange);
+  opacity: 0.4;
+}
+.carousel {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 12px max(20px, calc((100vw - 1180px) / 2)) 28px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 20px;
+  scrollbar-width: none;
+  /* Desvanecimiento oscuro en los bordes. */
+  mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent);
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+.card {
+  position: relative;
+  flex: none;
+  inline-size: min(78vw, 300px);
+  aspect-ratio: 4 / 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 20px 20px;
+  scroll-snap-align: start;
+  text-align: center;
+}
+.cardTitle {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+.mock {
+  inline-size: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgb(255 255 255 / 0.16);
+  text-align: start;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.mock span {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(10 12 25 / 0.42);
+}
+.cardText {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  text-align: start;
+  align-self: stretch;
+  padding-inline-end: 56px;
+}
+.cardIcon {
+  position: absolute;
+  inset-inline-end: 18px;
+  inset-block-end: 18px;
+  color: var(--dd-bg);
+  opacity: 0.9;
+}
+
+/* --- Momento atrevido: bandas en perspectiva ------------------------------- */
+.bands {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-block-start: clamp(72px, 12vh, 128px);
+  perspective: 900px;
+  overflow: hidden;
+}
+.band {
+  white-space: nowrap;
+  padding: 10px 0;
+  font-size: clamp(2.75rem, 1.5rem + 6vw, 7rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  color: var(--dd-bg);
+}
+.band[data-tone="brand"] {
+  background: var(--dd-brand-blue);
+  color: var(--dd-on-blue);
+  transform: rotateX(18deg) rotate(-3deg) scale(1.08);
+}
+.band[data-tone="lime"] {
+  background: var(--dd-lime);
+  transform: rotate(2deg) scale(1.08);
+}
+.band[data-tone="green"] {
+  background: var(--dd-green);
+  transform: rotateX(-18deg) rotate(-1.5deg) scale(1.08);
+}
+.band span {
+  display: inline-block;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .band span {
+      animation: slideBand linear both;
+      animation-timeline: view();
+    }
+    .band[data-tone="lime"] span {
+      animation-name: slideBandBack;
+    }
+  }
+}
+@keyframes slideBand {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-30%);
+  }
+}
+@keyframes slideBandBack {
+  from {
+    transform: translateX(-30%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* --- Cifras ---------------------------------------------------------------- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+  inline-size: min(100%, 1080px);
+  margin: 32px 0 0;
+}
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+}
+.statValue {
+  margin: 0;
+  color: var(--dd-lime);
+  font-size: clamp(3rem, 2rem + 4vw, 5.5rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+}
+.statLabel {
+  color: var(--text);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+/* --- Bloque de descarga ---------------------------------------------------- */
+.download {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 32px;
+  inline-size: min(calc(100% - 40px), 1080px);
+  margin: clamp(72px, 12vh, 128px) auto 0;
+  padding: clamp(28px, 5vw, 56px);
+  border-radius: 40px;
+  background: var(--dd-surface);
+  scroll-margin-top: 80px;
+}
+.downloadCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+}
+.downloadActions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+.downloadActions p {
+  margin: 0;
+  max-width: 40ch;
+}
+/* Píldora con el mismo relieve que el primario, en verde (no es el botón
+   blanco: en esta vista el blanco es «Probar Dream»). */
+.install {
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: var(--radius-pill);
+  background: var(--dd-green);
+  color: var(--dd-bg);
+  font-weight: 800;
+  box-shadow: 0 5px 0 #0b9a5f;
+  transition: transform 140ms var(--ease);
+}
+.install:active {
+  transform: scale(0.97) translateY(3px);
+}
+.qr {
+  margin: 0;
+  inline-size: clamp(150px, 22vw, 210px);
+  padding: 14px;
+  border-radius: 32px;
+  background: #ffffff;
+}
+.qr svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+/* --- FAQ ------------------------------------------------------------------- */
+.faq {
+  inline-size: min(100%, 680px);
+  margin-block-start: 24px;
+  text-align: start;
+}
+.faqItem {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.faqItem summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: calc(12px + var(--safe-top)) calc(20px + var(--safe-right)) 12px calc(20px + var(--safe-left));
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: var(--touch);
-  padding-right: 8px;
-  border-radius: var(--radius-nav);
-  color: inherit;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}
-.navCta {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch);
-  padding: 0 20px;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.16);
-  color: inherit;
-  font-weight: 700;
-}
-@media (hover: hover) and (pointer: fine) {
-  .brand:hover,
-  .navCta:hover {
-    background-color: rgba(255, 255, 255, 0.24);
-  }
-  .footer a:hover,
-  .footerButton:hover {
-    color: var(--text);
-  }
-}
-
-/* --- Escenas ---------------------------------------------------------------- */
-.scene {
-  position: relative;
-  padding: clamp(72px, 12vh, 128px) calc(24px + var(--safe-right)) clamp(72px, 12vh, 128px) calc(24px + var(--safe-left));
-}
-.sceneTitle {
-  margin: 0;
-}
-.lead {
-  max-width: 46ch;
-  margin: 0;
-  font-size: clamp(1.0625rem, 1rem + 0.4vw, 1.25rem);
-  font-weight: 500;
-  line-height: 1.5;
-}
-.copy {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 20px;
-}
-.tag {
-  line-height: 0;
-}
-.split {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(32px, 6vw, 96px);
-  max-width: 1120px;
-  margin: 0 auto;
-}
-.cta {
-  min-width: 220px;
-}
-
-/* 1. Héroe */
-.hero {
-  min-height: calc(100svh - 68px);
-  display: grid;
-  place-items: center;
-  padding-top: 32px;
-  text-align: center;
-}
-.heroInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  max-width: 860px;
-}
-.heroSticker {
-  line-height: 0;
-  /* Landing → login: this sticker is the Orb that travels (lib/orb-transition.ts). */
-  view-transition-name: dream-orb;
-}
-.heroTitle {
-  margin: 0;
-  font-size: clamp(3rem, 2rem + 6vw, 6.5rem);
-}
-.hero .lead {
-  margin-inline: auto;
-}
-.actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-.note {
-  font-size: var(--text-secondary-size);
-  font-weight: 600;
-}
-
-/* 2. Apuntes → examen (momento firma) */
-.notesStage {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(32px, 6vw, 96px);
-  max-width: 1120px;
-  margin: 0 auto;
-}
-.notesVisual {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 420px;
-}
-.phone {
-  position: relative;
-  width: 210px;
-  height: 400px;
-  padding: 44px 14px 18px;
-  border-radius: 36px;
-  background: #0b0f1c;
-  box-shadow:
-    0 0 0 3px rgba(255, 255, 255, 0.25),
-    0 30px 60px rgba(8, 11, 20, 0.35);
-}
-.phoneNotch {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  width: 72px;
-  height: 18px;
-  margin-left: -36px;
-  border-radius: 10px;
-  background: #1c2235;
-}
-.sheet {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  height: 100%;
-  padding: 18px 16px;
-  border-radius: 14px;
-  background: #fffdf4;
-  color: #1c2235;
-  font-size: 0.8125rem;
-  transform: rotate(-3deg);
-}
-.sheet i {
-  display: block;
-  height: 8px;
-  border-radius: 4px;
-  background: #c9cfe0;
-}
-.sheet i:nth-child(odd) {
-  width: 78%;
-}
-.examCard {
-  position: absolute;
-  right: 0;
-  bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 240px;
-  padding: 18px 20px;
-  border-radius: 24px;
-  background: var(--card);
-  color: var(--text);
-  box-shadow: 0 24px 48px rgba(8, 11, 20, 0.28);
-  transform: rotate(4deg);
-}
-.examCard b {
-  font-size: 1.125rem;
-}
-.examCard span {
-  color: var(--text-secondary);
-  font-size: var(--text-secondary-size);
-}
-.examCard .examReady {
-  align-self: flex-start;
-  margin-top: 6px;
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
-  background: var(--pop-green);
-  color: var(--on-pop-green);
-  font-weight: 700;
-}
-
-/* 3. Chat con pistas */
-.chat {
-  background: var(--bg);
-  color: var(--text);
-}
-.bubbles {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0;
-  padding: 0;
+  min-height: 64px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
   list-style: none;
 }
-.bubbles li {
-  max-width: 34ch;
-  padding: 14px 18px;
-  border-radius: 22px;
-  font-size: var(--text-body);
-  line-height: 1.45;
+.faqItem summary::-webkit-details-marker {
+  display: none;
 }
-.me {
-  align-self: flex-end;
-  border-bottom-right-radius: 6px;
-  background: var(--pop-blue);
-  color: var(--on-pop-blue);
+.faqItem summary > span:first-child {
+  text-decoration-line: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
 }
-.dream {
-  align-self: flex-start;
-  border-bottom-left-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-}
-
-/* 4. Tests y nota objetivo */
-.testsVisual {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 24px;
-}
-.deck {
+.plus {
   position: relative;
-  display: grid;
-  min-height: 260px;
+  flex: none;
+  inline-size: 20px;
+  block-size: 20px;
+  transition: transform 250ms var(--ease);
 }
-.card {
-  grid-area: 1 / 1;
-  align-self: center;
-  justify-self: center;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  width: min(100%, 260px);
-  padding: 20px;
-  border-radius: 22px;
-  background: var(--card);
-  color: var(--text);
-  box-shadow: 0 16px 32px rgba(8, 11, 20, 0.2);
-}
-.card small {
-  color: var(--text-secondary);
-  font-weight: 700;
-}
-.card b {
-  font-size: 1.0625rem;
-  line-height: 1.35;
-}
-/* Final (static) arrangement: a fan. */
-.card:nth-child(1) {
-  transform: translateX(-28%) rotate(-9deg);
-}
-.card:nth-child(3) {
-  transform: translateX(28%) rotate(9deg);
-}
-.wheel {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.55);
-}
-.wheelRing {
+.plus::before,
+.plus::after {
+  content: "";
   position: absolute;
-  inset: 0;
+  inset-block-start: 9px;
+  inset-inline: 0;
+  block-size: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.plus::after {
+  transform: rotate(90deg);
+}
+.faqItem[open] .plus {
+  transform: rotate(45deg);
+}
+.faqItem p {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.wheelRing li {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 36px;
-  margin: -12px 0 0 -18px;
-  font-weight: 800;
-  text-align: center;
-  transform: rotate(calc(var(--i) * 51.4deg)) translateY(-82px);
-  opacity: 0.55;
-}
-.wheelValue {
-  display: grid;
-  place-items: center;
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-}
-.wheelValue small {
-  font-size: 0.875rem;
-  line-height: 1.4;
-}
-
-/* 5. Progreso */
-.progressCard {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 28px;
-  border-radius: 28px;
-  background: var(--card);
-  color: var(--text);
-  box-shadow: 0 24px 48px rgba(8, 11, 20, 0.22);
-}
-.example {
-  align-self: flex-start;
-  padding: 2px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--surface);
+  padding: 0 36px 22px 0;
   color: var(--text-secondary);
-  font-size: var(--text-small);
-  font-weight: 700;
+  line-height: 1.55;
+  animation: faqIn 250ms var(--ease) both;
 }
-.cap {
-  position: absolute;
-  top: -28px;
-  right: 20px;
+@keyframes faqIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
 }
-.progressLabel {
-  margin: 8px 0 0;
-  font-weight: 700;
-}
-.bigNumber {
-  margin: 0;
-  font-size: clamp(4rem, 3rem + 4vw, 6rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.04em;
-}
-.odometer {
-  display: inline-flex;
-  align-items: flex-end;
-}
-.digit {
-  display: inline-flex;
-  flex-direction: column;
-  height: 1em;
-  overflow: clip;
-  font-variant-numeric: tabular-nums;
-}
-.digit > span {
-  display: block;
-  height: 1em;
-  transform: translateY(calc(var(--to) * -1em));
-}
-.pct {
-  margin-left: 0.08em;
-  font-size: 0.5em;
-  line-height: 1.6;
-}
-.bar {
-  position: relative;
-  display: block;
-  height: 14px;
-  margin-top: 8px;
-  border-radius: 7px;
-  overflow: hidden;
-  background: var(--surface);
-}
-.bar i {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--pop-green);
-  transform-origin: left center;
-  transform: scaleX(0.82);
+.faqCta {
+  margin-block-start: 40px;
 }
 
-/* 6. Gratis */
-.freeInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-  max-width: 760px;
-  margin: 0 auto;
-  text-align: center;
-}
-.freeInner .lead {
-  margin-inline: auto;
-}
-.freeSticker {
-  line-height: 0;
-}
-
-/* 7. Pie */
+/* --- Footer verde lima con «Dream» gigante en azul, recortado -------------------------- */
 .footer {
+  position: relative;
+  overflow: hidden;
+  margin: clamp(72px, 12vh, 128px) calc(10px + var(--safe-right)) calc(10px + var(--safe-bottom)) calc(10px + var(--safe-left));
+  padding: 40px clamp(24px, 5vw, 56px) 0;
+  border-radius: 40px;
+  background: var(--dd-lime);
+  color: var(--dd-bg);
+  --focus: var(--dd-bg);
+}
+.footerTop {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 8px 24px;
-  padding: 24px calc(24px + var(--safe-right)) calc(24px + var(--safe-bottom)) calc(24px + var(--safe-left));
-  color: var(--text-secondary);
-  font-size: var(--text-secondary-size);
+  gap: 16px 32px;
 }
-.footer > span {
+.footerBrand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin: 0;
+  font-weight: 800;
 }
-.footer nav {
+/* Enlaces en tinta oscura sobre el verde lima (15.7:1). */
+.footerLinks {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 8px;
+  gap: 4px 8px;
 }
-.footer a,
+.footerLinks a,
 .footerButton {
   display: inline-flex;
   align-items: center;
-  min-height: var(--touch);
-  padding: 0 8px;
-  color: var(--text-secondary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  color: var(--dd-bg);
+  font-weight: 750;
+  font-size: 0.9375rem;
+}
+.footerButton {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+.giant {
+  margin: 24px 0 0;
+  color: var(--dd-brand-blue);
+  font-size: min(27vw, 22rem);
+  font-weight: 900;
+  line-height: 0.75;
+  letter-spacing: -0.07em;
+  text-align: center;
+  transform: translateY(14%);
+  user-select: none;
 }
 
-/* Hero entrance at load: sticker, text and button rise 40 ms apart. The
-   title (the LCP element) only moves, it never starts transparent, so the
-   largest paint is not delayed by the animation. */
-.heroInner > * {
-  animation: heroRise var(--dur-rise) var(--ease) backwards;
-}
-.heroInner > .heroTitle {
-  animation-name: heroTitleRise;
-  animation-delay: var(--stagger);
-}
-.heroInner > :nth-child(3) {
-  animation-delay: calc(var(--stagger) * 2);
-}
-.heroInner > :nth-child(4) {
-  animation-delay: calc(var(--stagger) * 3);
-}
-@keyframes heroRise {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
+@media (hover: hover) and (pointer: fine) {
+  .faqItem summary:hover > span:first-child {
+    text-decoration-color: currentColor;
   }
-}
-@keyframes heroTitleRise {
-  from {
-    transform: translateY(12px);
+  .footerLinks a:hover,
+  .footerButton:hover {
+    background-color: rgb(10 12 25 / 0.12);
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  .heroInner > * {
-    animation-name: heroFade;
-    animation-duration: var(--dur-fast);
-  }
-  .heroInner > .heroTitle {
-    animation: none;
-  }
-}
-@keyframes heroFade {
-  from {
-    opacity: 0;
+  .install:hover {
+    background-color: var(--dd-neon);
   }
 }
 
-/* --- Móvil: escenas apiladas, nada fijado ---------------------------------- */
-@media (max-width: 899.98px) {
-  .split,
-  .notesStage {
+/* --- Responsive ------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 40px;
+  }
+}
+@media (max-width: 700px) {
+  .hero {
+    align-items: flex-start;
+    padding-block-end: 220px;
+  }
+  .heroOrb svg {
+    width: 200px;
+    height: 200px;
+  }
+  .heroOrb {
+    inset-block-end: -50px;
+  }
+  .download {
     grid-template-columns: minmax(0, 1fr);
   }
-  .notesVisual {
-    min-height: 0;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-  }
-  .phone {
-    width: 180px;
-    height: 330px;
-  }
-  .examCard {
-    position: relative;
-    right: auto;
-    bottom: auto;
+  .qr {
     justify-self: center;
-    margin-top: -64px;
   }
-  .testsVisual {
-    grid-template-columns: minmax(0, 1fr);
-    justify-items: center;
+  .chipsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
-  .deck {
-    width: 100%;
-  }
-  .card:nth-child(1) {
-    transform: translateX(-14%) rotate(-7deg);
-  }
-  .card:nth-child(3) {
-    transform: translateX(14%) rotate(7deg);
+  .chips {
+    inline-size: 100%;
   }
 }
 
-/* --- Movimiento ligado al scroll (escritorio y móvil) ---------------------- */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    /* 1. The hero leaves: it rises, shrinks a little and fades (the
-       wrapper moves; its children keep their load-time stagger). */
-    .heroInner {
-      animation: hero-out linear both;
-      animation-timeline: view();
-      animation-range: exit 0% exit 100%;
-    }
-    /* 3. Each bubble slides in from its side as it reaches the view. */
-    .bubbles li {
-      animation: bubble-in linear both;
-      animation-timeline: view();
-      animation-range: entry 10% entry 70%;
-    }
-    .me {
-      --from: 32px;
-    }
-    .dream {
-      --from: -32px;
-    }
-    /* 4. The cards fan out and the wheel turns while the scene crosses. */
-    .card {
-      animation: card-fan linear both;
-      animation-timeline: view();
-      animation-range: entry 40% cover 55%;
-    }
-    .card:nth-child(1) {
-      --fan: translateX(-28%) rotate(-9deg);
-    }
-    .card:nth-child(2) {
-      --fan: none;
-    }
-    .card:nth-child(3) {
-      --fan: translateX(28%) rotate(9deg);
-    }
-    .wheelRing {
-      animation: wheel-turn linear both;
-      animation-timeline: view();
-      animation-range: entry 30% cover 60%;
-    }
-    /* 5. The number rolls and the bar grows as the card comes in. */
-    /* One clock for the whole card: every digit row moves together. */
-    .progressCard {
-      view-timeline-name: --progress;
-    }
-    .digit > span {
-      animation: digit-roll linear both;
-      animation-timeline: --progress;
-      animation-range: entry 40% contain 10%;
-    }
-    .bar i {
-      animation: bar-grow linear both;
-      animation-timeline: --progress;
-      animation-range: entry 40% contain 10%;
-    }
-    /* 6. The sticker drops into place. */
-    .freeSticker {
-      animation: sticker-drop linear both;
-      animation-timeline: view();
-      animation-range: entry 20% entry 90%;
-    }
+@media (prefers-reduced-motion: reduce) {
+  .plus,
+  .install {
+    transition: none;
+  }
+  .faqItem p {
+    animation: faqFade 120ms linear both;
+  }
+  .install:active {
+    transform: none;
   }
 }
-
-/* 2. Signature moment, desktop with a fine pointer: the scene is pinned
-   (sticky) for 0.8 screens while the sheet leaves the phone and becomes the
-   exam card, then holds. Phones and reduced motion: stacked, not pinned. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) and (min-width: 900px) and (pointer: fine) {
-    .notes {
-      height: 180vh;
-      padding-block: 0;
-      view-timeline-name: --notes;
-    }
-    .notesStage {
-      position: sticky;
-      top: 0;
-      min-height: 100vh;
-    }
-    .sheet {
-      animation: sheet-out linear both;
-      animation-timeline: --notes;
-      animation-range: contain 0% contain 40%;
-    }
-    .examCard {
-      animation: card-become linear both;
-      animation-timeline: --notes;
-      animation-range: contain 25% contain 65%;
-    }
-  }
-  @media (prefers-reduced-motion: no-preference) and ((max-width: 899.98px) or (pointer: coarse)) {
-    .phone,
-    .examCard {
-      animation: reveal linear both;
-      animation-timeline: view();
-      animation-range: entry 10% entry 70%;
-    }
-  }
-}
-
-@keyframes hero-out {
-  to {
-    transform: translateY(-48px) scale(0.94);
-    opacity: 0.4;
-  }
-}
-@keyframes bubble-in {
+@keyframes faqFade {
   from {
-    transform: translateX(var(--from, 0));
-    opacity: 0;
-  }
-}
-@keyframes card-fan {
-  from {
-    transform: translateY(24px) rotate(0deg);
-  }
-  to {
-    transform: var(--fan);
-  }
-}
-@keyframes wheel-turn {
-  from {
-    transform: rotate(-300deg);
-  }
-}
-@keyframes digit-roll {
-  from {
-    transform: translateY(0);
-  }
-}
-@keyframes bar-grow {
-  from {
-    transform: scaleX(0.02);
-  }
-}
-@keyframes sticker-drop {
-  from {
-    transform: translateY(-48px) rotate(-10deg) scale(0.92);
-    opacity: 0;
-  }
-}
-@keyframes sheet-out {
-  from {
-    transform: rotate(-3deg);
-  }
-  to {
-    transform: translate(70%, -18%) rotate(10deg) scale(0.9);
-    opacity: 0;
-  }
-}
-@keyframes card-become {
-  from {
-    transform: translate(-45%, -30%) rotate(-12deg) scale(0.6);
-    opacity: 0;
-  }
-  to {
-    transform: rotate(4deg);
-    opacity: 1;
-  }
-}
-@keyframes reveal {
-  from {
-    transform: translateY(32px);
     opacity: 0;
   }
 }

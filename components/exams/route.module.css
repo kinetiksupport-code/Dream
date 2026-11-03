@@ -189,7 +189,7 @@
 .trailFill {
   position: absolute;
   inset: 0;
-  background: var(--primary);
+  background: var(--accent);
   transform: scaleY(0.001);
   transform-origin: top;
   transition: transform 250ms var(--ease) 120ms;

@@ -1,7 +1,6 @@
 "use client";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { flushSync } from "react-dom";
-import { Sun, Moon, Monitor, Info } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Info } from "lucide-react";
 import Link from "next/link";
 import { PrivacySettings } from "@/components/observability";
 import { CookieSettingsButton } from "@/components/cookie-settings-button";
@@ -20,7 +19,7 @@ import { useConversations } from "@/components/shell";
 import { callDream, errorMessage } from "@/lib/dream-api";
 import { accountIdentity } from "@/lib/account";
 import { useOnline } from "@/lib/use-online";
-import { applyEasyReading, crossFade, readEasyReading } from "@/lib/reading";
+import { applyEasyReading, readEasyReading } from "@/lib/reading";
 import styles from "./settings.module.css";
 
 const CONTACT =
@@ -30,17 +29,10 @@ const EXIT_MS = 120;
 /** A confirmation toast stays this long; it also has a close button. */
 const TOAST_MS = 6000;
 
-type Theme = "light" | "dark" | "system";
 type Dialog = "history" | "account";
 
-const THEMES = [
-  { value: "light", label: "Claro", icon: Sun },
-  { value: "dark", label: "Oscuro", icon: Moon },
-  { value: "system", label: "Sistema", icon: Monitor },
-] as const;
-
 export default function Settings() {
-  const { session, profile, theme, setTheme, logout } = useDream();
+  const { session, profile, logout } = useDream();
   const { items, loaded, refresh } = useConversations();
   const online = useOnline();
   const [busy, setBusy] = useState(false);
@@ -54,19 +46,6 @@ export default function Settings() {
   const timers = useRef<number[]>([]);
   const identity = accountIdentity(session?.user, profile);
 
-  // The theme pill only animates after the saved theme has been applied, so
-  // it never slides on page load.
-  const [settled, setSettled] = useState(false);
-  useEffect(() => {
-    let inner = 0;
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => setSettled(true));
-    });
-    return () => {
-      cancelAnimationFrame(outer);
-      cancelAnimationFrame(inner);
-    };
-  }, []);
   useEffect(() => {
     setEasyReading(readEasyReading());
     const pending = timers.current;
@@ -104,17 +83,6 @@ export default function Settings() {
     }, EXIT_MS);
   }
 
-  function chooseTheme(next: Theme) {
-    if (next === theme) return;
-    crossFade(() => {
-      // Paint the new colours inside the transition; Providers then stores
-      // the choice and keeps following the system when "Sistema" is chosen.
-      const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-      document.documentElement.dataset.theme =
-        next === "system" ? (dark ? "dark" : "light") : next;
-      flushSync(() => setTheme(next));
-    });
-  }
   function toggleEasyReading() {
     // No cross-fade here: the switch's own thumb movement is the feedback.
     const next = !easyReading;
@@ -216,35 +184,6 @@ export default function Settings() {
         <h2 className="section-title" id="theme-title">
           Apariencia
         </h2>
-        <div
-          className="segmented segmented-theme"
-          role="group"
-          aria-labelledby="theme-title"
-          data-settled={settled || undefined}
-        >
-          {/* The pill slides under the chosen option (transform only). */}
-          <span
-            className="segmented-indicator"
-            aria-hidden="true"
-            style={
-              {
-                "--segment": THEMES.findIndex((t) => t.value === theme),
-              } as CSSProperties
-            }
-          />
-          {THEMES.map((t) => (
-            <button
-              type="button"
-              className={`press ${styles.themeOption} ${styles[t.value]}`}
-              aria-pressed={theme === t.value}
-              key={t.value}
-              onClick={() => chooseTheme(t.value)}
-            >
-              <t.icon size={18} aria-hidden="true" />
-              {t.label}
-            </button>
-          ))}
-        </div>
         <div className="group-list">
           <div className="group-row">
             <span className="row-text" id="reading-label">
@@ -335,13 +274,16 @@ export default function Settings() {
         <h2 className="section-title" id="account-title">
           Cuenta
         </h2>
-        <div className="button-row">
+        {/* Dream design: la salida va en su grupo, en rojo. */}
+        <div className="group-list">
           <button
             type="button"
-            className="secondary press"
+            className="group-row group-row-button danger press"
             onClick={() => void signOut()}
           >
-            Cerrar sesión
+            <span className="row-text">
+              <strong>Cerrar sesión</strong>
+            </span>
           </button>
         </div>
       </section>

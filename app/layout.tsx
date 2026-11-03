@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import Script from "next/script";
 import { COOKIEBOT, cookiebotScript } from "@/lib/cookie-consent";
-import { Inter, Lexend } from "next/font/google";
+import { Archivo, Lexend } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { HEAD_BOOT, THEME_COLORS } from "@/lib/theme";
 // KaTeX styles in the global stylesheet, on every page: without them each
@@ -11,25 +11,14 @@ import { HEAD_BOOT, THEME_COLORS } from "@/lib/theme";
 // (a cached app shell after a deploy).
 import "katex/dist/katex.min.css";
 import "./globals.css";
-// Claude Design: the system stack (SF Pro on Apple) with Inter everywhere
-// else. The font variables live on <html> so --font-stack, defined on :root,
-// can resolve them (on <body> the stack was invalid and every non-Apple device
-// fell back to its default font, e.g. Roboto on Android).
-const inter = Inter({
+// Dream design (3-nov-2026): una sola grotesca para todo, Archivo (variable,
+// 100-900), elegida frente a Bricolage Grotesque e Inter Tight
+// (docs/diseno/dream-design/fuentes-hero.png). Las variables viven en <html>
+// para que --font-stack, definida en :root, pueda resolverlas.
+const archivo = Archivo({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-inter",
+  variable: "--font-grotesk",
   display: "swap",
-});
-// Huge headlines (.hero-title) in Inter 800 italic, like Carlos's style
-// references (decision of 17/10/2026). Not preloaded: the browser downloads it
-// only when a page shows a .hero-title.
-const interHero = Inter({
-  subsets: ["latin", "latin-ext"],
-  weight: "800",
-  style: "italic",
-  variable: "--font-hero",
-  display: "swap",
-  preload: false,
 });
 // Easy-reading option in Ajustes (dyslexia-friendly). Downloaded only on use.
 const lexend = Lexend({
@@ -46,7 +35,7 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Dream",
   },
   formatDetection: { telephone: false },
@@ -59,18 +48,15 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "supported-color-schemes": "light dark",
+    "supported-color-schemes": "dark",
   },
 };
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  colorScheme: "light dark",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
-    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
-  ],
+  colorScheme: "dark",
+  themeColor: THEME_COLORS.dark,
 };
 export default async function RootLayout({
   children,
@@ -85,7 +71,8 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${interHero.variable} ${lexend.variable}`}
+      className={`${archivo.variable} ${lexend.variable}`}
+      data-theme="dark"
       data-cookiebot={cookiebot ? "on" : "off"}
       suppressHydrationWarning
     >

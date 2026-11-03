@@ -1,7 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-// Landing con scroll cinematográfico (docs/diseno/landing-storyboard.md):
-// structure, the pinned signature scene only on desktop, the scroll-driven
-// details and the static version (reduced motion / no support).
+// Landing de Dream design (skill dream-design-system): estructura, cabecera
+// flotante, FAQ, movimiento reducido y sin scroll lateral.
 test.use({ serviceWorkers: "block" });
 
 async function open(page: Page) {
@@ -9,16 +8,15 @@ async function open(page: Page) {
   await page.goto("/");
 }
 
-test("one h1, a heading per scene, real text and links to the login and the legal pages", async ({ page }) => {
+test("one h1, the sections, real text and links to the login and the legal pages", async ({ page }) => {
   await open(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Saca tu mejor nota/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Saca\s*tu mejor\s*nota/i);
   expect(await page.getByRole("heading", { level: 2 }).allTextContents()).toEqual([
-    "Sube tus apuntes.",
-    "Entiende, no copies.",
-    "Tests y simulacros.",
-    "Mira cómo avanzas.",
-    "Dream es gratis.",
+    "Todo lo que necesitas para tu examen",
+    "Dream en cifras",
+    "Llévate Dream en el móvil",
+    "Preguntas frecuentes",
   ]);
   for (const link of await page.getByRole("link", { name: "Probar Dream" }).all())
     await expect(link).toHaveAttribute("href", "/login");
@@ -31,12 +29,13 @@ test("one h1, a heading per scene, real text and links to the login and the lega
     ["Aviso legal", "/aviso-legal"],
   ])
     await expect(legal.getByRole("link", { name })).toHaveAttribute("href", href);
-  // The chat example and the progress number are text, not pictures.
-  await expect(page.getByRole("list", { name: "Ejemplo de conversación" }).getByRole("listitem")).toHaveCount(4);
-  await expect(page.getByText("82 %")).toBeAttached();
+  // Nada de tiendas ni idiomas: QR e «Instalar Dream».
+  await expect(page.getByRole("img", { name: "Código QR para abrir Dream en el móvil" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Instalar Dream" })).toBeVisible();
+  await expect(page.getByText(/App Store|Google Play/)).toHaveCount(0);
 });
 
-test("keyboard: skip link first, then Dream, Entrar and every action", async ({ page }) => {
+test("keyboard: skip link first, then Dream, Entrar, the menu and the main action", async ({ page }) => {
   await open(page);
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Ir al contenido" })).toBeFocused();
@@ -45,66 +44,39 @@ test("keyboard: skip link first, then Dream, Entrar and every action", async ({ 
   await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Entrar" })).toBeFocused();
   await page.keyboard.press("Tab");
+  await expect(page.getByRole("button", { name: "Abrir menú" })).toBeFocused();
+  await page.keyboard.press("Tab");
   await expect(page.getByRole("link", { name: "Probar Dream" }).first()).toBeFocused();
 });
 
-test("desktop: the notes scene is pinned and the sheet becomes the exam card", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
+test("floating header: the menu opens and closes with Escape; «Empezar» appears after scrolling", async ({ page }) => {
   await open(page);
-  const stage = page.locator("section[aria-labelledby='notes-title'] > div").first();
-  expect(await stage.evaluate((el) => getComputedStyle(el).position)).toBe("sticky");
-  const opacity = () =>
-    page.getByText("Examen de Biología").evaluate((el) => Number(getComputedStyle(el.parentElement!).opacity));
-  await page.locator("#notes-title").scrollIntoViewIfNeeded();
-  const section = page.locator("section[aria-labelledby='notes-title']");
-  const top = await section.evaluate((el) => el.getBoundingClientRect().top + scrollY);
-  await page.evaluate((y) => scrollTo(0, y), top);
-  await page.waitForTimeout(200);
-  const start = await opacity();
-  await page.evaluate((y) => scrollTo(0, y + innerHeight * 0.7), top);
-  await page.waitForTimeout(200);
-  const end = await opacity();
-  expect(start).toBeLessThan(0.2);
-  expect(end).toBeGreaterThan(0.95);
-  // While pinned, the title stays on screen (readable hold).
-  await expect(page.locator("#notes-title")).toBeInViewport();
+  await page.getByRole("button", { name: "Abrir menú" }).click();
+  await expect(page.getByRole("navigation", { name: "Secciones" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("navigation", { name: "Secciones" })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Abrir menú" })).toBeFocused();
+  await page.evaluate(() => scrollTo(0, 800));
+  await expect(page.locator("header[data-scrolled]")).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Empezar" })).toBeVisible();
 });
 
-test("phones: nothing is pinned and every scene reads in order", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+test("FAQ: the answer opens and the + turns into ×", async ({ page }) => {
   await open(page);
-  const stage = page.locator("section[aria-labelledby='notes-title'] > div").first();
-  expect(await stage.evaluate((el) => getComputedStyle(el).position)).toBe("static");
+  const item = page.locator("details").first();
+  await item.locator("summary").click();
+  await expect(item).toHaveAttribute("open", "");
+  await expect(item.getByText(/no hace falta tarjeta/)).toBeVisible();
 });
 
-test("the progress number rolls to 82 % and the bar fills as the card arrives", async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await open(page);
-  await page.locator("#progress-title").scrollIntoViewIfNeeded();
-  await page.evaluate(() => scrollBy(0, 200));
-  await page.waitForTimeout(300);
-  const digits = await page.locator("[class*=digit]").evaluateAll((cols) =>
-    cols.map((c) => {
-      const box = c.getBoundingClientRect();
-      const shown = [...c.children].find((d) => Math.abs(d.getBoundingClientRect().top - box.top) < 2);
-      return shown?.textContent;
-    }),
-  );
-  expect(digits).toEqual(["8", "2"]);
-});
-
-test("reduced motion: no scroll animation, no pin, everything in its final place", async ({ page }) => {
+test("reduced motion: no scroll-driven animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1280, height: 800 });
   await open(page);
-  const stage = page.locator("section[aria-labelledby='notes-title'] > div").first();
-  expect(await stage.evaluate((el) => getComputedStyle(el).position)).toBe("static");
   const scrollDriven = await page.evaluate(
     () => document.getAnimations().filter((a) => a.timeline && !(a.timeline instanceof DocumentTimeline)).length,
   );
   expect(scrollDriven).toBe(0);
-  await expect(page.getByText("Examen de Biología")).toBeVisible();
-  expect(await page.getByText("Examen de Biología").evaluate((el) => getComputedStyle(el.parentElement!).opacity)).toBe("1");
 });
 
 for (const vp of [

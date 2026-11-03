@@ -55,7 +55,7 @@
   display: block;
   block-size: 100%;
   inline-size: 100%;
-  background: var(--primary);
+  background: var(--accent);
   transform-origin: left center;
   transition: transform 250ms var(--ease);
 }
