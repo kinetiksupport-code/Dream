@@ -57,7 +57,7 @@ test("only the landing and the legal pages show Cookiebot; the app never does, n
   }
   expect(cb.uc).toBe(0);
   // From the landing into the app without a reload: Cookiebot stays in memory but hidden.
-  await page.goto("/");
+  await page.goto("/?landing");
   await expect(page.getByRole("dialog", { name: "Tus cookies, tu decisión" })).toBeVisible();
   await page.locator('header a[href="/login"]').first().click();
   // Con sesión, /login lleva directo a /chat.
@@ -70,7 +70,7 @@ test("2 · reject all: one click, the app works, no Crisp, and support asks for 
   await fakeCookiebot(page);
   const crisp = await fakeCrisp(page);
   await signedIn(page);
-  await page.goto("/");
+  await page.goto("/?landing");
   await page.getByRole("button", { name: "Denegar" }).click();
   await expect(page.getByRole("dialog", { name: "Tus cookies, tu decisión" })).toBeHidden();
   await page.goto("/settings");
@@ -104,7 +104,7 @@ test("2b · «Permitir y abrir» in the app opens the chat for this visit (no Co
   await page.getByRole("alertdialog").getByRole("button", { name: "Permitir y abrir" }).click();
   await expect.poll(() => crisp.loads).toBe(1);
   // On a Cookiebot page the same click is recorded in Cookiebot.
-  await page.goto("/");
+  await page.goto("/?landing");
   await page.evaluate(() => (window as unknown as { Cookiebot: { submitCustomConsent: (p: boolean, s: boolean, m: boolean) => void } }).Cookiebot.submitCustomConsent(true, false, false));
   const consent = (await page.context().cookies()).find((c) => c.name === "CookieConsent");
   expect(JSON.parse(decodeURIComponent(consent!.value))).toEqual({ preferences: true, statistics: false, marketing: false });
@@ -114,7 +114,7 @@ test("3 · accept all: Crisp opens from Ajustes > Ayuda and from the ban screen,
   await fakeCookiebot(page);
   const crisp = await fakeCrisp(page);
   await signedIn(page);
-  await page.goto("/");
+  await page.goto("/?landing");
   await page.getByRole("button", { name: "Permitir todas" }).click();
   await page.goto("/settings");
   await page.getByRole("button", { name: "Hablar con soporte" }).click();
@@ -162,7 +162,7 @@ test("4 · withdraw: «Configurar cookies» → Denegar closes Crisp and removes
 test("«Configurar cookies» is in every public footer and in Ajustes > Privacidad", async ({ page }) => {
   await fakeCookiebot(page, { preferences: false });
   await signedIn(page);
-  for (const path of ["/", "/privacidad", "/terminos", "/cookies", "/aviso-legal", "/settings"]) {
+  for (const path of ["/?landing", "/privacidad", "/terminos", "/cookies", "/aviso-legal", "/settings"]) {
     await page.goto(path);
     await page.getByRole("button", { name: "Configurar cookies" }).click();
     await expect(page.getByRole("dialog", { name: "Tus cookies, tu decisión" }), path).toBeVisible();
