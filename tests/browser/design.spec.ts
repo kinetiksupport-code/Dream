@@ -170,42 +170,30 @@ for (const vp of [
     expect(wide).toEqual([]);
   });
 
-test("theme choice wins over the system: Claro stays light on a dark system", async ({
+test("Dream is dark only: a light system still gets the dark page and no theme picker", async ({
   page,
 }) => {
-  await page.emulateMedia({ colorScheme: "dark" });
+  await page.emulateMedia({ colorScheme: "light" });
   await open(page, "ajustes");
-  await page.getByRole("button", { name: "Claro" }).click();
-  const state = () =>
-    page.evaluate(() => ({
-      theme: document.documentElement.dataset.theme,
-      bg: getComputedStyle(document.body).backgroundColor,
-    }));
-  // The change runs inside a View Transition (Ajustes cross-fade), a frame
-  // after the click, so wait for it.
-  await expect
-    .poll(state)
-    .toEqual({ theme: "light", bg: "rgb(255, 255, 255)" });
-  await page.reload();
-  expect(await state()).toEqual({ theme: "light", bg: "rgb(255, 255, 255)" });
-  await expect(page.getByRole("button", { name: "Claro" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
+  const state = await page.evaluate(() => ({
+    theme: document.documentElement.dataset.theme,
+    bg: getComputedStyle(document.body).backgroundColor,
+  }));
+  expect(state).toEqual({ theme: "dark", bg: "rgb(10, 12, 25)" });
+  await expect(page.getByRole("button", { name: "Claro" })).toHaveCount(0);
 });
 
-test("the font stack resolves to the self-hosted Inter (not the browser default)", async ({
+test("the font stack resolves to the bundled Archivo (not the browser default)", async ({
   page,
 }) => {
   await open(page, "login");
   // The original bug: --font-stack was empty, so Android fell back to Roboto.
-  // This machine has Inter installed locally, so assert the stack and the
-  // self-hosted @font-face, not which file the renderer picked.
+  // Archivo goes first; system fonts are only the fallback.
   const font = await page.evaluate(() => ({
     stack: getComputedStyle(document.body).fontFamily,
     faces: [...document.fonts].map((f) => f.family),
   }));
-  expect(font.stack).toMatch(/Inter/);
-  expect(font.stack).not.toMatch(/Roboto|Segoe/);
-  expect(font.faces).toContain("Inter");
+  expect(font.stack.split(",")[0].toLowerCase()).toMatch(/archivo/);
+  expect(font.faces.some((f) => /archivo/i.test(f))).toBe(true);
 });
+

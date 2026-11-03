@@ -41,7 +41,7 @@ export const cookiesTabla = String.raw`| Nombre | De quién | Para qué | Duraci
 | CookieConsent | Cookiebot (en edudream.es) | Guardar tu elección sobre las cookies | Hasta 12 meses | Necesaria |
 | sb-…-auth-token (y su code-verifier al iniciar sesión) | Dream (Supabase) | Mantenerte conectado de forma segura | Hasta que cierres sesión | Necesaria |
 | dream-login-pending | Dream | Terminar el inicio de sesión | Mientras la pestaña esté abierta | Necesaria |
-| dream-theme, dream-reading, dream-ai-mode | Dream | Recordar el tema, la lectura fácil y el modo de la IA que eliges | Hasta que las borres | Necesaria (preferencia elegida) |
+| dream-reading, dream-ai-mode | Dream | Recordar la lectura fácil y el modo de la IA que eliges | Hasta que las borres | Necesaria (preferencia elegida) |
 | dream-privacy-v1, dream-crisp-notice | Dream | Recordar tus decisiones sobre datos de uso y el aviso del chat | Hasta que las borres | Necesaria |
 | dream-qr-token, dream-qr-device | Dream (solo al subir por QR) | Que el móvil pueda subir los archivos | Mientras la pestaña esté abierta | Necesaria |
 | dream-static-v3 (caché) | Dream (app instalable) | Abrir más rápido y mostrar una página sin conexión. No guarda tus conversaciones | Hasta la siguiente versión | Necesaria |

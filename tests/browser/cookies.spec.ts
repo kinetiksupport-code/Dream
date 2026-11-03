@@ -254,16 +254,19 @@ test("10 · accessibility: axe finds no serious problems on /cookies or the supp
   await context.close();
 });
 
-test("the theme is stored only when the student picks one; «Sistema» removes it", async ({ page }) => {
+test("no theme is stored any more (Dream is dark only) and an old choice is removed", async ({ page }) => {
   await fakeCookiebot(page, { preferences: false });
   await signedIn(page);
+  await page.addInitScript(() => {
+    if (!sessionStorage.getItem("seeded")) {
+      localStorage.setItem("dream-theme", "light");
+      sessionStorage.setItem("seeded", "1");
+    }
+  });
   await page.goto("/settings");
   const theme = () => page.evaluate(() => localStorage.getItem("dream-theme"));
-  expect(await theme()).toBeNull();
-  await page.getByRole("button", { name: "Oscuro" }).click();
-  await expect.poll(theme).toBe("dark");
-  await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-  await page.getByRole("button", { name: "Sistema" }).click();
   await expect.poll(theme).toBeNull();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.getByRole("button", { name: "Sistema" })).toHaveCount(0);
 });
+
