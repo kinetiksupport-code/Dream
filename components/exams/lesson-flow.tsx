@@ -11,7 +11,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ChevronDown, FileText, X as XIcon } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, FileText, Lightbulb, SkipForward, Target, Timer, X as XIcon } from "lucide-react";
 import { errorMessage } from "@/lib/dream-api";
 import {
   answerQuiz,
@@ -65,7 +65,7 @@ const clock = (ms: number) => {
 const STEPS = ["Pidiendo tu lección", "Escribiendo la lectura, las preguntas y las tarjetas", "Comprobando que todo cuadre"];
 const POLL_MS = 4000;
 
-export function LessonFlow({
+function LessonScreens({
   examId,
   unitId,
   title,
@@ -294,29 +294,67 @@ export function LessonFlow({
     const r = phase.result;
     return (
       <div className={sf.frame} data-testid="leccion-resultados">
-        <main className={s.results} data-mastered={r.mastered || undefined}>
-          <span className={s.resultOrb} aria-hidden="true">
-            <Orb size={88} breathing />
+        <main className={s.kwResults} data-mastered={r.mastered || undefined}>
+          <span aria-hidden="true">
+            <Orb size={120} breathing reaction={r.mastered ? "success" : null} reactionKey="fin" />
           </span>
-          <h1 className={s.resultTitle}>{r.mastered ? "¡Dominado!" : known ? "Mejor haz la lección" : "Casi"}</h1>
+          <h1 className={s.kwTitleBig}>{r.mastered ? "¡Lo dominas!" : known ? "Mejor haz la lección" : "¡Casi lo tienes!"}</h1>
           <ul className={s.pills} aria-label="Tu resultado">
-            <li className={s.pill} data-kind="score">
-              <span className={s.pillLabel}>Aciertos</span>
-              <strong className="num">
+            <li className={s.stat} data-kind="score">
+              <span className={s.statLabel}>Puntuación total</span>
+              <strong className={`${s.statValue} num`}>
+                <Target size={22} aria-hidden="true" />
                 {r.right}/{r.total}
               </strong>
             </li>
-            <li className={s.pill} data-kind="time">
-              <span className={s.pillLabel}>Tiempo</span>
-              <strong className="num">{clock(Date.now() - started.current)}</strong>
+            <li className={s.stat} data-kind="time">
+              <span className={s.statLabel}>Tiempo</span>
+              <strong className={`${s.statValue} num`}>
+                <Timer size={22} aria-hidden="true" />
+                {clock(Date.now() - started.current)}
+              </strong>
             </li>
           </ul>
+          <div className={s.stack}>
+            {known && !r.mastered ? (
+              <>
+                {/* Carga completa: la lección se abre desde el principio, ya sin «Ya me sé este tema». */}
+                <a className="primary press" href={`/exams/${examId}/study/${unitId}`}>
+                  Hacer la lección
+                </a>
+                <Link className="secondary press" href={`/exams/${examId}/ruta`}>
+                  Volver
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
+                  Continuar
+                </Link>
+                <button
+                  type="button"
+                  className="secondary press"
+                  disabled={busy}
+                  onClick={() => {
+                    const next = round + 1;
+                    setRound(next);
+                    setBusy(true);
+                    void startQuiz(0, next)
+                      .catch((e) => setError(errorMessage(e)))
+                      .finally(() => setBusy(false));
+                  }}
+                >
+                  Repetir
+                </button>
+              </>
+            )}
+          </div>
           <p className={s.resultText} role="status">
             {known && !r.mastered
               ? "Aún no lo dominas, y no pasa nada: la lección te lo explica paso a paso."
               : r.mastered
-              ? "Te lo sabes. Las tarjetas de esta lección volverán cuando toque."
-              : `Repasa tus fallos y vuelve a intentarlo: ya tienes ${r.mistake_cards} ${r.mistake_cards === 1 ? "tarjeta" : "tarjetas"} con ellos.`}
+              ? "Las tarjetas de esta lección volverán cuando toque."
+              : `Intento guardado. Repasa tus fallos y vuelve a intentarlo: ya tienes ${r.mistake_cards} ${r.mistake_cards === 1 ? "tarjeta" : "tarjetas"} con ellos.`}
           </p>
           <div className={s.chips} role="group" aria-label="¿Cómo lo has notado?">
             {felt ? (
@@ -328,7 +366,7 @@ export function LessonFlow({
                 <button
                   key={f}
                   type="button"
-                  className={`secondary press ${s.chip}`}
+                  className={s.chipKw}
                   onClick={() => {
                     setFelt(f);
                     void saveProgress(ids, { felt_difficulty: f }).catch(() => undefined);
@@ -339,42 +377,8 @@ export function LessonFlow({
               ))
             )}
           </div>
+          {error && <p className={sf.saveError} role="alert">{error}</p>}
         </main>
-        <footer className={sf.foot}>
-          {known && !r.mastered ? (
-            <>
-              <Link className={`secondary press ${sf.small}`} href={`/exams/${examId}/ruta`}>
-                Volver
-              </Link>
-              {/* Carga completa: la lección se abre desde el principio, ya sin «Ya me sé este tema». */}
-              <a className="primary press" href={`/exams/${examId}/study/${unitId}`}>
-                Hacer la lección
-              </a>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                className={`secondary press ${sf.small}`}
-                disabled={busy}
-                onClick={() => {
-                  const next = round + 1;
-                  setRound(next);
-                  setBusy(true);
-                  void startQuiz(0, next)
-                    .catch((e) => setError(errorMessage(e)))
-                    .finally(() => setBusy(false));
-                }}
-              >
-                Repetir
-              </button>
-              <Link className="primary press" href={`/exams/${examId}/ruta${r.completed ? `?hecho=${unitId}` : ""}`}>
-                Continuar
-              </Link>
-            </>
-          )}
-        </footer>
-        {error && <p className={sf.saveError} role="alert">{error}</p>}
       </div>
     );
   }
@@ -383,16 +387,16 @@ export function LessonFlow({
   if (phase.kind === "review")
     return (
       <div className={sf.frame} data-testid="leccion-repaso">
-        <main className={s.results}>
-          <span className={s.resultOrb} aria-hidden="true">
-            <Orb size={88} breathing />
+        <main className={s.kwResults}>
+          <span aria-hidden="true">
+            <Orb size={120} breathing />
           </span>
-          <h1 className={s.resultTitle}>¡Repasemos las preguntas que fallaste!</h1>
+          <h1 className={s.kwTitleBig}>¡Repasemos las preguntas que fallaste!</h1>
           <p className={s.resultText}>
             {missed.length === 1 ? "Es solo una" : `Son ${missed.length}`}. Vuelven hasta que las aciertes; tu nota no cambia.
           </p>
         </main>
-        <footer className={sf.foot}>
+        <footer className={`${sf.foot} ${s.stack}`}>
           <button
             type="button"
             className="primary press"
@@ -498,8 +502,8 @@ export function LessonFlow({
                   <ArrowLeft size={20} aria-hidden="true" />
                 </button>
               ) : !last ? (
-                <button type="button" className={`secondary press ${sf.small}`} onClick={() => goSection(sections.length - 1)}>
-                  Saltar
+                <button type="button" className={`secondary press ${s.square}`} aria-label="Saltar" title="Saltar" onClick={() => goSection(sections.length - 1)}>
+                  <SkipForward size={20} aria-hidden="true" />
                 </button>
               ) : null}
               {/* El botón no se mueve: solo cambia el texto (0.12 · 10). */}
@@ -510,10 +514,13 @@ export function LessonFlow({
           }
         >
           <article className={s.section} key={phase.section} data-testid="tarjeta-que-saber">
-            <p className={s.cardEyebrow}>
-              Qué saber · <span className="num">{phase.section + 1}</span>/<span className="num">{sections.length}</span>
+            <p className={s.kwEyebrow}>
+              <Lightbulb size={18} aria-hidden="true" /> Qué saber
+              <span className="visually-hidden">
+                , tarjeta {phase.section + 1} de {sections.length}
+              </span>
             </p>
-            <h1 className={s.sectionTitle}>{sec.title}</h1>
+            <h1 className={s.kwTitle}>{sec.title}</h1>
             <div className={s.body}>
               <Markdown content={sec.body_markdown} />
             </div>
@@ -622,5 +629,14 @@ export function LessonFlow({
         <WhyPanel examId={examId} unitId={unitId} conversationId={conversationId} title={title} draft={why} onClose={() => setWhy(null)} />
       )}
     </>
+  );
+}
+
+/** La lección entera va en una pantalla oscura fija, como en las capturas de Knowunity. */
+export function LessonFlow(props: Parameters<typeof LessonScreens>[0]) {
+  return (
+    <div className={s.kw} data-testid="leccion-kw">
+      <LessonScreens {...props} />
+    </div>
   );
 }

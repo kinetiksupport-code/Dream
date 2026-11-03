@@ -2,6 +2,10 @@
    ruta 0.11 · 4-5 y 0.12 · 1-7, docs/diseno/ruta/MICROINTERACCIONES-KNOWUNITY.md).
    Movimiento: solo transform y opacity; color solo en estados de botón (≤ 150 ms). */
 .question {
+  inline-size: 100%;
+  max-inline-size: 640px;
+  margin-inline: auto;
+  padding-block-start: 6vh;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -41,15 +45,16 @@
 
 .tutor {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
+  margin-block-end: 8px;
 }
 .orb {
   flex: none;
   display: grid;
   place-items: center;
-  inline-size: 52px;
-  block-size: 52px;
+  inline-size: 72px;
+  block-size: 72px;
   /* 0.12 · 9: un «parpadeo» de brillo cada pocos segundos. */
   animation: blink 6s var(--ease) infinite;
 }
@@ -67,9 +72,21 @@
   position: relative;
   flex: 1;
   min-inline-size: 0;
-  padding: 14px 16px;
-  border-radius: 6px 20px 20px 20px;
-  background: var(--card);
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #23263a;
+}
+/* El piquito de la burbuja apunta a la Orb. */
+.bubble::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: -7px;
+  inset-block-start: 50%;
+  inline-size: 14px;
+  block-size: 14px;
+  background: inherit;
+  border-radius: 3px;
+  transform: translateY(-50%) rotate(45deg);
 }
 .eyebrow {
   margin: 0 0 4px;
@@ -81,11 +98,11 @@
   color: var(--text-secondary);
 }
 .prompt {
+  position: relative;
   margin: 0;
-  font-size: 1.25rem;
-  line-height: 1.3;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-size: 1.125rem;
+  line-height: 1.35;
+  font-weight: 500;
 }
 .prompt p {
   margin: 0;
@@ -99,84 +116,73 @@
 .option {
   display: flex;
   align-items: center;
-  gap: 12px;
-  min-block-size: 56px;
-  padding: 10px 16px;
-  border: 2px solid transparent;
-  border-radius: 18px;
-  background: var(--card);
+  justify-content: center;
+  gap: 10px;
+  min-block-size: 58px;
+  padding: 10px 22px;
+  border: 1.5px solid rgba(255, 255, 255, 0.13);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: 0 3px 0 rgba(255, 255, 255, 0.07);
   color: var(--text);
   font: inherit;
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: start;
+  font-size: 1.0625rem;
+  font-weight: 500;
+  text-align: center;
   cursor: pointer;
   transition:
     background-color 120ms ease,
     color 120ms ease,
     border-color 120ms ease,
-    opacity 150ms var(--ease),
     transform 100ms var(--ease);
 }
 .option:focus-visible {
-  outline: 3px solid var(--primary);
+  outline: 3px solid #6ea0ff;
   outline-offset: 2px;
 }
 .option:active:not([aria-disabled]) {
-  transform: scale(0.98);
+  transform: translateY(2px);
 }
 @media (hover: hover) and (pointer: fine) {
-  /* 0.12 · 1: el fondo se aclara un tono; sin borde nuevo ni escala. */
+  /* estado-04: el fondo se aclara un tono; sin borde nuevo ni escala. */
   .option:not([aria-disabled]):hover {
-    background: var(--chip-hover);
+    background: #23263a;
   }
 }
-/* 0.12 · 2: la elegida se queda clara y con contorno (no solo color). */
+/* estado-05: la elegida se queda rellena (y con contorno claro: no solo color). */
 .option[data-picked] {
-  background: var(--chip-hover);
-  border-color: var(--primary);
+  background: #2c2f40;
+  border-color: rgba(255, 255, 255, 0.32);
 }
 .option[aria-disabled] {
   cursor: default;
 }
 .key {
+  display: none;
+}
+.mark {
   flex: none;
-  inline-size: 26px;
-  block-size: 26px;
-  border-radius: 8px;
-  display: grid;
-  place-items: center;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  background: var(--bg);
+  display: inline-grid;
 }
 .label {
-  flex: 1;
   min-inline-size: 0;
 }
-/* 0.12 · 4: correcta verde oscuro / texto verde claro; mal elegida, rojo. */
+/* estado-09/10: correcta verde oscuro con texto menta; mal elegida, granate con texto rosa. */
 .option[data-right] {
-  background: #14432f;
-  border-color: #2f9e6b;
-  color: #c4f7da;
-}
-.option[data-right] .key {
-  background: #2f9e6b;
-  color: #04170e;
+  background: #0f3d29;
+  border-color: transparent;
+  box-shadow: 0 3px 0 #0a2a1c;
+  color: #74e8ab;
 }
 .option[data-wrong] {
-  background: #4a1820;
-  border-color: #d14b5a;
-  color: #ffd0d6;
+  background: #3b1d24;
+  border-color: transparent;
+  box-shadow: 0 3px 0 #29131a;
+  color: #f2a3ae;
   animation: hop 160ms var(--ease) 1;
 }
-.option[data-wrong] .key {
-  background: #d14b5a;
-  color: #22060a;
-}
 .option[data-dim] {
-  opacity: 0.4;
+  color: rgba(244, 245, 250, 0.42);
 }
 @keyframes hop {
   50% {
@@ -185,27 +191,28 @@
 }
 
 /* «Comprobar»: gris hasta elegir (0.12 · 3). */
-.check:not([data-ready]) {
-  background: var(--chip-hover);
-  color: var(--text-secondary);
-  box-shadow: none;
+.check.check:not([data-ready]) {
+  background: #23252f;
+  color: #6c6f7d;
+  box-shadow: 0 4px 0 #181a24;
   cursor: not-allowed;
 }
-.check:not([data-ready]):active {
+.check.check:not([data-ready]):active {
   transform: none;
 }
 
 /* ── Hoja de corrección (0.12 · 5-6) ── */
 .sheet {
-  --sheet-bg: #4a1820;
-  --sheet-text: #ffd0d6;
-  --lip-bg: #ff8a80;
-  --lip: #c4554e;
+  --sheet-bg: #3a2327;
+  --sheet-text: #f47a88;
+  --lip-bg: #f2707e;
+  --lip: #c24e5c;
+  --why: #4c363b;
   position: fixed;
   inset-inline: 0;
   inset-block-end: 0;
   z-index: 40;
-  padding: 10px max(16px, calc((100% - 728px) / 2)) calc(16px + var(--safe-bottom, 0px));
+  padding: 10px max(16px, calc((100% - 600px) / 2)) calc(20px + var(--safe-bottom, 0px));
   border-radius: 24px 24px 0 0;
   background: var(--sheet-bg);
   color: var(--sheet-text);
@@ -216,10 +223,11 @@
   animation: sheetUp 400ms var(--ease-drawer) both;
 }
 .sheet[data-ok] {
-  --sheet-bg: #14432f;
-  --sheet-text: #c4f7da;
-  --lip-bg: #7ce8b0;
-  --lip: #3faa76;
+  --sheet-bg: #0e3a25;
+  --sheet-text: #74e8ab;
+  --lip-bg: #6ee7b0;
+  --lip: #3aa877;
+  --why: #1b4a34;
 }
 @keyframes sheetUp {
   from {
@@ -240,10 +248,10 @@
   gap: 10px;
 }
 .sheetIcon {
-  inline-size: 32px;
-  block-size: 32px;
+  inline-size: 28px;
+  block-size: 28px;
   flex: none;
-  border-radius: 50%;
+  border-radius: 7px;
   display: grid;
   place-items: center;
   background: var(--lip-bg);
@@ -251,8 +259,10 @@
 }
 .sheetTitle {
   flex: 1;
-  font-size: 1.25rem;
-  font-weight: 750;
+  font-family: var(--font-hero), var(--font-stack);
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .thumbs {
   display: inline-flex;
@@ -287,6 +297,7 @@
   }
 }
 .sheetBody {
+  color: rgba(244, 245, 250, 0.82);
   font-size: 0.9375rem;
   line-height: 1.45;
 }
@@ -299,7 +310,7 @@
 }
 .why,
 .next {
-  min-block-size: 50px;
+  min-block-size: 54px;
   border: 0;
   border-radius: var(--radius-pill);
   font: inherit;
@@ -314,9 +325,10 @@
     background-color 120ms ease;
 }
 .why {
-  padding-inline: 20px;
-  background: rgba(0, 0, 0, 0.28);
+  padding-inline: 22px;
+  background: var(--why);
   color: #fff;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.25);
 }
 /* «Continuar»/«Entendido»: píldora gruesa con labio inferior (0.12 · 6). */
 .next {
@@ -343,7 +355,7 @@
 }
 @media (hover: hover) and (pointer: fine) {
   .why:hover {
-    background: rgba(0, 0, 0, 0.36);
+    filter: brightness(1.12);
   }
 }
 

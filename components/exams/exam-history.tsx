@@ -6,6 +6,7 @@
 // View Transition de las páginas (globals.css › Objeto de la asignatura).
 import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { studyStepsEnabled } from "@/lib/study-steps";
+import k from "./plan-card.module.css";
 import Link from "next/link";
 import {
   CalendarDays,
@@ -95,6 +96,47 @@ export function HistoryCard({
   const [steps, setSteps] = useState(false);
   useEffect(() => setSteps(studyStepsEnabled()), []);
   const pct = p.total ? Math.round((100 * p.completed) / p.total) : 0;
+  // Tarjeta de «Planes de estudio» de las capturas (estado-15): «Faltan: N días»,
+  // la asignatura en grande y «N% completado · a/b pasos» con su barra fina.
+  if (steps && exam.status !== "draft")
+    return (
+      <article className={k.card} style={{ "--i": Math.min(index, 7) } as CSSProperties} aria-labelledby={titleId}>
+        <Link href={hrefFor(exam)} className={k.link}>
+          <span className={k.chip} data-soon={soon || undefined}>
+            <CalendarDays size={16} aria-hidden="true" />
+            {days === null ? "Sin fecha" : days < 0 ? countdownText(exam.exam_date) : `Faltan: ${days === 1 ? "1 día" : `${days} días`}`}
+          </span>
+          <h3 className={k.title} id={titleId}>
+            {exam.subject.trim() || title}
+          </h3>
+          {exam.subject.trim() && <span className={k.sub}>{title}</span>}
+          <span className={k.row}>
+            <span>
+              <span className="num">{pct}%</span> completado
+            </span>
+            <span data-testid="tarjeta-examen-progreso">
+              <span className="num">
+                {p.completed}/{p.total}
+              </span>{" "}
+              {p.total === 1 ? "paso" : "pasos"}
+            </span>
+          </span>
+          <span
+            className={k.track}
+            role="progressbar"
+            aria-label={`Progreso de ${title}`}
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <i style={{ transform: `scaleX(${p.total ? p.completed / p.total : 0})` }} />
+          </span>
+        </Link>
+        <button type="button" className={`${k.more} press`} aria-label={`Más opciones de ${title}`} aria-haspopup="dialog" onClick={() => onActions(exam)}>
+          <MoreHorizontal size={20} aria-hidden="true" />
+        </button>
+      </article>
+    );
   return (
     <article
       className={s.hCard}

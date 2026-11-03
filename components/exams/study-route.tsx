@@ -10,7 +10,7 @@
 // - Movimiento: solo transform y opacity (globals.css › .press, hoja).
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeft, BookOpen, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
+import { ArrowDown, ArrowLeft, BookOpen, CalendarDays, Check, Goal, Layers as LayersIcon, Lock, PencilLine, Star, Trophy, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
 import { DueLink, goalText, useStudyToday } from "../study-today";
@@ -21,8 +21,10 @@ import { BottomSheet } from "../bottom-sheet";
 import { ProgressView } from "../progress/progress-view";
 import s from "./study-route.module.css";
 
-/** Zigzag suave del camino: 0, 1, 2, 1… pasos hacia la derecha. */
-const OFFSETS = [0, 1, 2, 1];
+/** Curva suave del camino, como en las capturas de Knowunity: derecha, izquierda, izquierda, derecha. */
+const OFFSETS = [1, 0, 0, 1];
+/** Icono de cada tipo de paso (círculos de la ruta). */
+const STEP_ICON = { study: BookOpen, practice: PencilLine, review: LayersIcon, mock: Trophy } as const;
 
 function Piece({ name, size = 72, className }: { name: string; size?: number; className?: string }) {
   // Decorativas: el estado y el nombre se leen en el texto del botón.
@@ -41,11 +43,11 @@ function SubjectHeaderObject({ subject, className }: { subject: string; classNam
   const [live, setLive] = useState(false);
   useEffect(() => setLive(wants3D(readDevice(window)) && hasWebGL2(document)), []);
   return live ? (
-    <span className={className} data-testid="ruta-3d" style={{ display: "inline-grid", width: 60, height: 60 }}>
-      <LiveSubjectObject subject={subject} size={60} float={false} />
+    <span className={className} data-testid="ruta-3d" style={{ display: "inline-grid", width: 40, height: 40 }}>
+      <LiveSubjectObject subject={subject} size={40} float={false} />
     </span>
   ) : (
-    <Piece name={subjectPiece(subject)} size={60} className={className} />
+    <Piece name={subjectPiece(subject)} size={40} className={className} />
   );
 }
 
@@ -66,6 +68,7 @@ function Step({
   const done = node.state === "completed";
   const state = done ? "hecha" : current ? "actual" : "bloq";
   const status = done ? "hecha" : current ? "ahora" : "pendiente";
+  const Icon = STEP_ICON[node.type] ?? BookOpen;
   return (
     <li
       className={s.stepItem}
@@ -81,20 +84,21 @@ function Step({
         aria-label={`${STEP_LABEL[node.type]}: ${node.title}, ${status}`}
         onClick={() => onOpen(node)}
       >
-        <span className={s.piece} aria-hidden="true">
-          {current && <span className={s.halo} />}
+        {/* Círculo grande con icono (estado-14): hecho, actual (rayado y con anillo), siguiente o bloqueado. */}
+        <span className={s.node} aria-hidden="true">
           {current && (
             <svg className={s.ring} viewBox="0 0 88 88" aria-hidden="true">
               <circle cx="44" cy="44" r="40" className={s.ringTrack} />
               <circle cx="44" cy="44" r="40" className={s.ringFill} pathLength={100} strokeDasharray="100 100" style={{ ["--off" as string]: 100 - Math.max(6, ring) }} />
             </svg>
           )}
-          <Piece name={state} />
-          {current && <Piece name={STEP_PIECE[node.type]} size={44} className={s.badge} />}
+          <span className={s.disc}>
+            {done ? <Check size={30} strokeWidth={2.5} /> : current ? <Star size={30} strokeWidth={2.2} fill="currentColor" /> : state === "bloq" && index > 1 ? <Lock size={24} /> : <Icon size={28} />}
+          </span>
         </span>
         {/* Una sola frase corta al lado del círculo (0.11 · 1). */}
         <span className={s.stepText}>
-          {current ? <span className={s.now}>Ahora</span> : <span className={s.stepType}>{STEP_LABEL[node.type]}</span>}
+          {current && <span className={s.now}>Ahora</span>}
           <span className={s.stepTitle}>{node.title}</span>
         </span>
       </button>
@@ -242,28 +246,35 @@ export function StudyRoute(p: StudyRouteProps) {
     );
   }
 
+  // Cabecera centrada (estado-14): asignatura y «N días · Nota objetivo».
   const header = (
     <header className={s.head}>
       <div className={s.subject}>
         <SubjectHeaderObject subject={exam.subject} className={s.subjectPiece} />
-        <span className={s.eyebrow}>{exam.subject}</span>
+        <h1 className={s.title}>{exam.subject.trim() || exam.title}</h1>
       </div>
-      <h1 className={s.title}>{exam.title}</h1>
+      {exam.subject.trim() && exam.title !== exam.subject && <p className={s.examName}>{exam.title}</p>}
       <p className={s.facts}>
         {p.days !== null && p.days >= 0 && (
           <span>
-            {p.days === 0 ? "Es " : "Faltan "}
-            <strong className="num">{p.days === 0 ? "hoy" : p.days === 1 ? "1 día" : `${p.days} días`}</strong>
+            <CalendarDays size={16} aria-hidden="true" />
+            <span className="num">{p.days === 0 ? "Es hoy" : p.days === 1 ? "1 día" : `${p.days} días`}</span>
           </span>
         )}
-        {mastery !== null && (
+        {typeof exam.target_grade === "number" && (
           <span>
-            Dominio <strong className="num">{mastery} %</strong>
+            <Goal size={16} aria-hidden="true" />
+            Nota objetivo: <span className="num">{String(exam.target_grade).replace(".", ",")}</span>
           </span>
         )}
         {perDay !== null && (
           <span>
-            ≈ <strong className="num">{perDay} min</strong> al día
+            ≈ <span className="num">{perDay} min</span> al día
+          </span>
+        )}
+        {mastery !== null && (
+          <span>
+            Dominio <span className="num">{mastery} %</span>
           </span>
         )}
       </p>
@@ -371,7 +382,7 @@ export function StudyRoute(p: StudyRouteProps) {
             {section && next && (
               <div className={s.sectionBar} data-testid="barra-seccion">
                 <span className={s.sectionName}>
-                  <span className={s.sectionEyebrow}>Sección</span>
+                  <span className="visually-hidden">Sección: </span>
                   {section}
                 </span>
                 <button type="button" className={`${s.book} press`} aria-label={`Resumen de «${section}»`} onClick={() => setOpen(g.current ?? next)}>

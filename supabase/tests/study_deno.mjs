@@ -248,6 +248,17 @@ Deno.test("con el flag apagado, las acciones no existen; por fases, solo para la
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "loyola");
   assertEquals((await call({ action: "cards_due" })).status, 404);
   Deno.env.delete("DREAM_STUDY_STEPS_USERS");
+  // Abierta para todos: sin valor o con «true» mal escrito («True », comillas), encendida.
+  for (const v of [undefined, " True ", '"true"', "si"]) {
+    if (v === undefined) Deno.env.delete("DREAM_STUDY_STEPS_ENABLED");
+    else Deno.env.set("DREAM_STUDY_STEPS_ENABLED", v);
+    assertEquals((await call({ action: "cards_due" })).status, 200, String(v));
+  }
+  // El interruptor de emergencia, escrito como sea: apagada.
+  for (const v of ["false", " FALSE", "off", "0"]) {
+    Deno.env.set("DREAM_STUDY_STEPS_ENABLED", v);
+    assertEquals((await call({ action: "cards_due" })).status, 404, v);
+  }
   Deno.env.set("DREAM_STUDY_STEPS_ENABLED", "true");
 });
 

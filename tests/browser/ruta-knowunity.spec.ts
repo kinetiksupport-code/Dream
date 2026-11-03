@@ -38,7 +38,7 @@ test("lista de exámenes: una tarjeta con «Faltan…», la asignatura y «N % c
   await page.setViewportSize({ width: 390, height: 844 });
   await routeFixture(page);
   await page.goto("/exams");
-  await expect(page.getByTestId("tarjeta-examen-progreso")).toHaveText(/30 % completado · 3\/10 lecciones/);
+  await expect(page.getByTestId("tarjeta-examen-progreso")).toHaveText("3/10 pasos");
 });
 
 test("pop-up de la ruta: sale sin ruta, una vez por sesión; «Ahora no» lo oculta; teclado y foco", async ({ page }) => {

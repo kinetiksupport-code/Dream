@@ -75,7 +75,7 @@ export function QuizQuestion({
       </p>
       <div className={s.tutor}>
         <span className={s.orb} aria-hidden="true">
-          <Orb size={44} breathing />
+          <Orb size={64} breathing />
         </span>
         <div className={s.bubble}>
           {eyebrow && <p className={s.eyebrow}>{eyebrow}</p>}
@@ -87,7 +87,7 @@ export function QuizQuestion({
       {written ??
         (options && (
           <div className={s.options} role="radiogroup" aria-label="Respuestas" ref={listRef}>
-            {options.map((o, i) => {
+            {options.map((o) => {
               const mine = picked === o.value;
               const right = locked && verdict.correctAnswer === o.value;
               const wrong = locked && mine && !verdict.correct;
@@ -105,9 +105,11 @@ export function QuizQuestion({
                   data-dim={(locked && !right && !wrong) || undefined}
                   onClick={() => !locked && onPick(o.value)}
                 >
-                  <span className={s.key} aria-hidden="true">
-                    {right ? <Check size={14} /> : wrong ? <XIcon size={14} /> : i + 1}
-                  </span>
+                  {(right || wrong) && (
+                    <span className={s.mark} aria-hidden="true">
+                      {right ? <Check size={18} strokeWidth={2.5} /> : <XIcon size={18} strokeWidth={2.5} />}
+                    </span>
+                  )}
                   <span className={s.label}>{o.label}</span>
                   {right && <span className="visually-hidden"> (respuesta correcta)</span>}
                   {wrong && <span className="visually-hidden"> (tu respuesta, incorrecta)</span>}

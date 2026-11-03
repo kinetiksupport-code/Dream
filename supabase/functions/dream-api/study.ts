@@ -21,17 +21,21 @@ export const STUDY_ACTIONS = new Set([
   'card_delete', 'cards_import', 'card_report', 'error_bank_list', 'study_quota',
   'unit_quiz_get', 'unit_quiz_answer', 'unit_quiz_finish', 'unit_quiz_rate', 'cards_list', 'study_today', ...MOCK_ACTIONS,
 ]);
-export const studyEnabled = () => Deno.env.get('DREAM_STUDY_STEPS_ENABLED') === 'true';
+/** Valor del interruptor, sin mayúsculas ni espacios ni comillas (se escribe a mano en Supabase). */
+const studyMode = () => (Deno.env.get('DREAM_STUDY_STEPS_ENABLED') ?? '').trim().replace(/^["']|["']$/g, '').trim().toLowerCase();
+const OFF = new Set(['false', 'off', '0', 'no', 'apagado']);
+export const studyEnabled = () => !OFF.has(studyMode()) && studyMode() !== 'loyola';
 /**
- * Encendido por fases (prompt de la ruta, apartado 6):
- * - DREAM_STUDY_STEPS_ENABLED=true: para todos.
- * - DREAM_STUDY_STEPS_ENABLED=loyola: para las cuentas de Fundación Loyola.
- * - DREAM_STUDY_STEPS_USERS: correos o ids separados por comas (la cuenta de prueba).
- * Sin nada de eso, apagado: las acciones no existen (404).
+ * Ruta de estudio abierta para todos (Carlos, 3-nov-2026). El secreto
+ * DREAM_STUDY_STEPS_ENABLED es el interruptor de emergencia:
+ * - false (u off, 0, no): apagada; las acciones no existen (404), salvo para
+ *   las cuentas de DREAM_STUDY_STEPS_USERS (correos o ids separados por comas).
+ * - loyola: solo para las cuentas de Fundación Loyola (y las de la lista).
+ * - Sin valor, true o cualquier otra cosa: encendida para todos.
  */
 export function studyEnabledFor(user: { id: string; email?: string | null }, loyola: boolean) {
-  const mode = Deno.env.get('DREAM_STUDY_STEPS_ENABLED');
-  if (mode === 'true') return true;
+  const mode = studyMode();
+  if (!OFF.has(mode) && mode !== 'loyola') return true;
   if (mode === 'loyola' && loyola) return true;
   const list = (Deno.env.get('DREAM_STUDY_STEPS_USERS') ?? '').split(',').map((x) => x.trim().toLowerCase()).filter(Boolean);
   return list.includes(user.id.toLowerCase()) || (!!user.email && list.includes(user.email.toLowerCase()));

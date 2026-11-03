@@ -1,0 +1,122 @@
+/* Tarjeta de examen como «Planes de estudio» de Knowunity (estado-15). */
+.card {
+  position: relative;
+  border-radius: 28px;
+  background: var(--card);
+  animation: cardIn 240ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.link {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 22px 24px 24px;
+  border-radius: inherit;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform 120ms var(--ease);
+}
+.link:active {
+  transform: scale(0.99);
+}
+.link:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--chip-hover);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.chip[data-soon] {
+  color: var(--danger);
+}
+.title {
+  margin: 12px 0 0;
+  font-family: var(--font-hero), var(--font-stack);
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+.sub {
+  margin-block-start: -6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+.track {
+  block-size: 8px;
+  border-radius: 4px;
+  background: var(--chip-hover);
+  overflow: hidden;
+}
+.track > i {
+  display: block;
+  block-size: 100%;
+  inline-size: 100%;
+  border-radius: 4px;
+  background: var(--primary);
+  transform-origin: left center;
+  transition: transform 250ms var(--ease);
+}
+.more {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-end: 14px;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-secondary);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .link:hover {
+    background: var(--chip-hover);
+  }
+  .more:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    animation-name: fade;
+    animation-duration: 100ms;
+    animation-delay: 0ms;
+  }
+  .link,
+  .track > i {
+    transition: none;
+  }
+  .link:active {
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
