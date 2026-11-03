@@ -90,7 +90,7 @@ test("3D: con WebGL bloqueado o en móvil, la pieza plana del mismo tamaño", as
   await page.setViewportSize({ width: 1440, height: 900 });
   await routeFixture(page);
   await page.goto(`/exams/${eid}/ruta`);
-  await expect(page.getByRole("tabpanel").locator("header img[src$='.svg']").first()).toBeVisible();
+  await expect(page.getByRole("tabpanel").locator("header img[src*='/estudio/']").first()).toBeVisible();
   await expect(page.getByTestId("ruta-3d")).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();

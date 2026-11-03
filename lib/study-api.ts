@@ -21,9 +21,11 @@ export type LessonState =
   | { status: "failed"; message: string };
 export interface QuizQuestion {
   index: number;
-  type: "mcq" | "tf" | "written";
+  type: "mcq" | "tf" | "written" | "numeric";
   prompt: string;
   options?: string[];
+  /** Unidad de una pregunta numérica («cm», «€»…). */
+  unit?: string;
 }
 export interface QuizCheck {
   correct: boolean;

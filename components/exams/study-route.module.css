@@ -1019,3 +1019,37 @@
   inline-size: 40px;
   block-size: 40px;
 }
+/* Fichas 3D de la lámina (sustituyen a los círculos con icono). */
+.ficha {
+  position: relative;
+  display: block;
+  transition: transform 120ms var(--ease);
+}
+.step[data-state="bloq"] .ficha {
+  opacity: 0.7;
+}
+.placa {
+  position: absolute !important;
+  inset-inline-end: -14px;
+  inset-block-start: -16px;
+  filter: drop-shadow(0 4px 8px rgba(8, 11, 20, 0.3));
+  animation: placa 3.2s var(--ease-pulse) infinite;
+}
+@keyframes placa {
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .step:hover .ficha {
+    transform: scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .placa {
+    animation: none;
+  }
+  .ficha {
+    transition: none;
+  }
+}

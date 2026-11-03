@@ -31,6 +31,7 @@ import { Markdown } from "../markdown";
 import { Orb } from "../orb";
 import { PlayWhileWaiting } from "../games/play-while-waiting";
 import { mixItems, type Item } from "@/lib/lesson-items";
+import { PIECE } from "@/lib/study-steps";
 import { StepFrame } from "./step-frame";
 import { CheckButton, CorrectionSheet, QuizQuestion as QuestionView, type Answer, type Verdict } from "./quiz-question";
 import { WhyPanel } from "./why-panel";
@@ -171,7 +172,8 @@ function LessonScreens({
   }
   /** «Comprobar» (0.12 · 4): bloquea las respuestas y pide la corrección. */
   async function check(item: Item) {
-    const value: Answer | null = item.kind === "quiz" && item.q.type === "written" ? draft : picked;
+    const typed = item.kind === "quiz" && (item.q.type === "written" || item.q.type === "numeric");
+    const value: Answer | null = typed ? draft : picked;
     if (busy || verdict || value === null || value === "") return;
     setBusy(true);
     setError("");
@@ -295,8 +297,14 @@ function LessonScreens({
     return (
       <div className={sf.frame} data-testid="leccion-resultados">
         <main className={s.kwResults} data-mastered={r.mastered || undefined}>
-          <span aria-hidden="true">
-            <Orb size={120} breathing reaction={r.mastered ? "success" : null} reactionKey="fin" />
+          <span aria-hidden="true" className={s.prize}>
+            {r.mastered ? (
+              // La medalla «Dominado» de la lámina de objetos.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={PIECE("dominado")} alt="" width={132} height={132} draggable={false} />
+            ) : (
+              <Orb size={120} breathing />
+            )}
           </span>
           <h1 className={s.kwTitleBig}>{r.mastered ? "¡Lo dominas!" : known ? "Mejor haz la lección" : "¡Casi lo tienes!"}</h1>
           <ul className={s.pills} aria-label="Tu resultado">
@@ -584,7 +592,7 @@ function LessonScreens({
         showCounter={false}
         shifted={!!why}
         onExit={leave}
-        footer={verdict ? null : <CheckButton ready={item.kind === "quiz" && item.q.type === "written" ? !!draft.trim() : picked !== null} busy={busy} onCheck={() => void check(item)} />}
+        footer={verdict ? null : <CheckButton ready={item.kind === "quiz" && (item.q.type === "written" || item.q.type === "numeric") ? !!draft.trim() : picked !== null} busy={busy} onCheck={() => void check(item)} />}
       >
         <div key={`${reviewing ? "r" : "t"}-${phase.at}`} className={s.qWrap} data-sheet={verdict ? "" : undefined}>
           <QuestionView
@@ -596,7 +604,23 @@ function LessonScreens({
             verdict={verdict}
             retry={item.kind === "quiz" && item.retry}
             written={
-              item.kind === "quiz" && item.q.type === "written" ? (
+              item.kind === "quiz" && item.q.type === "numeric" ? (
+                // Respuesta numérica (matemáticas, física, química): un número, con coma o punto.
+                <label className={s.numeric}>
+                  <span>Tu resultado</span>
+                  <span className={s.numericRow}>
+                    <input
+                      value={draft}
+                      inputMode="decimal"
+                      autoComplete="off"
+                      maxLength={30}
+                      disabled={!!verdict}
+                      onChange={(e) => setDraft(e.target.value)}
+                    />
+                    {item.q.unit && <span className={s.unit}>{item.q.unit}</span>}
+                  </span>
+                </label>
+              ) : item.kind === "quiz" && item.q.type === "written" ? (
                 <label className={s.written}>
                   <span>Tu respuesta</span>
                   <textarea value={draft} maxLength={1500} disabled={!!verdict} onChange={(e) => setDraft(e.target.value)} rows={6} />

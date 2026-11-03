@@ -28,7 +28,16 @@ export function studyStepsEnabled(
 }
 
 /** Piezas 3D de Claude Design («Dream · Experiencia de estudio», Iconos3D). */
-export const PIECE = (name: string) => `/estudio/3d/${name}.svg`;
+/**
+ * Objetos de la lámina de Carlos (3-nov-2026), recortados sin retocar y con el
+ * fondo quitado (public/estudio/objetos). Los que no están en la lámina siguen
+ * con la pieza de siempre (public/estudio/3d).
+ */
+const OBJECTS = new Set([
+  "hecha", "actual", "bloq", "gema", "leer", "test", "tarjetas", "simulacro", "dominado", "completada",
+  "historia", "geografia", "matematicas", "quimica", "fisica", "biologia", "lengua", "arte",
+]);
+export const PIECE = (name: string) => (OBJECTS.has(name) ? `/estudio/objetos/${name}.webp` : `/estudio/3d/${name}.svg`);
 
 /** Cada parada se llama «lección» (5b); el tipo va en la etiqueta corta. */
 export const STEP_LABEL: Record<RouteNodeType, string> = {

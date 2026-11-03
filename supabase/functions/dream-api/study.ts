@@ -215,7 +215,7 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
       const first = pickLessonTest(bank, 7);
       // Pretest opcional (Bloque 2): 2-3 rápidas del banco que no salen en el test, sin puntuar.
       if (b.pretest === true) {
-        const rest = [...bank.keys()].filter((i) => !first.includes(i) && bank[i].type !== 'written').slice(0, 3);
+        const rest = [...bank.keys()].filter((i) => !first.includes(i) && (bank[i].type === 'mcq' || bank[i].type === 'tf')).slice(0, 3);
         return { questions: rest.length >= 2 ? rest.map((i) => publicQuestion(bank[i], i)) : [] };
       }
       const round = Math.max(0, Math.min(10, Number(b.round) || 0));

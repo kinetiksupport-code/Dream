@@ -106,3 +106,32 @@ test("corrección en código: test, V/F y escrita por ideas de la rúbrica; tarj
   assert.equal(mistakeCard(tf).back, "Verdadero");
   assert.ok(mistakeCard({ ...mcq, prompt: "p".repeat(400) }).front.length <= 300);
 });
+
+test("preguntas numéricas (matemáticas): coma o punto, redondeo pequeño, unidad en la corrección", async () => {
+  const { gradeQuestion, validateLesson: v, publicQuestion } = await import("../supabase/functions/dream-api/lesson.mjs");
+  const q = { type: "numeric", prompt: "Área de un círculo de radio 2 (2 decimales)", answer: 12.57, unit: "cm²", explanation: "π·r²", section_index: 0, difficulty: "medio" } as never;
+  assert.equal(gradeQuestion(q, "12,57").correct, true);
+  assert.equal(gradeQuestion(q, "12.566").correct, true);
+  assert.equal(gradeQuestion(q, " 12,57 cm² ").correct, true);
+  assert.equal(gradeQuestion(q, "12,9").correct, false);
+  assert.equal(gradeQuestion(q, "").correct, false);
+  assert.equal(gradeQuestion(q, "x").correct, false);
+  assert.equal(gradeQuestion(q, "1").correct_answer, "12,57 cm²");
+  assert.deepEqual(publicQuestion(q, 3), { index: 3, type: "numeric", prompt: "Área de un círculo de radio 2 (2 decimales)", unit: "cm²" });
+  const lesson = clone();
+  (lesson.quiz as unknown[])[0] = { type: "numeric", prompt: "2+2", answer: "4", explanation: "Suma.", section_index: 0, difficulty: "facil" };
+  const r = v(lesson);
+  assert.equal(r.ok, true);
+  if (r.ok) assert.equal(r.value.quiz[0].answer, 4);
+  (lesson.quiz as unknown[])[0] = { type: "numeric", prompt: "2+2", answer: "cuatro", explanation: "", section_index: 0 };
+  assert.deepEqual(v(lesson), { ok: false, reason: "numeric_answer" });
+});
+
+test("la instrucción pide variedad, distractores creíbles, pocas negativas y ejemplo resuelto en mates", () => {
+  const sys = lessonSystem();
+  assert.match(sys, /errores típicos/);
+  assert.match(sys, /como mucho UNA pregunta en negativo/);
+  assert.match(sys, /nunca «todas las anteriores»/);
+  assert.match(sys, /ejemplo resuelto paso a paso/);
+  assert.match(sys, /numeric/);
+});

@@ -10,7 +10,7 @@
 // - Movimiento: solo transform y opacity (globals.css › .press, hoja).
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowDown, ArrowLeft, BookOpen, CalendarDays, Check, Goal, Layers as LayersIcon, Lock, PencilLine, Star, Trophy, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
+import { ArrowDown, ArrowLeft, BookOpen, CalendarDays, Goal, ChevronDown, ChevronRight, MoreHorizontal, RotateCcw, Route as RouteIcon, BarChart3, FileText, Layers, Compass } from "lucide-react";
 import type { DreamExam } from "@/lib/exam-plans";
 import type { RouteView, RouteViewNode } from "@/lib/study-path";
 import { DueLink, goalText, useStudyToday } from "../study-today";
@@ -23,8 +23,7 @@ import s from "./study-route.module.css";
 
 /** Curva suave del camino, como en las capturas de Knowunity: derecha, izquierda, izquierda, derecha. */
 const OFFSETS = [1, 0, 0, 1];
-/** Icono de cada tipo de paso (círculos de la ruta). */
-const STEP_ICON = { study: BookOpen, practice: PencilLine, review: LayersIcon, mock: Trophy } as const;
+
 
 function Piece({ name, size = 72, className }: { name: string; size?: number; className?: string }) {
   // Decorativas: el estado y el nombre se leen en el texto del botón.
@@ -68,7 +67,6 @@ function Step({
   const done = node.state === "completed";
   const state = done ? "hecha" : current ? "actual" : "bloq";
   const status = done ? "hecha" : current ? "ahora" : "pendiente";
-  const Icon = STEP_ICON[node.type] ?? BookOpen;
   return (
     <li
       className={s.stepItem}
@@ -92,9 +90,9 @@ function Step({
               <circle cx="44" cy="44" r="40" className={s.ringFill} pathLength={100} strokeDasharray="100 100" style={{ ["--off" as string]: 100 - Math.max(6, ring) }} />
             </svg>
           )}
-          <span className={s.disc}>
-            {done ? <Check size={30} strokeWidth={2.5} /> : current ? <Star size={30} strokeWidth={2.2} fill="currentColor" /> : state === "bloq" && index > 1 ? <Lock size={24} /> : <Icon size={28} />}
-          </span>
+          {/* Fichas de la lámina de Carlos: hecha, actual (con la placa del tipo flotando) y bloqueada. */}
+          <Piece name={state} size={76} className={s.ficha} />
+          {current && <Piece name={STEP_PIECE[node.type]} size={40} className={s.placa} />}
         </span>
         {/* Una sola frase corta al lado del círculo (0.11 · 1). */}
         <span className={s.stepText}>
@@ -436,7 +434,7 @@ export function StudyRoute(p: StudyRouteProps) {
                     style={{ ["--off" as string]: 100 - p.units.percentage }}
                   />
                 </svg>
-                <Piece name="gema" size={96} />
+                <Piece name={p.units.percentage >= 100 ? "completada" : "gema"} size={96} />
               </span>
               <h2 id={`${id}-gema`} className={s.gemTitle}>
                 Preparación <span className="num">{p.units.percentage} %</span>

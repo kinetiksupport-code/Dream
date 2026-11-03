@@ -708,3 +708,56 @@
   border-radius: 7px;
   background: #8b7cf6;
 }
+.prize img {
+  display: block;
+  animation: prizeIn 320ms var(--ease) both;
+}
+@keyframes prizeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .prize img {
+    animation-name: fade;
+    animation-duration: 100ms;
+  }
+}
+/* Respuesta numérica: un campo grande, centrado, con la unidad al lado. */
+.numeric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+.numericRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.numeric input {
+  inline-size: min(260px, 70vw);
+  min-block-size: 64px;
+  padding: 0 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.numeric input:focus-visible {
+  outline: 3px solid #6ea0ff;
+  outline-offset: 2px;
+}
+.unit {
+  color: var(--text);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
