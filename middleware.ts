@@ -187,6 +187,7 @@ async function app(request: NextRequest, rewrite?: URL): Promise<NextResponse> {
       sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
       development: process.env.NODE_ENV === "development",
       turnstile: turnstileOn(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY),
+      blogImages: request.nextUrl.pathname === "/blog" || request.nextUrl.pathname.startsWith("/blog/"),
     },
     [await readingBootHash, await gameHash],
   );

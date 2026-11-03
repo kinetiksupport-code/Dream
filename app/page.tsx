@@ -259,6 +259,9 @@ export default function LandingPage() {
             <Orb size={28} /> Dream © 2026
           </p>
           <nav aria-label="Legal" className={s.footerLinks}>
+            {/* Carga completa: /blog tiene su propia CSP de imágenes (lib/csp.ts). */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/blog">Blog</a>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/terminos">Términos</Link>
             <Link href="/cookies">Cookies</Link>

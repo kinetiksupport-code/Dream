@@ -1,0 +1,205 @@
+/* Blog de BabyLoveGrowth con los colores y tokens de Dream (globals.css).
+   Movimiento: solo transform y color; hover solo con ratón. */
+.page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(12px + var(--safe-top)) calc(20px + var(--safe-right)) 12px calc(20px + var(--safe-left));
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding-inline-end: 8px;
+  border-radius: var(--radius-pill);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.main {
+  flex: 1;
+  inline-size: min(100% - 40px, 1080px);
+  margin: 0 auto;
+  padding-block: 24px 64px;
+}
+.narrow {
+  inline-size: min(100% - 40px, 720px);
+}
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.lead {
+  margin: 12px 0 0;
+  max-inline-size: 56ch;
+  color: var(--text-secondary);
+  font-size: 1.0625rem;
+}
+.header {
+  margin-block-end: 32px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--primary-ink);
+  font-weight: 600;
+  font-size: var(--text-secondary-size);
+}
+.empty {
+  color: var(--text-secondary);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-panel);
+  background: var(--card);
+  border: 1px solid var(--border);
+  transition: transform 160ms var(--ease);
+}
+.card:active {
+  transform: scale(0.98);
+}
+.cardImage {
+  display: block;
+  inline-size: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: var(--surface);
+}
+.cardBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px 20px;
+}
+.date {
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+.cardTitle {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.cardText {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-secondary-size);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hero {
+  display: block;
+  inline-size: 100%;
+  margin-block: 24px;
+  border-radius: var(--radius-panel);
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  font-size: var(--text-small);
+  font-weight: 600;
+}
+.articleFooter {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 40px;
+}
+.pageLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  font-weight: 600;
+  font-size: var(--text-secondary-size);
+}
+.pageLink[aria-disabled='true'] {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+.pageInfo {
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  justify-content: center;
+  padding: 24px 20px calc(24px + var(--safe-bottom));
+  color: var(--text-secondary);
+  font-size: var(--text-small);
+}
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .cardTitle,
+  .footer a:hover,
+  .tag:hover {
+    color: var(--primary-ink);
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .card:hover {
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+  .card:active {
+    transform: none;
+  }
+}
+.articleDate {
+  display: block;
+  margin-top: 12px;
+}
