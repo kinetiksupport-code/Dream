@@ -237,11 +237,20 @@ async function groqJson(system: string, user: string, operation: string, signal?
 // Esquemas (schemes.mjs, docs/ESQUEMAS.md): JSON con el formato del esquema,
 // temperatura baja y sin razonamiento (lo que pasó el banco de pruebas).
 async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>, schema: object = SCHEME_JSON_SCHEMA) {
-  const response = await groqProvider.request({ operation: 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
+  const send = (format: object) => groqProvider.request({ operation: 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
     model: groqModel(), stream: false, temperature: 0.25, max_tokens: 3000,
     ...(/^qwen\//.test(groqModel()) ? { reasoning_format: 'hidden', reasoning_effort: 'none' } : {}),
-    response_format: { type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema } }, messages,
+    response_format: format, messages,
   }});
+  let response: Response;
+  try { response = await send({ type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema } }); }
+  catch (error) {
+    // Groq responde 400 (json_validate_failed) cuando la salida no cumple el
+    // esquema JSON: se pide otra vez como JSON normal y lo valida validateScheme.
+    if (!(error instanceof GroqProviderError) || error.status !== 400) throw error;
+    console.log(JSON.stringify({ event: 'scheme_json_schema_400_retry' }));
+    response = await send({ type: 'json_object' });
+  }
   const data = await response.json();
   const content = data?.choices?.[0]?.message?.content;
   if (typeof content !== 'string') throw new Error('empty');
