@@ -5061,13 +5061,21 @@ textarea.field {
 
 /* Texto pegado (prompt «ahorrar tokens», 6): aviso del composer y vista del texto. */
 .composer-note {
+  /* Siempre la última fila del composer (también en la rejilla del de Inicio). */
+  grid-column: 1 / -1;
+  grid-row: 9;
   margin: 6px 4px 0;
   font-size: 0.8125rem;
   color: var(--text-secondary);
 }
 .pasted-open {
-  all: unset;
-  display: contents;
+  flex: 1;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
   cursor: pointer;
 }
 .pasted-open:focus-visible strong {
