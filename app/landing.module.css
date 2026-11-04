@@ -355,6 +355,8 @@
 .stat {
   display: flex;
   flex-direction: column-reverse;
+  /* Cifra arriba y alineada aunque la etiqueta ocupe dos líneas. */
+  justify-content: flex-end;
   align-items: center;
   gap: 8px;
 }

@@ -313,3 +313,24 @@ Checklist de la skill:
 - [x] Sin scroll lateral de 360 a 1280 px (tests/browser/landing.spec.ts).
 
 Capturas (oscuro, móvil 390 y escritorio 1440): `docs/diseno/dream-design/capturas/`.
+
+## Pulido UX (skill dream-ux-polish, 4-nov-2026)
+
+Revisión de toda la web con capturas en móvil (390) y escritorio (1440): landing con scroll, bienvenida, login, Inicio, chat, Tareas, Apuntes, Exámenes, detalle, ruta, lección, simulacro, test, Progreso, juegos, Historial, Ajustes, Más, modales, avisos, páginas legales, blog, 404, mantenimiento y subida por QR.
+
+| Gravedad | Pantalla / estado | Qué se veía | Arreglo |
+|---|---|---|---|
+| Alta | Modal «¿Borrar examen?» y el resto de confirmaciones destructivas | «Sí, borrar» rectángulo rosa claro con texto blanco (2,3:1) junto a «Cancelar» en píldora; con `.primary` el blanco del primario tapaba el rojo | `.danger-button` píldora, coral con texto oscuro (≈8:1), relieve y pulsado como el primario; el foco inicial va a «Cancelar» |
+| Media | Barra de pestañas del móvil con listas largas | El texto que pasaba por detrás se leía a través del cristal al 72 % | Barra al 94 % y degradado de 24 px encima |
+| Media | Cabecera flotante de la landing al bajar | El texto se leía entre las píldoras (logo, «Empezar», menú) | Degradado del fondo detrás de la cabecera al bajar (solo opacidad) |
+| Media | Test corregido | Radio gris y ✓ verde a la vez en la misma respuesta | La marca ocupa el sitio del radio (que sigue para lectores de pantalla) |
+| Media | Ruta, lección, simulacro, tarjetas y juegos | Etiquetas en letra mono («A CONTINUACIÓN · TEST», «EDAD MEDIA»), contra «una sola grotesca» | `--font-mono` apunta a Archivo; el código sigue en `--font-code` |
+| Media | Aviso «Examen borrado · Deshacer» | Sin cuenta atrás visible | Barra lima que se encoge (transform) y se pausa con el aviso |
+| Baja | «Dream en cifras» en escritorio | El «3» quedaba más alto porque su etiqueta ocupa dos líneas | Cifras alineadas arriba |
+| Baja | Política de cookies | Decía «como el tema oscuro» (ya no hay selector de tema) | «como la lectura fácil» |
+
+Lo que ya estaba bien y se toma de referencia: «Cancelar» en píldora, estados vacíos con acción («Crear examen»), errores con «Reintentar», 404 y mantenimiento con salida clara.
+
+Patrones a vigilar en lo nuevo: cualquier barra fija necesita fondo propio o degradado; botones juntos con el mismo componente y alto; nada de etiquetas en mono; avisos con tiempo, con cuenta atrás.
+
+Capturas: `docs/diseno/pulido-ux/`.

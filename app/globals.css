@@ -197,7 +197,9 @@
 
 @theme inline {
   --font-sans: var(--font-stack);
-  --font-mono: var(--font-code);
+  /* Una sola grotesca (rediseño Dream design): las etiquetas pequeñas que
+     usaban mono pasan a Archivo. El código sigue con --font-code. */
+  --font-mono: var(--font-stack);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-text: var(--text);
@@ -4956,4 +4958,103 @@ textarea.field {
 .pop-grid,
 .pop.pop-grid {
   background-image: none;
+}
+
+/* ==========================================================================
+   Pulido UX (skill dream-ux-polish, 4-nov-2026)
+   ========================================================================== */
+
+/* Barra de pestañas (móvil): el cristal al 72 % dejaba leer el texto que
+   pasaba por detrás. Más opaca y con un degradado encima para que el
+   contenido se desvanezca al llegar a ella en vez de cortarse en seco. */
+@media (max-width: 639.98px) {
+  .tabbar {
+    background: rgba(18, 20, 34, 0.94);
+  }
+  .tabbar::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 100%;
+    block-size: 24px;
+    background: linear-gradient(to bottom, transparent, var(--bg));
+    pointer-events: none;
+  }
+}
+
+/* Botón destructivo: era un rectángulo rosa claro con texto blanco (2,3:1)
+   junto a «Cancelar» en píldora, y con .primary el blanco del primario lo
+   tapaba. Ahora píldora como el resto, coral saturado y texto oscuro (7:1). */
+.danger-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-secondary-size);
+  font-weight: 750;
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: transform 140ms var(--ease);
+}
+.danger-button:not(:disabled):not([aria-disabled="true"]),
+.primary.danger-button:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--danger);
+  color: var(--dd-bg);
+  box-shadow: 0 5px 0 #b8565c;
+}
+.primary.danger-button::before {
+  display: none;
+}
+.danger-button:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: scale(0.97) translateY(3px);
+  box-shadow: 0 2px 0 #b8565c;
+}
+.danger-button:disabled,
+.danger-button[aria-disabled="true"] {
+  background: #2a2d3b;
+  color: #8c93a6;
+  box-shadow: 0 5px 0 #1c1e29;
+}
+@media (hover: hover) and (pointer: fine) {
+  .primary.danger-button:hover:not(:disabled):not([aria-disabled="true"]),
+  .danger-button:hover:not(:disabled):not([aria-disabled="true"]) {
+    background: #ff9ea2;
+  }
+}
+
+/* Test corregido: el radio y la marca ✓/✕ salían a la vez. La marca ocupa
+   el sitio del radio (que sigue ahí para lectores de pantalla). */
+.test-option:has(.option-index) input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Aviso con «Deshacer»: cuenta atrás visible (solo transform). Se pausa con
+   el aviso (puntero encima, foco o pestaña oculta). */
+.toast {
+  position: relative;
+  overflow: hidden;
+}
+.toast-timer {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 3px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation-name: toast-timer;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }

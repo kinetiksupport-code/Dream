@@ -255,10 +255,10 @@ export function ExamActionsSheet({
             segundos para deshacerlo.
           </p>
           <div className="modal-actions">
-            <button type="button" className="secondary press" onClick={() => setConfirm(false)}>
+            <button type="button" className="secondary press" onClick={() => setConfirm(false)} autoFocus>
               Cancelar
             </button>
-            <button type="button" className="danger-button press" onClick={onDelete} autoFocus>
+            <button type="button" className="primary danger-button press" onClick={onDelete}>
               Sí, borrar
             </button>
           </div>

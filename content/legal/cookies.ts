@@ -11,7 +11,7 @@ Una cookie es un archivo pequeño que una web guarda en tu navegador. Dream tamb
 
 ## Qué usa Dream
 
-- **Necesarias.** Sirven para iniciar sesión, mantener la web segura y recordar lo que eliges, como el tema oscuro. Funcionan siempre: sin ellas Dream no funciona. No hace falta tu permiso.
+- **Necesarias.** Sirven para iniciar sesión, mantener la web segura y recordar lo que eliges, como la lectura fácil. Funcionan siempre: sin ellas Dream no funciona. No hace falta tu permiso.
 - **Preferencias.** Solo para el **chat de ayuda (Crisp)**. Se usan si tú lo permites, y solo cuando abres el chat.
 - **Estadísticas.** Solo si activas «Datos de uso» en **Ajustes**. Hoy no están en marcha.
 - **Publicidad: ninguna.** Dream no usa cookies de publicidad, de perfiles ni de seguimiento entre webs, ni aunque aceptes todo.

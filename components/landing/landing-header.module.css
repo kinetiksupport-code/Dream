@@ -15,6 +15,21 @@
 .header > * {
   pointer-events: auto;
 }
+/* Al bajar, un degradado del fondo detrás de las píldoras para que el texto
+   que pasa por debajo no se lea entre ellas (dream-ux-polish § cabeceras). */
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -20px;
+  z-index: -1;
+  background: linear-gradient(to bottom, var(--dd-bg) 55%, transparent);
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+  pointer-events: none;
+}
+.header[data-scrolled]::before {
+  opacity: 1;
+}
 .brand {
   display: inline-flex;
   align-items: center;

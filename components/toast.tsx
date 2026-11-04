@@ -79,6 +79,16 @@ export function Toast({
           {action.label}
         </button>
       )}
+      {duration ? (
+        <span
+          className="toast-timer"
+          aria-hidden="true"
+          style={{
+            animationDuration: `${duration}ms`,
+            animationPlayState: paused ? "paused" : "running",
+          }}
+        />
+      ) : null}
       {onClose && (
         <button
           className="icon-button press"
