@@ -12,7 +12,6 @@ import {
 } from "../supabase/functions/dream-api/explanation-style.mjs";
 import { gradeQuestion, lessonContext, lessonSystem, validateLesson } from "../supabase/functions/dream-api/lesson.mjs";
 import { SOLUTION_MAX, gradingSystem, mockQuestionsSystem, validateGrading, validateMockQuestions } from "../supabase/functions/dream-api/mock.mjs";
-// @ts-expect-error: módulo de evals en JS sin tipos
 import { caseProblems } from "../evals/explicaciones.mjs";
 
 const evals = JSON.parse(readFileSync(new URL("../evals/explicaciones.json", import.meta.url), "utf8"));
@@ -110,7 +109,7 @@ test("simulacro: solución corta (≤ 1.500), resumen + pasos + por qué no vale
   }
   const long = "Es correcta porque **x**. " + "Paso largo. ".repeat(400);
   const q = validateMockQuestions({ questions: [{ type: "tf", prompt: "P", answer: true, explanation: long }] }, { mcq: 0, tf: 1, written: 0 });
-  assert.ok(q.value[0].explanation.length <= 1500);
+  assert.ok((q.value ?? [])[0].explanation.length <= 1500);
   const g = validateGrading({ items: [{ id: "a", solution: long, cause: "concepto" }] }, [], ["a"]);
   assert.ok(g.ok && (g.value as Record<string, { solution: string }>).a.solution.length <= 1500);
 });
