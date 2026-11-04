@@ -32,6 +32,11 @@ export interface QuizCheck {
   correct_answer: string | boolean;
   explanation: string;
   rubric?: string[];
+  /** Por qué no vale la opción elegida (tipo test, solo al fallar). */
+  why_wrong?: string;
+  /** Respuesta escrita: ideas de la rúbrica que ya tenía y las que le faltan. */
+  ideas_have?: string[];
+  ideas_missing?: string[];
 }
 export interface QuizResult {
   right: number;

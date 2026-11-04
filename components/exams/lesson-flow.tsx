@@ -35,6 +35,7 @@ import { PIECE } from "@/lib/study-steps";
 import { StepFrame } from "./step-frame";
 import { CheckButton, CorrectionSheet, QuizQuestion as QuestionView, type Answer, type Verdict } from "./quiz-question";
 import { WhyPanel } from "./why-panel";
+import { ExplainSelection } from "./explain-selection";
 import sf from "./step-frame.module.css";
 import s from "./lesson-flow.module.css";
 
@@ -52,6 +53,9 @@ type Phase =
 interface Checked extends Verdict {
   explanation: string;
   rubric?: string[];
+  whyWrong?: string;
+  have?: string[];
+  missing?: string[];
 }
 
 const TF = [
@@ -185,7 +189,7 @@ function LessonScreens({
         const r = await answerQuiz(ids, item.q.index, value);
         // La nota sale del primer intento; la ronda de repaso no la cambia.
         if (!item.retry) setAnswers((a) => ({ ...a, [item.q.index]: value }));
-        setVerdict({ correct: r.correct, correctAnswer: r.correct_answer, explanation: r.explanation, rubric: r.rubric });
+        setVerdict({ correct: r.correct, correctAnswer: r.correct_answer, explanation: r.explanation, rubric: r.rubric, whyWrong: r.why_wrong, have: r.ideas_have, missing: r.ideas_missing });
         if (!r.correct && item.q.type !== "written") {
           if (reviewing) setItems((list) => [...list, { kind: "quiz", q: item.q, retry: true }]);
           else setMissed((m) => [...m, item.q]);
@@ -582,6 +586,10 @@ function LessonScreens({
       mine !== null && !verdict.correct && !(item.kind === "quiz" && item.q.type === "written") ? ` contesté «${label(mine)}» y` : ""
     } la respuesta es «${label(verdict.correctAnswer)}». ¿Por qué?`;
   };
+  const selectionDraft = (text: string) =>
+    verdict
+      ? `En la pregunta «${prompt.replace(/\s+/g, " ").slice(0, 160)}» la respuesta es «${label(verdict.correctAnswer)}». Explícame esto: «${text.slice(0, 300)}»`
+      : "";
   return (
     <>
       <StepFrame
@@ -640,12 +648,25 @@ function LessonScreens({
             nextLabel={phase.at + 1 >= items.length && (reviewing || !missed.length) ? "Ver resultados" : undefined}
             onRate={item.kind === "quiz" ? (up) => void rateQuestion(ids, item.q.index, up).catch(() => undefined) : undefined}
           >
-            {item.kind === "quiz" && item.q.type === "written" && verdict.rubric?.length ? (
-              <p>Ideas clave: {verdict.rubric.join(" · ")}.</p>
-            ) : !verdict.correct ? (
-              <p>La correcta es «{label(verdict.correctAnswer)}».</p>
-            ) : null}
-            {verdict.explanation && <p>{verdict.explanation}</p>}
+            <ExplainSelection onExplain={(text) => setWhy(selectionDraft(text))}>
+              {item.kind === "quiz" && item.q.type === "written" && verdict.rubric?.length ? (
+                verdict.have || verdict.missing ? (
+                  <>
+                    {!!verdict.have?.length && <p>Ya tenías: {verdict.have.join(" · ")}.</p>}
+                    {!!verdict.missing?.length && <p>Te falta: {verdict.missing.join(" · ")}.</p>}
+                  </>
+                ) : (
+                  <p>Ideas clave: {verdict.rubric.join(" · ")}.</p>
+                )
+              ) : !verdict.correct ? (
+                <>
+                  {verdict.whyWrong && <Markdown content={verdict.whyWrong} />}
+                  <p>La correcta es «{label(verdict.correctAnswer)}».</p>
+                </>
+              ) : null}
+              {/* La explicación sale siempre, también al acertar. */}
+              {verdict.explanation && <Markdown content={verdict.explanation} />}
+            </ExplainSelection>
           </CorrectionSheet>
         )}
       </StepFrame>

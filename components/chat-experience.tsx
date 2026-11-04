@@ -88,12 +88,14 @@ export function ChatExperience({
   study,
 }: {
   study?: {
-    examId: string;
-    unitId: string;
+    examId?: string;
+    unitId?: string;
     conversationId: string;
     title: string;
-    /** Pregunta ya escrita (el «¿Por qué?» de la lección); el alumno la envía. */
+    /** Pregunta ya escrita (el «¿Por qué?» de la lección). */
     draft?: string;
+    /** «¿Por qué?» de una pregunta ya corregida: se envía sola y Dream explica con el formato corto. */
+    why?: boolean;
   };
 }) {
   const params = useSearchParams();
@@ -106,6 +108,9 @@ export function ChatExperience({
     study?.conversationId ?? params.get("c"),
   );
   const [value, setValue] = useState(study?.draft ?? "");
+  const sendRef = useRef<((prompt?: string) => Promise<void>) | null>(null);
+  const autoSent = useRef<string | null>(null);
+  const loadedFor = useRef<string | null>(null);
   const [analysisView, setAnalysisView] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [state, setState] = useState<DreamState>("idle");
@@ -263,10 +268,19 @@ export function ChatExperience({
         if (!controller.signal.aborted) setError(errorMessage(e));
       })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (controller.signal.aborted) return;
+        loadedFor.current = c;
+        setLoading(false);
       });
     return () => controller.abort();
   }, [c, newKey, prefill, clearFiles, setPageTitle]);
+  // «¿Por qué?»: la pregunta ya corregida se envía sola en cuanto carga la
+  // conversación; el alumno no tiene que pedirlo (sí puede seguir preguntando).
+  useEffect(() => {
+    if (!study?.why || !prefill || loading || !c || loadedFor.current !== c || autoSent.current === prefill) return;
+    autoSent.current = prefill;
+    void sendRef.current?.(prefill);
+  }, [study?.why, prefill, loading, c]);
   useEffect(
     () => () => {
       abort.current?.abort();
@@ -545,6 +559,7 @@ export function ChatExperience({
     ask: string | null;
     attachment_ids: string[];
   };
+  sendRef.current = send;
   async function send(
     promptOverride?: string,
     retryIds?: string[],
@@ -673,6 +688,7 @@ export function ChatExperience({
           attachment_ids: attachmentIds,
           mode,
           ...(study ? { exam_id: study.examId, unit_id: study.unitId } : {}),
+          ...(study?.why ? { why: true } : {}),
         };
         // Short limits (busy minute, queue) wait and resend the same message;
         // only when nothing was saved, so the turn is never duplicated.

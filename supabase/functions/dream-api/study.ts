@@ -14,7 +14,7 @@ interface LessonValue {
   quiz: unknown[];
   cards: { front: string; back: string }[];
 }
-type JsonAI = (system: string, context: string, operation: string, signal?: AbortSignal) => Promise<unknown>;
+type JsonAI = (system: string, context: string, operation: string, signal?: AbortSignal, maxTokens?: number) => Promise<unknown>;
 
 export const STUDY_ACTIONS = new Set([
   'unit_content_get', 'unit_progress_save', 'cards_due', 'card_review', 'card_create', 'card_update',
@@ -82,7 +82,7 @@ function publicReading(reading: { sections: { title: string; body_markdown: stri
   };
 }
 
-export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai: JsonAI, signal: AbortSignal, ctx: { course?: string | null } = {}): Promise<unknown> {
+export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai: JsonAI, signal: AbortSignal, ctx: { course?: string | null; interests?: string } = {}): Promise<unknown> {
   const action = String(b.action);
   const quota = async (kind: 'lesson' | 'mock', exam?: string) => {
     const { data, error } = await db.rpc('dream_study_quota', { p_owner: owner, p_kind: kind, p_exam: exam ?? null });
@@ -108,7 +108,7 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     return { due, minutes: Math.max(1, Math.round((due * 20) / 60)), reviewed_today: reviewed, lessons_today: lessons, goal: { lessons: 1, cards: 10 } };
   }
   // Simulacro (Bloque 5): diagnóstico, de bloque y final.
-  if (MOCK_ACTIONS.has(action)) return mockAction(db, owner, b, ai, signal, quota);
+  if (MOCK_ACTIONS.has(action)) return mockAction(db, owner, b, ai, signal, quota, ctx.interests ?? '');
 
   // ── La lección: se genera la primera vez que se abre y se guarda ──
   if (action === 'unit_content_get') {
@@ -138,12 +138,12 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     const links = checked(await db.from('dream_exam_materials').select('attachment_id').eq('exam_id', unit.exam_id).eq('owner_id', owner)) ?? [];
     const files = links.length ? checked(await db.from('dream_attachments').select('file_name,extracted_text').in('id', (links as { attachment_id: string }[]).map((m) => m.attachment_id)).eq('owner_id', owner)) ?? [] : [];
     const system = lessonSystem();
-    const context = lessonContext({ topic: unit.topic || unit.title, subject: exam?.subject ?? '', course: ctx.course ?? null, summary: unit.summary, difficulty,
+    const context = lessonContext({ topic: unit.topic || unit.title, subject: exam?.subject ?? '', course: ctx.course ?? null, summary: unit.summary, difficulty, interests: ctx.interests ?? '',
       notes: unitNotes(files as { file_name: string; extracted_text: string }[], unit).map((n: { name: string; text: string }) => ({ name: n.name, text: n.text })) });
     let lesson: ReturnType<typeof validateLesson> = { ok: false, reason: 'not_run' } as never;
     for (let attempt = 0; attempt < 2 && !lesson.ok; attempt++) {
       try {
-        lesson = validateLesson(await ai(system, context, 'test_generate', signal));
+        lesson = validateLesson(await ai(system, context, 'test_generate', signal, LESSON_MAX_TOKENS));
       } catch (error) {
         // Los límites de Dream y de los proveedores se respetan: se para y se avisa.
         if (error instanceof Error && ['AdmissionError', 'GroqProviderError', 'CloudflareProviderError'].includes(error.name)) {
@@ -236,8 +236,11 @@ export async function studyAction(db: SupabaseClient, owner: string, b: Body, ai
     if (action === 'unit_quiz_answer') {
       const q = question(b.index);
       const graded = gradeQuestion(q, b.answer);
-      // La corrección llega solo después de contestar.
-      return { ...graded, explanation: q.explanation ?? '' };
+      // La corrección llega solo después de contestar: la explicación siempre
+      // (también al acertar) y, si falla un tipo test, por qué SU opción no vale.
+      const whyWrong = !graded.correct && q.type === 'mcq' && typeof b.answer === 'string'
+        ? (q as { why_wrong?: Record<string, string> }).why_wrong?.[b.answer.trim()] ?? '' : '';
+      return { ...graded, explanation: q.explanation ?? '', ...(whyWrong ? { why_wrong: whyWrong } : {}) };
     }
     const answers = b.answers && typeof b.answers === 'object' && !Array.isArray(b.answers) ? b.answers as Record<string, unknown> : null;
     const keys = answers ? Object.keys(answers) : [];

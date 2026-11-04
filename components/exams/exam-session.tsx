@@ -578,6 +578,7 @@ export function ExamSessionView({
                 <Markdown content={formatAnswer(item.correct_answer)} />
               </>
             )}
+            {!item.is_correct && item.why_wrong && <Markdown content={item.why_wrong} />}
             <Markdown content={item.feedback} />
           </section>
         ))}

@@ -128,12 +128,16 @@ export interface DreamTest {
   status: string;
   mode: "practice" | "exam";
   difficulty: string;
+  /** Conversación del test, para el panel «¿Por qué?». */
+  conversation_id?: string | null;
   questions: DreamQuestion[];
 }
 export interface Evaluation {
   is_correct: boolean;
   feedback: string;
   correct_answer: AnswerValue;
+  /** Por qué no vale la opción que eligió (tipo test y V/F, solo al fallar). */
+  why_wrong?: string;
 }
 export interface TestResult {
   attempt_id: string;

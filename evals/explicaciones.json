@@ -1,0 +1,84 @@
+{
+  "description": "Casos fijos de explicaciones de preguntas ya corregidas (prompt «explicar bien», Parte A, punto 4). Perfil de prueba con aficiones fútbol y videojuegos. Cada caso lleva una explicación de referencia que cumple el formato (la usan las pruebas del comprobador) y, con GROQ_API_KEY, evals/explicaciones.mjs pide la explicación a la IA con el mismo prompt que dream-api y la comprueba.",
+  "profile": { "interests": ["fútbol", "videojuegos"], "course": "3.º ESO" },
+  "cases": [
+    {
+      "id": "visigodos",
+      "subject": "Historia",
+      "type": "mcq",
+      "prompt": "¿Qué hicieron los visigodos tras ser expulsados de la Galia en 507?",
+      "options": ["Se concentraron en la península ibérica con capital en Toledo", "Fijaron su capital en Tolosa", "Se unieron a los francos", "Volvieron a Escandinavia"],
+      "answer": "Se concentraron en la península ibérica con capital en Toledo",
+      "student_answer": "Fijaron su capital en Tolosa",
+      "reference": {
+        "explanation": "Es correcta porque en **507**, tras perder contra los francos en la batalla de Vouillé, los visigodos se quedaron sin casi todo lo que tenían en la Galia. Por eso se concentraron en la península ibérica y pusieron la capital en **Toledo**. Es como un equipo de fútbol que pierde la final y se muda de estadio.",
+        "why_wrong": { "Fijaron su capital en Tolosa": "No es esa: **Tolosa** fue la capital *antes*, en la Galia, no después de 507." }
+      }
+    },
+    {
+      "id": "fraccion-generatriz",
+      "subject": "Matemáticas",
+      "type": "mcq",
+      "math": true,
+      "prompt": "¿Cuál es la fracción generatriz de $0,\\overline{36}$?",
+      "options": ["$\\frac{4}{11}$", "$\\frac{36}{100}$", "$\\frac{9}{25}$", "$\\frac{36}{90}$"],
+      "answer": "$\\frac{4}{11}$",
+      "student_answer": "$\\frac{36}{100}$",
+      "reference": {
+        "explanation": "Es correcta porque en un periódico puro el periodo va arriba y abajo tantos **9** como cifras tiene:\n1. $x = 0,\\overline{36}$\n2. $100x - x = 36$, entonces $99x = 36$\n3. $x = \\frac{36}{99} = \\frac{4}{11}$\nResultado: **$\\frac{4}{11}$**.",
+        "why_wrong": { "$\\frac{36}{100}$": "No es esa: $\\frac{36}{100}$ es $0,36$ exacto; el periodo se repite, así que van **9**, no ceros." }
+      }
+    },
+    {
+      "id": "sintagma",
+      "subject": "Lengua",
+      "type": "mcq",
+      "prompt": "En «el libro de la biblioteca», ¿cuál es el núcleo del sintagma nominal?",
+      "options": ["libro", "biblioteca", "el", "de"],
+      "answer": "libro",
+      "student_answer": "biblioteca",
+      "reference": {
+        "explanation": "Es correcta porque el núcleo es la palabra que manda en el grupo, y aquí todo habla de un **libro**. «De la biblioteca» es un complemento que solo dice de dónde es, por eso no puede ser el núcleo.",
+        "why_wrong": { "biblioteca": "No es esa: **biblioteca** es el núcleo del grupo pequeño «la biblioteca», que va dentro del complemento." }
+      }
+    },
+    {
+      "id": "ecuacion",
+      "subject": "Matemáticas",
+      "type": "numeric",
+      "math": true,
+      "prompt": "Resuelve $2x + 6 = 14$.",
+      "answer": "4",
+      "student_answer": "10",
+      "reference": {
+        "explanation": "Es correcta porque hay que dejar la $x$ sola haciendo lo contrario de cada operación:\n1. Restamos 6: $2x = 8$\n2. Dividimos entre 2: $x = 4$\nResultado: **$x = 4$**.",
+        "why_wrong": {}
+      }
+    },
+    {
+      "id": "verdadero-falso",
+      "subject": "Biología",
+      "type": "tf",
+      "prompt": "Las mitocondrias producen la energía de la célula. ¿Verdadero o falso?",
+      "options": ["Verdadero", "Falso"],
+      "answer": "Verdadero",
+      "student_answer": "Falso",
+      "reference": {
+        "explanation": "Es correcta porque las **mitocondrias** hacen la respiración celular: usan glucosa y oxígeno y sacan **ATP**, la energía que gasta la célula. Por eso se dice que son su central eléctrica.",
+        "why_wrong": { "Falso": "No es esa: quien hace la fotosíntesis es el cloroplasto; la energía para gastar la saca la **mitocondria**." }
+      }
+    },
+    {
+      "id": "escrita",
+      "subject": "Historia",
+      "type": "written",
+      "prompt": "Explica una causa de la Primera Guerra Mundial.",
+      "rubric": ["Nombra una causa (alianzas, imperialismo, nacionalismo o carrera de armamentos)", "Explica cómo llevó a la guerra", "Menciona el atentado de Sarajevo de 1914 como detonante"],
+      "student_answer": "Las alianzas entre países.",
+      "reference": {
+        "feedback": "Has acertado la causa: las **alianzas**. Te falta explicar cómo llevaron a la guerra y el detonante. Quedaría así: «Por las alianzas, cuando en **1914** mataron en Sarajevo al heredero de Austria, unos países arrastraron a otros a la guerra».",
+        "why_wrong": {}
+      }
+    }
+  ]
+}

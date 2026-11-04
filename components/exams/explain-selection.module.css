@@ -1,0 +1,40 @@
+/* Botón «Explicar» sobre el texto seleccionado: aparece con un fundido corto. */
+.zone {
+  position: relative;
+}
+.explain {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, calc(-100% - 8px));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--dd-bg, #0b0d18);
+  font: inherit;
+  font-weight: 750;
+  font-size: 0.9375rem;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  animation: explainIn 140ms var(--ease) both;
+}
+.explain:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+@keyframes explainIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 4px));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .explain {
+    animation-duration: 1ms;
+  }
+}
