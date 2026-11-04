@@ -139,8 +139,13 @@ function languageLooksEnglish(text) {
  * @param {unknown} raw
  * @param {{ sources?: string }} [options]
  */
-export function validateScheme(raw, { sources = '' } = {}) {
+export function validateScheme(raw, { sources = '', lenient = false } = {}) {
   const errors = [];
+  // Modo «arreglar» (último recurso tras los reintentos): los fallos pequeños
+  // se corrigen solos (recortar, ordenar, quitar la frase con una cifra sin
+  // respaldo) en vez de tirar el esquema entero. Nunca se inventa nada: solo se quita.
+  const soft = [];
+  const fix = (message) => (lenient ? soft.push(message) : errors.push(message));
   let dropped = 0;
   let checkedFacts = 0;
   let foundFacts = 0;
@@ -152,9 +157,10 @@ export function validateScheme(raw, { sources = '' } = {}) {
   const verified = new Set();
   const freeNumbers = [];
   const field = (value, max, where, { required = true, free = false } = {}) => {
-    const text = clean(value);
+    let text = clean(value);
+    if (lenient) text = text.replace(/<\/?[a-z][^>]*>|&[a-z]+;|javascript:/gi, ' ').replace(/(^|\s)(#{1,6}\s|```)/g, ' ').replace(/\s+/g, ' ').trim();
     if (required && !text) errors.push(`${where}: está vacío.`);
-    if (text.length > max) errors.push(`${where}: tiene ${text.length} caracteres y el máximo es ${max}.`);
+    if (text.length > max) fix(`${where}: tiene ${text.length} caracteres y el máximo es ${max}.`);
     if (HTML.test(text)) errors.push(`${where}: no puede llevar HTML.`);
     if (MARKDOWN_JUNK.test(text)) errors.push(`${where}: no puede llevar títulos Markdown ni bloques de código.`);
     if (free) numbersIn(text).forEach((n) => freeNumbers.push([n, where]));
@@ -177,13 +183,13 @@ export function validateScheme(raw, { sources = '' } = {}) {
   };
   const bullets = (list, max, where) => {
     if (!Array.isArray(list)) { errors.push(`${where}: debe ser una lista.`); return []; }
-    if (list.length > max) errors.push(`${where}: tiene ${list.length} viñetas y el máximo es ${max}.`);
+    if (list.length > max) fix(`${where}: tiene ${list.length} viñetas y el máximo es ${max}.`);
     const seen = new Set();
     return list.slice(0, max).flatMap((b, i) => {
       const text = field(b?.text, L.bullet, `${where}[${i + 1}]`);
       const quote = clean(b?.quote).slice(0, L.quote);
       const key = normalizeForQuote(text);
-      if (key && seen.has(key)) { errors.push(`${where}[${i + 1}]: viñeta repetida.`); return []; }
+      if (key && seen.has(key)) { fix(`${where}[${i + 1}]: viñeta repetida.`); return []; }
       seen.add(key);
       return text && supported(text, quote) ? [{ text, quote }] : [];
     });
@@ -193,16 +199,17 @@ export function validateScheme(raw, { sources = '' } = {}) {
   const subtitle = field(r.subtitle, L.subtitle, 'subtitle', { required: false, free: true });
   const subject = field(r.subject, L.subject, 'subject', { required: false });
   const rawSections = Array.isArray(r.sections) ? r.sections : [];
-  if (rawSections.length < L.sections[0] || rawSections.length > L.sections[1]) errors.push(`sections: tiene ${rawSections.length} secciones y deben ser entre ${L.sections[0]} y ${L.sections[1]}.`);
+  if (rawSections.length < L.sections[0]) errors.push(`sections: tiene ${rawSections.length} secciones y deben ser entre ${L.sections[0]} y ${L.sections[1]}.`);
+  else if (rawSections.length > L.sections[1]) fix(`sections: tiene ${rawSections.length} secciones y deben ser entre ${L.sections[0]} y ${L.sections[1]}.`);
   const headings = new Set();
   const sections = rawSections.slice(0, L.sections[1]).map((s, i) => {
     const where = `sections[${i + 1}]`;
     const heading = field(s?.heading, L.heading, `${where}.heading`, { free: true });
     const hk = normalizeForQuote(heading);
-    if (hk && headings.has(hk)) errors.push(`${where}.heading: título de sección repetido.`);
+    if (hk && headings.has(hk)) fix(`${where}.heading: título de sección repetido.`);
     headings.add(hk);
     const period = tidyPeriod(field(s?.period, L.period, `${where}.period`, { required: false, free: true }));
-    const kind = SECTION_KINDS.includes(s?.kind) ? s.kind : (errors.push(`${where}.kind: «${clean(s?.kind).slice(0, 20)}» no es un tipo válido.`), 'list');
+    let kind = SECTION_KINDS.includes(s?.kind) ? s.kind : (fix(`${where}.kind: «${clean(s?.kind).slice(0, 20)}» no es un tipo válido.`), 'list');
     const intro = field(s?.intro, L.intro, `${where}.intro`, { required: false, free: true });
     const sectionBullets = bullets(s?.bullets ?? [], L.bullets, `${where}.bullets`);
     const subcards = (Array.isArray(s?.subcards) ? s.subcards : []).slice(0, L.subcards).map((c, j) => ({
@@ -210,39 +217,70 @@ export function validateScheme(raw, { sources = '' } = {}) {
       period: tidyPeriod(field(c?.period, L.period, `${where}.subcards[${j + 1}].period`, { required: false, free: true })),
       bullets: bullets(c?.bullets ?? [], L.subBullets, `${where}.subcards[${j + 1}].bullets`),
     })).filter((c) => c.title && c.bullets.length);
-    const dates = (Array.isArray(s?.dates) ? s.dates : []).slice(0, L.dates).flatMap((d, j) => {
+    let dates = (Array.isArray(s?.dates) ? s.dates : []).slice(0, L.dates).flatMap((d, j) => {
       const year = field(d?.year, L.year, `${where}.dates[${j + 1}].year`);
       const text = stripYear(field(d?.text, L.dateText, `${where}.dates[${j + 1}].text`), year);
       const quote = clean(d?.quote).slice(0, L.quote);
       return year && text && supported(`${year} ${text}`, quote) ? [{ year, text, quote }] : [];
     });
     const values = dates.map((d) => yearValue(d.year));
-    if (values.every((v) => v !== null) && values.some((v, k) => k > 0 && v < values[k - 1])) errors.push(`${where}.dates: las fechas deben ir en orden cronológico.`);
+    if (values.every((v) => v !== null) && values.some((v, k) => k > 0 && v < values[k - 1])) {
+      fix(`${where}.dates: las fechas deben ir en orden cronológico.`);
+      if (lenient) dates = [...dates].sort((a, b) => Number(yearValue(a.year)) - Number(yearValue(b.year)));
+    }
     const formula = field(s?.formula, L.formula, `${where}.formula`, { required: false });
     const highlight = field(s?.highlight, L.highlight, `${where}.highlight`, { required: false, free: true });
     const illustration = s?.illustration_prompt == null ? null : clean(s.illustration_prompt).slice(0, L.illustration) || null;
     const caption = illustration ? field(s?.illustration_caption, L.caption, `${where}.illustration_caption`, { required: false, free: true }) : '';
-    if (kind === 'subcards' && !subcards.length && !sectionBullets.length) errors.push(`${where}: es de tipo subcards y no tiene subtarjetas.`);
-    if (kind === 'dates' && !dates.length && !sectionBullets.length) errors.push(`${where}: es de tipo dates y no tiene fechas.`);
-    if (kind === 'formula' && !formula) errors.push(`${where}: es de tipo formula y no tiene fórmula.`);
+    if (kind === 'subcards' && !subcards.length && !sectionBullets.length) fix(`${where}: es de tipo subcards y no tiene subtarjetas.`);
+    if (kind === 'dates' && !dates.length && !sectionBullets.length) fix(`${where}: es de tipo dates y no tiene fechas.`);
+    if (kind === 'formula' && !formula) fix(`${where}: es de tipo formula y no tiene fórmula.`);
+    if (lenient && ((kind === 'subcards' && !subcards.length) || (kind === 'dates' && !dates.length) || (kind === 'formula' && !formula))) kind = 'list';
     return { heading, period, kind, intro, bullets: sectionBullets, subcards, dates, formula, highlight, illustration_prompt: illustration, illustration_caption: caption };
   });
+  // Cifras sin respaldo en los textos libres: en modo arreglar se quita ese texto
+  // (o la cifra, si es un título) en vez de tirar el esquema.
+  const inSourceAll = sourceNorm ? new Set(numbersIn(sources)) : null;
+  const backed = (text) => !inSourceAll || numbersIn(text).every((n) => verified.has(n) || inSourceAll.has(n));
+  const dropNumbers = (text) => (backed(text) ? text : text.replace(/\(?\s*\b\d[\d.,:/-]*\b\s*\)?/g, (m) => (backed(m) ? m : ' ')).replace(/\s+/g, ' ').replace(/\s+([,.;:])/g, '$1').trim());
+  if (lenient && inSourceAll) {
+    for (const sec of sections) {
+      sec.heading = dropNumbers(sec.heading);
+      if (!backed(sec.period)) sec.period = '';
+      if (!backed(sec.intro)) sec.intro = '';
+      if (!backed(sec.highlight)) sec.highlight = '';
+      if (!backed(sec.illustration_caption)) sec.illustration_caption = '';
+      for (const c of sec.subcards) { c.title = dropNumbers(c.title); if (!backed(c.period)) c.period = ''; }
+    }
+  }
   // Si quitar datos sin respaldo deja una sección vacía, la sección se va.
-  const kept = sections.filter((s) => s.intro || s.bullets.length || s.subcards.length || s.dates.length || s.formula);
+  const seenHeadings = new Set();
+  const kept = sections.filter((s) => s.intro || s.bullets.length || s.subcards.length || s.dates.length || s.formula)
+    .filter((s) => !lenient || (s.heading && !seenHeadings.has(normalizeForQuote(s.heading)) && seenHeadings.add(normalizeForQuote(s.heading))));
   if (rawSections.length >= L.sections[0] && kept.length < L.sections[0] && !errors.length) errors.push(`Tras quitar los datos sin cita en la fuente quedan ${kept.length} secciones: usa solo datos que aparezcan en la fuente.`);
-  const keyIdeas = (Array.isArray(r.key_ideas) ? r.key_ideas : []).slice(0, L.keyIdeas)
+  let keyIdeas = (Array.isArray(r.key_ideas) ? r.key_ideas : []).slice(0, L.keyIdeas)
     .map((k, i) => field(k, L.keyIdea, `key_ideas[${i + 1}]`, { free: true })).filter(Boolean);
-  const summary = field(r.summary, L.summary, 'summary', { required: false, free: true });
-  const closing = field(r.closing, L.closing, 'closing', { required: false, free: true });
-  if (sourceNorm) {
+  let summary = field(r.summary, L.summary, 'summary', { required: false, free: true });
+  let closing = field(r.closing, L.closing, 'closing', { required: false, free: true });
+  let fixedTitle = title;
+  let fixedSubtitle = subtitle;
+  if (lenient && inSourceAll) {
+    keyIdeas = keyIdeas.filter(backed);
+    if (!backed(summary)) summary = '';
+    if (!backed(closing)) closing = '';
+    fixedTitle = dropNumbers(title) || title;
+    if (!backed(subtitle)) fixedSubtitle = '';
+  }
+  if (sourceNorm && !lenient) {
     // En los textos sin cita solo valen cifras ya respaldadas o que aparecen en la fuente.
     const inSource = new Set(numbersIn(sources));
     const unbacked = [...new Map(freeNumbers.filter(([n]) => !verified.has(n) && !inSource.has(n)).map(([n, where]) => [n, where])).entries()];
     unbacked.slice(0, 6).forEach(([n, where]) => errors.push(`${where}: la cifra ${n} no aparece en la fuente. Quítala.`));
   }
   if (texts.some(languageLooksEnglish) || languageLooksEnglish(texts.join(' '))) errors.push('El texto debe estar en español de España, no en inglés.');
-  const scheme = { title, subtitle, subject, sections: kept, key_ideas: keyIdeas, summary, closing };
-  return { scheme: errors.length ? null : scheme, errors: errors.slice(0, 20), dropped, droppedTexts, checkedFacts, foundFacts };
+  if (lenient && kept.length < L.sections[0] && !errors.length) errors.push(`Quedan ${kept.length} secciones con datos de la fuente.`);
+  const scheme = { title: fixedTitle, subtitle: fixedSubtitle, subject, sections: kept, key_ideas: keyIdeas, summary, closing };
+  return { scheme: errors.length ? null : scheme, errors: errors.slice(0, 20), dropped, droppedTexts, checkedFacts, foundFacts, repaired: soft.length };
 }
 
 /**
@@ -257,17 +295,29 @@ export async function generateScheme({ call, messages, sources = '' }) {
   let last = { errors: ['Sin respuesta.'] };
   let history = messages;
   /** @type {string[]} */ let firstErrors = [];
+  let lastRaw = null;
   while (attempts < 2) {
     attempts++;
     let raw;
     try { raw = await call(history); }
     catch (error) { if (attempts >= 2 || error?.name === 'AdmissionError') throw error; last = { errors: ['La respuesta no era JSON válido.'] }; firstErrors = last.errors; continue; }
+    lastRaw = raw;
     const result = validateScheme(raw, { sources });
     if (result.scheme) return { ok: true, attempts, firstErrors, ...result };
+    // Fallos pequeños en el segundo intento: se arreglan solos en vez de tirar el esquema.
+    if (attempts >= 2) {
+      const repaired = validateScheme(raw, { sources, lenient: true });
+      if (repaired.scheme) return { ok: true, attempts, firstErrors, ...repaired };
+    }
     last = result;
     if (attempts === 1) firstErrors = result.errors;
     history = [...messages, { role: 'assistant', content: JSON.stringify(raw).slice(0, 12000) },
       { role: 'user', content: `El JSON tiene estos errores. Corrígelos y devuelve el JSON completo otra vez:\n- ${result.errors.join('\n- ')}` }];
+  }
+  // El primer intento falló por formato y el segundo no llegó a validar: último arreglo.
+  if (lastRaw && attempts >= 2) {
+    const repaired = validateScheme(lastRaw, { sources, lenient: true });
+    if (repaired.scheme) return { ok: true, attempts, firstErrors, ...repaired };
   }
   return { ok: false, attempts, firstErrors, ...last, scheme: null };
 }

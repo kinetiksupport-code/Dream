@@ -10,7 +10,9 @@ import {
   Puzzle,
   ListChecks,
   RotateCw,
+  Download,
 } from "lucide-react";
+import { wordsLabel } from "@/lib/pasted-text";
 import { Markdown } from "./markdown";
 import { plainMath } from "@/lib/math";
 import { AiStatus } from "./ai-status";
@@ -151,6 +153,24 @@ export const MessageView = memo(function MessageView({
         <Announce
           text={!live && !revealing && !message.stopped ? parsed.text : ""}
         />
+      )}
+      {/* Respuesta larga (apuntes, resumen): también como documento .md para
+          descargar; está en «Dreams» y en el historial solo viaja su título. */}
+      {!live && !revealing && parsed.doc && (
+        <div className="quiz-widget doc-widget" data-kind="doc">
+          <span className="quiz-icon" aria-hidden="true">
+            <FileText size={22} />
+          </span>
+          <span className="quiz-text">
+            <small>Dreams · Documento</small>
+            <strong>{parsed.doc.title}</strong>
+            <span>{wordsLabel(parsed.doc.words)}</span>
+          </span>
+          <button type="button" className="quiz-start press doc-download" onClick={() => downloadMarkdown(parsed.doc!.title, parsed.text)}>
+            <Download size={18} aria-hidden="true" />
+            Descargar .md
+          </button>
+        </div>
       )}
       {/* The test card, the notice and the actions wait for the last word. */}
       {!revealing &&
@@ -294,3 +314,16 @@ export const MessageView = memo(function MessageView({
     </article>
   );
 });
+
+/** Descarga la respuesta como archivo .md (sin pasar por el servidor). */
+function downloadMarkdown(title: string, text: string) {
+  const name = `${title.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-").toLowerCase().slice(0, 60) || "documento"}.md`;
+  const url = URL.createObjectURL(new Blob([text.trim() + "\n"], { type: "text/markdown;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

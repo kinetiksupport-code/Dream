@@ -19,7 +19,7 @@ export const BOARD_MAX_CHARS = 700;
 export const REST_MAX_CHARS = 4000;
 
 const clean = (value, max) => String(value ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
-const words = (text) => String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9ñ]+/).filter(Boolean);
+export const words = (text) => String(text ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').split(/[^a-z0-9ñ]+/).filter(Boolean);
 
 /** Resumen de 2 líneas de un archivo, con reglas (sin IA): el título y la primera frase con contenido. */
 export function fileSummary(text) {

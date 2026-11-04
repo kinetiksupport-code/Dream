@@ -958,12 +958,15 @@ test("every mode and the Cloudflare fallback go through the same message builder
       ),
     );
   }
-  // Shorter context for the small models.
+  // Material per turn: every mode now gets the same ≤ 6.000 characters
+  // (index + summary + matching parts, long-text.mjs) and never more than
+  // the general default.
   const att = (ms: { content: string }[]) =>
     ms.find((m) => m.content.startsWith("Contexto de archivos"))!.content
       .length;
-  assert.ok(att(variants[2]) < att(variants[1]));
-  assert.ok(att(variants[3]) < att(variants[2]));
+  assert.ok(att(variants[0]) <= 6000 + 800);
+  assert.ok(att(variants[2]) <= att(variants[1]));
+  assert.ok(att(variants[3]) <= att(variants[2]));
   // Cloudflare never gets the web search tool prompt.
   assert.ok(!variants[2].some((m) => /web_search/.test(m.content)));
   assert.ok(!variants[3].some((m) => /web_search/.test(m.content)));

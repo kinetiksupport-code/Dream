@@ -69,3 +69,14 @@ y, si hay ejemplo, con una afición del perfil.
 node evals/explicaciones.mjs                    # comprueba las referencias
 GROQ_API_KEY=… node evals/explicaciones.mjs     # pide las explicaciones a la IA
 ```
+
+## Ahorro de tokens con textos largos (`tokens-texto-pegado.mjs`)
+
+Un texto pegado de ~10.800 caracteres y 3 turnos de preguntas (la última, sobre
+el final del texto). Mide los tokens de contexto por turno (sin el prompt de
+sistema) antes y después, con la estimación de `groq-budget.mjs`, y comprueba
+que un archivo de 30 páginas cabe en el límite de Groq por petición.
+
+```bash
+node evals/tokens-texto-pegado.mjs
+```

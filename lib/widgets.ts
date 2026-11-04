@@ -5,7 +5,16 @@ export function parseDreamContent(content: string) {
   const games: GameWidget[] = [];
   const sources: WebSource[] = [];
   const requestTest = content.includes("<!--DREAM_ACTION:TEST-->");
+  let doc: { title: string; words: number } | null = null;
   const text = content
+    // Documento largo de Dream (apuntes, resumen): título y palabras, para descargarlo como .md.
+    .replace(/<!--DREAM_DOC:([\s\S]*?)-->/g, (_, raw: string) => {
+      try {
+        const v = JSON.parse(raw) as { title?: unknown; words?: unknown };
+        if (typeof v.title === "string") doc = { title: v.title.slice(0, 90), words: Number(v.words) || 0 };
+      } catch {}
+      return "";
+    })
     .replace(/<!--DREAM_WIDGET:([\s\S]*?)-->/g, (_, raw: string) => {
       try {
         const value: unknown = JSON.parse(raw);
@@ -60,8 +69,18 @@ export function parseDreamContent(content: string) {
       return "";
     })
     .replace(/<!--DREAM_ACTION:TEST-->/g, "")
-    .replace(/<!--DREAM_(?:WIDGET|ACTION|SOURCES):[\s\S]*$/g, "");
-  return { text, widgets, schemes, games, requestTest, sources: sources.slice(0, 5) };
+    .replace(/<!--DREAM_(?:WIDGET|ACTION|SOURCES|DOC):[\s\S]*$/g, "");
+  return { text, widgets, schemes, games, requestTest, sources: sources.slice(0, 5), doc: doc ?? longDocument(text) };
+}
+
+/** Misma regla que dream-api (long-text.mjs): respuesta larga con forma de documento. */
+export function longDocument(text: string): { title: string; words: number } | null {
+  const t = text.trim();
+  const shaped = /^\s{0,3}#{1,3}\s+\S/m.test(t) || (t.match(/^\s*([-*•]|\d+[.)])\s+/gm) ?? []).length >= 6;
+  if (t.length < 2500 || !shaped) return null;
+  const line = t.split("\n").map((l) => l.trim()).find((l) => /^#{1,3}\s+\S/.test(l)) ?? t.split("\n")[0];
+  const title = line.replace(/^#+\s*/, "").replace(/[*_`]/g, "").trim().slice(0, 90) || "Documento";
+  return { title, words: (t.match(/[\p{L}\p{N}]+/gu) ?? []).length };
 }
 
 function parseSources(raw: string): WebSource[] {

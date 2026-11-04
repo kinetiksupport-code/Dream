@@ -102,7 +102,13 @@ export function createCloudflareProvider({
     }
     const kind = response.status === 401 || response.status === 403 ? 'auth'
       : response.status === 408 || response.status === 425 || response.status >= 500 ? 'transient' : 'request';
-    log({ generation: generationId, operation, result: kind, status: response.status, duration_ms: now() - started });
+    // Solo el código de error del proveedor (números), nunca el texto: sirve
+    // para saber por qué Cloudflare rechaza una petición (400) sin registrar contenido.
+    let providerCode = null;
+    if (kind === 'request') {
+      try { const body = await response.clone().json(); providerCode = Number(body?.errors?.[0]?.code) || null; } catch { /* sin cuerpo JSON */ }
+    }
+    log({ generation: generationId, operation, result: kind, status: response.status, ...(providerCode ? { provider_code: providerCode } : {}), duration_ms: now() - started });
     if (kind === 'request') throw new CloudflareProviderError(`http_${response.status}`, { status: response.status });
     fail(kind);
     throw new CloudflareProviderError(`http_${response.status}`, { status: response.status >= 500 ? response.status : 503, retryable: true });
