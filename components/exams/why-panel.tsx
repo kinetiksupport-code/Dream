@@ -1,9 +1,10 @@
 "use client";
 // «¿Por qué?» (prompt de la ruta, 0.11 · 6 y 0.12 · 8): el tutor de Dream en
 // un panel a la derecha (escritorio) o a pantalla completa (móvil). Es el chat
-// de siempre de la unidad, con la pregunta ya escrita para que el alumno la
-// envíe: el tutor responde con su regla socrática y el aviso de IA del pie.
-// En la lección solo se habla de la pregunta que acaba de corregir.
+// de siempre (de la unidad o del test), con la pregunta, la respuesta del
+// alumno y la correcta ya cargadas: se envía sola y Dream responde con el
+// formato corto de las explicaciones (explanation-style.mjs). Debajo queda la
+// caja para seguir preguntando. Solo para preguntas ya corregidas.
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { ChatExperience } from "../chat-experience";
@@ -18,8 +19,8 @@ export function WhyPanel({
   draft,
   onClose,
 }: {
-  examId: string;
-  unitId: string;
+  examId?: string;
+  unitId?: string;
   conversationId: string | null;
   title: string;
   draft: string;
@@ -54,7 +55,7 @@ export function WhyPanel({
       </header>
       <div className={s.body} aria-live="polite">
         {conversationId ? (
-          <ChatExperience study={{ examId, unitId, conversationId, title, draft }} />
+          <ChatExperience key={draft} study={{ examId, unitId, conversationId, title, draft, why: true }} />
         ) : (
           <p className={s.wait}>Preparando al tutor…</p>
         )}

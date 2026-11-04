@@ -617,8 +617,11 @@ function FailsSheet({
                 <Markdown content={i.improved} />
               </details>
             )}
-            <details className={s.details}>
-              <summary>Solución detallada</summary>
+            {/* Corrección de las escritas: qué hiciste bien → qué falta → cómo quedaría. */}
+            {i.feedback && <Markdown content={i.feedback} />}
+            {/* La solución ya es corta (resumen + ≤ 5 pasos): abierta desde el principio. */}
+            <details className={s.details} open>
+              <summary>Solución</summary>
               <Markdown content={i.solution} />
             </details>
             <label className={s.cause}>

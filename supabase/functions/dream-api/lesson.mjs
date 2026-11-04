@@ -5,8 +5,10 @@
 //
 // La IA recibe solo: tema, asignatura, curso, el resumen de la unidad, la
 // dificultad y, si los hay, fragmentos de los apuntes del alumno de esa
-// unidad. Nunca nombre, correo ni conversaciones.
+// unidad, y sus aficiones para los ejemplos. Nunca nombre, apodo, correo ni
+// conversaciones.
 import { MATERIAL_GUARD, wrapStudentMaterial } from "./file-guard.mjs";
+import { EXPLANATION_STYLE, WHY_WRONG_RULE, cleanWhyWrong, tidyExplanation } from "./explanation-style.mjs";
 
 export const DIFFICULTIES = Object.freeze(["facil", "medio", "dificil"]);
 export const LIMITS = Object.freeze({
@@ -15,11 +17,11 @@ export const LIMITS = Object.freeze({
   quiz: [8, 12],
   cards: [8, 12],
   cardChars: 300,
-  materialChars: 6000, // ≈ 1.500 tokens de apuntes como mucho (Bloque 7: ≤ 4.000 de entrada)
+  materialChars: 4500, // ≈ 1.300 tokens de apuntes como mucho: deja sitio a la salida en el límite de Groq
   writtenChars: 1500,
 });
-/** Tope de salida de la llamada (Bloque 7: ≤ 3.500 tokens). */
-export const LESSON_MAX_TOKENS = 3500;
+/** Tope de salida de la llamada: con why_wrong y explicaciones de verdad, 3.500 se quedaba corto. groqJson lo baja si la entrada no deja sitio. */
+export const LESSON_MAX_TOKENS = 4096; // el máximo que admite admission.mjs por petición
 
 const LEVEL = {
   facil: "Fácil: lo básico, con ejemplos muy cercanos y frases cortas.",
@@ -32,16 +34,19 @@ export function lessonSystem() {
     "Eres el profesor de Dream. Preparas UNA lección privada para un alumno de España, en español de España, con tildes y signos de apertura.",
     "Devuelve SOLO JSON con esta forma exacta:",
     '{"reading":{"sections":[{"title":"…","body_markdown":"…","why_it_matters":"…","check":{"statement":"…","is_true":true,"explanation":"…"}}],"sources":["…"]},',
-    '"quiz":[{"type":"mcq|tf|written|numeric","prompt":"…","options":["…"],"answer":"…","unit":"…","explanation":"…","rubric":["…"],"section_index":0,"difficulty":"facil|medio|dificil"}],',
+    '"quiz":[{"type":"mcq|tf|written|numeric","prompt":"…","options":["…"],"answer":"…","why_wrong":{"opción incorrecta":"No es esa: …"},"unit":"…","explanation":"Es correcta porque …","rubric":["…"],"section_index":0,"difficulty":"facil|medio|dificil"}],',
     '"cards":[{"front":"…","back":"…","section_index":0}]}',
     "Reglas:",
     "- reading.sections: de 3 a 6 tarjetas «Qué saber» muy cortas (≤ 50 palabras cada una, 3-4 líneas), una idea por tarjeta, conceptos clave en **negrita**, fórmulas en KaTeX ($…$). check: una afirmación de verdadero/falso sobre esa tarjeta.",
-    "- quiz: de 8 a 12 preguntas que se contestan con la lectura, mezclando todas las tarjetas: definición, relación, escenario y, si el tema tiene fechas o etapas, ordenar la cronología (mcq con 4 opciones del tipo «A → B → C»). mcq: 4 opciones (3 si no hay más) y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave. explanation en 1-2 frases.",
+    "- quiz: de 8 a 10 preguntas que se contestan con la lectura, mezclando todas las tarjetas: definición, relación, escenario y, si el tema tiene fechas o etapas, ordenar la cronología (mcq con 4 opciones del tipo «A → B → C»). mcq: 4 opciones (3 si no hay más) y answer igual a una de ellas. tf: answer «true» o «false». written: rubric con 2 a 4 ideas clave.",
+    WHY_WRONG_RULE,
     // Pautas sacadas de cómo preguntan las apps de estudio y de la investigación
     // sobre práctica de recuperación (docs/diseno/ruta/PREGUNTAS.md).
     "- Cómo preguntar (varía los formatos en cada lección): ordena de más fácil a más difícil; las opciones incorrectas son errores típicos de alumnos, creíbles y de longitud parecida a la correcta; nunca «todas las anteriores» ni «ninguna de las anteriores»; como mucho UNA pregunta en negativo («¿Cuál de estas NO…?», con el NO en mayúsculas) y nunca dobles negaciones; incluye al menos una pregunta de aplicar la idea a un caso nuevo, no solo de recordar.",
     "- Matemáticas, física, química y todo lo que se calcula: la lectura enseña UN ejemplo resuelto paso a paso; en el quiz, preguntas de completar el paso que falta de un ejercicio parecido (mcq con el paso siguiente) y preguntas numeric: answer es SOLO el número (con punto decimal), unit la unidad si la hay, y el enunciado dice cuántos decimales. explanation dice el paso clave, no solo el resultado.",
-    "- cards: de 8 a 12 tarjetas de concepto (pregunta corta / respuesta corta, ≤ 300 caracteres). Ninguna tarjeta resuelve un ejercicio: pregunta por ideas, definiciones o relaciones.",
+    "- check.explanation de cada tarjeta y explanation de cada pregunta siguen el formato de abajo, en la lección con 40 palabras como mucho (el JSON tiene que caber entero).",
+    EXPLANATION_STYLE,
+    "- cards: de 8 a 10 tarjetas de concepto (pregunta corta / respuesta corta, ≤ 300 caracteres). Ninguna tarjeta resuelve un ejercicio: pregunta por ideas, definiciones o relaciones.",
     "- sources: «De tus apuntes» si usas los apuntes; si no, el tema y la asignatura. No inventes datos, fechas ni citas: si no estás seguro, no lo pongas.",
     "- Nunca des la solución de un ejercicio del alumno.",
     MATERIAL_GUARD,
@@ -49,9 +54,9 @@ export function lessonSystem() {
 }
 
 /**
- * @param {{topic:string, subject:string, course?:string|null, summary?:string, difficulty?:string, notes?:{name:string,text:string}[]}} input
+ * @param {{topic:string, subject:string, course?:string|null, summary?:string, difficulty?:string, notes?:{name:string,text:string}[], interests?:string}} input
  */
-export function lessonContext({ topic, subject, course, summary, difficulty = "medio", notes = [] }) {
+export function lessonContext({ topic, subject, course, summary, difficulty = "medio", notes = [], interests = "" }) {
   const level = LEVEL[DIFFICULTIES.includes(difficulty) ? difficulty : "medio"];
   const parts = [
     `Tema: ${String(topic).slice(0, 160)}`,
@@ -59,6 +64,7 @@ export function lessonContext({ topic, subject, course, summary, difficulty = "m
     course ? `Curso: ${String(course).slice(0, 60)}` : "",
     summary ? `Objetivo de la unidad: ${String(summary).slice(0, 400)}` : "",
     `Dificultad: ${level}`,
+    interests,
   ].filter(Boolean);
   const material = notes.length
     ? wrapStudentMaterial(notes.map((n) => ({ file_name: n.name, extracted_text: n.text })), LIMITS.materialChars)
@@ -106,7 +112,7 @@ export function validateLesson(raw) {
       title,
       body_markdown: body,
       ...(str(s.why_it_matters, 400) ? { why_it_matters: str(s.why_it_matters, 400) } : {}),
-      check: { statement, is_true: s.check.is_true, explanation: str(s.check.explanation, 400) },
+      check: { statement, is_true: s.check.is_true, explanation: tidyExplanation(str(s.check.explanation, 700), 500) },
     });
   }
   const quizRaw = Array.isArray(raw.quiz) ? raw.quiz : null;
@@ -115,7 +121,7 @@ export function validateLesson(raw) {
   for (const q of quizRaw) {
     const type = q?.type;
     const prompt = str(q?.prompt, 600);
-    const explanation = str(q?.explanation, 500);
+    const explanation = tidyExplanation(str(q?.explanation, 900), 600);
     const index = Number.isInteger(q?.section_index) ? q.section_index : -1;
     const difficulty = DIFFICULTIES.includes(q?.difficulty) ? q.difficulty : "medio";
     if (!prompt || index < 0 || index >= cleanSections.length) return fail("quiz_shape");
@@ -123,7 +129,8 @@ export function validateLesson(raw) {
       const options = Array.isArray(q.options) ? q.options.map((o) => str(o, 200)).filter(Boolean) : [];
       const answer = str(q.answer, 200);
       if (options.length < 3 || options.length > 4 || new Set(options).size !== options.length || !options.includes(answer)) return fail("mcq_answer");
-      quiz.push({ type, prompt, options, answer, explanation, section_index: index, difficulty });
+      const why_wrong = cleanWhyWrong(q.why_wrong, options, answer);
+      quiz.push({ type, prompt, options, answer, ...(Object.keys(why_wrong).length ? { why_wrong } : {}), explanation, section_index: index, difficulty });
     } else if (type === "tf") {
       const answer = q.answer === true || q.answer === "true" ? true : q.answer === false || q.answer === "false" ? false : null;
       if (answer === null) return fail("tf_answer");
@@ -229,7 +236,16 @@ export function gradeQuestion(q, answer) {
     return keys.length ? hit / keys.length >= 0.5 : false;
   });
   const met = ideas.filter(Boolean).length;
-  return { correct: (q.rubric?.length ?? 0) > 0 && met >= Math.ceil((q.rubric?.length ?? 1) / 2), correct_answer: q.answer, rubric: q.rubric ?? [], met };
+  const rubric = q.rubric ?? [];
+  return {
+    correct: rubric.length > 0 && met >= Math.ceil((rubric.length || 1) / 2),
+    correct_answer: q.answer,
+    rubric,
+    met,
+    // Qué ideas ya tenía y cuáles le faltan (hoja de corrección).
+    ideas_have: rubric.filter((_, i) => ideas[i]),
+    ideas_missing: rubric.filter((_, i) => !ideas[i]),
+  };
 }
 
 /** La pregunta tal y como la ve el alumno: sin respuesta, sin explicación, sin rúbrica. */

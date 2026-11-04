@@ -12,6 +12,8 @@ import type {
   TestResult,
 } from "@/lib/types";
 import { DreamActivity } from "./dream-mark";
+import { ExplainSelection } from "./exams/explain-selection";
+import { WhyPanel } from "./exams/why-panel";
 import { Markdown } from "./markdown";
 import { useConversations } from "./shell";
 import {
@@ -204,6 +206,7 @@ export function AnswerFeedback({
         </span>
         {ok ? "Bien pensado." : "Todavía no."}
       </strong>
+      {!ok && evaluation.why_wrong && <Markdown content={evaluation.why_wrong} />}
       {evaluation.feedback && <Markdown content={evaluation.feedback} />}
       {children}
     </div>
@@ -244,6 +247,7 @@ export function TestExperience({ id }: { id: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
+  const [why, setWhy] = useState<string | null>(null);
   const questionRef = useQuestionEnter<HTMLElement>(
     test?.questions[index]?.id,
     direction,
@@ -452,6 +456,7 @@ export function TestExperience({ id }: { id: string }) {
                     </p>
                   </>
                 )}
+                {!item.is_correct && item.why_wrong && <Markdown content={item.why_wrong} />}
                 <Markdown content={item.feedback} />
               </div>
             </details>
@@ -532,7 +537,13 @@ export function TestExperience({ id }: { id: string }) {
           <DreamActivity state="thinking" label="Comprobando tu respuesta" />
         )}
         {evaluation && (
+          <ExplainSelection onExplain={(text) => test.conversation_id && setWhy(whyDraft(question, answers[question.id], evaluation, text))}>
           <AnswerFeedback evaluation={evaluation}>
+            {test.conversation_id && (
+              <button className="text-button press" onClick={() => setWhy(whyDraft(question, answers[question.id], evaluation))}>
+                ¿Por qué?
+              </button>
+            )}
             {!evaluation.is_correct && (
               <button
                 className="text-button press"
@@ -549,6 +560,10 @@ export function TestExperience({ id }: { id: string }) {
               </button>
             )}
           </AnswerFeedback>
+          </ExplainSelection>
+        )}
+        {why !== null && test.conversation_id && (
+          <WhyPanel conversationId={test.conversation_id} title={test.title} draft={why} onClose={() => setWhy(null)} />
         )}
       </section>
       <div className="test-navigation">
@@ -613,6 +628,15 @@ export function TestExperience({ id }: { id: string }) {
 }
 
 /** Staggered entry for result rows: --stagger per row, capped at 8 rows. */
+/** La pregunta ya corregida, con su respuesta y la correcta, para el «¿Por qué?». */
+function whyDraft(q: DreamQuestion, mine: AnswerValue | undefined, ev: Evaluation, selected?: string) {
+  const show = (v: unknown) => (typeof v === "string" ? v : Array.isArray(v) ? v.join(", ") : v == null ? "" : JSON.stringify(v));
+  const base = `En la pregunta «${q.prompt.replace(/\s+/g, " ").slice(0, 200)}»${
+    !ev.is_correct && show(mine) ? ` contesté «${show(mine).slice(0, 200)}» y` : ""
+  } la respuesta es «${show(ev.correct_answer).slice(0, 200)}».`;
+  return selected ? `${base} Explícame esto: «${selected.slice(0, 300)}»` : `${base} ¿Por qué?`;
+}
+
 export function staggerDelay(i: number) {
   return `calc(var(--stagger) * ${Math.min(i, 8)})`;
 }

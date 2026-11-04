@@ -72,8 +72,12 @@ Deno.test("abrir una lección por primera vez la genera, la guarda y devuelve la
   assertNotMatch(res.text, /"quiz"|"answer"/);
   // Una sola llamada, con tope de salida, sin datos personales y con los apuntes de la unidad.
   assertEquals(groqBodies.length, 1);
-  assertEquals(groqBodies[0].max_tokens, 3500);
+  // Tope de salida: el máximo que admite admission.mjs (why_wrong y explicaciones de verdad).
+  assertEquals(groqBodies[0].max_tokens, 4096);
   const prompt = groqBodies[0].messages.map((m) => m.content).join("\n");
+  // Formato de las explicaciones (explanation-style.mjs) y why_wrong en las de tipo test.
+  assertMatch(prompt, /Es correcta porque/);
+  assertMatch(prompt, /why_wrong/);
   assertMatch(prompt, /Tema: Bizancio/);
   assertMatch(prompt, /Constantinopla/);
   assertNotMatch(prompt, /fotosíntesis/);

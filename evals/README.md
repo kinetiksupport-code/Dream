@@ -54,3 +54,18 @@ python3 scripts/ia/medir-tokens.py
 
 Usa el tokenizador real de Qwen3 (el de Qwen 3.8 no está publicado; es la
 misma familia) y el de gpt-oss.
+
+## Explicaciones de preguntas corregidas (`explicaciones.json`)
+
+Seis casos fijos (visigodos, fracción generatriz, un sintagma, una ecuación,
+un verdadero/falso y una respuesta escrita) con un perfil de prueba (aficiones:
+fútbol y videojuegos). Se comprueba con `explanation-style.mjs` (el mismo
+módulo que usa dream-api): empieza por «Es correcta porque» (o «No es esa:» en
+`why_wrong`), ≤ 60 palabras sin contar los pasos de mates, dato clave en
+negrita, `why_wrong` de la opción que eligió el alumno, sin «¿Te queda claro?»
+y, si hay ejemplo, con una afición del perfil.
+
+```bash
+node evals/explicaciones.mjs                    # comprueba las referencias
+GROQ_API_KEY=… node evals/explicaciones.mjs     # pide las explicaciones a la IA
+```
