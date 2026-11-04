@@ -94,7 +94,7 @@ export const MODES = Object.freeze({
     temperature: 0.4,
     tools: true,
     history: Object.freeze({ maxMessages: 8, recentFull: 2, recentChars: 1500, olderChars: 200, totalChars: 3000 }),
-    attachmentChars: 12_000,
+    attachmentChars: 6_000,
     weight: MODE_WEIGHTS.fast,
     flag: null,
   }),
@@ -111,7 +111,7 @@ export const MODES = Object.freeze({
     temperature: 0.5,
     tools: true,
     history: Object.freeze({ maxMessages: 14, recentFull: 4, recentChars: 3000, olderChars: 300, totalChars: 7000 }),
-    attachmentChars: null, // el máximo general de adjuntos
+    attachmentChars: 6_000, // índice + resumen + trozos (long-text.mjs)
     weight: MODE_WEIGHTS.normal,
     flag: null,
   }),
@@ -127,7 +127,7 @@ export const MODES = Object.freeze({
     temperature: 0.3,
     tools: false,
     history: Object.freeze({ maxMessages: 6, recentFull: 2, recentChars: 2000, olderChars: 200, totalChars: 4000 }),
-    attachmentChars: 8_000,
+    attachmentChars: 6_000,
     weight: MODE_WEIGHTS.think,
     flag: 'thinkMode',
   }),

@@ -1,6 +1,7 @@
 "use client";
 import { AttachmentItem } from "./attachment";
-import { useEffect, useRef, type ClipboardEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type ReactNode } from "react";
+import { PASTE_LIMIT, nextPastedNumber, pastedFile } from "@/lib/pasted-text";
 import { PlusIcon, SendIcon, StopIcon } from "./icons";
 import type { Attachment, DreamState } from "@/lib/types";
 import { fileAccept } from "@/lib/attachments";
@@ -56,12 +57,38 @@ export function Composer({
   }, [value, variant]);
   const blocked =
     unavailable || !online || attachments.some((a) => a.status !== "ready");
+  const [savedAsFile, setSavedAsFile] = useState(false);
+  useEffect(() => {
+    if (!savedAsFile) return;
+    const t = window.setTimeout(() => setSavedAsFile(false), 5000);
+    return () => window.clearTimeout(t);
+  }, [savedAsFile]);
+  // Texto largo → archivo «Texto pegado» (como Claude): no va en el mensaje y
+  // Dream lee solo los trozos que necesita en cada turno.
+  const asFile = (text: string) =>
+    onFiles([pastedFile(text, nextPastedNumber(attachments.map((a) => a.file.name)))]);
   function paste(e: ClipboardEvent) {
     const files = Array.from(e.clipboardData.files);
     if (files.length) {
       e.preventDefault();
       onFiles(files);
+      return;
     }
+    const text = e.clipboardData.getData("text/plain");
+    if (text.length > PASTE_LIMIT && attachments.length < 4) {
+      e.preventDefault();
+      asFile(text);
+    }
+  }
+  function type(next: string) {
+    // Si escribe más de 1.500 caracteres seguidos, también se guarda como archivo.
+    if (next.length > PASTE_LIMIT && value.length <= PASTE_LIMIT && attachments.length < 4) {
+      asFile(next);
+      onChange("");
+      setSavedAsFile(true);
+      return;
+    }
+    onChange(next);
   }
   const attach = (
     <>
@@ -107,7 +134,7 @@ export function Composer({
       ref={textarea}
       value={value}
       maxLength={12000}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => type(e.target.value)}
       onPaste={paste}
       placeholder={
         placeholder ??
@@ -175,6 +202,11 @@ export function Composer({
             {send}
           </div>
         </>
+      )}
+      {savedAsFile && (
+        <p className="composer-note" role="status">
+          Lo guardo como archivo para que Dream lo lea mejor.
+        </p>
       )}
       {!online && (
         <p className="composer-offline" role="status">

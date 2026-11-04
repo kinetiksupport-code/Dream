@@ -1,3 +1,6 @@
+import { historyPlaceholder, isLongDocument, selectChunks, splitChunks } from './long-text.mjs';
+import { words } from './conversation-memory.mjs';
+
 // Capacity helpers for the free AI tier. Groq limits are per organization; each
 // of Dream's keys belongs to its own organization, so a 429 cools only that key
 // (see groq.mjs).
@@ -36,19 +39,41 @@ export function classifyProviderLimit({ retryAfter, header = () => null, body = 
 
 // Keep the newest turns whole and shorten older ones so a long conversation
 // does not resend thousands of tokens on every message. No extra AI call.
-export function compactHistory(messages, { recentFull = 4, olderChars = 400, totalChars = 9000, recentChars = 4000 } = {}) {
+// Prompt «ahorrar tokens» (8): a pasted text or a long Dream document is never
+// resent cut at 4.000 characters; it goes as «[Texto pegado: «título», N
+// palabras — resumen: …]». If the student asks about a Dream document again,
+// only the part that fits the question comes back (`prompt`).
+export const PASTED_CHARS = 1500;
+export function compactHistory(messages, { recentFull = 4, olderChars = 400, totalChars = 9000, recentChars = 4000, prompt = '' } = {}) {
   const out = [];
   let used = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
     const recent = messages.length - 1 - i < recentFull;
-    const text = String(messages[i].content || '');
+    const role = messages[i].role;
+    const text = String(messages[i].content || '').replace(/<!--DREAM_DOC:[\s\S]*?-->/g, '').trim();
     const limit = recent ? recentChars : olderChars;
-    const content = text.length > limit ? `${text.slice(0, limit)}…` : text;
+    let content;
+    if (role === 'assistant' && (text.length > limit || isLongDocument(text)) && isLongDocument(text)) {
+      const back = prompt ? selectChunks(splitChunks(text), prompt, 2) : [];
+      const asked = back.length && keysMatch(prompt, back) ? `\n${back.map((c) => c.text).join('\n\n').slice(0, 1500)}` : '';
+      content = `${historyPlaceholder(text, 'assistant')}${asked}`;
+      if (!recent && !asked) content = content.slice(0, Math.max(limit, 200));
+    } else if (role === 'user' && text.length > PASTED_CHARS) {
+      content = historyPlaceholder(text, 'user');
+      if (!recent) content = content.slice(0, Math.max(limit, 200));
+    }
+    else content = text.length > limit ? `${text.slice(0, limit)}…` : text;
     if (used + content.length > totalChars && out.length >= 2) break;
     used += content.length;
-    out.unshift({ role: messages[i].role, content });
+    out.unshift({ role, content });
   }
   return out;
+}
+
+// Only bring a document part back when the question shares real words with it.
+function keysMatch(prompt, chunks) {
+  const asked = words(prompt).filter((w) => w.length > 3);
+  return chunks.some((c) => { const body = new Set(words(c.text)); return asked.some((w) => body.has(w)); });
 }
 
 // Short answers by default; a full budget only when the student asks for

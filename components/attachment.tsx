@@ -8,7 +8,10 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { Attachment } from "@/lib/types";
+import { isPastedName, wordCount, wordsLabel } from "@/lib/pasted-text";
+import { BottomSheet } from "./bottom-sheet";
 export function AttachmentItem({
   attachment: a,
   busy = false,
@@ -47,6 +50,18 @@ export function AttachmentItem({
         : a.status === "processing"
           ? "Procesando"
           : "Error";
+  // «Texto pegado · 2.340 palabras»: se puede abrir para verlo y quitar.
+  const pasted = isPastedName(a.file.name);
+  const [text, setText] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!pasted) return;
+    let alive = true;
+    void a.file.text().then((t) => alive && setText(t));
+    return () => {
+      alive = false;
+    };
+  }, [pasted, a.file]);
   const size =
     a.file.size >= 1024 * 1024
       ? `${(a.file.size / 1024 / 1024).toFixed(1)} MB`
@@ -66,6 +81,14 @@ export function AttachmentItem({
           <Icon size={20} />
         )}
       </span>
+      {pasted ? (
+        <button type="button" className="attachment-info pasted-open" onClick={() => setOpen(true)} aria-label="Ver el texto pegado">
+          <strong>Texto pegado</strong>
+          <small>
+            {status} · {text === null ? "…" : wordsLabel(wordCount(text))}
+          </small>
+        </button>
+      ) : (
       <span className="attachment-info">
         <strong>{a.file.name}</strong>
         <small>
@@ -73,6 +96,18 @@ export function AttachmentItem({
         </small>
         {a.error && <small className="attachment-error">{a.error}</small>}
       </span>
+      )}
+      {open && (
+        <BottomSheet labelledBy={`pegado-${a.localId}`} onClose={() => setOpen(false)}>
+          <h2 id={`pegado-${a.localId}`}>Texto pegado</h2>
+          <pre className="pasted-view">{text}</pre>
+          <div className="modal-actions">
+            <button className="secondary press" onClick={() => setOpen(false)}>
+              Cerrar
+            </button>
+          </div>
+        </BottomSheet>
+      )}
       {a.status === "error" && (
         <button
           className="icon-button"
@@ -86,7 +121,7 @@ export function AttachmentItem({
       <button
         className="icon-button"
         disabled={busy}
-        aria-label={`Quitar ${a.file.name}`}
+        aria-label={pasted ? "Quitar el texto pegado" : `Quitar ${a.file.name}`}
         onClick={onRemove}
       >
         <X size={16} />

@@ -25,7 +25,9 @@ export const MAX_TEXT_BYTES = 500 * 1024;
 export const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 export const MAX_EXTRACTED_CHARS = 24000;
-export const MAX_ATTACHMENT_CONTEXT_CHARS = 32000;
+// Tope de material por turno (prompt «ahorrar tokens»): antes 32.000 (≈ 9.000
+// tokens, un solo archivo podía pasar del límite de Groq y dar 413).
+export const MAX_ATTACHMENT_CONTEXT_CHARS = 6000;
 /** Tiempo máximo para leer un PDF; después se cancela y se libera. */
 export const PDF_TIMEOUT_MS = 8000;
 // Código: las etiquetas forman parte del contenido y no se quitan.
