@@ -1,0 +1,58 @@
+// TEMPORAL (04/11/2026): banco de pruebas de «Apuntes» (docs/APUNTES-LIMPIOS.md,
+// Bloque 0). Usa las claves de Groq que ya tiene el proyecto sin exponerlas.
+// Solo hace dos cosas, con parámetros fijos: (1) pedir a Groq una página de
+// apuntes limpios con NOTES_JSON_SCHEMA y (2) leer una foto con el mismo
+// prompt de OCR que attachments.mjs. Exige una llave de un solo uso (aquí solo
+// su SHA-256). No registra contenido. Se desactiva al terminar.
+// Copia de NOTES_JSON_SCHEMA (clean-notes.mjs).
+const NOTES_JSON_SCHEMA = {"type":"object","additionalProperties":false,"required":["title","sections","flow","key_idea","unreadable","doubts"],"properties":{"title":{"type":"string","maxLength":70},"sections":{"type":"array","minItems":1,"maxItems":5,"items":{"type":"object","additionalProperties":false,"required":["heading","period","bullets"],"properties":{"heading":{"type":"string","maxLength":60},"period":{"type":"string","maxLength":24},"bullets":{"type":"array","minItems":1,"maxItems":7,"items":{"type":"object","additionalProperties":false,"required":["term","text","quote"],"properties":{"term":{"type":"string","maxLength":40},"text":{"type":"string","maxLength":220},"quote":{"type":"string","maxLength":240}}}}}}},"flow":{"type":"array","maxItems":5,"items":{"type":"object","additionalProperties":false,"required":["label","period"],"properties":{"label":{"type":"string","maxLength":34},"period":{"type":"string","maxLength":24}}}},"key_idea":{"type":"object","additionalProperties":false,"required":["text","quote"],"properties":{"text":{"type":"string","maxLength":200},"quote":{"type":"string","maxLength":240}}},"unreadable":{"type":"array","maxItems":5,"items":{"type":"string","maxLength":90}},"doubts":{"type":"array","maxItems":3,"items":{"type":"object","additionalProperties":false,"required":["text","quote"],"properties":{"text":{"type":"string","maxLength":180},"quote":{"type":"string","maxLength":240}}}}}};
+const OCR_PROMPT = 'Analiza esta imagen para usarla como contexto de conversación. Describe con precisión el contenido visual y transcribe todo el texto legible (OCR), también la letra a mano, respetando títulos, listas y el orden. Si un trozo no se puede leer, escribe [ilegible] en su lugar en vez de adivinarlo. No inventes detalles. Responde en español.';
+const TOKEN_SHA256 = '<sha256 de la llave de un solo uso>';
+const MODEL = 'qwen/qwen3.8-27b';
+const KEY_NAMES = ['GROQ_API_KEY_1', 'GROQ_API_KEY_2', 'GROQ_API_KEY_3', 'GROQ_API_KEY_4', 'GROQ_API_KEY'];
+
+async function sha256(text: string) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+const keys = (names: string[]) => [...new Set(names.map((n) => Deno.env.get(n)?.trim()).filter((k): k is string => Boolean(k) && !/[\s"']/.test(k!)))];
+
+async function groq(payload: Record<string, unknown>) {
+  const started = Date.now();
+  let last = 0;
+  for (const key of keys(KEY_NAMES)) {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST', signal: AbortSignal.timeout(90000),
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+      body: JSON.stringify(payload),
+    });
+    last = res.status;
+    if (res.status === 429 || res.status >= 500 || res.status === 401) { await res.body?.cancel(); continue; }
+    const data = await res.json();
+    if (!res.ok) return json({ error: 'groq_error', status: res.status, message: String(data?.error?.message ?? '').slice(0, 300) }, 502);
+    return json({ content: data.choices?.[0]?.message?.content ?? '', usage: data.usage ?? null, ms: Date.now() - started,
+      remaining: { tokens_minute: res.headers.get('x-ratelimit-remaining-tokens') } });
+  }
+  return json({ error: 'groq_unavailable', status: last }, 503);
+}
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') return json({ error: 'not_found' }, 404);
+  if ((await sha256(req.headers.get('x-banco-token') ?? '')) !== TOKEN_SHA256) return json({ error: 'not_found' }, 404);
+  let body: any;
+  try { body = await req.json(); } catch { return json({ error: 'bad_json' }, 400); }
+  if (body.action === 'groq') {
+    const messages = Array.isArray(body.messages) ? body.messages.slice(0, 6).map((m: any) => ({ role: ['system', 'user', 'assistant'].includes(m?.role) ? m.role : 'user', content: String(m?.content ?? '').slice(0, 20000) })) : [];
+    if (!messages.length) return json({ error: 'bad_messages' }, 400);
+    return groq({ model: MODEL, messages, temperature: 0.2, stream: false, max_completion_tokens: 2400, reasoning_format: 'hidden', reasoning_effort: 'none',
+      response_format: { type: 'json_schema', json_schema: { name: 'apuntes', strict: false, schema: NOTES_JSON_SCHEMA } } });
+  }
+  if (body.action === 'vision') {
+    const image = String(body.image ?? '');
+    if (!/^[A-Za-z0-9+/=]{100,1500000}$/.test(image)) return json({ error: 'bad_image' }, 400);
+    return groq({ model: Deno.env.get('GROQ_VISION_MODEL')?.trim() || MODEL, stream: false, temperature: 0.2, max_completion_tokens: 1400,
+      messages: [{ role: 'user', content: [{ type: 'text', text: OCR_PROMPT }, { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${image}` } }] }] });
+  }
+  return json({ error: 'not_found' }, 404);
+});

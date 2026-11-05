@@ -133,6 +133,7 @@ export function FileCard({
   attachment,
   onAnalyze,
   onScheme,
+  onCleanNotes,
   onRemove,
   onRetry,
   busy,
@@ -141,6 +142,8 @@ export function FileCard({
   onAnalyze: () => void;
   /** «Esquema de estos apuntes» (docs/ESQUEMAS.md). */
   onScheme?: () => void;
+  /** «Apuntes»: pasar a limpio (docs/APUNTES-LIMPIOS.md). */
+  onCleanNotes?: () => void;
   onRemove: () => void;
   onRetry: () => void;
   busy: boolean;
@@ -155,7 +158,7 @@ export function FileCard({
       />
       <h2>Tus apuntes, más claros.</h2>
       <p>
-        Puedes pedir un resumen, un esquema, preguntar por un concepto o preparar un test.
+        Puedes pasarlos a limpio, pedir un esquema, preguntar por un concepto o preparar un test.
       </p>
       <div className="button-row">
         <button
@@ -172,6 +175,16 @@ export function FileCard({
             onClick={onScheme}
           >
             Esquema de estos apuntes
+          </button>
+        ) : null}
+        {onCleanNotes ? (
+          <button
+            className="secondary"
+            disabled={busy || attachment.status !== "ready"}
+            onClick={onCleanNotes}
+            aria-label="Apuntes: pasar a limpio"
+          >
+            Apuntes
           </button>
         ) : null}
       </div>

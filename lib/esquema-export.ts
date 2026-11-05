@@ -30,9 +30,9 @@ export function toMarkdown(s: Scheme) {
 }
 
 /** Nombre de archivo sin tildes ni símbolos: «Al-Ándalus tras…» → «esquema-al-andalus-tras». */
-export function fileNameFor(title: string, ext: string) {
+export function fileNameFor(title: string, ext: string, prefix = "esquema") {
   const slug = title.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
-  return `esquema-${slug || "dream"}.${ext}`;
+  return `${prefix}-${slug || "dream"}.${ext}`;
 }
 
 export function download(blob: Blob, name: string) {
@@ -136,7 +136,7 @@ export async function exportSvg(article: HTMLElement, title: string) {
 }
 
 /** PNG a doble resolución. */
-export async function exportPng(article: HTMLElement, title: string) {
+export async function exportPng(article: HTMLElement, title: string, prefix = "esquema") {
   const { svg, width, height } = await svgOf(article);
   const img = new Image();
   img.decoding = "sync";
@@ -154,7 +154,7 @@ export async function exportPng(article: HTMLElement, title: string) {
   ctx.drawImage(img, 0, 0, width, height);
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
   if (!blob) throw new Error("No se pudo crear la imagen.");
-  download(blob, fileNameFor(title, "png"));
+  download(blob, fileNameFor(title, "png", prefix));
 }
 
 /** PDF: diálogo de imprimir con A4 vertical o apaisado (el texto se puede seleccionar). */

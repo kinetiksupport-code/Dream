@@ -1,8 +1,9 @@
-import type { GameWidget, QuizWidget, SchemeWidget, WebSource } from "./types";
+import type { GameWidget, NotesWidget, QuizWidget, SchemeWidget, WebSource } from "./types";
 export function parseDreamContent(content: string) {
   const widgets: QuizWidget[] = [];
   const schemes: SchemeWidget[] = [];
   const games: GameWidget[] = [];
+  const notes: NotesWidget[] = [];
   const sources: WebSource[] = [];
   const requestTest = content.includes("<!--DREAM_ACTION:TEST-->");
   let doc: { title: string; words: number } | null = null;
@@ -32,6 +33,19 @@ export function parseDreamContent(content: string) {
             title: v.title.slice(0, 120),
             subject: typeof v.subject === "string" ? v.subject.slice(0, 60) : undefined,
             sections: Number.isInteger(v.sections) ? (v.sections as number) : undefined,
+          });
+        else if (
+          v &&
+          v.type === "notes" &&
+          typeof v.notesId === "string" &&
+          /^[0-9a-f-]{36}$/i.test(v.notesId) &&
+          typeof v.title === "string"
+        )
+          notes.push({
+            type: "notes",
+            notesId: v.notesId,
+            title: v.title.slice(0, 120),
+            pages: Number.isInteger(v.pages) ? (v.pages as number) : undefined,
           });
         else if (
           v &&
@@ -70,7 +84,7 @@ export function parseDreamContent(content: string) {
     })
     .replace(/<!--DREAM_ACTION:TEST-->/g, "")
     .replace(/<!--DREAM_(?:WIDGET|ACTION|SOURCES|DOC):[\s\S]*$/g, "");
-  return { text, widgets, schemes, games, requestTest, sources: sources.slice(0, 5), doc: doc ?? longDocument(text) };
+  return { text, widgets, schemes, games, notes, requestTest, sources: sources.slice(0, 5), doc: doc ?? longDocument(text) };
 }
 
 /** Misma regla que dream-api (long-text.mjs): respuesta larga con forma de documento. */

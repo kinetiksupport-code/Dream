@@ -7,6 +7,7 @@ import {
   FileText,
   ArrowRight,
   LayoutGrid,
+  NotebookPen,
   Puzzle,
   ListChecks,
   RotateCw,
@@ -223,6 +224,33 @@ export const MessageView = memo(function MessageView({
             </span>
             <span className="quiz-start">
               Ver esquema
+              <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
+            </span>
+          </Link>
+        ))}
+      {!revealing &&
+        parsed.notes.map((w) => (
+          <Link
+            className="quiz-widget press"
+            data-kind="notes"
+            href={`/apuntes/${w.notesId}`}
+            key={w.notesId}
+          >
+            <span className="quiz-icon" aria-hidden="true">
+              <NotebookPen size={22} />
+            </span>
+            <span className="quiz-text">
+              <small>Dreams · Apuntes</small>
+              <strong>{w.title}</strong>
+              {w.pages ? (
+                <span>
+                  <span className="num">{w.pages}</span>{" "}
+                  {w.pages === 1 ? "página" : "páginas"}
+                </span>
+              ) : null}
+            </span>
+            <span className="quiz-start">
+              Ver apuntes
               <ArrowRight size={18} className="quiz-arrow" aria-hidden="true" />
             </span>
           </Link>

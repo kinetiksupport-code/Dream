@@ -1,0 +1,36 @@
+.page { padding: 12px 16px 40px; max-width: 900px; margin-inline: auto; }
+.bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.bar :global(.secondary), .bar :global(.primary) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; }
+
+/* Menú «Descargar»: <details> nativo, como en los esquemas. */
+.menu { position: relative; }
+.menu > summary { list-style: none; cursor: pointer; }
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary[aria-disabled] { opacity: 0.6; pointer-events: none; }
+.menuList {
+  position: absolute; z-index: 20; right: 0; top: calc(100% + 6px); min-width: 200px; padding: 6px;
+  display: grid; background: var(--elevated); border: 1px solid var(--border); border-radius: 14px;
+  box-shadow: var(--shadow-popover); transform-origin: top right;
+  animation: menuIn 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.menuList button {
+  min-height: 44px; padding: 0 12px; text-align: left; border: 0; border-radius: 10px;
+  background: transparent; color: var(--text); font: inherit; cursor: pointer;
+}
+.menuList button:focus-visible { outline: 2px solid var(--primary); }
+@media (hover: hover) and (pointer: fine) { .menuList button:hover { background: var(--nav-active); } }
+@keyframes menuIn { from { opacity: 0; transform: scale(0.96); } }
+
+.notices { display: grid; gap: 8px; margin: 0 auto 14px; max-width: 820px; }
+.hint { margin: 0; font-size: 14px; color: var(--text-secondary); }
+.warn {
+  margin: 0; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.45;
+  background: var(--warning-soft, rgba(245, 180, 0, 0.14)); color: var(--text);
+}
+.warn ul { margin: 6px 0 0; padding-left: 18px; }
+
+.progress { display: grid; justify-items: center; margin-top: 18px; min-height: 44px; }
+.pageError { display: grid; gap: 8px; justify-items: center; text-align: center; }
+
+@media (prefers-reduced-motion: reduce) { .menuList { animation: none; } }
+@media print { .bar, .notices, .progress { display: none; } }

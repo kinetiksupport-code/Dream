@@ -21,6 +21,7 @@ import { WORD_LIMITS, createReplyGuard, hasForeignScript, planText, replyKind, s
 import { REST_MAX_CHARS, REUPLOAD_NOTE, ROUTER_SCHEMA, asksToReupload, boardText, conversationFiles, fileIndex, ftsQuery, needsMaterial, normalizeRoute, pickFiles, readBoard, routeByRules, routerMessages, updateBoard } from './conversation-memory.mjs';
 import { GAME_JSON_SCHEMAS, GAME_KINDS, gameKindFor, generateGame, validResult } from './games.mjs';
 import { IMAGE_BUCKET, ILLUSTRATIONS_GLOBAL_PER_DAY, ILLUSTRATIONS_PER_DAY, generateImage, illustrationTargets, illustrationsEnabled, imageType, promptHash } from './illustrations.mjs';
+import { NOTES_JSON_SCHEMA, NOTES_MAX_PAGES, NOTES_MAX_TOKENS, NOTES_PAGE_CHARS, generateNotesPage, notesCacheKey, notesTextFrom, notesDocument, notesMessages, notesPages, unreadableMarks } from './clean-notes.mjs';
 import { SCHEME_JSON_SCHEMA, SCHEME_SOURCE_CHARS, SECTION_JSON_SCHEMA, generateScheme, normalizeEditedScheme, schemeSourceFrom, validateSection } from './schemes.mjs';
 import { selectEducationalSkills, educationalSkillPrompt } from './educational-skills.mjs';
 import { CONSENT_TEXT, MINOR_RESET, MIN_AGE, OnboardingError, ageOn, consentBlock, consentDecision, createNicknameReplacer, madridToday, nicknameFor, onboardingPatch, personalContext, replaceNickname, welcomeFields } from './onboarding.mjs';
@@ -236,14 +237,14 @@ async function groqJson(system: string, user: string, operation: string, signal?
 
 // Esquemas (schemes.mjs, docs/ESQUEMAS.md): JSON con el formato del esquema,
 // temperatura baja y sin razonamiento (lo que pasó el banco de pruebas).
-async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>, schema: object = SCHEME_JSON_SCHEMA) {
-  const send = (format: object) => groqProvider.request({ operation: 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
-    model: groqModel(), stream: false, temperature: 0.25, max_tokens: 3000,
+async function groqScheme(messages: { role: string; content: string }[], signal: AbortSignal | undefined, admission: ReturnType<typeof createAdmission>, schema: object = SCHEME_JSON_SCHEMA, opts: { operation?: string; maxTokens?: number; temperature?: number; name?: string } = {}) {
+  const send = (format: object) => groqProvider.request({ operation: opts.operation ?? 'scheme_generate', signal, timeoutMs: 60000, beforeAttempt: admission.beforeAttempt, pause: admission.pause, body: {
+    model: groqModel(), stream: false, temperature: opts.temperature ?? 0.25, max_tokens: opts.maxTokens ?? 3000,
     ...(/^qwen\//.test(groqModel()) ? { reasoning_format: 'hidden', reasoning_effort: 'none' } : {}),
     response_format: format, messages,
   }});
   let response: Response;
-  try { response = await send({ type: 'json_schema', json_schema: { name: 'esquema', strict: false, schema } }); }
+  try { response = await send({ type: 'json_schema', json_schema: { name: opts.name ?? 'esquema', strict: false, schema } }); }
   catch (error) {
     // Groq responde 400 (json_validate_failed) cuando la salida no cumple el
     // esquema JSON: se pide otra vez como JSON normal y lo valida validateScheme.
@@ -878,6 +879,140 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     return json({ scheme: { id: inserted.data.id, title: inserted.data.title }, assistant_message: assistantMessage, widget });
   }
 
+  // «Apuntes» (clean-notes.mjs, docs/APUNTES-LIMPIOS.md): los apuntes del alumno
+  // pasados a limpio, una página por llamada. Cuenta como un test, pero solo si
+  // sale bien: si falla o ya estaba hecho (caché), se devuelve el cupo.
+  const refundQuota = async ({ exam = false }: { exam?: boolean } = {}) => {
+    if (special.on) return;
+    try {
+      const done = await admin.rpc('dream_refund_admission', { p_owner: user.id, p_exam: exam });
+      if (done.error) console.error(JSON.stringify({ event: 'notes_refund_failed', code: String(done.error.code ?? '').slice(0, 20) }));
+    } catch { console.error(JSON.stringify({ event: 'notes_refund_failed' })); }
+  };
+  // Texto de los apuntes (sin la cabecera técnica de la extracción).
+  const notesSourceOf = (files: any[]) => {
+    const list = files.map((f: any) => ({ name: String(f.file_name || ''), text: notesTextFrom(f.extracted_text) }));
+    const max = NOTES_MAX_PAGES * NOTES_PAGE_CHARS + 2000;
+    return list.length === 1 ? list[0].text.trim().slice(0, max) : schemeSourceFrom(list, max);
+  };
+  const notesPage = async (text: string, page: number, pages: number, request: string) => generateNotesPage({
+    call: (messages) => groqScheme(messages, req.signal, admission, NOTES_JSON_SCHEMA, { operation: 'notes_clean', maxTokens: NOTES_MAX_TOKENS, temperature: 0.2, name: 'apuntes' }),
+    messages: notesMessages({ request, text, page, pages }), source: text, first: page === 1,
+  });
+  const notesLog = (result: any, page: number, extra: Record<string, unknown> = {}) =>
+    console.log(JSON.stringify({ event: 'notes_clean_page', page, ok: Boolean(result?.ok), attempts: result?.attempts ?? 0, dropped: result?.dropped ?? 0, repaired: Boolean(result?.repaired), missing: result?.missing?.length ?? 0, ...extra }));
+
+  if (body.action === 'notes_clean_generate') {
+    // Desde el chat (con conversación) o desde la pantalla Apuntes (solo archivos).
+    const inChat = typeof body.conversation_id === 'string' && body.conversation_id !== '';
+    if (inChat && !uuid.test(body.conversation_id)) return json({ error: 'Conversación no válida.' }, 400);
+    if (inChat) {
+      const owns = await admin.from('dream_conversations').select('id').eq('id', body.conversation_id).eq('owner_id', user.id).maybeSingle();
+      if (!owns.data) return json({ error: 'Conversación no encontrada.' }, 404);
+    }
+    let ids = Array.isArray(body.attachment_ids) ? body.attachment_ids.filter((id: unknown) => typeof id === 'string' && uuid.test(id)).slice(0, MAX_MESSAGE_ATTACHMENTS) : [];
+    if (!ids.length && inChat) {
+      const asked = typeof body.context === 'string' ? body.context : '';
+      ids = pickFiles(await filesOf(body.conversation_id), asked, { ftsIds: await filesMatching(body.conversation_id, asked) }).map((f: any) => f.id);
+    }
+    if (!ids.length) { await refundQuota({ exam: true }); return json({ error: 'Sube tus apuntes (foto, PDF, Word o texto) y te los paso a limpio.', code: 'notes_needs_notes' }, 400); }
+    let query = admin.from('dream_attachments').select('id,file_name,extracted_text,created_at').in('id', ids).eq('owner_id', user.id).eq('status', 'processed');
+    if (inChat) query = query.eq('conversation_id', body.conversation_id);
+    const found = await query.order('created_at', { ascending: true });
+    const files = (found.data || []).filter((f: any) => String(f.extracted_text || '').trim());
+    if (!files.length) { await refundQuota({ exam: true }); return json({ error: 'No hemos podido leer texto en esos archivos. Prueba con otra foto o con el PDF.', code: 'notes_needs_notes' }, 400); }
+    const source = notesSourceOf(files);
+    const { pages, truncated } = notesPages(source);
+    if (!pages.length) { await refundQuota({ exam: true }); return json({ error: 'No hemos podido leer texto en esos archivos.', code: 'notes_needs_notes' }, 400); }
+    const cacheKey = await notesCacheKey(source);
+    const request = typeof body.context === 'string' && body.context.trim() ? body.context.trim().slice(0, 600) : 'Pásame a limpio estos apuntes.';
+    const deliver = async (row: { id: string; title: string; total_pages: number; content: any }, cached: boolean) => {
+      const widget = { type: 'notes', notesId: row.id, title: row.title, pages: row.total_pages };
+      const assistantMessage = `${cached ? 'Ya tenía pasados a limpio estos apuntes' : 'He pasado a limpio tus apuntes'}: **${row.title}**.\n\n<!--DREAM_WIDGET:${JSON.stringify(widget)}-->`;
+      const done = Array.isArray(row.content?.pages) ? row.content.pages.length : 0;
+      if (!inChat) return json({ notes: { id: row.id, title: row.title, total_pages: row.total_pages, done, cached }, widget });
+      let userMessageId: string | null = null;
+      if (body.persist_user_message === true) {
+        const saved = await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'user', content: request }).select('id').single();
+        userMessageId = saved.data?.id || null;
+      }
+      if (userMessageId) await admin.from('dream_attachments').update({ message_id: userMessageId }).in('id', files.map((f: any) => f.id)).is('message_id', null);
+      await admin.from('dream_messages').insert({ conversation_id: body.conversation_id, owner_id: user.id, role: 'assistant', content: assistantMessage });
+      await admin.from('dream_conversations').update({ updated_at: new Date().toISOString() }).eq('id', body.conversation_id);
+      await markDelivered(body.conversation_id, 'apuntes', row.title, request);
+      return json({ notes: { id: row.id, title: row.title, total_pages: row.total_pages, done, cached }, assistant_message: assistantMessage, widget });
+    };
+    // Caché: los mismos apuntes ya pasados a limpio no gastan IA ni cupo.
+    const cached = await admin.from('dream_clean_notes').select('id,title,total_pages,content').eq('owner_id', user.id).eq('cache_key', cacheKey).maybeSingle();
+    if (cached.error) return json({ error: 'Esta función todavía no está disponible.', code: 'notes_unavailable' }, 503);
+    if (cached.data) { await refundQuota({ exam: true }); console.log(JSON.stringify({ event: 'notes_clean_cache_hit' })); return deliver(cached.data as any, true); }
+    if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    let result: any;
+    try { result = await notesPage(pages[0], 1, pages.length, request); }
+    catch (error) {
+      await refundQuota({ exam: true });
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
+      return json({ error: 'No se pudieron pasar a limpio tus apuntes. Inténtalo de nuevo.' }, 502);
+    }
+    notesLog(result, 1, { pages: pages.length, ocr_unreadable: unreadableMarks(source) });
+    if (!result.ok || !result.page) {
+      await refundQuota({ exam: true });
+      return json({ error: 'No he podido pasar a limpio estos apuntes sin cambiar lo que dicen. Prueba con una foto más nítida o con menos páginas. No se ha gastado tu cupo.', code: 'notes_invalid' }, 422);
+    }
+    const content = notesDocument({ title: result.title, pages: [result.page], total: pages.length, truncated });
+    const inserted = await admin.from('dream_clean_notes').insert({
+      owner_id: user.id, conversation_id: inChat ? body.conversation_id : null, title: content.title, content, total_pages: pages.length,
+      attachment_ids: files.map((f: any) => f.id), cache_key: cacheKey,
+    }).select('id,title,total_pages,content').single();
+    if (inserted.error) {
+      // Dos peticiones iguales a la vez: la otra ya lo guardó.
+      const again = await admin.from('dream_clean_notes').select('id,title,total_pages,content').eq('owner_id', user.id).eq('cache_key', cacheKey).maybeSingle();
+      if (again.data) return deliver(again.data as any, true);
+      return json({ error: 'No se pudieron guardar tus apuntes.' }, 503);
+    }
+    return deliver(inserted.data as any, false);
+  }
+
+  if (body.action === 'notes_clean_page') {
+    // Las páginas siguientes, una por llamada y en orden (no gastan cupo).
+    await refundQuota();
+    if (!uuid.test(body.notes_id || '')) return json({ error: 'Apuntes no válidos.' }, 400);
+    const row = await admin.from('dream_clean_notes').select('id,title,content,total_pages,attachment_ids,cache_key,updated_at').eq('id', body.notes_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Apuntes no encontrados.' }, 404);
+    const content = row.data.content as any;
+    const done = Array.isArray(content?.pages) ? content.pages.length : 0;
+    if (done >= row.data.total_pages) return json({ notes: { id: row.data.id, title: row.data.title, content, total_pages: row.data.total_pages, done } });
+    const found = await admin.from('dream_attachments').select('id,file_name,extracted_text,created_at').in('id', row.data.attachment_ids || [])
+      .eq('owner_id', user.id).eq('status', 'processed').order('created_at', { ascending: true });
+    const files = (found.data || []).filter((f: any) => String(f.extracted_text || '').trim());
+    const source = notesSourceOf(files);
+    if (!files.length || await notesCacheKey(source) !== row.data.cache_key) return json({ error: 'Ya no tengo los apuntes originales (la conversación se borró), así que no puedo seguir sin inventar.', code: 'notes_sources_gone' }, 409);
+    const { pages } = notesPages(source);
+    if (!groqConfigured()) return json({ error: 'El servicio de IA no está configurado.' }, 503);
+    let result: any;
+    try { result = await notesPage(pages[done], done + 1, pages.length, ''); }
+    catch (error) {
+      if (error instanceof AdmissionError || error instanceof GroqProviderError) return safeFailure(error);
+      return json({ error: 'No se pudo pasar a limpio esta página. Inténtalo de nuevo.' }, 502);
+    }
+    notesLog(result, done + 1);
+    if (!result.ok || !result.page) return json({ error: `No he podido pasar a limpio la página ${done + 1} sin cambiar lo que dice. Puedes reintentarlo.`, code: 'notes_invalid' }, 422);
+    const next = { ...content, pages: [...content.pages, result.page] };
+    const saved = await admin.from('dream_clean_notes').update({ content: next, updated_at: new Date().toISOString() })
+      .eq('id', row.data.id).eq('owner_id', user.id).eq('updated_at', row.data.updated_at).select('id,title,content,total_pages').maybeSingle();
+    if (saved.error) return json({ error: 'No se pudo guardar la página.' }, 503);
+    const out = saved.data ?? (await admin.from('dream_clean_notes').select('id,title,content,total_pages').eq('id', row.data.id).eq('owner_id', user.id).maybeSingle()).data;
+    if (!out) return json({ error: 'Apuntes no encontrados.' }, 404);
+    return json({ notes: { ...out, done: (out as any).content.pages.length } });
+  }
+
+  if (body.action === 'notes_clean_get') {
+    if (!uuid.test(body.notes_id || '')) return json({ error: 'Apuntes no válidos.' }, 400);
+    const row = await admin.from('dream_clean_notes').select('id,title,content,total_pages,created_at').eq('id', body.notes_id).eq('owner_id', user.id).maybeSingle();
+    if (!row.data) return json({ error: 'Apuntes no encontrados.' }, 404);
+    return json({ notes: { ...row.data, done: Array.isArray((row.data as any).content?.pages) ? (row.data as any).content.pages.length : 0 } });
+  }
+
   if (body.action === 'scheme_update') {
     // Lo que edita el alumno (su texto: no se piden citas). Se limpia y se guarda.
     if (!uuid.test(body.scheme_id || '')) return json({ error: 'Esquema no válido.' }, 400);
@@ -1056,12 +1191,14 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
 
   if (body.action === 'dreams_list') {
     // Sección «Dreams»: esquemas y juegos del alumno, lo más reciente primero.
-    const [schemes, games, docs] = await Promise.all([
+    const [schemes, games, docs, notes] = await Promise.all([
       admin.from('dream_schemes').select('id,title,subject,created_at,updated_at').eq('owner_id', user.id).order('updated_at', { ascending: false }).limit(100),
       admin.from('dream_games').select('id,title,kind,best_score,total,created_at,updated_at').eq('owner_id', user.id).order('updated_at', { ascending: false }).limit(100),
       // Documentos largos de Dream (apuntes, resúmenes, esquemas en texto).
       admin.from('dream_messages').select('id,conversation_id,content,created_at').eq('owner_id', user.id).eq('role', 'assistant')
         .like('content', '%<!--DREAM_DOC:%').order('created_at', { ascending: false }).limit(50),
+      // «Apuntes» pasados a limpio (sin la migración, la lista sigue sin ellos).
+      admin.from('dream_clean_notes').select('id,title,total_pages,updated_at').eq('owner_id', user.id).order('updated_at', { ascending: false }).limit(100),
     ]);
     if (schemes.error || games.error) return json({ error: 'No se pudieron cargar tus Dreams.' }, 503);
     const docMeta = (content: string) => {
@@ -1069,6 +1206,7 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     };
     const items = [
       ...(schemes.data || []).map((s: any) => ({ type: 'scheme', id: s.id, title: s.title, subject: s.subject || '', updated_at: s.updated_at })),
+      ...(notes.error ? [] : notes.data || []).map((n: any) => ({ type: 'notes', id: n.id, title: n.title, pages: n.total_pages, updated_at: n.updated_at })),
       ...(games.data || []).map((g: any) => ({ type: 'game', id: g.id, title: g.title, kind: g.kind, best_score: g.best_score, total: g.total, updated_at: g.updated_at })),
       ...(docs.error ? [] : docs.data || []).map((d: any) => ({ type: 'doc', id: d.id, conversation_id: d.conversation_id,
         title: String(docMeta(d.content)?.title || 'Documento').slice(0, 90), words: Number(docMeta(d.content)?.words) || 0, updated_at: d.created_at })),

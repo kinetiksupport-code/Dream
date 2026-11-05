@@ -176,7 +176,7 @@ async function analyzeImage(base64, mimeType, signal, admission) {
       model: Deno.env.get('GROQ_VISION_MODEL')?.trim() || 'qwen/qwen3.8-27b',
       stream: false, temperature: 0.2, max_completion_tokens: 1400,
       messages: [{ role: 'user', content: [
-        { type: 'text', text: 'Analiza esta imagen para usarla como contexto de conversación. Describe con precisión el contenido visual y transcribe todo el texto legible (OCR). No inventes detalles. Responde en español.' },
+        { type: 'text', text: 'Analiza esta imagen para usarla como contexto de conversación. Describe con precisión el contenido visual y transcribe todo el texto legible (OCR), también la letra a mano, respetando títulos, listas y el orden. Si un trozo no se puede leer, escribe [ilegible] en su lugar en vez de adivinarlo. No inventes detalles. Responde en español.' },
         { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64}` } },
       ] }],
     }}); }

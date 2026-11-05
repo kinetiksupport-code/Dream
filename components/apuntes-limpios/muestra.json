@@ -1,0 +1,97 @@
+{
+ "title": "Evolución de al-Ándalus",
+ "total": 1,
+ "pages": [
+  {
+   "sections": [
+    {
+     "heading": "Crisis del Califato",
+     "period": "",
+     "bullets": [
+      {
+       "term": "",
+       "text": "Tras la muerte de Al-Hakam II, los califas perdieron poder.",
+       "quote": "Tras la muerte de Al-Hakam II, los califas perdieron poder"
+      },
+      {
+       "term": "Almanzor",
+       "text": "Como hayib, controló el gobierno mediante razias (campañas militares de saqueo) contra reinos cristianos.",
+       "quote": "Almanzor, como hayib, controlo el gobierno mediante razias"
+      },
+      {
+       "term": "",
+       "text": "A su muerte en 1002, las luchas internas provocaron la desaparición del califato en 1031.",
+       "quote": "A su muerte en 1002, las luchas internas provocaron la desaparicion del califato en 1031"
+      }
+     ]
+    },
+    {
+     "heading": "Fragmentación en taifas",
+     "period": "1031-1086",
+     "bullets": [
+      {
+       "term": "",
+       "text": "Al-Ándalus se dividió en numerosos reinos o taifas que competían entre sí.",
+       "quote": "Al-Andalus se dividio en numerosos reinos o taifas que competian entre si"
+      },
+      {
+       "term": "",
+       "text": "Los reyes pagaban parias a los monarcas cristianos para evitar ataques.",
+       "quote": "Los reyes pagaban parias a los monarcas cristianos para evitar ataques"
+      }
+     ]
+    },
+    {
+     "heading": "Imperios norteafricanos",
+     "period": "1086-1212",
+     "bullets": [
+      {
+       "term": "",
+       "text": "Tras la caída de Toledo en 1085, los musulmanes buscaron apoyo externo.",
+       "quote": "Tras la caida de Toledo en 1085, los musulmanes buscaron apoyo externo"
+      },
+      {
+       "term": "Almorávides",
+       "text": "Guerreros bereberes de Marrakech que cruzaron el estrecho en 1086. Su impopularidad causó las segundas taifas.",
+       "quote": "guerreros bereberes de Marrakech que cruzaron el estrecho en 1086"
+      },
+      {
+       "term": "Almohades",
+       "text": "Llegaron en 1146 y fueron derrotados en la batalla de Las Navas de Tolosa en 1212.",
+       "quote": "llegaron en 1146 tras ser llamados por nuevas taifas. Fueron derrotados en la batalla de Las Navas de Tolosa en 1212"
+      },
+      {
+       "term": "",
+       "text": "Los cristianos conquistaron casi toda al-Ándalus, excepto Granada.",
+       "quote": "los cristianos conquistaron casi toda al-Andalus, exceptuando Granada"
+      }
+     ]
+    }
+   ],
+   "flow": [
+    {
+     "label": "Califato",
+     "period": "hasta 1031"
+    },
+    {
+     "label": "Taifas",
+     "period": "1031-1086"
+    },
+    {
+     "label": "Almorávides y Almohades",
+     "period": "1086-1212"
+    },
+    {
+     "label": "Conquista cristiana",
+     "period": "excepto Granada"
+    }
+   ],
+   "key_idea": {
+    "text": "La caída del califato y la llegada de los almorávides y almohades marcaron el final de al-Ándalus.",
+    "quote": "las luchas internas provocaron la desaparicion del califato en 1031"
+   },
+   "unreadable": [],
+   "doubts": []
+  }
+ ]
+}

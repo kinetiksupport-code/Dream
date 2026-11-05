@@ -50,6 +50,7 @@ import {
 } from "@/lib/limits";
 import { parseDreamContent } from "@/lib/widgets";
 import { wantsScheme } from "@/lib/esquema";
+import { wantsCleanNotes } from "@/lib/clean-notes";
 import { gameKindFor, wantsGame } from "@/lib/dream-games";
 import { routeCandidate } from "../supabase/functions/dream-api/conversation-memory.mjs";
 import { MAX_CHAT_FILES, prepareFile, validateFile, toBase64, withUploadRetry } from "@/lib/attachments";
@@ -524,6 +525,32 @@ export function ChatExperience({
       { id: messageId, role: "assistant", content: r.assistant_message },
     ]);
   }
+  // «Apuntes»: los apuntes del alumno pasados a limpio (docs/APUNTES-LIMPIOS.md).
+  async function generateCleanNotes(
+    id: string,
+    prompt: string,
+    signal: AbortSignal,
+    attachmentIds: string[],
+  ) {
+    setDreaming(true);
+    setState("shaping");
+    const r = await callDream<{ assistant_message: string }>(
+      "notes_clean_generate",
+      {
+        conversation_id: id,
+        context: prompt,
+        attachment_ids: attachmentIds,
+        persist_user_message: true,
+      },
+      signal,
+    );
+    const messageId = crypto.randomUUID();
+    fresh.current.add(messageId);
+    setMessages((s) => [
+      ...s,
+      { id: messageId, role: "assistant", content: r.assistant_message },
+    ]);
+  }
   // Juego interactivo de los apuntes adjuntos (docs/ESQUEMAS.md, Bloque 7).
   async function generateGame(
     id: string,
@@ -649,7 +676,9 @@ export function ChatExperience({
       // que mira la conversación entera (archivos y pizarra). Si falla, se
       // sigue como antes, solo con este mensaje.
       let route: ChatRoute | null = null;
-      if (!study && routeCandidate(prompt)) {
+      // «Pásame a limpio estos apuntes»: con los de este mensaje o los ya subidos.
+      const cleanNotes = !study && wantsCleanNotes(prompt);
+      if (!study && !cleanNotes && routeCandidate(prompt)) {
         try {
           route = (
             await callDream<{ route: ChatRoute }>(
@@ -663,7 +692,9 @@ export function ChatExperience({
           route = null;
         }
       }
-      if (route?.ask) {
+      if (cleanNotes) {
+        await generateCleanNotes(id, prompt, controller.signal, attachmentIds);
+      } else if (route?.ask) {
         // Una sola pregunta útil (ya guardada en la conversación).
         const ask = route.ask;
         setMessages((s) => [...s, { id: assistantId, role: "assistant", content: ask }]);
@@ -1058,6 +1089,7 @@ export function ChatExperience({
                 )
               }
               onScheme={() => void send("Hazme un esquema de estos apuntes.")}
+              onCleanNotes={() => void send("Pásame a limpio estos apuntes.")}
               onRemove={() => removeFile(attachments[0].localId)}
               onRetry={() => enqueueUpload(attachments[0])}
             />

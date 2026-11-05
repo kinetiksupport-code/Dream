@@ -1,6 +1,8 @@
 "use client";
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import { useState, type CSSProperties } from "react";
+import { callDream, errorMessage } from "@/lib/dream-api";
 import { AlertIcon, CheckIcon, ClockIcon } from "./icons";
 import {
   NotesFileInput,
@@ -111,6 +113,21 @@ function NoteCard({
   const about = `mis apuntes «${title}» de ${note.subject}`;
   const summarize = `/chat?q=${encodeURIComponent(`Resume ${about} con sus ideas clave.`)}`;
   const quiz = `/chat?q=${encodeURIComponent(`Hazme un test corto sobre ${about}.`)}`;
+  const router = useRouter();
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanError, setCleanError] = useState("");
+  // «Apuntes»: este archivo pasado a limpio (docs/APUNTES-LIMPIOS.md).
+  async function cleanNotes() {
+    setCleaning(true);
+    setCleanError("");
+    try {
+      const r = await callDream<{ notes: { id: string } }>("notes_clean_generate", { attachment_ids: [note.id] });
+      router.push(`/apuntes/${r.notes.id}`);
+    } catch (e) {
+      setCleanError(errorMessage(e));
+      setCleaning(false);
+    }
+  }
   return (
     <article
       className={s.card}
@@ -163,12 +180,26 @@ function NoteCard({
           </p>
         )}
       </div>
+      {cleanError ? (
+        <p className={s.note} role="alert">
+          {cleanError}
+        </p>
+      ) : null}
       {note.status === "processing" ? (
         <p className={s.note}>Puedes seguir usando Dream mientras termina.</p>
       ) : (
         <div className={s.actions}>
           {note.status === "ready" ? (
             <>
+              <button
+                type="button"
+                className={`${s.action} press`}
+                onClick={() => void cleanNotes()}
+                disabled={cleaning}
+                aria-label="Apuntes: pasar este archivo a limpio"
+              >
+                {cleaning ? "Pasando a limpio…" : "Apuntes"}
+              </button>
               <Link className={`${s.action} press`} href={summarize}>
                 Resumir
               </Link>

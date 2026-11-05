@@ -137,7 +137,7 @@ function languageLooksEnglish(text) {
  * Si no hay fuente (`sources` vacío) no se comprueban citas: el que llama
  * decide si eso se permite (con apuntes o búsqueda siempre hay fuente).
  * @param {unknown} raw
- * @param {{ sources?: string }} [options]
+ * @param {{ sources?: string, lenient?: boolean }} [options]
  */
 export function validateScheme(raw, { sources = '', lenient = false } = {}) {
   const errors = [];

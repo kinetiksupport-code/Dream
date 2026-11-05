@@ -86,6 +86,13 @@ export interface SchemeWidget {
   subject?: string;
   sections?: number;
 }
+/** Tarjeta «Dreams · Apuntes» (apuntes pasados a limpio, docs/APUNTES-LIMPIOS.md). */
+export interface NotesWidget {
+  type: "notes";
+  notesId: string;
+  title: string;
+  pages?: number;
+}
 /** Tarjeta «Dreams» de un juego interactivo (docs/ESQUEMAS.md, Bloque 7). */
 export interface GameWidget {
   type: "game";

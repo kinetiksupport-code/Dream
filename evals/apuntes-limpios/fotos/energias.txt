@@ -1,0 +1,10 @@
+Fuentes de energia
+Renovables (no se agotan):
+- Solar: paneles fotovoltaicos → electricidad.
+- Eolica: aerogeneradores, viento.
+- Hidraulica: embalses y presas.
+- Biomasa: restos organicos.
+No renovables (se agotan):
+- Combustibles fosiles: carbon, petroleo y gas natural. Emiten CO2 → efecto invernadero.
+- Nuclear: fision del uranio. Residuos radiactivos durante miles de años.
+En España en 2023 las renovables produjeron mas del 50 % de la electricidad.
