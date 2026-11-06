@@ -20,6 +20,7 @@ const PUBLIC_ROUTES = new Set([
   "/terminos",
   "/cookies",
   "/aviso-legal",
+  "/sobre-nosotros",
   "/auth/callback",
   "/api/auth/verify-maintenance",
 ]);

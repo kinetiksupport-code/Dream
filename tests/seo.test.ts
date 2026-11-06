@@ -28,5 +28,5 @@ test("llms.txt existe y no promete ejercicios resueltos", () => {
 
 test("el sitemap usa www.edudream.es y solo páginas públicas", () => {
   assert.equal(SITE_URL, "https://www.edudream.es");
-  assert.deepEqual(PUBLIC_PAGES.map((p) => p.path), ["/", "/blog", "/login", "/privacidad", "/terminos", "/cookies", "/aviso-legal"]);
+  assert.deepEqual(PUBLIC_PAGES.map((p) => p.path), ["/", "/blog", "/sobre-nosotros", "/login", "/privacidad", "/terminos", "/cookies", "/aviso-legal"]);
 });

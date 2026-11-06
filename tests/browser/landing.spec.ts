@@ -23,6 +23,7 @@ test("one h1, the sections, real text and links to the login and the legal pages
   await expect(page.getByText("Gratis. Entra con Google.")).toBeVisible();
   const legal = page.getByRole("navigation", { name: "Legal" });
   for (const [name, href] of [
+    ["Sobre nosotros", "/sobre-nosotros"],
     ["Privacidad", "/privacidad"],
     ["Términos", "/terminos"],
     ["Cookies", "/cookies"],

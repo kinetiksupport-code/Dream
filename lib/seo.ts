@@ -11,6 +11,7 @@ export const HOME_DESCRIPTION =
   "Sube tus apuntes y prepara el examen con pistas, tests y simulacros. Dream es gratis, sigue tu progreso y te ayuda a sacar tu mejor nota en la ESO y la PAU.";
 
 const ORG = `${SITE_URL}/#organization`;
+const FOUNDER = `${SITE_URL}/sobre-nosotros#carlos-sanchez`;
 const WEBSITE = `${SITE_URL}/#website`;
 const APP = `${SITE_URL}/#application`;
 
@@ -26,6 +27,8 @@ export function homeJsonLd() {
         name: "Dream",
         logo: `${SITE_URL}/icon-512.png`,
         brand: { "@type": "Brand", name: "Dream" },
+        foundingDate: "2026",
+        founder: { "@id": FOUNDER },
         description:
           "Plataforma de estudio que ayuda a entender los contenidos, practicar con tests y prepararse para los exámenes.",
       },
@@ -93,9 +96,48 @@ export const jsonLdScript = (data: unknown) => JSON.stringify(data).replace(/</g
 export const PUBLIC_PAGES = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/blog", priority: 0.8, changeFrequency: "daily" },
+  { path: "/sobre-nosotros", priority: 0.5, changeFrequency: "yearly" },
   { path: "/login", priority: 0.6, changeFrequency: "monthly" },
   { path: "/privacidad", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terminos", priority: 0.3, changeFrequency: "yearly" },
   { path: "/cookies", priority: 0.3, changeFrequency: "yearly" },
   { path: "/aviso-legal", priority: 0.3, changeFrequency: "yearly" },
 ] as const;
+
+/** Grafo JSON-LD de «Sobre nosotros»: quién fundó Dream (para buscadores). */
+export function aboutJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "AboutPage",
+        "@id": `${SITE_URL}/sobre-nosotros#page`,
+        url: `${SITE_URL}/sobre-nosotros`,
+        name: "Sobre nosotros · Dream",
+        inLanguage: "es",
+        isPartOf: { "@id": WEBSITE },
+        about: { "@id": ORG },
+        mainEntity: { "@id": FOUNDER },
+      },
+      {
+        "@type": "Organization",
+        "@id": ORG,
+        url: SITE_URL,
+        name: "Dream Education",
+        alternateName: "Dream",
+        foundingDate: "2026",
+        founder: { "@id": FOUNDER },
+      },
+      {
+        "@type": "Person",
+        "@id": FOUNDER,
+        name: "Carlos Sánchez",
+        jobTitle: "Fundador y CEO",
+        email: "carlossanchezma@edudream.es",
+        homeLocation: { "@type": "Place", name: "Sevilla, España" },
+        worksFor: { "@id": ORG },
+        url: `${SITE_URL}/sobre-nosotros`,
+      },
+    ],
+  };
+}
