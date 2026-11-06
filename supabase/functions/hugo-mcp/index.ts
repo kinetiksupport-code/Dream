@@ -63,7 +63,10 @@ export async function authorized(req: Request, rawBody: string, env: { token?: s
   const token = env.token ?? Deno.env.get('HUGO_MCP_TOKEN') ?? '';
   const secret = env.secret ?? Deno.env.get('HUGO_MCP_SIGNING_SECRET') ?? '';
   const website = env.website ?? CRISP_WEBSITE_ID;
-  if (!token || !secret) return false;
+  if (!token || !secret) {
+    console.log(JSON.stringify({ event: 'hugo_auth_failed', secrets_missing: true, token_set: token !== '', signing_secret_set: secret !== '' }));
+    return false;
+  }
   const bearer = /^Bearer (.+)$/.exec(req.headers.get('authorization') ?? '')?.[1] ?? '';
   const timestamp = req.headers.get('x-crisp-timestamp') ?? '';
   const signature = req.headers.get('x-crisp-signature') ?? '';
