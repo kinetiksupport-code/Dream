@@ -72,10 +72,15 @@ export async function authorized(req: Request, rawBody: string, env: { token?: s
   const siteOk = await safeEqual(site, website);
   const expected = 'sha256=' + await hmacHex(secret, `${timestamp}.${website}.${rawBody}`);
   const signatureOk = await safeEqual(signature, expected);
-  const ts = Number(timestamp);
+  // La hora puede llegar en segundos o en milisegundos; la firma usa el texto tal cual.
+  let ts = Number(timestamp);
+  if (ts > 1e12) ts = Math.floor(ts / 1000);
   const now = env.now ?? Math.floor(Date.now() / 1000);
   const fresh = Number.isFinite(ts) && Math.abs(now - ts) <= MAX_AGE_SECONDS;
-  return bearerOk && siteOk && signatureOk && fresh;
+  const ok = bearerOk && siteOk && signatureOk && fresh;
+  // Solo qué comprobación falla (sí/no), nunca valores ni cabeceras.
+  if (!ok) console.log(JSON.stringify({ event: 'hugo_auth_failed', bearer: bearerOk, site: siteOk, signature: signatureOk, fresh, has_signature_header: signature !== '', has_bearer: bearer !== '' }));
+  return ok;
 }
 
 type Db = (fn: string, args: Record<string, unknown>) => Promise<any>;
