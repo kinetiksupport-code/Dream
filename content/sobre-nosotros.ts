@@ -18,5 +18,5 @@ Que estudiar no dependa de tener un profesor particular ni de saber por dónde e
 
 ## Hablemos
 
-Si tienes una idea, has visto un fallo o quieres contarnos cómo te va, escríbenos a [hellodream@edudream.es](mailto:hellodream@edudream.es).
+Si quieres proponerme una función, contarme una idea o cómo te va con Dream, escríbeme a [carlossanchezma@edudream.es](mailto:carlossanchezma@edudream.es). Es el correo del fundador, **no es de soporte**: leo todo lo que llega y estaré encantado de responder.
 `;
