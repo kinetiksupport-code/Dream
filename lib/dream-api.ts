@@ -45,6 +45,8 @@ export type DreamAction =
   | "memory_import_commit"
   | "memory_seen"
   | "data_export"
+  | "crisp_link"
+  | "crisp_unlink"
   | "exam_create"
   | "exam_get"
   | "exam_update"

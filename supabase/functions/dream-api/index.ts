@@ -607,6 +607,22 @@ async function handle(req: Request, examInternal = false, inherited?: ReturnType
     if (studentResult) return json(studentResult.body, studentResult.status, { 'Cache-Control': 'no-store' });
   }
 
+  // Hugo (Crisp) por MCP: atar la sesión de Crisp a ESTA cuenta (24 h) o desatarla
+  // al cerrar sesión. Crisp no recibe nada de la cuenta (docs/HUGO_MCP.md).
+  if (body.action === 'crisp_link' || body.action === 'crisp_unlink') {
+    try {
+      if (body.action === 'crisp_unlink') {
+        await rpcFor(admin)('hugo_unlink', { p_user: user.id });
+        return json({ ok: true }, 200, { 'Cache-Control': 'no-store' });
+      }
+      const session = typeof body.session_id === 'string' ? body.session_id.trim() : '';
+      if (!/^[A-Za-z0-9_:.-]{1,128}$/.test(session)) return json({ error: 'Sesión no válida.', code: 'sesion_no_valida' }, 400);
+      const linked = await rpcFor(admin)('hugo_link', { p_user: user.id, p_session: session });
+      // «ya atada a otra cuenta» y «demasiadas» se ignoran en silencio para el alumno.
+      return json({ ok: linked?.ok === true }, 200, { 'Cache-Control': 'no-store' });
+    } catch { return json({ ok: false }, 200, { 'Cache-Control': 'no-store' }); }
+  }
+
   if (body.action === 'ai_usage') {
     try {
       if (special.on) return json({ ...usageSummary({ window: null, usage: [] }, { modes: availableModes(aiContext()) }), messages_left: null, unlimited: true, default_mode: DEFAULT_MODE });

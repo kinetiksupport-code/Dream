@@ -82,6 +82,7 @@ Con todo apagado el sistema no lee la IP, no guarda nada nuevo y no sanciona a n
 - **Supabase** (base de datos, autenticación y funciones; región Zúrich).
 - **Groq:** recibe, solo cuando la revisión con IA está activada y el filtro marca el mensaje, el texto marcado (sin correo, nombre ni apodo).
 - **Crisp:** solo en la apelación (pantalla del baneado), con un código de apelación aleatorio y **sin enviar correo, nombre ni datos de la cuenta**. Carga tras un aviso de privacidad.
+- **Hugo (asistente de Crisp, por MCP, solo lectura; docs/HUGO_MCP.md):** con la sesión de Dream iniciada al abrir el chat, consulta solo esa cuenta: nombre de pila (máx. 20 caracteres), estado de bloqueo y norma, uso del día, cola, avisos y apelaciones (sin textos). Sin sesión no ve nada. La conversación de Crisp se ata a la cuenta 24 h (se borra al cerrar sesión o con la cuenta). Registro de llamadas sin datos personales, 30 días. **Pendiente de Carlos/profesional:** dónde guarda Crisp los datos de la conversación y sus subencargados.
 - **Vercel** sirve la web y puede registrar datos técnicos de conexión (ya descrito en la política).
 
 ## 10. Riesgo residual

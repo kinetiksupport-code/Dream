@@ -19,6 +19,7 @@ type CrispCommand = unknown[];
 interface CrispApi {
   push: (command: CrispCommand) => void;
   is?: (state: string) => boolean;
+  get?: (key: string) => unknown;
 }
 export interface CrispWindow {
   $crisp?: CrispApi | CrispCommand[];
@@ -123,6 +124,33 @@ export function createCrisp({
     }
   };
 
+  /**
+   * Identificador de la sesión de Crisp (`$crisp.get("session:identifier")`,
+   * null si aún no está cargada). Solo se manda a dream-api para que Hugo
+   * pueda consultar ESTA cuenta; a Crisp no se le manda nada. Docs: `get` no es
+   * seguro antes de que Crisp esté listo, por eso solo se llama tras `load()`.
+   */
+  function sessionId(): string | null {
+    const api = win.$crisp;
+    if (!api || Array.isArray(api) || typeof api.get !== "function") return null;
+    try {
+      const id = api.get("session:identifier");
+      return typeof id === "string" && /^[A-Za-z0-9_:.-]{1,128}$/.test(id) ? id : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Espera a que Crisp tenga sesión (evento `session:loaded` o sondeo corto). */
+  async function waitSessionId(tries = 8): Promise<string | null> {
+    for (let i = 0; i < tries; i++) {
+      const id = sessionId();
+      if (id) return id;
+      await wait(500);
+    }
+    return null;
+  }
+
   /** Loads Crisp if needed and makes sure its chat is on screen. */
   async function open() {
     await load();
@@ -135,7 +163,7 @@ export function createCrisp({
     throw new CrispUnavailable("not_opened");
   }
 
-  return { load, open, isOpen };
+  return { load, open, isOpen, sessionId, waitSessionId };
 }
 
 let browserCrisp: ReturnType<typeof createCrisp> | null = null;

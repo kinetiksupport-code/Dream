@@ -41,6 +41,7 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
   const [pending, setPending] = useState<Pending | null>(null);
   const [reauth, setReauth] = useState<null | (() => void)>(null);
   const [lookup, setLookup] = useState("");
+  const [support, setSupport] = useState<SupportData | null>(null);
 
   /** Llama al servidor y traduce los estados del panel (sesión caducada, código nuevo). */
   const call = useCallback(
@@ -60,6 +61,8 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
     if (reply.status === 200 && reply.data) setInbox(reply.data as unknown as Inbox);
     const stats = await call("admin_memory_stats");
     if (stats.status === 200 && Array.isArray(stats.data?.days)) setMemory(stats.data.days as unknown as MemoryDay[]);
+    const hugo = await call("admin_support");
+    if (hugo.status === 200 && hugo.data) setSupport(hugo.data as unknown as SupportData);
   }, [call]);
   useEffect(() => {
     void load();
@@ -240,6 +243,12 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
             ))}
           </Section>
 
+          <Section title="Soporte (Hugo)" count={null} empty="">
+            <SupportPanel data={support} act={act} />
+          </Section>
+          <Section title="Privacidad (petición de tutor o titular)" count={null} empty="">
+            <PrivacyForm act={act} />
+          </Section>
           <Section title="Memoria del chat (14 días)" count={memory?.length ?? 0} empty="Aún no hay datos.">
             <MemoryTable days={memory ?? []} />
           </Section>
@@ -277,11 +286,11 @@ export function PanelHome({ onLock }: { onLock: () => void }) {
   );
 }
 
-function Section({ title, count, empty, children }: { title: string; count: number; empty: string; children: ReactNode }) {
+function Section({ title, count, empty, children }: { title: string; count: number | null; empty: string; children: ReactNode }) {
   return (
     <section className={styles.section} aria-label={title}>
       <h2>
-        {title} <span className={styles.count}>{count}</span>
+        {title} {count !== null && <span className={styles.count}>{count}</span>}
       </h2>
       {count === 0 ? <p className={styles.empty}>{empty}</p> : <div className={styles.list}>{children}</div>}
     </section>
@@ -330,6 +339,86 @@ function MemoryTable({ days }: { days: MemoryDay[] }) {
     </div>
   );
 }
+interface SupportData {
+  aviso: string;
+  resumen: Record<string, number>;
+  llamadas: { hora: string; herramienta: string; resultado: string; sesion: string | null }[];
+}
+const PRIVACY_REASONS: [string, string][] = [
+  ["tutor_menor_14", "Tutor de un menor de 14"],
+  ["tutor_14_17", "Tutor de un menor de 14 a 17"],
+  ["titular", "Titular de la cuenta"],
+  ["otro", "Otro motivo"],
+];
+
+/** Llamadas de Hugo (sin datos personales: hora, herramienta y resultado) y el aviso que ve Hugo. */
+function SupportPanel({ data, act }: { data: SupportData | null; act: (a: string, p: Record<string, unknown>, ok: string, label: string) => Promise<void> }) {
+  const [notice, setNotice] = useState<string | null>(null);
+  if (!data) return <p>Cargando…</p>;
+  const text = notice ?? data.aviso;
+  const sin = data.resumen?.sin_cuenta ?? 0;
+  return (
+    <div>
+      <p className={styles.meta}>
+        Últimas 24 h: {Object.entries(data.resumen ?? {}).map(([k, v]) => `${k} ${v}`).join(" · ") || "sin llamadas"}
+        {sin >= 20 ? " · Muchas consultas sin cuenta atada: revisa que el chat se abre con la sesión iniciada." : ""}
+      </p>
+      <label className={styles.field}>
+        <span>Aviso para Hugo (estado de Dream, máximo 280 caracteres; vacío = sin aviso)</span>
+        <input value={text} maxLength={280} onChange={(e) => setNotice(e.target.value)} />
+      </label>
+      <Actions>
+        <button className={styles.secondary} type="button" onClick={() => void act("admin_support_notice", { text }, "Aviso guardado.", "Guardar aviso")}>
+          Guardar aviso
+        </button>
+      </Actions>
+      <ul className={styles.plain}>
+        {data.llamadas.slice(0, 30).map((c, i) => (
+          <li key={i}>
+            {when(c.hora)} · {c.herramienta} · {c.resultado} · {c.sesion ? c.sesion.slice(0, 12) : "sin sesión"}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** El correo solo busca la cuenta: no se guarda ni se audita. */
+function PrivacyForm({ act }: { act: (a: string, p: Record<string, unknown>, ok: string, label: string) => Promise<void> }) {
+  const [email, setEmail] = useState("");
+  const [reason, setReason] = useState("tutor_menor_14");
+  const done = () => setEmail("");
+  return (
+    <div>
+      <p className={styles.meta}>Para peticiones recibidas por correo. Eliminar pide un código reciente y confirmación en dos pasos.</p>
+      <div className={styles.row}>
+        <label className={styles.field}>
+          <span>Correo de la cuenta</span>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="off" spellCheck={false} />
+        </label>
+        <label className={styles.field}>
+          <span>Motivo</span>
+          <select value={reason} onChange={(e) => setReason(e.target.value)}>
+            {PRIVACY_REASONS.map(([v, l]) => (
+              <option key={v} value={v}>
+                {l}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <Actions>
+        <button className={styles.secondary} type="button" disabled={!email.includes("@")} onClick={() => void act("admin_privacy_hold", { email, reason }, "Bloqueo preventivo aplicado (se levanta desde la ficha).", "Bloqueo preventivo por revisión de privacidad").then(done)}>
+          Bloqueo preventivo
+        </button>
+        <button className={styles.danger} type="button" disabled={!email.includes("@")} onClick={() => void act("admin_privacy_delete", { email, reason }, "Cuenta eliminada.", `Eliminar cuenta por petición de privacidad · ${reason}`).then(done)}>
+          Eliminar cuenta por petición de privacidad
+        </button>
+      </Actions>
+    </div>
+  );
+}
+
 const Actions = ({ children }: { children: ReactNode }) => <div className={styles.actions}>{children}</div>;
 function Card({ who, onOpen, children }: { who: UserRef; onOpen: () => void; children: ReactNode }) {
   return (

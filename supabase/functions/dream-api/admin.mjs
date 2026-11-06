@@ -26,6 +26,10 @@ export const ADMIN_ACTIONS = new Set([
   "admin_appeal_resolve",
   "admin_appeal_by_code",
   "admin_memory_stats",
+  "admin_support",
+  "admin_support_notice",
+  "admin_privacy_hold",
+  "admin_privacy_delete",
 ]);
 
 export const ADMIN_LIMITS = Object.freeze({
@@ -36,6 +40,9 @@ export const ADMIN_LIMITS = Object.freeze({
   deniedLogCap: 20,
   actionsPerMinute: 60,
 });
+
+/** Motivos de «Eliminar cuenta por petición de privacidad». */
+export const PRIVACY_REASONS = Object.freeze(["tutor_menor_14", "tutor_14_17", "titular", "otro"]);
 
 /** Reglas que puede elegir el administrador al banear: todas filas de la tabla G. */
 export const ADMIN_BAN_RULES = Object.freeze({
@@ -291,6 +298,46 @@ export async function handleAdminAction({ action, body, user, token, origin, ori
         return ok({ ok: true });
       };
       return duration === "permanent" ? grave(action, id, `${rule}:permanent`, work) : run(action, id, `${rule}:${duration}`, work);
+    }
+    // Soporte (Hugo, docs/HUGO_MCP.md): llamadas de Hugo sin datos personales y el aviso de estado.
+    case "admin_support":
+      return run(action, null, "soporte", async () => ok((await rpc("hugo_panel", {})) ?? {}));
+    case "admin_support_notice": {
+      const text = typeof body.text === "string" ? body.text.trim() : "";
+      if (text.length > 280) return fail(400, "invalid", "Máximo 280 caracteres.");
+      return run(action, null, "aviso", async () => {
+        await rpc("hugo_set_notice", { p_text: text });
+        return ok({ ok: true });
+      });
+    }
+    // Privacidad: petición de padre, madre, tutor o titular por correo. El correo
+    // solo se usa para buscar la cuenta: no se guarda ni entra en la auditoría.
+    case "admin_privacy_hold":
+    case "admin_privacy_delete": {
+      const email = typeof body.email === "string" ? body.email.trim() : "";
+      const reason = typeof body.reason === "string" && PRIVACY_REASONS.includes(body.reason) ? body.reason : null;
+      if (!reason || email.length < 5 || email.length > 254 || !email.includes("@")) return fail(400, "invalid", "Datos no válidos.");
+      let id = null;
+      try { id = needUuid(await rpc("hugo_find_by_email", { p_email: email })); } catch { return fail(503, "failed", "No se pudo completar la acción."); }
+      if (!id) return fail(404, "not_found", "No hay ninguna cuenta con ese correo.");
+      if (id === actor) return fail(409, "not_allowed", "No se puede.");
+      let isOtherAdmin = true;
+      try { isOtherAdmin = (await rpc("admin_check", { p_user: id })) === true; } catch { isOtherAdmin = true; }
+      if (isOtherAdmin) return fail(409, "not_allowed", "No se puede.");
+      if (action === "admin_privacy_hold") {
+        // Limitación sin norma G, reversible (admin_sanction_resolve > levantar).
+        return run(action, id, `bloqueo_preventivo:${reason}`, async () => {
+          await rpc("mod_sanction_add", { p_user: id, p_kind: "limitacion", p_until: null, p_rule: "ADMIN", p_status: "activa", p_by: "admin" });
+          return ok({ ok: true });
+        });
+      }
+      // El mismo borrado que account_delete (todo cae en cascada con auth.users).
+      return grave(action, id, `privacidad:${reason}`, async () => {
+        await db.schema("dream_private").from("leases").delete().eq("owner_id", id);
+        const removed = await db.auth.admin.deleteUser(id);
+        if (removed.error) return fail(503, "failed", "No se pudo eliminar la cuenta.");
+        return ok({ ok: true, deleted: true });
+      });
     }
     case "admin_ban_lift": {
       const id = needUuid(body.user_id);

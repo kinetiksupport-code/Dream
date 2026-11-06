@@ -14,6 +14,7 @@ import type { Session } from "@supabase/supabase-js";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import { getDreamProfile, errorMessage } from "@/lib/dream-api";
+import { unlinkSupportChat } from "@/lib/hugo-link";
 import { ConnectionStatus } from "@/components/connection-status";
 import { ConsentWatcher } from "@/components/consent-watcher";
 import { HumanCheckHost } from "@/components/human-check/human-check-host";
@@ -255,6 +256,7 @@ export function Providers({ children }: { children: ReactNode }) {
         cache: "no-store",
       });
     } catch {}
+    await unlinkSupportChat();
     const { error } = await getSupabase().auth.signOut();
     if (error) throw error;
     setProfile(null);

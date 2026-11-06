@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { Modal } from "@/components/modal";
+import { callDream } from "@/lib/dream-api";
 import { allowCrispThisVisit, crisp, noticeAccepted, rememberNotice } from "@/lib/crisp";
 import { grantPreferences, type ConsentWindow } from "@/lib/cookie-consent";
 import { useCookieConsent } from "@/lib/use-cookie-consent";
@@ -61,6 +62,12 @@ export function SupportChatButton({
     setBusy(true);
     try {
       await crisp().open();
+      // Con la sesión de Dream iniciada, Hugo puede consultar solo esta cuenta.
+      // Si no hay identificador de sesión, no se manda nada y el chat sigue igual.
+      void crisp()
+        .waitSessionId()
+        .then((id) => (id ? callDream("crisp_link", { session_id: id }) : null))
+        .catch(() => {});
     } catch {
       // Red, bloqueador de anuncios o sin conexión: una línea discreta y la alternativa.
       setFailed(true);
