@@ -1,0 +1,142 @@
+{
+  "title": "La célula",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Teoría celular",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula",
+              "text": "La célula es la unidad estructural y funcional de todos los seres vivos.",
+              "quote": "La célula es la unidad estructural y funcional de los seres vivos."
+            },
+            {
+              "term": "Teoría celular",
+              "text": "Todos los seres vivos están formados por células, siendo la unidad de vida más pequeña.",
+              "quote": "todos los seres vivos están formados por células, que la célula es la unidad de vida más pequeña"
+            }
+          ]
+        },
+        {
+          "heading": "Partes comunes",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Partes comunes",
+              "text": "Membrana plasmática, citoplasma y material genético (ADN) son comunes a todas las células.",
+              "quote": "membrana plasmática, citoplasma y material genético (ADN)"
+            }
+          ]
+        },
+        {
+          "heading": "Célula procariota",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula procariota",
+              "text": "No tiene núcleo; el ADN está en una región llamada nucleoide.",
+              "quote": "no tiene núcleo; el ADN está en una región llamada nucleoide"
+            },
+            {
+              "term": "",
+              "text": "Es pequeña, sencilla y carece de orgánulos membranosos.",
+              "quote": "Es pequeña y sencilla y no tiene orgánulos membranosos"
+            },
+            {
+              "term": "",
+              "text": "Posee ribosomas y pared celular; ejemplo: las bacterias.",
+              "quote": "Tiene ribosomas y pared celular. Ejemplo: las bacterias."
+            }
+          ]
+        },
+        {
+          "heading": "Célula eucariota",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula eucariota",
+              "text": "Tiene núcleo rodeado por envoltura nuclear y orgánulos membranosos.",
+              "quote": "tiene núcleo rodeado por una envoltura nuclear y orgánulos membranosos"
+            },
+            {
+              "term": "Célula animal",
+              "text": "Tiene centriolos, sin pared celular ni cloroplastos; vacuolas pequeñas.",
+              "quote": "tiene centriolos y no tiene pared celular ni cloroplastos"
+            },
+            {
+              "term": "Célula vegetal",
+              "text": "Tiene pared celular de celulosa, cloroplastos y una gran vacuola central.",
+              "quote": "tiene pared celular de celulosa, cloroplastos y una gran vacuola central"
+            }
+          ]
+        },
+        {
+          "heading": "Orgánulos y funciones",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Mitocondrias",
+              "text": "Respiración celular, obtienen energía (ATP).",
+              "quote": "Mitocondrias: respiración celular, obtienen energía (ATP)"
+            },
+            {
+              "term": "Cloroplastos",
+              "text": "Fotosíntesis, solo en células vegetales.",
+              "quote": "Cloroplastos: fotosíntesis, solo en células vegetales"
+            },
+            {
+              "term": "Ribosomas",
+              "text": "Síntesis de proteínas.",
+              "quote": "Ribosomas: síntesis de proteínas"
+            },
+            {
+              "term": "Retículo endoplasmático",
+              "text": "Síntesis y transporte de proteínas y lípidos.",
+              "quote": "Retículo endoplasmático: síntesis y transporte de proteínas y lípidos"
+            },
+            {
+              "term": "Aparato de Golgi",
+              "text": "Modifica, empaqueta y distribuye sustancias.",
+              "quote": "Aparato de Golgi: modifica, empaqueta y distribuye sustancias"
+            },
+            {
+              "term": "Lisosomas",
+              "text": "Digestión celular.",
+              "quote": "Lisosomas: digestión celular"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Teoría celular",
+          "period": ""
+        },
+        {
+          "label": "Partes comunes",
+          "period": ""
+        },
+        {
+          "label": "Célula procariota",
+          "period": ""
+        },
+        {
+          "label": "Célula eucariota",
+          "period": ""
+        },
+        {
+          "label": "Orgánulos y funciones",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "La célula es la unidad estructural y funcional de los seres vivos, clasificándose en procariota y eucariota.",
+        "quote": "La célula es la unidad estructural y funcional de los seres vivos."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

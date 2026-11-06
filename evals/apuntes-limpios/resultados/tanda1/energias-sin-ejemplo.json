@@ -1,0 +1,82 @@
+{
+  "title": "Fuentes de energía",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Fuentes renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Solar",
+              "text": "Solar: paneles fotovoltaicos → electricidad.",
+              "quote": "Solar: paneles fotovoltaicos → electricidad."
+            },
+            {
+              "term": "Hidráulica",
+              "text": "Hidráulica: embalses y presas.",
+              "quote": "Hidráulica: embalses y presas."
+            }
+          ]
+        },
+        {
+          "heading": "Fuentes no renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Combustibles fósiles",
+              "text": "Combustibles fósiles: carbón, petróleo y gas natural.",
+              "quote": "Combustibles fósiles: carbón, petróleo y gas natural."
+            },
+            {
+              "term": "",
+              "text": "Emiten CO2 → efecto invernadero.",
+              "quote": "Emiten CO2 → efecto invernadero."
+            },
+            {
+              "term": "Nuclear",
+              "text": "Nuclear: fisión del uranio.",
+              "quote": "Nuclear: fisión del uranio."
+            },
+            {
+              "term": "",
+              "text": "Residuos radiactivos durante miles de años.",
+              "quote": "Residuos radiactivos durante miles de años."
+            }
+          ]
+        },
+        {
+          "heading": "Datos España 2023",
+          "period": "2023",
+          "bullets": [
+            {
+              "term": "",
+              "text": "En España en 2023 las renovables produjeron más del 50 % de la electricidad.",
+              "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Renovables",
+          "period": ""
+        },
+        {
+          "label": "No renovables",
+          "period": ""
+        },
+        {
+          "label": "Datos España 2023",
+          "period": "2023"
+        }
+      ],
+      "key_idea": {
+        "text": "Las fuentes de energía se dividen en renovables y no renovables, siendo las primeras mayoritarias en España en 2023.",
+        "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

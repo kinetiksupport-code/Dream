@@ -1,0 +1,141 @@
+{
+  "title": "La Revolución Francesa",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Causas de la Revolución",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Antiguo Régimen",
+              "text": "Francia vivía bajo el Antiguo Régimen, una sociedad estamental dividida en clero, nobleza y tercer estado.",
+              "quote": "Francia vivía bajo el Antiguo Régimen, una sociedad estamental dividida en clero, nobleza y tercer estado"
+            },
+            {
+              "term": "",
+              "text": "El tercer estado pagaba casi todos los impuestos.",
+              "quote": "El tercer estado pagaba casi todos los impuestos"
+            },
+            {
+              "term": "",
+              "text": "La Hacienda estaba en bancarrota y las malas cosechas encarecieron el pan.",
+              "quote": "La Hacienda estaba en bancarrota y las malas cosechas encarecieron el pan"
+            },
+            {
+              "term": "Ilustración",
+              "text": "Las ideas de la Ilustración criticaban el absolutismo.",
+              "quote": "Las ideas de la Ilustración criticaban el absolutismo"
+            }
+          ]
+        },
+        {
+          "heading": "Inicio de la Revolución",
+          "period": "1789",
+          "bullets": [
+            {
+              "term": "",
+              "text": "En mayo de 1789 Luis XVI convoca los Estados Generales.",
+              "quote": "En mayo de 1789 Luis XVI convoca los Estados Generales"
+            },
+            {
+              "term": "Asamblea Nacional",
+              "text": "Los diputados del tercer estado se proclaman Asamblea Nacional y hacen el juramento del Juego de Pelota.",
+              "quote": "Los diputados del tercer estado se proclaman Asamblea Nacional y hacen el juramento del Juego de Pelota"
+            },
+            {
+              "term": "",
+              "text": "El 14 de julio de 1789 el pueblo de París toma la Bastilla.",
+              "quote": "El 14 de julio de 1789 el pueblo de París toma la Bastilla"
+            },
+            {
+              "term": "",
+              "text": "En agosto de 1789 la Asamblea aprueba la Declaración de los Derechos del Hombre y del Ciudadano.",
+              "quote": "En agosto de 1789 la Asamblea aprueba la Declaración de los Derechos del Hombre y del Ciudadano"
+            }
+          ]
+        },
+        {
+          "heading": "Etapas de la Revolución",
+          "period": "1789-1799",
+          "bullets": [
+            {
+              "term": "",
+              "text": "La Constitución de 1791 establece la separación de poderes y el sufragio censitario.",
+              "quote": "la Constitución de 1791 establece la separación de poderes y el sufragio censitario"
+            },
+            {
+              "term": "",
+              "text": "En 1792 se proclama la República.",
+              "quote": "en 1792 se proclama la República"
+            },
+            {
+              "term": "",
+              "text": "Luis XVI es ejecutado en 1793.",
+              "quote": "Luis XVI es ejecutado en 1793"
+            },
+            {
+              "term": "Robespierre",
+              "text": "Los jacobinos, dirigidos por Robespierre, imponen el Terror.",
+              "quote": "Los jacobinos, dirigidos por Robespierre, imponen el Terror"
+            },
+            {
+              "term": "",
+              "text": "Robespierre es ejecutado en 1794.",
+              "quote": "Robespierre es ejecutado en 1794"
+            },
+            {
+              "term": "Directorio",
+              "text": "Entre 1795 y 1799, la República conservadora o Directorio gobierna con la burguesía moderada.",
+              "quote": "República conservadora o Directorio (1795–1799): gobierna la burguesía moderada"
+            }
+          ]
+        },
+        {
+          "heading": "Fin y consecuencias",
+          "period": "1799",
+          "bullets": [
+            {
+              "term": "Napoleón Bonaparte",
+              "text": "En 1799 Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, y pone fin a la Revolución.",
+              "quote": "En 1799 Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, y pone fin a la Revolución"
+            },
+            {
+              "term": "",
+              "text": "Consecuencias: fin del Antiguo Régimen, igualdad ante la ley, soberanía nacional y difusión del liberalismo.",
+              "quote": "fin del Antiguo Régimen en Francia, igualdad ante la ley, soberanía nacional y difusión del liberalismo por Europa"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Causas",
+          "period": ""
+        },
+        {
+          "label": "Estallido",
+          "period": "1789"
+        },
+        {
+          "label": "Monarquía constitucional",
+          "period": "1789-1792"
+        },
+        {
+          "label": "República democrática",
+          "period": "1792-1794"
+        },
+        {
+          "label": "República conservadora",
+          "period": "1795-1799"
+        }
+      ],
+      "key_idea": {
+        "text": "La Revolución terminó con el Antiguo Régimen, instauró la igualdad ante la ley y difundió el liberalismo.",
+        "quote": "fin del Antiguo Régimen en Francia, igualdad ante la ley, soberanía nacional y difusión del liberalismo por Europa"
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

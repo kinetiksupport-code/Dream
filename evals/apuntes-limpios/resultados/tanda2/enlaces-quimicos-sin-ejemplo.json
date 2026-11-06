@@ -1,0 +1,143 @@
+{
+  "title": "Los enlaces químicos",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Concepto y regla del octeto",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Enlace químico",
+              "text": "Unión entre átomos para formar sustancias más estables.",
+              "quote": "Un enlace químico es la unión entre átomos para formar sustancias más estables."
+            },
+            {
+              "term": "Regla del octeto",
+              "text": "Los átomos tienden a completar su última capa con 8 electrones.",
+              "quote": "Los átomos tienden a completar su última capa con 8 electrones (regla del octeto)."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace iónico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Enlace iónico",
+              "text": "El metal cede electrones formando cationes; el no metal los capta formando aniones.",
+              "quote": "El metal cede electrones y forma un catión; el no metal los capta y forma un anión."
+            },
+            {
+              "term": "",
+              "text": "Los iones se atraen electrostáticamente y forman redes cristalinas.",
+              "quote": "Los iones se atraen por fuerzas electrostáticas y forman redes cristalinas."
+            },
+            {
+              "term": "",
+              "text": "Ejemplo típico: el cloruro de sodio (NaCl).",
+              "quote": "Ejemplo: el cloruro de sodio (NaCl)."
+            },
+            {
+              "term": "",
+              "text": "Sólidos a temperatura ambiente, con puntos de fusión altos y solubles en agua.",
+              "quote": "Propiedades: sólidos a temperatura ambiente, puntos de fusión altos, solubles en agua."
+            },
+            {
+              "term": "",
+              "text": "Conducen electricidad disueltos o fundidos, pero no en estado sólido.",
+              "quote": "conducen la electricidad disueltos o fundidos, pero no en estado sólido."
+            },
+            {
+              "term": "",
+              "text": "Son duros pero frágiles.",
+              "quote": "Son duros pero frágiles."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace covalente",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Enlace covalente",
+              "text": "Se da entre no metales que comparten pares de electrones.",
+              "quote": "se da entre no metales, que comparten pares de electrones."
+            },
+            {
+              "term": "",
+              "text": "Forma moléculas (agua) o redes cristalinas covalentes (diamante).",
+              "quote": "Puede formar moléculas, como el agua (H2O), o redes cristalinas covalentes, como el diamante."
+            },
+            {
+              "term": "",
+              "text": "Las sustancias moleculares tienen puntos de fusión bajos y no conducen electricidad.",
+              "quote": "Las sustancias moleculares suelen tener puntos de fusión bajos y no conducen la electricidad."
+            },
+            {
+              "term": "",
+              "text": "Los cristales covalentes son muy duros y tienen puntos de fusión muy altos.",
+              "quote": "Los cristales covalentes son muy duros y tienen puntos de fusión muy altos."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace metálico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Enlace metálico",
+              "text": "Se da entre átomos de metales.",
+              "quote": "se da entre átomos de metales."
+            },
+            {
+              "term": "Nube electrónica",
+              "text": "Cationes forman una red y los electrones se mueven libremente en una nube.",
+              "quote": "Los cationes forman una red y los electrones se mueven libremente formando una nube electrónica."
+            },
+            {
+              "term": "",
+              "text": "Buenos conductores de calor y electricidad, con brillo metálico, dúctiles y maleables.",
+              "quote": "Propiedades: buenos conductores del calor y de la electricidad, brillo metálico, dúctiles y maleables."
+            }
+          ]
+        },
+        {
+          "heading": "Error típico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Error típico: afirmar que los compuestos iónicos conducen electricidad en estado sólido.",
+              "quote": "Error típico: decir que los compuestos iónicos conducen la electricidad en estado sólido."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Regla del octeto",
+          "period": ""
+        },
+        {
+          "label": "Enlace iónico",
+          "period": ""
+        },
+        {
+          "label": "Enlace covalente",
+          "period": ""
+        },
+        {
+          "label": "Enlace metálico",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "Los átomos se unen para completar su última capa con 8 electrones, formando enlaces iónicos, covalentes o metálicos.",
+        "quote": "Los átomos tienden a completar su última capa con 8 electrones (regla del octeto)."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

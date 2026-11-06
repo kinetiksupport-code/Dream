@@ -1,0 +1,124 @@
+{
+  "title": "Guerra Civil española",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Origen del conflicto",
+          "period": "1936",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El golpe fracasa parcialmente y se convierte en una guerra civil entre bandos.",
+              "quote": "El golpe fracasa en gran parte del país y se convierte en una guerra civil"
+            }
+          ]
+        },
+        {
+          "heading": "Apoyos internacionales",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El bando sublevado recibió ayuda de la Alemania nazi y la Italia fascista.",
+              "quote": "el bando sublevado recibió ayuda de la Alemania nazi y de la Italia fascista"
+            },
+            {
+              "term": "",
+              "text": "La República contó con apoyo de la Unión Soviética y las Brigadas Internacionales.",
+              "quote": "La República recibió ayuda de la Unión Soviética y de las Brigadas Internacionales"
+            },
+            {
+              "term": "",
+              "text": "Francia y Reino Unido impulsaron el Comité de No Intervención.",
+              "quote": "Francia y Reino Unido impulsaron el Comité de No Intervención"
+            }
+          ]
+        },
+        {
+          "heading": "Fases militares",
+          "period": "1936-1939",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Avance hacia Madrid (1936-1937): los sublevados no logran tomar la capital.",
+              "quote": "Avance hacia Madrid (1936–1937): los sublevados no logran tomar la capital"
+            },
+            {
+              "term": "",
+              "text": "Campaña del Norte (1937): el bando sublevado conquista el norte.",
+              "quote": "Campaña del Norte (1937): el bando sublevado conquista el norte"
+            },
+            {
+              "term": "",
+              "text": "En abril de 1937, la Legión Cóndor bombardea Guernica.",
+              "quote": "En abril de 1937 la Legión Cóndor bombardea Guernica"
+            },
+            {
+              "term": "",
+              "text": "Batalla del Ebro (1938): fue la batalla más larga de la guerra.",
+              "quote": "Batalla del Ebro (1938): fue la batalla más larga de la guerra"
+            },
+            {
+              "term": "",
+              "text": "Ocupación de Cataluña y fin de la guerra (1939).",
+              "quote": "Ocupación de Cataluña y fin de la guerra (1939)"
+            },
+            {
+              "term": "",
+              "text": "El 1 de abril de 1939, Franco firma el último parte de guerra.",
+              "quote": "el 1 de abril de 1939 Franco firma el último parte de guerra"
+            }
+          ]
+        },
+        {
+          "heading": "Situación de los bandos",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Zona republicana: revolución social en algunos lugares y tensiones entre partidos.",
+              "quote": "en la zona republicana hubo una revolución social en algunos lugares y tensiones entre partidos"
+            }
+          ]
+        },
+        {
+          "heading": "Consecuencias",
+          "period": "hasta 1975",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Consecuencias: cientos de miles de muertos, exilio, represión y dictadura de Franco.",
+              "quote": "cientos de miles de muertos, exilio, represión y el comienzo de la dictadura de Franco"
+            },
+            {
+              "term": "",
+              "text": "La dictadura de Franco duró hasta 1975.",
+              "quote": "la dictadura de Franco, que duró hasta 1975"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Sublevación",
+          "period": "1936"
+        },
+        {
+          "label": "Guerra civil",
+          "period": "1936-1939"
+        },
+        {
+          "label": "Dictadura",
+          "period": "hasta 1975"
+        }
+      ],
+      "key_idea": {
+        "text": "La sublevación de 1936 derivó en una guerra civil que instauró la dictadura de Franco.",
+        "quote": "el golpe fracasa en gran parte del país y se convierte en una guerra civil"
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

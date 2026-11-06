@@ -1,0 +1,109 @@
+{
+  "title": "Guerra Civil española",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Origen del conflicto",
+          "period": "1936",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El golpe fracasa parcialmente y se convierte en una guerra civil entre dos bandos.",
+              "quote": "se convierte en una guerra civil entre el bando republicano y el bando sublevado"
+            }
+          ]
+        },
+        {
+          "heading": "Apoyos internacionales",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El bando sublevado recibió ayuda militar de la Alemania nazi y la Italia fascista.",
+              "quote": "el bando sublevado recibió ayuda de la Alemania nazi y de la Italia fascista"
+            },
+            {
+              "term": "",
+              "text": "La República contó con el apoyo de la Unión Soviética y las Brigadas Internacionales.",
+              "quote": "La República recibió ayuda de la Unión Soviética y de las Brigadas Internacionales"
+            },
+            {
+              "term": "",
+              "text": "Francia y Reino Unido impulsaron el Comité de No Intervención para evitar la escalada.",
+              "quote": "Francia y Reino Unido impulsaron el Comité de No Intervención"
+            }
+          ]
+        },
+        {
+          "heading": "Fases militares",
+          "period": "1936-1939",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Avance hacia Madrid (1936-1937): los sublevados no logran tomar la capital.",
+              "quote": "Avance hacia Madrid (1936–1937): los sublevados no logran tomar la capital"
+            },
+            {
+              "term": "",
+              "text": "En la campaña del norte, la Legión Cóndor bombardea Guernica en abril de 1937.",
+              "quote": "En abril de 1937 la Legión Cóndor bombardea Guernica"
+            },
+            {
+              "term": "Batalla del Ebro",
+              "text": "Batalla del Ebro (1938): fue la batalla más larga de la guerra y terminó con derrota republicana.",
+              "quote": "Batalla del Ebro (1938): fue la batalla más larga de la guerra"
+            }
+          ]
+        },
+        {
+          "heading": "Situación de los bandos",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "En la zona republicana hubo revolución social y tensiones entre partidos en algunos lugares.",
+              "quote": "en la zona republicana hubo una revolución social en algunos lugares"
+            },
+            {
+              "term": "Franco",
+              "text": "En la zona sublevada, Franco fue nombrado jefe del Estado en 1936 y concentró el poder.",
+              "quote": "Franco fue nombrado jefe del Estado en 1936 y concentró todo el poder"
+            }
+          ]
+        },
+        {
+          "heading": "Consecuencias",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Consecuencias: cientos de miles de muertos, exilio, represión y dictadura de Franco hasta 1975.",
+              "quote": "cientos de miles de muertos, exilio, represión y el comienzo de la dictadura de Franco, que duró hasta 1975"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Golpe de Estado",
+          "period": "1936"
+        },
+        {
+          "label": "Guerra Civil",
+          "period": "1936-1939"
+        },
+        {
+          "label": "Fin de la guerra",
+          "period": "1939"
+        }
+      ],
+      "key_idea": {
+        "text": "El conflicto derivó en una guerra civil que terminó con la victoria de Franco y su dictadura hasta 1975.",
+        "quote": "el comienzo de la dictadura de Franco, que duró hasta 1975"
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

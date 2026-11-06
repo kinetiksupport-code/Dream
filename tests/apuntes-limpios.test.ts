@@ -42,6 +42,7 @@ const GOOD = {
   unreadable: [],
   doubts: [],
 };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- se modifican a propósito para las pruebas
 const clone = (): any => structuredClone(GOOD);
 
 test("una página fiel a los apuntes pasa entera, con las faltas corregidas", () => {
@@ -268,4 +269,59 @@ test("en el reintento se explica qué viñeta se quitó y por qué", () => {
   const r = validateNotesPage(raw, { source: SOURCE });
   assert.equal(r.page, null);
   assert.match(r.errors.join(" "), /Viñetas quitadas: «A su muerte en 1002.*: lleva 1031, que no está en su quote/);
+});
+
+test("último recurso: lo que se ha perdido vuelve tal cual, copiado de los apuntes", () => {
+  const raw = clone();
+  raw.sections[1].bullets.pop();
+  raw.sections[0].bullets.splice(2, 1);
+  const r = validateNotesPage(raw, { source: SOURCE, lenient: true });
+  const all = JSON.stringify(r.page);
+  assert.match(all, /Los reyes pagaban parias a los monarcas cristianos para evitar ataques/);
+  assert.match(all, /1002/);
+});
+
+test("citas cortas de una lista valen si están tal cual", () => {
+  const source = "Renovables:\n- Eólica: aerogeneradores, viento.\n- Biomasa: restos orgánicos.";
+  const page = { title: "Energías", sections: [{ heading: "Renovables", period: "", bullets: [{ term: "Eólica", text: "Aerogeneradores, viento.", quote: "Eólica: aerogeneradores, viento" }, { term: "Biomasa", text: "Restos orgánicos.", quote: "Biomasa: restos orgánicos" }] }], flow: [], key_idea: { text: "", quote: "" }, unreadable: [], doubts: [] };
+  const r = validateNotesPage(page, { source });
+  assert.equal(r.dropped, 0, JSON.stringify(r.errors));
+});
+
+test("último recurso: cada frase vuelve a su apartado, en su orden (no «fósiles» en renovables)", () => {
+  const source = "Fuentes de energía\nRenovables (no se agotan):\n- Solar: paneles fotovoltaicos que dan electricidad.\n- Biomasa: restos orgánicos.\nNo renovables (se agotan):\n- Combustibles fósiles: carbón, petróleo y gas natural.\n- Nuclear: fisión del uranio en las centrales.";
+  const page = { title: "Fuentes de energía", sections: [
+    { heading: "Renovables", period: "", bullets: [{ term: "Solar", text: "Paneles fotovoltaicos que dan electricidad.", quote: "Solar: paneles fotovoltaicos que dan electricidad" }] },
+    { heading: "No renovables", period: "", bullets: [{ term: "Nuclear", text: "Fisión del uranio en las centrales.", quote: "Nuclear: fisión del uranio en las centrales" }] },
+  ], flow: [], key_idea: { text: "", quote: "" }, unreadable: [], doubts: [] };
+  const r = validateNotesPage(page, { source, lenient: true });
+  const [ren, no] = r.page!.sections;
+  assert.deepEqual(ren.bullets.map((b: { term: string }) => b.term), ["Solar", "Biomasa"]);
+  assert.deepEqual(no.bullets.map((b: { term: string }) => b.term), ["Combustibles fósiles", "Nuclear"]);
+});
+
+test("las abreviaturas no parten frases y el término no se repite", async () => {
+  const { lostSentences } = await import("../supabase/functions/dream-api/clean-notes.mjs");
+  assert.deepEqual(lostSentences("Empieza en Gran Bretaña a mediados del s. XVIII (hacia 1760).", ""), ["Empieza en Gran Bretaña a mediados del s. XVIII (hacia 1760)."]);
+  const raw = clone();
+  raw.sections[2].bullets[1].text = "Almorávides: guerreros bereberes de Marrakech que cruzaron el estrecho en 1086. Su impopularidad causó las segundas taifas.";
+  const r = validateNotesPage(raw, { source: SOURCE });
+  assert.match(r.page!.sections[2].bullets[1].text, /^Guerreros bereberes/);
+});
+
+test("periodo abierto «1870-» → «desde 1870»; de una frase larga vuelve solo el trozo que falta", () => {
+  const raw = clone();
+  raw.sections[2].period = "1086-";
+  assert.equal(validateNotesPage(raw, { source: SOURCE, lenient: true }).page?.sections[2].period, "desde 1086");
+  const source = `Legado del tema\nLegado: la Alhambra de Granada, construida por los nazaríes; la Giralda de Sevilla, que fue el alminar de la mezquita almohade; la Torre del Oro de Sevilla, también almohade; el regadío con acequias y norias; y pensadores como Averroes, nacido en Córdoba en 1126.`;
+  const page = { title: "Legado", sections: [{ heading: "Legado", period: "", bullets: [
+    { term: "Alhambra", text: "La Alhambra de Granada, construida por los nazaríes.", quote: "la Alhambra de Granada, construida por los nazaríes" },
+    { term: "Giralda", text: "La Giralda de Sevilla fue el alminar de la mezquita almohade.", quote: "la Giralda de Sevilla, que fue el alminar de la mezquita almohade" },
+    { term: "Torre del Oro", text: "La Torre del Oro de Sevilla, también almohade.", quote: "la Torre del Oro de Sevilla, también almohade" },
+    { term: "", text: "El regadío con acequias y norias.", quote: "el regadío con acequias y norias" },
+  ] }], flow: [], key_idea: { text: "", quote: "" }, unreadable: [], doubts: [] };
+  const r = validateNotesPage(page, { source, lenient: true });
+  const last = r.page!.sections[0].bullets.at(-1);
+  assert.match(last.text, /Averroes, nacido en Córdoba en 1126/);
+  assert.ok(last.text.length < 80);
 });

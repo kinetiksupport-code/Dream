@@ -1,0 +1,22 @@
+Análisis visual y OCR
+Basado en la imagen proporcionada, aquí tienes la descripción visual y la transcripción del texto.
+
+**Descripción visual:**
+La imagen muestra una hoja de papel cuadernillo (con líneas azules horizontales y un margen vertical rojo) sobre una superficie gris oscura. El texto está escrito a mano en tinta negra con una caligrafía clara y legible. El contenido es una lista de puntos sobre "Fuentes de energía".
+
+**Transcripción del texto (OCR):**
+
+**Fuentes de energía**
+
+Renovables (no se agotan):
+- Solar: paneles fotovoltaicos → electricidad.
+- Eólica: aerogeneradores, viento.
+- Hidráulica: embalses y presas.
+- Biomasa: restos orgánicos.
+
+No renovables (se agotan):
+- Combustibles fósiles: carbón, petróleo y gas natural.
+  Emite CO2 → efecto invernadero.
+- Nuclear: fisión del uranio. Residuos radiactivos durante miles de años.
+
+En España en 2023 las renovables produjeron más del 50 % de la electricidad.

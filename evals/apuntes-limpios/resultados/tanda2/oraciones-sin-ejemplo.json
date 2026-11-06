@@ -1,0 +1,122 @@
+{
+  "title": "Oraciones compuestas",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Tipos de oraciones compuestas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Oración compuesta",
+              "text": "Oración con dos o más verbos personales, es decir, varias proposiciones.",
+              "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+            },
+            {
+              "term": "Coordinadas",
+              "text": "Proposiciones con mismo nivel sintáctico unidas por nexos coordinantes.",
+              "quote": "las proposiciones tienen el mismo nivel sintáctico y se unen con nexos coordinantes"
+            },
+            {
+              "term": "Yuxtapuestas",
+              "text": "Proposiciones unidas sin nexo, solo mediante signos de puntuación.",
+              "quote": "las proposiciones se unen sin nexo, solo con signos de puntuación"
+            },
+            {
+              "term": "Subordinadas",
+              "text": "Una proposición depende de otra y cumple función dentro de ella.",
+              "quote": "una proposición depende de otra y cumple una función dentro de ella"
+            }
+          ]
+        },
+        {
+          "heading": "Coordinadas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Copulativas",
+              "text": "Suman ideas; nexos: y, e, ni. Ejemplo: Leí el libro y vi la película.",
+              "quote": "Copulativas: suman ideas. Nexos: y, e, ni. Ejemplo: Leí el libro y vi la película."
+            },
+            {
+              "term": "Disyuntivas",
+              "text": "Presentan opciones; nexos: o, u. Ejemplo: ¿Vienes o te quedas?",
+              "quote": "Disyuntivas: presentan opciones. Nexos: o, u. Ejemplo: ¿Vienes o te quedas?"
+            },
+            {
+              "term": "Adversativas",
+              "text": "Oponen ideas; nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió.",
+              "quote": "Adversativas: oponen ideas. Nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió."
+            },
+            {
+              "term": "Explicativas",
+              "text": "Aclaran lo anterior; nexos: es decir, o sea. Ejemplo: Es filántropo, es decir, ama a la humanidad.",
+              "quote": "Explicativas: aclaran lo anterior. Nexos: es decir, o sea. Ejemplo: Es filántropo, es decir, ama a la humanidad."
+            }
+          ]
+        },
+        {
+          "heading": "Subordinadas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Sustantivas",
+              "text": "Funcionan como sustantivo (sujeto, CD). Ejemplo: Quiero que vengas.",
+              "quote": "Sustantivas: funcionan como un sustantivo (sujeto, complemento directo…). Ejemplo: Quiero que vengas."
+            },
+            {
+              "term": "Adjetivas",
+              "text": "Funcionan como adjetivo, complementan al antecedente. Ejemplo: El libro que me prestaste es genial.",
+              "quote": "Adjetivas o de relativo: funcionan como un adjetivo y complementan a un sustantivo, el antecedente. Ejemplo: El libro que me prestaste es genial."
+            },
+            {
+              "term": "Adverbiales",
+              "text": "Funcionan como adverbio: tiempo, lugar, modo, causa, condición, finalidad, concesión, consecuencia. Ejemplo: Si llueve, no saldremos.",
+              "quote": "Adverbiales: funcionan como un adverbio e indican tiempo, lugar, modo, causa, condición, finalidad, concesión o consecuencia. Ejemplo: Si llueve, no saldremos."
+            }
+          ]
+        },
+        {
+          "heading": "Yuxtapuestas y error",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Yuxtapuestas",
+              "text": "Proposiciones unidas sin nexo, solo con puntuación. Ejemplo: Llegué tarde; no había nadie.",
+              "quote": "Yuxtapuestas: las proposiciones se unen sin nexo, solo con signos de puntuación. Ejemplo: Llegué tarde; no había nadie."
+            },
+            {
+              "term": "Error típico",
+              "text": "Confundir el «que» relativo (con antecedente) con la conjunción «que» de las sustantivas (sin antecedente).",
+              "quote": "Error típico: confundir el «que» relativo, que tiene antecedente, con la conjunción «que» de las sustantivas, que no lo tiene."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Oración compuesta",
+          "period": ""
+        },
+        {
+          "label": "Coordinadas",
+          "period": ""
+        },
+        {
+          "label": "Yuxtapuestas",
+          "period": ""
+        },
+        {
+          "label": "Subordinadas",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "Las oraciones compuestas tienen varias proposiciones unidas por coordinación, yuxtaposición o subordinación.",
+        "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

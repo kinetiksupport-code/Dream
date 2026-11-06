@@ -1,0 +1,103 @@
+{
+  "title": "La fotosíntesis",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Definición y ecuación",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fotosíntesis",
+              "text": "Proceso anabólico en cloroplastos donde plantas, algas y bacterias convierten luz en energía química.",
+              "quote": "La fotosíntesis es el proceso por el que las plantas, las algas y algunas bacterias transforman la energía de la luz en energía química."
+            },
+            {
+              "term": "",
+              "text": "Ecuación global: se toman dióxido de carbono y agua para producir glucosa y oxígeno.",
+              "quote": "6 CO2 + 6 H2O + luz → C6H12O6 + 6 O2. Se toman dióxido de carbono y agua y se producen glucosa y oxígeno."
+            }
+          ]
+        },
+        {
+          "heading": "Fase luminosa",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fase luminosa",
+              "text": "Ocurre en tilacoides, necesita luz, la clorofila la capta y el agua se rompe (fotólisis).",
+              "quote": "Fase luminosa: ocurre en los tilacoides del cloroplasto y necesita luz."
+            },
+            {
+              "term": "",
+              "text": "Se liberan oxígeno, ATP y NADPH como productos de esta fase.",
+              "quote": "Se producen ATP y NADPH."
+            }
+          ]
+        },
+        {
+          "heading": "Fase oscura",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fase oscura",
+              "text": "Ciclo de Calvin en el estroma que no necesita luz directamente para fijar el CO2.",
+              "quote": "Fase oscura o ciclo de Calvin: ocurre en el estroma y no necesita luz directamente."
+            },
+            {
+              "term": "",
+              "text": "Utiliza ATP y NADPH de la fase luminosa para fabricar glucosa.",
+              "quote": "Usa el ATP y el NADPH de la fase luminosa para fijar el CO2 y fabricar glucosa."
+            },
+            {
+              "term": "Rubisco",
+              "text": "La enzima rubisco es la responsable de fijar el dióxido de carbono.",
+              "quote": "La enzima que fija el CO2 es la rubisco."
+            }
+          ]
+        },
+        {
+          "heading": "Factores e importancia",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Influyen la intensidad de la luz, concentración de CO2, temperatura y disponibilidad de agua.",
+              "quote": "Factores que influyen: intensidad de la luz, concentración de CO2, temperatura y disponibilidad de agua."
+            },
+            {
+              "term": "",
+              "text": "Produce oxígeno atmosférico, es base de cadenas alimentarias y retira CO2 del aire.",
+              "quote": "Importancia: produce el oxígeno de la atmósfera, es la base de casi todas las cadenas alimentarias y retira CO2 del aire."
+            },
+            {
+              "term": "",
+              "text": "Error típico: creer que la fase oscura ocurre de noche; en realidad ocurre de día.",
+              "quote": "Error típico: pensar que la fase oscura ocurre de noche. Se llama así porque no usa la luz directamente, pero ocurre de día."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Fase luminosa",
+          "period": ""
+        },
+        {
+          "label": "Fase oscura",
+          "period": ""
+        },
+        {
+          "label": "Producción de glucosa",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "La fotosíntesis transforma la luz en energía química, produciendo glucosa y oxígeno en dos fases.",
+        "quote": "La fotosíntesis es el proceso por el que las plantas, las algas y algunas bacterias transforman la energía de la luz en energía química."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

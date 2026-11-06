@@ -1,0 +1,16 @@
+Análisis visual y OCR
+Claro, aquí tienes la descripción y la transcripción del contenido de la imagen.
+
+**Descripción visual:**
+La imagen muestra una hoja de papel cuadriculado, con una línea vertical roja en el margen izquierdo, típica de un cuaderno escolar. El papel está sobre una superficie de color gris oscuro. En la parte superior de la hoja, hay un título escrito a mano con tinta azul y subrayado: "Aparato digestivo". Debajo del título, hay una lista numerada del 1 al 5, seguida de una línea final, todo escrito a mano con la misma tinta azul. La letra es cursiva y legible.
+
+**Transcripción del texto (OCR):**
+
+Aparato digestivo
+
+1. Boca: los dientes trituran y la saliva (amilasa) empieza a digerir el almidon. Se forma el bolo alimenticio.
+2. Faringe y esofago: el bolo baja por movimientos peristalticos.
+3. Estomago: jugo gastrico con acido clorhidrico y pepsina (digiere proteinas). El bolo pasa a ser quimo.
+4. Intestino delgado (unos 7 metros): bilis del higado y jugo pancreatico. Las vellosidades absorben los nutrientes -> sangre. El quimo pasa a quilo.
+5. Intestino grueso (1,5 metros): absorbe agua y forma las heces.
+Glandulas anejas: higado, pancreas y glandulas salivales.

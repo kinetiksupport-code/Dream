@@ -1,0 +1,102 @@
+{
+  "title": "Fuentes de energía",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Energías renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Renovables",
+              "text": "Son fuentes de energía que no se agotan.",
+              "quote": "Renovables (no se agotan)"
+            },
+            {
+              "term": "Solar",
+              "text": "Paneles fotovoltaicos que generan electricidad.",
+              "quote": "Solar: paneles fotovoltaicos → electricidad"
+            },
+            {
+              "term": "Eólica",
+              "text": "Aerogeneradores que aprovechan el viento.",
+              "quote": "Eólica: aerogeneradores, viento"
+            },
+            {
+              "term": "Hidráulica",
+              "text": "Se basa en embalses y presas.",
+              "quote": "Hidráulica: embalses y presas"
+            },
+            {
+              "term": "",
+              "text": "Biomasa: restos orgánicos.",
+              "quote": "Biomasa: restos orgánicos."
+            },
+            {
+              "term": "",
+              "text": "Combustibles fósiles: carbón, petróleo y gas natural.",
+              "quote": "Combustibles fósiles: carbón, petróleo y gas natural."
+            }
+          ]
+        },
+        {
+          "heading": "Energías no renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "No renovables",
+              "text": "Son fuentes de energía que se agotan.",
+              "quote": "No renovables (se agotan)"
+            },
+            {
+              "term": "",
+              "text": "Emiten CO2 que causa efecto invernadero.",
+              "quote": "Emiten CO2 → efecto invernadero"
+            },
+            {
+              "term": "Nuclear",
+              "text": "Se basa en la fisión del uranio.",
+              "quote": "Nuclear: fisión del uranio"
+            },
+            {
+              "term": "",
+              "text": "Genera residuos radiactivos durante miles de años.",
+              "quote": "Residuos radiactivos durante miles de años"
+            }
+          ]
+        },
+        {
+          "heading": "Situación en España",
+          "period": "2023",
+          "bullets": [
+            {
+              "term": "",
+              "text": "En 2023, las renovables produjeron más del 50% de la electricidad en España.",
+              "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Renovables",
+          "period": ""
+        },
+        {
+          "label": "No renovables",
+          "period": ""
+        },
+        {
+          "label": "España 2023",
+          "period": "2023"
+        }
+      ],
+      "key_idea": {
+        "text": "Las energías renovables no se agotan, mientras que las no renovables emiten CO2 o residuos, y en España superaron el 50% en 2023.",
+        "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

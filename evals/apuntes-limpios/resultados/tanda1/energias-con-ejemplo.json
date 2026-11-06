@@ -1,0 +1,72 @@
+{
+  "title": "Fuentes de energía",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Energías renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Hidráulica",
+              "text": "Se produce en embalses y presas.",
+              "quote": "Hidráulica: embalses y presas."
+            }
+          ]
+        },
+        {
+          "heading": "Energías no renovables",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "La quema de fósiles emite CO2 y causa efecto invernadero.",
+              "quote": "Emite CO2 → efecto invernadero."
+            },
+            {
+              "term": "Nuclear",
+              "text": "Se basa en la fisión del uranio.",
+              "quote": "Nuclear: fisión del uranio."
+            },
+            {
+              "term": "",
+              "text": "Genera residuos radiactivos que duran miles de años.",
+              "quote": "Residuos radiactivos durante miles de años."
+            }
+          ]
+        },
+        {
+          "heading": "Dato España 2023",
+          "period": "2023",
+          "bullets": [
+            {
+              "term": "",
+              "text": "En España, en 2023, las renovables produjeron más del 50% de la electricidad.",
+              "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Renovables",
+          "period": ""
+        },
+        {
+          "label": "No renovables",
+          "period": ""
+        },
+        {
+          "label": "Dato España 2023",
+          "period": "2023"
+        }
+      ],
+      "key_idea": {
+        "text": "Las energías se dividen en renovables y no renovables, destacando el alto uso de renovables en España en 2023.",
+        "quote": "En España en 2023 las renovables produjeron más del 50 % de la electricidad."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

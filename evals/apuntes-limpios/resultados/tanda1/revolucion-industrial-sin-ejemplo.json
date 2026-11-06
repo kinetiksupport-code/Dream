@@ -1,0 +1,69 @@
+{
+  "title": "Revolución Industrial",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Inicio y causas",
+          "period": "1760",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Comienza en Gran Bretaña a mediados del siglo XVIII, hacia 1760.",
+              "quote": "Empieza en Gran Bretaña a mediados del s. XVIII (hacia 1760)."
+            },
+            {
+              "term": "",
+              "text": "Causas: aumento de población, revolución agrícola, capital colonial y recursos minerales.",
+              "quote": "aumento de la población, revolución agrícola, capital del comercio colonial, y carbón y hierro abundantes"
+            }
+          ]
+        },
+        {
+          "heading": "Innovaciones tecnológicas",
+          "period": "1733-1830",
+          "bullets": [
+            {
+              "term": "Máquina de vapor",
+              "text": "James Watt la mejora en 1769 para fábricas, trenes y barcos.",
+              "quote": "James Watt la mejora en 1769. Se usa en fábricas, trenes y barcos."
+            },
+            {
+              "term": "Industria textil",
+              "text": "El algodón es el primer sector mecanizado con la lanzadera volante en 1733.",
+              "quote": "Industria textil del algodón = primer sector en mecanizarse (lanzadera volante, 1733)."
+            },
+            {
+              "term": "Ferrocarril",
+              "text": "La primera línea de ferrocarril une Liverpool y Manchester en 1830.",
+              "quote": "Ferrocarril: primera línea Liverpool-Manchester en 1830."
+            }
+          ]
+        },
+        {
+          "heading": "Consecuencias y segunda fase",
+          "period": "1870",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El éxodo rural hace crecer las ciudades y nace el proletariado.",
+              "quote": "Consecuencias: éxodo rural, crecen las ciudades, nace el proletariado y el movimiento obrero."
+            },
+            {
+              "term": "Segunda Revolución",
+              "text": "Desde 1870, la Segunda Revolución Industrial usa electricidad, petróleo y acero.",
+              "quote": "Segunda Revolución Industrial (desde 1870): electricidad, petróleo y acero."
+            }
+          ]
+        }
+      ],
+      "flow": [],
+      "key_idea": {
+        "text": "La Revolución Industrial comenzó en Gran Bretaña en 1760 y trajo cambios sociales y tecnológicos.",
+        "quote": "Empieza en Gran Bretaña a mediados del s. XVIII (hacia 1760)."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

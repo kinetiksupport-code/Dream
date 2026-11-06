@@ -1,0 +1,113 @@
+{
+  "title": "La Revolución Francesa",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Causas de la Revolución",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Antiguo Régimen",
+              "text": "Sociedad estamental dividida en clero, nobleza y tercer estado bajo el Antiguo Régimen.",
+              "quote": "Francia vivía bajo el Antiguo Régimen, una sociedad estamental dividida en clero, nobleza y tercer estado"
+            },
+            {
+              "term": "",
+              "text": "Bancarrota de la Hacienda pública y encarecimiento del pan por malas cosechas.",
+              "quote": "La Hacienda estaba en bancarrota y las malas cosechas encarecieron el pan"
+            },
+            {
+              "term": "Ilustración",
+              "text": "Las ideas de la Ilustración criticaban el sistema político del absolutismo monárquico.",
+              "quote": "Las ideas de la Ilustración criticaban el absolutismo"
+            }
+          ]
+        },
+        {
+          "heading": "Inicio de la Revolución",
+          "period": "1789",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Luis XVI convoca los Estados Generales en mayo de 1789 para abordar la crisis.",
+              "quote": "En mayo de 1789 Luis XVI convoca los Estados Generales"
+            },
+            {
+              "term": "Asamblea Nacional",
+              "text": "El tercer estado se proclama Asamblea Nacional y realiza el juramento del Juego de Pelota.",
+              "quote": "Los diputados del tercer estado se proclaman Asamblea Nacional y hacen el juramento del Juego de Pelota"
+            },
+            {
+              "term": "",
+              "text": "El pueblo de París toma la Bastilla el 14 de julio de 1789.",
+              "quote": "El 14 de julio de 1789 el pueblo de París toma la Bastilla"
+            },
+            {
+              "term": "Declaración de Derechos",
+              "text": "La Asamblea aprueba la Declaración de los Derechos del Hombre y del Ciudadano en agosto de 1789.",
+              "quote": "En agosto de 1789 la Asamblea aprueba la Declaración de los Derechos del Hombre y del Ciudadano"
+            }
+          ]
+        },
+        {
+          "heading": "Etapas de la Revolución",
+          "period": "1789-1799",
+          "bullets": [
+            {
+              "term": "Constitución de 1791",
+              "text": "La Constitución de 1791 establece la separación de poderes y el sufragio censitario.",
+              "quote": "la Constitución de 1791 establece la separación de poderes y el sufragio censitario"
+            },
+            {
+              "term": "República",
+              "text": "Se proclama la República en 1792, marcando el fin de la monarquía.",
+              "quote": "en 1792 se proclama la República"
+            },
+            {
+              "term": "",
+              "text": "Luis XVI es ejecutado en 1793 tras el proceso judicial.",
+              "quote": "Luis XVI es ejecutado en 1793"
+            }
+          ]
+        },
+        {
+          "heading": "Fin y Consecuencias",
+          "period": "1799",
+          "bullets": [
+            {
+              "term": "Napoleón Bonaparte",
+              "text": "Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, en 1799.",
+              "quote": "En 1799 Napoleón Bonaparte da un golpe de Estado, el 18 de brumario, y pone fin a la Revolución"
+            },
+            {
+              "term": "",
+              "text": "Consecuencias: fin del Antiguo Régimen, igualdad ante la ley, soberanía nacional y liberalismo.",
+              "quote": "fin del Antiguo Régimen en Francia, igualdad ante la ley, soberanía nacional y difusión del liberalismo por Europa"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Causas",
+          "period": ""
+        },
+        {
+          "label": "Inicio 1789",
+          "period": "1789"
+        },
+        {
+          "label": "Monarquía constitucional",
+          "period": "1789-1792"
+        }
+      ],
+      "key_idea": {
+        "text": "",
+        "quote": ""
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

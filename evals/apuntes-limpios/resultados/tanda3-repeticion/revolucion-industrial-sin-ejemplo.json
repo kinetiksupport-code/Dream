@@ -1,0 +1,95 @@
+{
+  "title": "Revolución Industrial",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Inicio y causas",
+          "period": "1760",
+          "bullets": [
+            {
+              "term": "Causas",
+              "text": "Causas: aumento de la población, revolución agrícola, capital del comercio colonial, y carbón y hierro abundantes.",
+              "quote": "Causas: aumento de la población, revolución agrícola, capital del comercio colonial, y carbón y hierro abundantes."
+            },
+            {
+              "term": "",
+              "text": "Empieza en Gran Bretaña a mediados del s.",
+              "quote": "Empieza en Gran Bretaña a mediados del s."
+            }
+          ]
+        },
+        {
+          "heading": "Innovaciones tecnológicas",
+          "period": "1733-1830",
+          "bullets": [
+            {
+              "term": "Industria textil",
+              "text": "La industria textil del algodón es el primer sector en mecanizarse con la lanzadera volante en 1733.",
+              "quote": "Industria textil del algodón = primer sector en mecanizarse (lanzadera volante, 1733)."
+            },
+            {
+              "term": "Máquina de vapor",
+              "text": "James Watt mejora la máquina de vapor en 1769.",
+              "quote": "Máquina de vapor → James Watt la mejora en 1769."
+            },
+            {
+              "term": "",
+              "text": "La máquina de vapor se usa en fábricas, trenes y barcos.",
+              "quote": "Se usa en fábricas, trenes y barcos."
+            },
+            {
+              "term": "Ferrocarril",
+              "text": "La primera línea de ferrocarril entre Liverpool y Manchester se inaugura en 1830.",
+              "quote": "Ferrocarril: primera línea Liverpool-Manchester en 1830."
+            }
+          ]
+        },
+        {
+          "heading": "Consecuencias y segunda fase",
+          "period": "1870",
+          "bullets": [
+            {
+              "term": "Consecuencias",
+              "text": "Consecuencias: éxodo rural, crecen las ciudades, nace el proletariado y el movimiento obrero.",
+              "quote": "Consecuencias: éxodo rural, crecen las ciudades, nace el proletariado y el movimiento obrero."
+            },
+            {
+              "term": "Segunda Revolución",
+              "text": "La Segunda Revolución Industrial, desde 1870, se basa en electricidad, petróleo y acero.",
+              "quote": "Segunda Revolución Industrial (desde 1870): electricidad, petróleo y acero."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Causas iniciales",
+          "period": ""
+        },
+        {
+          "label": "Mecanización textil",
+          "period": "1733"
+        },
+        {
+          "label": "Mejora máquina vapor",
+          "period": "1769"
+        },
+        {
+          "label": "Primera línea ferrocarril",
+          "period": "1830"
+        },
+        {
+          "label": "Segunda Revolución Industrial",
+          "period": "1870"
+        }
+      ],
+      "key_idea": {
+        "text": "",
+        "quote": ""
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

@@ -1,0 +1,123 @@
+{
+  "title": "Ecuaciones de segundo grado",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Forma y fórmula",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Ecuación de segundo grado",
+              "text": "Tiene la forma ax^2 + bx + c = 0, con a distinto de 0.",
+              "quote": "Una ecuación de segundo grado tiene la forma ax^2 + bx + c = 0, con a distinto de 0."
+            },
+            {
+              "term": "Fórmula general",
+              "text": "La fórmula general es x = (-b ± √(b^2 - 4ac)) / 2a.",
+              "quote": "Fórmula general: x = (-b ± √(b^2 - 4ac)) / 2a."
+            }
+          ]
+        },
+        {
+          "heading": "Discriminante",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Discriminante",
+              "text": "El discriminante es Δ = b^2 - 4ac.",
+              "quote": "El discriminante es Δ = b^2 - 4ac"
+            },
+            {
+              "term": "",
+              "text": "Si Δ > 0, hay dos soluciones reales distintas.",
+              "quote": "Si Δ > 0, hay dos soluciones reales distintas."
+            },
+            {
+              "term": "",
+              "text": "Si Δ = 0, hay una solución doble.",
+              "quote": "Si Δ = 0, hay una solución doble."
+            },
+            {
+              "term": "",
+              "text": "Si Δ < 0, no hay soluciones reales.",
+              "quote": "Si Δ < 0, no hay soluciones reales."
+            }
+          ]
+        },
+        {
+          "heading": "Ecuaciones incompletas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "b = 0",
+              "text": "Si b = 0, se despeja x^2 y se hace la raíz: x = ±√(-c/a).",
+              "quote": "Si b = 0 (ax^2 + c = 0), se despeja x^2 y se hace la raíz: x = ±√(-c/a)."
+            },
+            {
+              "term": "c = 0",
+              "text": "Si c = 0, se saca factor común: x(ax + b) = 0, así que x = 0 o x = -b/a.",
+              "quote": "Si c = 0 (ax^2 + bx = 0), se saca factor común: x(ax + b) = 0, así que x = 0 o x = -b/a."
+            }
+          ]
+        },
+        {
+          "heading": "Ejemplo resuelto",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Ejemplo",
+              "text": "Ejemplo: x^2 - 5x + 6 = 0. Aquí a = 1, b = -5 y c = 6.",
+              "quote": "Ejemplo: x^2 - 5x + 6 = 0. Aquí a = 1, b = -5 y c = 6."
+            },
+            {
+              "term": "",
+              "text": "Δ = 25 - 24 = 1. Las soluciones son x = 3 y x = 2.",
+              "quote": "Δ = 25 - 24 = 1. Las soluciones son x = 3 y x = 2."
+            }
+          ]
+        },
+        {
+          "heading": "Propiedades y errores",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Propiedades",
+              "text": "La suma de las soluciones es -b/a y el producto es c/a.",
+              "quote": "Propiedades de las soluciones: la suma es -b/a y el producto es c/a."
+            },
+            {
+              "term": "Errores típicos",
+              "text": "Errores típicos: olvidar el signo de b, no dividir todo el numerador entre 2a y dividir entre x en ax^2 + bx = 0, perdiendo x = 0.",
+              "quote": "Errores típicos: olvidar el signo de b al sustituir, no dividir todo el numerador entre 2a y dividir entre x en ax^2 + bx = 0, con lo que se pierde la solución x = 0."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Forma general",
+          "period": ""
+        },
+        {
+          "label": "Discriminante",
+          "period": ""
+        },
+        {
+          "label": "Incompletas",
+          "period": ""
+        },
+        {
+          "label": "Ejemplo",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "El discriminante determina el número de soluciones reales de una ecuación de segundo grado.",
+        "quote": "El discriminante es Δ = b^2 - 4ac"
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

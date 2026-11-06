@@ -1,0 +1,142 @@
+{
+  "title": "La célula",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Concepto y teoría celular",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula",
+              "text": "Unidad estructural y funcional de los seres vivos.",
+              "quote": "La célula es la unidad estructural y funcional de los seres vivos."
+            },
+            {
+              "term": "Teoría celular",
+              "text": "Todos los seres vivos están formados por células.",
+              "quote": "La teoría celular dice que todos los seres vivos están formados por células"
+            },
+            {
+              "term": "",
+              "text": "Es la unidad de vida más pequeña.",
+              "quote": "la célula es la unidad de vida más pequeña"
+            },
+            {
+              "term": "",
+              "text": "Toda célula procede de otra célula.",
+              "quote": "toda célula procede de otra célula"
+            },
+            {
+              "term": "Partes comunes",
+              "text": "Membrana plasmática, citoplasma y material genético (ADN).",
+              "quote": "Partes comunes: membrana plasmática, citoplasma y material genético (ADN)."
+            }
+          ]
+        },
+        {
+          "heading": "Célula procariota",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula procariota",
+              "text": "No tiene núcleo; ADN en una región llamada nucleoide.",
+              "quote": "Célula procariota: no tiene núcleo; el ADN está en una región llamada nucleoide."
+            },
+            {
+              "term": "",
+              "text": "Pequeña, sencilla y sin orgánulos membranosos.",
+              "quote": "Es pequeña y sencilla y no tiene orgánulos membranosos."
+            },
+            {
+              "term": "",
+              "text": "Posee ribosomas y pared celular.",
+              "quote": "Tiene ribosomas y pared celular."
+            }
+          ]
+        },
+        {
+          "heading": "Célula eucariota",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Célula eucariota",
+              "text": "Tiene núcleo con envoltura nuclear y orgánulos membranosos.",
+              "quote": "Célula eucariota: tiene núcleo rodeado por una envoltura nuclear y orgánulos membranosos."
+            },
+            {
+              "term": "Célula animal",
+              "text": "Animal: centriolos, sin pared celular ni cloroplastos.",
+              "quote": "Célula animal: tiene centriolos y no tiene pared celular ni cloroplastos."
+            },
+            {
+              "term": "",
+              "text": "Sus vacuolas son pequeñas.",
+              "quote": "Sus vacuolas son pequeñas."
+            },
+            {
+              "term": "Célula vegetal",
+              "text": "Vegetal: pared de celulosa, cloroplastos y gran vacuola central.",
+              "quote": "Célula vegetal: tiene pared celular de celulosa, cloroplastos y una gran vacuola central."
+            }
+          ]
+        },
+        {
+          "heading": "Orgánulos y funciones",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Mitocondrias",
+              "text": "Mitocondrias: respiración celular, obtienen energía (ATP).",
+              "quote": "Mitocondrias: respiración celular, obtienen energía (ATP)."
+            },
+            {
+              "term": "Cloroplastos",
+              "text": "Cloroplastos: fotosíntesis, solo en células vegetales.",
+              "quote": "Cloroplastos: fotosíntesis, solo en células vegetales."
+            },
+            {
+              "term": "Ribosomas",
+              "text": "Ribosomas: síntesis de proteínas.",
+              "quote": "Ribosomas: síntesis de proteínas."
+            },
+            {
+              "term": "Retículo endoplasmático",
+              "text": "Retículo endoplasmático: síntesis y transporte de proteínas y lípidos.",
+              "quote": "Retículo endoplasmático: síntesis y transporte de proteínas y lípidos."
+            },
+            {
+              "term": "Aparato de Golgi",
+              "text": "Aparato de Golgi: modifica, empaqueta y distribuye sustancias.",
+              "quote": "Aparato de Golgi: modifica, empaqueta y distribuye sustancias."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Teoría celular",
+          "period": ""
+        },
+        {
+          "label": "Célula procariota",
+          "period": ""
+        },
+        {
+          "label": "Célula eucariota",
+          "period": ""
+        },
+        {
+          "label": "Orgánulos",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "La célula es la unidad estructural y funcional de los seres vivos, clasificada en procariota y eucariota.",
+        "quote": "La célula es la unidad estructural y funcional de los seres vivos."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

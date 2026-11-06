@@ -1,0 +1,112 @@
+{
+  "title": "Aparato digestivo",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Boca y masticación",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Boca",
+              "text": "Los dientes trituran y la saliva con amilasa inicia la digestión del almidón.",
+              "quote": "los dientes trituran y la saliva (amilasa) empieza a digerir el almidon"
+            },
+            {
+              "term": "",
+              "text": "El resultado de la masticación y la saliva es el bolo alimenticio.",
+              "quote": "Se forma el bolo alimenticio"
+            }
+          ]
+        },
+        {
+          "heading": "Faringe y esófago",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El bolo alimenticio desciende hacia el estómago mediante movimientos peristálticos.",
+              "quote": "el bolo baja por movimientos peristalticos"
+            }
+          ]
+        },
+        {
+          "heading": "Estómago y quimo",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Estomago",
+              "text": "El jugo gástrico, con ácido clorhídrico y pepsina, digiere las proteínas.",
+              "quote": "jugo gastrico con acido clorhidrico y pepsina (digiere proteinas)"
+            },
+            {
+              "term": "",
+              "text": "En el estómago, el bolo alimenticio se transforma en quimo.",
+              "quote": "El bolo pasa a ser quimo"
+            }
+          ]
+        },
+        {
+          "heading": "Intestino delgado",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Las vellosidades absorben los nutrientes y los pasan a la sangre.",
+              "quote": "Las vellosidades absorben los nutrientes -> sangre"
+            },
+            {
+              "term": "",
+              "text": "Intestino grueso (1,5 metros): absorbe agua y forma las heces.",
+              "quote": "Intestino grueso (1,5 metros): absorbe agua y forma las heces."
+            }
+          ]
+        },
+        {
+          "heading": "Intestino grueso y glándulas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Glandulas anejas",
+              "text": "Son el hígado, el páncreas y las glándulas salivales.",
+              "quote": "Glandulas anejas: higado, pancreas y glandulas salivales"
+            },
+            {
+              "term": "",
+              "text": "Intestino delgado (unos 7 metros): bilis del higado y jugo pancreatico.",
+              "quote": "Intestino delgado (unos 7 metros): bilis del higado y jugo pancreatico."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Boca",
+          "period": ""
+        },
+        {
+          "label": "Faringe y esofago",
+          "period": ""
+        },
+        {
+          "label": "Estomago",
+          "period": ""
+        },
+        {
+          "label": "Intestino delgado",
+          "period": ""
+        },
+        {
+          "label": "Intestino grueso",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "El aparato digestivo transforma el alimento en nutrientes mediante una secuencia de órganos y secreciones.",
+        "quote": "los dientes trituran y la saliva (amilasa) empieza a digerir el almidon"
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

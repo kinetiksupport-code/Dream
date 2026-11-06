@@ -1,0 +1,128 @@
+{
+  "title": "Los enlaces químicos",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Definición y regla octeto",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Enlace químico",
+              "text": "Unión entre átomos para formar sustancias más estables.",
+              "quote": "Un enlace químico es la unión entre átomos para formar sustancias más estables."
+            },
+            {
+              "term": "Regla del octeto",
+              "text": "Los átomos tienden a completar su última capa con 8 electrones.",
+              "quote": "Los átomos tienden a completar su última capa con 8 electrones (regla del octeto)."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace iónico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Los iones se atraen electrostáticamente formando redes cristalinas.",
+              "quote": "Los iones se atraen por fuerzas electrostáticas y forman redes cristalinas."
+            },
+            {
+              "term": "Cloruro de sodio",
+              "text": "Ejemplo típico: cloruro de sodio (NaCl).",
+              "quote": "Ejemplo: el cloruro de sodio (NaCl)."
+            },
+            {
+              "term": "",
+              "text": "Sólidos, puntos de fusión altos y solubles en agua.",
+              "quote": "Propiedades: sólidos a temperatura ambiente, puntos de fusión altos, solubles en agua."
+            },
+            {
+              "term": "",
+              "text": "Conducen electricidad disueltos o fundidos, no en estado sólido.",
+              "quote": "conducen la electricidad disueltos o fundidos, pero no en estado sólido."
+            },
+            {
+              "term": "",
+              "text": "Son duros pero frágiles.",
+              "quote": "Son duros pero frágiles."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace covalente",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Forma moléculas (agua) o redes cristalinas (diamante).",
+              "quote": "Puede formar moléculas, como el agua (H2O), o redes cristalinas covalentes, como el diamante."
+            },
+            {
+              "term": "",
+              "text": "Moléculas: puntos de fusión bajos, no conducen electricidad.",
+              "quote": "Las sustancias moleculares suelen tener puntos de fusión bajos y no conducen la electricidad."
+            },
+            {
+              "term": "",
+              "text": "Cristales covalentes: muy duros y puntos de fusión altos.",
+              "quote": "Los cristales covalentes son muy duros y tienen puntos de fusión muy altos."
+            }
+          ]
+        },
+        {
+          "heading": "Enlace metálico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Nube electrónica",
+              "text": "Cationes en red y electrones libres formando nube electrónica.",
+              "quote": "Los cationes forman una red y los electrones se mueven libremente formando una nube electrónica."
+            },
+            {
+              "term": "",
+              "text": "Buenos conductores, brillo metálico, dúctiles y maleables.",
+              "quote": "Propiedades: buenos conductores del calor y de la electricidad, brillo metálico, dúctiles y maleables."
+            }
+          ]
+        },
+        {
+          "heading": "Error típico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Error típico",
+              "text": "Error común: pensar que los iónicos conducen electricidad en estado sólido.",
+              "quote": "Error típico: decir que los compuestos iónicos conducen la electricidad en estado sólido."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Unión átomos",
+          "period": ""
+        },
+        {
+          "label": "Enlace iónico",
+          "period": ""
+        },
+        {
+          "label": "Enlace covalente",
+          "period": ""
+        },
+        {
+          "label": "Enlace metálico",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "Los enlaces químicos unen átomos para formar sustancias estables, clasificándose en iónico, covalente y metálico.",
+        "quote": "Un enlace químico es la unión entre átomos para formar sustancias más estables."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

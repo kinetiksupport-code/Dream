@@ -1,0 +1,117 @@
+{
+  "title": "Oraciones compuestas",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Clasificación general",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Oración compuesta",
+              "text": "Tiene dos o más verbos en forma personal, es decir, dos o más proposiciones.",
+              "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+            },
+            {
+              "term": "Coordinadas",
+              "text": "Las proposiciones tienen el mismo nivel sintáctico y se unen con nexos coordinantes.",
+              "quote": "las proposiciones tienen el mismo nivel sintáctico y se unen con nexos coordinantes"
+            },
+            {
+              "term": "Yuxtapuestas",
+              "text": "Las proposiciones se unen sin nexo, solo con signos de puntuación.",
+              "quote": "las proposiciones se unen sin nexo, solo con signos de puntuación"
+            },
+            {
+              "term": "Subordinadas",
+              "text": "Una proposición depende de otra y cumple una función dentro de ella.",
+              "quote": "una proposición depende de otra y cumple una función dentro de ella"
+            }
+          ]
+        },
+        {
+          "heading": "Coordinadas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Copulativas",
+              "text": "Suman ideas. Nexos: y, e, ni. Ejemplo: Leí el libro y vi la película.",
+              "quote": "Copulativas: suman ideas. Nexos: y, e, ni. Ejemplo: Leí el libro y vi la película."
+            },
+            {
+              "term": "Disyuntivas",
+              "text": "Presentan opciones. Nexos: o, u. Ejemplo: ¿Vienes o te quedas?",
+              "quote": "Disyuntivas: presentan opciones. Nexos: o, u. Ejemplo: ¿Vienes o te quedas?"
+            },
+            {
+              "term": "Adversativas",
+              "text": "Oponen ideas. Nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió.",
+              "quote": "Adversativas: oponen ideas. Nexos: pero, mas, sino, sin embargo. Ejemplo: Estudió mucho, pero suspendió."
+            },
+            {
+              "term": "Explicativas",
+              "text": "Aclaran lo anterior. Nexos: es decir, o sea. Ejemplo: Es filántropo, es decir, ama a la humanidad.",
+              "quote": "Explicativas: aclaran lo anterior. Nexos: es decir, o sea. Ejemplo: Es filántropo, es decir, ama a la humanidad."
+            }
+          ]
+        },
+        {
+          "heading": "Subordinadas",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Sustantivas",
+              "text": "Funcionan como un sustantivo (sujeto, complemento directo…). Ejemplo: Quiero que vengas.",
+              "quote": "Sustantivas: funcionan como un sustantivo (sujeto, complemento directo…). Ejemplo: Quiero que vengas."
+            },
+            {
+              "term": "Adjetivas",
+              "text": "Funcionan como un adjetivo y complementan a un sustantivo, el antecedente. Ejemplo: El libro que me prestaste es genial.",
+              "quote": "Adjetivas o de relativo: funcionan como un adjetivo y complementan a un sustantivo, el antecedente. Ejemplo: El libro que me prestaste es genial."
+            },
+            {
+              "term": "Adverbiales",
+              "text": "Funcionan como un adverbio e indican tiempo, lugar, modo, causa, condición, finalidad, concesión o consecuencia. Ejemplo: Si llueve, no saldremos.",
+              "quote": "Adverbiales: funcionan como un adverbio e indican tiempo, lugar, modo, causa, condición, finalidad, concesión o consecuencia. Ejemplo: Si llueve, no saldremos."
+            }
+          ]
+        },
+        {
+          "heading": "Error típico",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Error típico",
+              "text": "Confundir el «que» relativo, que tiene antecedente, con la conjunción «que» de las sustantivas, que no lo tiene.",
+              "quote": "confundir el «que» relativo, que tiene antecedente, con la conjunción «que» de las sustantivas, que no lo tiene"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Oración compuesta",
+          "period": ""
+        },
+        {
+          "label": "Coordinadas",
+          "period": ""
+        },
+        {
+          "label": "Yuxtapuestas",
+          "period": ""
+        },
+        {
+          "label": "Subordinadas",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "Las oraciones compuestas tienen varias proposiciones que se unen por coordinación, yuxtaposición o subordinación.",
+        "quote": "Una oración compuesta tiene dos o más verbos en forma personal, es decir, dos o más proposiciones."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

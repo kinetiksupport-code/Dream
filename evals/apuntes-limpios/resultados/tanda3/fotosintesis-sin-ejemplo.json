@@ -1,0 +1,98 @@
+{
+  "title": "La fotosíntesis",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Definición y ecuación",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fotosíntesis",
+              "text": "Proceso anabólico en cloroplastos donde plantas y algas transforman luz en energía química.",
+              "quote": "La fotosíntesis es el proceso por el que las plantas, las algas y algunas bacterias transforman la energía de la luz en energía química."
+            },
+            {
+              "term": "",
+              "text": "Ecuación global: 6 CO2 + 6 H2O + luz producen C6H12O6 + 6 O2.",
+              "quote": "Ecuación global: 6 CO2 + 6 H2O + luz → C6H12O6 + 6 O2. Se toman dióxido de carbono y agua y se producen glucosa y oxígeno."
+            }
+          ]
+        },
+        {
+          "heading": "Fase luminosa",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fase luminosa",
+              "text": "Ocurre en tilacoides con luz; la clorofila capta luz y el agua se rompe liberando oxígeno.",
+              "quote": "Fase luminosa: ocurre en los tilacoides del cloroplasto y necesita luz. La clorofila capta la luz, el agua se rompe (fotólisis) y se libera oxígeno."
+            },
+            {
+              "term": "",
+              "text": "Se producen ATP y NADPH.",
+              "quote": "Se producen ATP y NADPH."
+            }
+          ]
+        },
+        {
+          "heading": "Fase oscura",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Ciclo de Calvin",
+              "text": "Ocurre en el estroma usando ATP y NADPH para fijar CO2 y fabricar glucosa.",
+              "quote": "Fase oscura o ciclo de Calvin: ocurre en el estroma y no necesita luz directamente. Usa el ATP y el NADPH de la fase luminosa para fijar el CO2 y fabricar glucosa."
+            },
+            {
+              "term": "Rubisco",
+              "text": "La enzima rubisco es la encargada de fijar el dióxido de carbono.",
+              "quote": "La enzima que fija el CO2 es la rubisco."
+            }
+          ]
+        },
+        {
+          "heading": "Factores e importancia",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Influyen la intensidad de la luz, concentración de CO2, temperatura y disponibilidad de agua.",
+              "quote": "Factores que influyen: intensidad de la luz, concentración de CO2, temperatura y disponibilidad de agua."
+            },
+            {
+              "term": "",
+              "text": "Produce oxígeno atmosférico, es base de cadenas alimentarias y retira CO2 del aire.",
+              "quote": "Importancia: produce el oxígeno de la atmósfera, es la base de casi todas las cadenas alimentarias y retira CO2 del aire."
+            },
+            {
+              "term": "",
+              "text": "Error típico: pensar que la fase oscura ocurre de noche; se llama así porque no usa luz directamente, pero ocurre de día.",
+              "quote": "Error típico: pensar que la fase oscura ocurre de noche. Se llama así porque no usa la luz directamente, pero ocurre de día."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Fase luminosa",
+          "period": ""
+        },
+        {
+          "label": "Fase oscura",
+          "period": ""
+        },
+        {
+          "label": "Producción de glucosa",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "La fotosíntesis transforma la luz en energía química, produciendo glucosa y oxígeno en dos fases.",
+        "quote": "La fotosíntesis es el proceso por el que las plantas, las algas y algunas bacterias transforman la energía de la luz en energía química."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "title": "El ciclo del agua",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Definición y motor",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Ciclo hidrológico",
+              "text": "Movimiento continuo del agua entre la superficie terrestre y la atmósfera.",
+              "quote": "El ciclo del agua o ciclo hidrológico es el movimiento continuo del agua entre la superficie de la Tierra y la atmósfera."
+            },
+            {
+              "term": "",
+              "text": "La energía del Sol y la gravedad actúan como motor del ciclo.",
+              "quote": "El motor del ciclo es la energía del Sol y la gravedad."
+            }
+          ]
+        },
+        {
+          "heading": "Fases del ciclo",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Evaporación",
+              "text": "El calor solar convierte en vapor el agua de mares, ríos y lagos.",
+              "quote": "el calor del Sol convierte en vapor el agua de mares, ríos y lagos"
+            },
+            {
+              "term": "Transpiración",
+              "text": "Las plantas pierden vapor de agua a través de sus hojas.",
+              "quote": "las plantas pierden vapor de agua por sus hojas"
+            },
+            {
+              "term": "Evapotranspiración",
+              "text": "La suma de evaporación y transpiración se denomina evapotranspiración.",
+              "quote": "Junto con la evaporación se llama evapotranspiración"
+            },
+            {
+              "term": "Condensación",
+              "text": "El vapor se enfría y se condensa en gotas que forman nubes.",
+              "quote": "el vapor sube, se enfría y se condensa en pequeñas gotas que forman las nubes"
+            },
+            {
+              "term": "Precipitación",
+              "text": "Las gotas se unen y caen como lluvia, nieve o granizo.",
+              "quote": "las gotas se unen, pesan más y caen en forma de lluvia, nieve o granizo"
+            },
+            {
+              "term": "Escorrentía",
+              "text": "El agua fluye por la superficie formando ríos que desembocan en el mar.",
+              "quote": "el agua corre por la superficie y forma ríos que llegan al mar"
+            },
+            {
+              "term": "Infiltración",
+              "text": "Parte del agua se filtra en el suelo creando acuíferos subterráneos.",
+              "quote": "parte del agua penetra en el suelo y forma acuíferos o aguas subterráneas"
+            }
+          ]
+        },
+        {
+          "heading": "Distribución del agua",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El 97% del agua terrestre es salada y se encuentra en los océanos.",
+              "quote": "alrededor del 97 % del agua de la Tierra es salada y está en los océanos"
+            },
+            {
+              "term": "",
+              "text": "El 3% es dulce, mayoritariamente helada en glaciares y casquetes polares.",
+              "quote": "Solo cerca del 3 % es dulce, y la mayor parte de ella está helada en glaciares y casquetes polares"
+            }
+          ]
+        },
+        {
+          "heading": "Importancia y acción humana",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "El ciclo reparte agua dulce, regula el clima y modela el relieve.",
+              "quote": "el ciclo reparte el agua dulce por el planeta, regula el clima y modela el relieve"
+            },
+            {
+              "term": "",
+              "text": "Contaminación, sobreexplotación de acuíferos y deforestación alteran el ciclo natural.",
+              "quote": "la contaminación, la sobreexplotación de acuíferos y la deforestación alteran el ciclo"
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Evaporación",
+          "period": ""
+        },
+        {
+          "label": "Condensación",
+          "period": ""
+        },
+        {
+          "label": "Precipitación",
+          "period": ""
+        },
+        {
+          "label": "Escorrentía",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "El ciclo hidrológico mueve el agua entre la superficie terrestre y la atmósfera.",
+        "quote": "El ciclo del agua o ciclo hidrológico es el movimiento continuo del agua entre la superficie de la Tierra y la atmósfera."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

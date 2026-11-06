@@ -1,0 +1,132 @@
+{
+  "title": "Filosofía de Immanuel Kant",
+  "pages": [
+    {
+      "sections": [
+        {
+          "heading": "Introducción a Kant",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Immanuel Kant",
+              "text": "Filósofo alemán de la Ilustración, vivió entre 1724 y 1804.",
+              "quote": "Immanuel Kant (1724–1804) fue un filósofo alemán de la Ilustración."
+            },
+            {
+              "term": "Idealismo trascendental",
+              "text": "Su sistema se denomina idealismo trascendental o filosofía crítica.",
+              "quote": "Su filosofía se llama idealismo trascendental o filosofía crítica."
+            },
+            {
+              "term": "Crítica de la razón pura",
+              "text": "Su obra principal es la Crítica de la razón pura, publicada en 1781.",
+              "quote": "Su obra principal es la Crítica de la razón pura, publicada en 1781."
+            },
+            {
+              "term": "",
+              "text": "Preguntas clave: qué puedo conocer, qué debo hacer, qué esperar y qué es el ser humano.",
+              "quote": "¿qué puedo conocer?, ¿qué debo hacer?, ¿qué me cabe esperar? y ¿qué es el ser humano?"
+            }
+          ]
+        },
+        {
+          "heading": "Teoría del conocimiento",
+          "period": "",
+          "bullets": [
+            {
+              "term": "",
+              "text": "Quiso superar la oposición entre racionalismo y empirismo.",
+              "quote": "Kant quiso superar el racionalismo y el empirismo."
+            },
+            {
+              "term": "",
+              "text": "Todo conocimiento empieza con la experiencia, pero no todo procede de ella.",
+              "quote": "Todo conocimiento comienza con la experiencia, pero no todo procede de ella."
+            },
+            {
+              "term": "Formas a priori",
+              "text": "El sujeto aporta formas a priori: espacio y tiempo en sensibilidad, categorías en entendimiento.",
+              "quote": "El sujeto aporta formas a priori: el espacio y el tiempo en la sensibilidad, y las categorías en el entendimiento."
+            },
+            {
+              "term": "Giro copernicano",
+              "text": "El giro copernicano: el objeto se adapta al sujeto que conoce.",
+              "quote": "Kant llama a este cambio «giro copernicano»: es el objeto el que se adapta al sujeto que conoce."
+            }
+          ]
+        },
+        {
+          "heading": "Fenómeno y noúmeno",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Fenómeno",
+              "text": "Solo podemos conocer los fenómenos, las cosas tal como se nos aparecen.",
+              "quote": "solo podemos conocer los fenómenos, las cosas tal como se nos aparecen."
+            },
+            {
+              "term": "Noúmeno",
+              "text": "El noúmeno, la cosa en sí, no se puede conocer.",
+              "quote": "El noúmeno, la cosa en sí, no se puede conocer."
+            },
+            {
+              "term": "",
+              "text": "Por eso la metafísica no puede ser ciencia.",
+              "quote": "Por eso la metafísica no puede ser ciencia."
+            }
+          ]
+        },
+        {
+          "heading": "Ética kantiana",
+          "period": "",
+          "bullets": [
+            {
+              "term": "Ética formal",
+              "text": "Propone una ética formal: no dice qué hacer, sino cómo debe ser la norma.",
+              "quote": "Kant propone una ética formal, que no dice qué hacer en concreto sino cómo debe ser la norma."
+            },
+            {
+              "term": "Imperativo categórico",
+              "text": "El deber se expresa en el imperativo categórico: máxima que pueda ser ley universal.",
+              "quote": "El deber se expresa en el imperativo categórico: «obra solo según aquella máxima por la cual puedas querer al mismo tiempo que se convierta en ley universal»."
+            },
+            {
+              "term": "",
+              "text": "Una acción tiene valor moral si se hace por deber, no solo conforme al deber.",
+              "quote": "Una acción tiene valor moral si se hace por deber, no solo conforme al deber."
+            },
+            {
+              "term": "Postulados",
+              "text": "Postulados de la razón práctica (1788): libertad, inmortalidad del alma y existencia de Dios.",
+              "quote": "En la Crítica de la razón práctica, de 1788, Kant defiende como postulados la libertad, la inmortalidad del alma y la existencia de Dios."
+            }
+          ]
+        }
+      ],
+      "flow": [
+        {
+          "label": "Filosofía crítica",
+          "period": ""
+        },
+        {
+          "label": "Conocimiento",
+          "period": ""
+        },
+        {
+          "label": "Fenómeno y noúmeno",
+          "period": ""
+        },
+        {
+          "label": "Ética",
+          "period": ""
+        }
+      ],
+      "key_idea": {
+        "text": "Kant propone el idealismo trascendental, limitando el conocimiento a los fenómenos y fundamentando la ética en el deber.",
+        "quote": "Su filosofía se llama idealismo trascendental o filosofía crítica."
+      },
+      "unreadable": [],
+      "doubts": []
+    }
+  ]
+}

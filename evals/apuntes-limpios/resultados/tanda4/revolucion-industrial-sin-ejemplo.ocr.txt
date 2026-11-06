@@ -1,0 +1,17 @@
+Análisis visual y OCR
+Claro, aquí tienes el análisis de la imagen.
+
+**Descripción visual:**
+La imagen muestra una hoja de papel cuadriculado, con líneas horizontales azules y un margen vertical rojo a la izquierda, típico de un cuaderno escolar. El papel está sobre una superficie de color gris oscuro. En la parte superior de la hoja, hay un texto escrito a mano con tinta azul. El texto está organizado como una lista de puntos sobre un tema histórico.
+
+**Transcripción del texto (OCR):**
+
+Revolucion Industrial
+
+- Empieza en Gran Bretaña a mediados del s. XVIII (hacia 1760).
+- Causas: aumento de la población, revolución agrícola, capital del comercio colonial, y carbón y hierro abundantes.
+- Máquina de vapor → James Watt la mejora en 1769. Se usa en fábricas, trenes y barcos.
+- Industria textil del algodón = primer sector en mecanizarse (lanzadera volante, 1733).
+- Ferrocarril: primera línea Liverpool-Manchester en 1830.
+- Consecuencias: éxodo rural, crecen las ciudades, nace el proletariado y el movimiento obrero.
+- Segunda Revolución Industrial (desde 1870): electricidad, petróleo y acero.

@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-05T06-17-15",
+  "runs": 1,
+  "valid": 1,
+  "validFirstTry": 0,
+  "withAddedFactsAuto": 0,
+  "withLostNumbers": 0,
+  "withLostIdeas": 0,
+  "avgTokensPerPage": 4806,
+  "accentErrors": 0,
+  "rows": [
+    {
+      "name": "revolucion-industrial-sin-ejemplo",
+      "slug": "revolucion-industrial",
+      "kind": "foto",
+      "example": false,
+      "ocrRecall": 100,
+      "ok": true,
+      "firstTry": false,
+      "pages": 1,
+      "attempts": 2,
+      "repaired": 1,
+      "dropped": 1,
+      "droppedWhy": [
+        "dato_sin_cita"
+      ],
+      "firstErrors": [
+        "No queda ningún apartado con viñetas citadas de los apuntes: copia en quote frases literales de los APUNTES.",
+        "flow: las cajas «Mecanizaci\u000f3n textil (1733)», «M\u000e1quina de vapor (1769)», «Ferrocarril (1830)», «Segunda Revoluci\u000f3n (1870)» llevan datos que no están en tus viñetas. Usa solo datos de las viñetas.",
+        "key_idea: lleva un dato que no está en tus viñetas.",
+        "Te has dejado estos datos de los apuntes: 1760, 1769, 1733, 1830, 1870. Inclúyelos en sus viñetas con su cita.",
+        "Te has dejado estas ideas de los apuntes: «Empieza en Gran Bretaña a mediados del s.»; «Causas: aumento de la población, revolución agrícola, capital del comercio colon»; «Máquina de vapor → James Watt la mejora en 1769.»; «Se usa en fábricas, trenes y barcos.». Añade una viñeta para cada una, con su cita.",
+        "Viñetas quitadas: «Inicia en Gran Breta\u000f1a a mediados del siglo XVIII, hacia 1760.»: su quote no está tal cual en los APUNTES (copia la frase exacta); «Aumento poblacional, revoluci\u000f3n agr\u000edcola, capital colonial y abundan…»: su quote no está tal cual en los APUNTES (copia la frase exacta); «James Watt mejora la m\u000e1quina de vapor en 1769 para f\u000e1bricas, trenes …»: su quote no está tal cual en los APUNTES (copia la frase exacta); «El alg\u000f3n es el primer sector mecanizado con la lanzadera volante en 1…»: su quote no está tal cual en los APUNTES (copia la frase exacta)."
+      ],
+      "addedFactsAuto": [],
+      "lostNumbers": [],
+      "lostIdeas": [],
+      "lostNames": [
+        "xviii"
+      ],
+      "namesKeptPct": 88,
+      "accentErrors": 0,
+      "flow": 5,
+      "keyIdea": false,
+      "doubts": 0,
+      "unreadable": 0,
+      "tokens": 4806,
+      "tokensPerPage": 4806,
+      "inputTokens": 3184,
+      "outputTokens": 1622,
+      "ocrTokens": 2170,
+      "calls": 2,
+      "ms": 5344,
+      "manualAddedFacts": null,
+      "manualLostIdeas": null
+    }
+  ]
+}

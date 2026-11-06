@@ -213,9 +213,20 @@ function looksEnglish(text) {
  * Frases de los apuntes que no aparecen en la salida (menos de la mitad de
  * sus palabras con contenido): ideas que se han perdido al pasar a limpio.
  */
+// Abreviaturas que no cierran frase («s. XVIII», «p. ej.», «a. C.»).
+const ABBREV = /(?:^|[\s(])(?:s|ss|p|pp|sr|sra|dr|dra|etc|ej|aprox|n|nº|art|cap|vol|pág|c|a|d)\.$/i;
+const splitSentences = (source) => {
+  const out = [];
+  for (const piece of String(source ?? '').split(/(?<=[.!?…])\s+(?=[A-ZÁÉÍÓÚÑ¿¡"«(])|\n+/)) {
+    if (out.length && ABBREV.test(out[out.length - 1])) out[out.length - 1] += ` ${piece}`;
+    else out.push(piece);
+  }
+  return out.map((x) => x.replace(/^\s*(#+|\d+[.)]|[-*•])\s*/, '').trim()).filter(Boolean);
+};
+
 export function lostSentences(source, outText) {
   const out = new Set(normalizeForQuote(outText).split(' ').filter((w) => w.length >= 4).map(stem));
-  return String(source ?? '').split(/(?<=[.!?…])\s+|\n+/).map((x) => x.replace(/^\s*(#+|\d+[.)]|[-*•])\s*/, '').trim())
+  return splitSentences(source)
     .filter((x) => x.length >= 25)
     .filter((x) => {
       const words = normalizeForQuote(x).split(' ').filter((w) => w.length >= 4 && !STOP.has(w));
@@ -230,9 +241,23 @@ export function lostSentences(source, outText) {
  */
 export function notesTextFrom(extracted) {
   let text = String(extracted ?? '').replace(/^(Análisis visual y OCR|PDF · \d+ páginas?)\n/, '');
-  const transcript = text.match(/\*{0,2}Transcripci[oó]n[^\n:]*\*{0,2}:?\*{0,2}\s*\n/i);
-  if (transcript && transcript.index !== undefined) text = text.slice(transcript.index + transcript[0].length);
-  return text.replace(/^\s*\*{0,2}(Descripción visual|Notas?)\*{0,2}:?.*$/gim, '').trim();
+  // Cabecera «**Transcripción del texto (OCR):**» en su propia línea: lo de antes es la descripción.
+  const transcript = /^[ \t]*[*#_ ]*Transcripci[oó]n[^\n]{0,60}?:?[*_ ]*$/im.exec(text);
+  if (transcript) text = text.slice(transcript.index + transcript[0].length);
+  // Sin cabecera: fuera las frases que describen la foto en vez de transcribirla.
+  return text.split('\n')
+    .filter((line) => !/^\s*[*_]*\s*(claro[,.]|aquí tienes|descripción visual|la imagen|en la imagen|esta imagen|se trata de una? (foto|imagen|hoja)|el texto está (escrito|organizado))/i.test(line))
+    .join('\n').replace(/^\s*\*\*([^*\n]+)\*\*\s*$/gm, '$1').trim();
+}
+
+/**
+ * La cita está tal cual en los apuntes. Como quoteFound, pero acepta citas de
+ * 2-3 palabras (las líneas de lista cortas: «Eólica: aerogeneradores, viento»).
+ */
+export function quoteOk(quote, sourceNorm) {
+  const q = normalizeForQuote(quote);
+  if (!q || q.length < 10 || q.split(' ').length < 2) return false;
+  return ` ${sourceNorm} `.includes(` ${q} `);
 }
 
 /** Trozos que el OCR marcó como [ilegible] en los apuntes. */
@@ -293,21 +318,23 @@ export function validateNotesPage(raw, { source, first = true, lenient = false }
     const where = `sections[${i + 1}]`;
     let heading = txt(s?.heading, L.heading, `${where}.heading`);
     if (heading && !fromSource(heading)) { fix(`${where}.heading: lleva un dato que no está en los apuntes.`); heading = withoutNew(heading); }
-    let period = txt(s?.period, L.period, `${where}.period`);
+    let period = txt(s?.period, L.period, `${where}.period`).replace(/^(\d{1,4})\s*[-–]$/, 'desde $1');
     if (period && !numbersIn(period).every((n) => sourceNumbers.has(n))) { fix(`${where}.period: «${period}» no está en los apuntes.`); period = ''; }
     const list = Array.isArray(s?.bullets) ? s.bullets : [];
     if (list.length > L.bullets) fix(`${where}.bullets: tiene ${list.length} viñetas y el máximo es ${L.bullets}.`);
     const bullets = list.slice(0, L.bullets).flatMap((b, j) => {
       const at = `${where}.bullets[${j + 1}]`;
-      const text = txt(b?.text, L.bullet, `${at}.text`);
+      let text = txt(b?.text, L.bullet, `${at}.text`);
       const term = txt(b?.term, L.term, `${at}.term`).replace(/[:：]\s*$/, '');
       const quote = clean(b?.quote).slice(0, L.quote);
       if (!text) return [];
+      // «Causas: Causas: …» → el término ya va delante en negrita.
+      if (term && normalizeForQuote(text).startsWith(`${normalizeForQuote(term)} `) && /^[^:]{1,45}:\s*/.test(text) && normalizeForQuote(text.split(':')[0]) === normalizeForQuote(term)) text = text.slice(text.indexOf(':') + 1).trim().replace(/^\p{Ll}/u, (c) => c.toUpperCase());
       const key = normalizeForQuote(text);
       if (seenBullets.has(key)) return []; // repetida: se quita sin más
       seenBullets.add(key);
       // La cita tiene que estar en los apuntes…
-      if (!quoteFound(quote, sourceNorm)) { dropped++; droppedWhy.push('sin_cita'); droppedNotes.push(`${short(text)}: su quote no está tal cual en los APUNTES (copia la frase exacta)`); return []; }
+      if (!quoteOk(quote, sourceNorm)) { dropped++; droppedWhy.push('sin_cita'); droppedNotes.push(`${short(text)}: su quote no está tal cual en los APUNTES (copia la frase exacta)`); return []; }
       // …y cada dato de la viñeta (cifras, fechas, nombres) en su cita.
       const quoteNorm = normalizeForQuote(quote);
       const quoteNumbers = new Set([...numbersIn(quote), ...romansIn(quote).map((x) => x.toLowerCase())]);
@@ -331,7 +358,7 @@ export function validateNotesPage(raw, { source, first = true, lenient = false }
   let flow = (Array.isArray(r.flow) ? r.flow : []).slice(0, L.flow[1]).map((f, i) => ({
     label: txt(f?.label, L.flowLabel, `flow[${i + 1}].label`),
     period: txt(f?.period, L.period, `flow[${i + 1}].period`),
-  })).filter((f) => f.label);
+  })).filter((f) => f.label).map((f) => (f.period && normalizeForQuote(f.label).includes(normalizeForQuote(f.period)) ? { ...f, period: '' } : f));
   const badBoxes = flow.filter((f) => !inBullets(`${f.label} ${f.period}`));
   if (badBoxes.length) {
     fix(`flow: las cajas ${badBoxes.map((f) => `«${f.label}${f.period ? ` (${f.period})` : ''}»`).join(', ')} llevan datos que no están en tus viñetas. Usa solo datos de las viñetas.`);
@@ -369,6 +396,37 @@ export function validateNotesPage(raw, { source, first = true, lenient = false }
   if (looksEnglish(outText)) errors.push('El texto debe estar en español de España, no en inglés.');
   // Si ya hay que reintentar, se explica también qué viñetas se han quitado y por qué.
   if (errors.length && droppedNotes.length) errors.push(`Viñetas quitadas: ${droppedNotes.slice(0, 4).join('; ')}.`);
+  // Último recurso (modo arreglar): lo que se ha perdido vuelve TAL CUAL, copiado
+  // de los apuntes, en el apartado que más se le parece. Nada inventado, nada perdido.
+  if (lenient && sections.length) {
+    const back = new Set(lost);
+    if (missing.length) for (const sentence of splitSentences(source)) if (missing.some((n) => numbersIn(sentence).includes(n))) back.add(sentence);
+    const at = (t) => ` ${sourceNorm} `.indexOf(` ${normalizeForQuote(t)} `);
+    // Dónde empieza cada apartado en los apuntes (por la cita de su primera viñeta).
+    const starts = sections.map((sec) => {
+      const first = Math.min(...sec.bullets.map((b) => at(b.quote)).filter((n) => n >= 0), Infinity);
+      // Si el título del apartado está en los apuntes justo antes, el apartado empieza ahí.
+      const heading = ` ${normalizeForQuote(sec.heading)} `;
+      const head = heading.trim() ? ` ${sourceNorm} `.lastIndexOf(heading, Number.isFinite(first) ? first : undefined) : -1;
+      return head >= 0 ? Math.min(head, first) : first;
+    });
+    // Las frases muy largas se parten por «;» y solo vuelve el trozo que falta.
+    const pieces = [...back].flatMap((x) => (x.length <= L.bullet ? [x] : x.split(/;\s*/).filter((part) => part.length >= 8 && (lostSentences(part, outText).length || missing.some((n) => numbersIn(part).includes(n))))));
+    for (const sentence of pieces.sort((a, b) => at(a) - at(b)).slice(0, 8)) {
+      const pos = at(sentence);
+      const norm = normalizeForQuote(sentence);
+      // El apartado que la tiene justo antes en los apuntes; si no se sabe, el primero.
+      let best = 0;
+      starts.forEach((start, i) => { if (start <= pos && start >= (starts[best] <= pos ? starts[best] : -1)) best = i; });
+      const sec = sections[best];
+      const text = sentence.replace(/\s+/g, ' ').trim().slice(0, L.bullet);
+      if (sec.bullets.some((b) => normalizeForQuote(b.text) === norm)) continue;
+      const after = sec.bullets.findIndex((b) => at(b.quote) > pos);
+      const labeled = /^([^:]{2,40}):\s+(\S[\s\S]*)$/.exec(text);
+      const bullet = labeled ? { term: labeled[1].trim(), text: labeled[2].replace(/^\p{Ll}/u, (c) => c.toUpperCase()), quote: text } : { term: '', text, quote: text };
+      sec.bullets.splice(after < 0 ? sec.bullets.length : after, 0, bullet);
+    }
+  }
   const page = { sections, flow, key_idea: keyIdea, unreadable, doubts };
   const ok = !errors.length && sections.length > 0 && (!first || Boolean(title));
   return { page: ok ? page : null, title, errors: errors.slice(0, 15), dropped, droppedWhy, missing, lost };
