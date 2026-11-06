@@ -4,6 +4,7 @@ import { Orb } from "@/components/orb";
 import { CookieSettingsButton } from "@/components/cookie-settings-button";
 
 const LINKS = [
+  { href: "/sobre-nosotros", label: "Sobre nosotros" },
   { href: "/privacidad", label: "Privacidad" },
   { href: "/terminos", label: "Términos" },
   { href: "/cookies", label: "Cookies" },

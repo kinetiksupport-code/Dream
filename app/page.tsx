@@ -280,6 +280,7 @@ export default function LandingPage() {
             {/* Carga completa: /blog tiene su propia CSP de imágenes (lib/csp.ts). */}
             {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
             <a href="/blog">Blog</a>
+            <Link href="/sobre-nosotros">Sobre nosotros</Link>
             <Link href="/privacidad">Privacidad</Link>
             <Link href="/terminos">Términos</Link>
             <Link href="/cookies">Cookies</Link>

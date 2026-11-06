@@ -93,6 +93,7 @@ export const jsonLdScript = (data: unknown) => JSON.stringify(data).replace(/</g
 export const PUBLIC_PAGES = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
   { path: "/blog", priority: 0.8, changeFrequency: "daily" },
+  { path: "/sobre-nosotros", priority: 0.5, changeFrequency: "yearly" },
   { path: "/login", priority: 0.6, changeFrequency: "monthly" },
   { path: "/privacidad", priority: 0.3, changeFrequency: "yearly" },
   { path: "/terminos", priority: 0.3, changeFrequency: "yearly" },
